@@ -1,0 +1,39 @@
+<div class="container-fluid bg-white rounded border p-4">
+    <h1 class="mt-4">Credit/Debit Notes</h1>
+    <%- include ("./partials/messages"); %>
+    <div class="row">
+        <div class="col">
+            <table class="table table-bordered table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Note ID</th>
+                        <th>Note Type</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                        <th>Sale ID</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Batch</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% notes.forEach(note => { %>
+                    <tr>
+                        <td><%= note.Id %></td>
+                        <td><%= note.NoteType %></td>
+                        <td>₹<%= note.Amount %></td>
+                        <td><%= note.Reason %></td>
+                        <td><%= note.SaleId %></td>
+                        <td><%= note.CustomerName %></td>
+                        <td><%= note.ProductName %></td>
+                        <td><%= note.BatchNumber %></td>
+                        <td><%= new Date(note.CreatedAt).toLocaleString() %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

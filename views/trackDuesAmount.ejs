@@ -1,0 +1,217 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0 d-flex align-items-center">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active fw-bold" aria-current="page">
+          Track Dues
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Track Dues Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">
+          <i class="bi bi-currency-rupee me-2"></i>Track Dues Details
+        </h4>
+      </div>
+      <div class="card-body p-4">
+        <%- include('./partials/messages'); %>
+
+        <!-- Search Form -->
+        <form action="/patient/searchPatientWithDuesAmount" method="post" class="mb-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <input
+                type="number"
+                class="form-control"
+                id="billNo"
+                name="BillNo"
+                placeholder="Bill No"
+                value="<%= typeof BillNo != 'undefined' ? BillNo : '' %>"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="Name"
+                placeholder="Enter Patient Name"
+                value="<%= typeof Name != 'undefined' ? Name : '' %>"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-6">
+              <input
+                type="text"
+                class="form-control"
+                id="FromDate"
+                name="FromDate"
+                placeholder="From Date"
+                value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>"
+                autocomplete="off"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="text"
+                class="form-control"
+                id="ToDate"
+                name="ToDate"
+                placeholder="To Date"
+                value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-md-6">
+              <select
+                name="Doctor"
+                class="form-control"
+                id="doctor"
+                aria-label="Select Doctor"
+              >
+                <option value="" selected>Select a Doctor</option>
+                <% doctorDetails.forEach(function(doctor){ %>
+                  <option
+                    value="<%=doctor.Id%>"
+                    <% if(typeof doctorId != 'undefined' && doctor.Id == doctorId){%>selected<%}%>
+                  >
+                    <%=doctor.FirstName%> <%=doctor.LastName%>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <button class="btn btn-primary w-100 py-2" type="submit">Search</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Dues Table -->
+        <h5 class="fw-bold mb-3">Patient Details With Dues</h5>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead class="table-primary">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Patient Detail</th>
+                <th scope="col">Referred By</th>
+                <th scope="col">Date</th>
+                <th scope="col">Gross Amount</th>
+                <th scope="col">Received Amount</th>
+                <th scope="col">Dues Amount</th>
+                <th scope="col">Add Amount</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% let i = 1; patientDetails.forEach(function(patient){ if(patient.DuesAmount > 0) { %>
+                <tr>
+                  <form action="/patient/updateDuesAmount?patientId=<%= patient.Id %>" method="post">
+                    <td><%= i %></td>
+                    <td class="text-capitalize">
+                      <p class="mb-1">
+                        <a
+                          data-bs-toggle="tooltip"
+                          data-bs-custom-class="custom-tooltip"
+                          data-bs-placement="top"
+                          title="<%= patient.TestNames %>"
+                          href="/patient/getPatientDetail?patientId=<%= patient.Id %>"
+                          class="link-primary fw-semibold text-decoration-none"
+                        >
+                          <%= patient.Title %> <%= patient.Name %>
+                        </a>
+                      </p>
+                      <p class="text-muted mb-1">
+                        <% if(patient.Gender == 1) { %>
+                          <i class="bi bi-gender-male text-info"></i> Male
+                        <% } else { %>
+                          <i class="bi bi-gender-female text-danger"></i> Female
+                        <% } %>
+                        | <%= patient.Age %> <%= patient.YMD %>
+                      </p>
+                      <p class="mb-0">
+                        <i class="bi bi-phone text-success" style="font-size: 1rem;"></i>
+                        <span class="fw-medium">+91 <%= patient.PhoneNumber %></span>
+                      </p>
+                    </td>
+                    <td
+                      class="text-capitalize"
+                      data-bs-toggle="tooltip"
+                      data-bs-custom-class="custom-tooltip"
+                      data-bs-placement="top"
+                      title="<%=patient.DoctorDegree1%>,<%=patient.DoctorDegree2%>"
+                    >
+                      <strong class="text-teal">Dr. <%= patient.DoctorFirstName%> <%= patient.DoctorLastName %></strong>
+                      <br />
+                      <small class="text-muted">
+                        <i class="bi bi-clipboard-heart"></i> <%= patient.DoctorSpecialistIn %>
+                      </small>
+                    </td>
+                    <td><i class="bi bi-calendar-event"></i> <%= patient.RegisteredOn %></td>
+                    <td class="fw-bold fs-6">₹ <%= patient.GrossAmount %></td>
+                    <td class="fw-bold fs-6">₹ <%= patient.GrossAmount - patient.DuesAmount %></td>
+                    <td class="fw-bold fs-6">₹ <%= patient.DuesAmount %></td>
+                    <td>
+                      <div class="input-group mb-2">
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="cash_<%= patient.Id %>"
+                          name="cashPayment"
+                          placeholder="Cash Amount"
+                        />
+                      </div>
+                      <div class="input-group">
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="onlineAmount_<%= patient.Id %>"
+                          name="onlinePayment"
+                          placeholder="Online Amount"
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <button type="submit" class="btn btn-primary btn-sm">Pay</button>
+                    </td>
+                  </form>
+                </tr>
+              <% i++; } }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm justify-content-center gap-1 mt-4" id="pagination_Number">
+            <li class="page-item disabled">
+              <a class="page-link rounded-pill px-3" href="#">Previous</a>
+            </li>
+            <!-- Dynamic pagination numbers can be added here via JS -->
+            <li class="page-item">
+              <a class="page-link rounded-pill px-3" href="#">1</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link rounded-pill px-3" href="#">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>

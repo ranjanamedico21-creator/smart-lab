@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Sales Invoice</title>
+    <style>
+        /* Print Styling */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                font-size: 12px;
+            }
+            .container-fluid {
+                width: 100%;
+                padding:3mm;
+                margin: 0;
+            }
+            .border {
+                border: 1px solid black !important;
+                min-height:42vh;
+                max-height:42vh;
+            }
+            .no-print {
+                display: none;
+            }
+            table {
+                font-size: 12px;
+            }
+            
+        }
+        /* General Styling */
+        .invoice-box {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background: #fff;
+        }
+        .table th, .table td {
+            padding: 4px;
+        }
+        hr {
+            border-top: 2px solid #000;
+        }
+        .spacer {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+
+  <!-- Main Section -->
+  <section class="pb-5">
+    <div class="container-xl">
+      <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold"><i class="bi bi-file-earmark-text me-2"></i>Purchase Order's Invoice Details</h4>
+        </div>
+        <div class="card-body p-4">
+          
+          <% if (purchaseOrder) { %>
+            <!-- Purchase Order Info -->
+            <div class="card shadow-sm mb-4">
+              <div class="card-body">
+                <h5 class="card-title text-primary mb-3 fw-bold">
+                  Purchase Order: <%= purchaseOrder[0].PurchaseInvoiceNo %>
+                </h5>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <p class="mb-2"><strong><i class="bi bi-person me-2"></i>Supplier:</strong> <%= purchaseOrder[0].SupplierName %></p>
+                    <p class="mb-2"><strong><i class="bi bi-calendar me-2"></i>Order Date:</strong><%= new Date(purchaseOrder[0].OrderDate).toLocaleDateString('en-GB').replace(/\//g, '-') %></p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-2"><strong><i class="bi bi-currency-rupee me-2"></i>Total Amount (With Tax):</strong> ₹<%= purchaseOrder[0].TotalAmountWithTax %></p>
+                    <p class="mb-2">
+                      <strong><i class="bi bi-tag me-2"></i>Status:</strong> 
+                      <span class="badge <%= purchaseOrder[0].Status === 'Pending' ? 'bg-warning' : 'bg-success' %>">
+                        <%= purchaseOrder[0].Status %>
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Products in Purchase Order -->
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-box-seam me-2"></i>Products in Purchase Order</h5>
+            <div class="table-responsive">
+              <table class="table table-hover table-striped align-middle">
+                <thead class="table-primary">
+                  <tr>
+                    <th scope="col">Product Name</th>
+                    <th scope="col">Ordered Qty</th>
+                    <th scope="col">Remaining Qty</th>
+                    <th scope="col">Purchase Price</th>
+                    <th scope="col">IGST (%)</th>
+                    <th scope="col">IGST</th>
+                    <th scope="col">Total Purchase Po without Tax</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% purchaseOrder.forEach(product => { %>
+                    <tr class="<%= product.RemainingQuantity === 0 ? 'table-success' : 'table-warning' %>">
+                      <td><%= product.ProductName %></td>
+                      <td><%= product.Quantity %></td>
+                      <td><%= product.RemainingQuantity %></td>
+                      <td>₹<%= product.PurchasePrice %></td>
+                      <td><%= product.IGSTPercentage %>%</td>
+                      <td>₹<%= product.IGSTAmount %></td>
+                      <td>₹<%= product.TotalAmount %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Invoices for this Purchase Order -->
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-receipt-cutoff me-2"></i>Invoices for this Purchase Order</h5>
+            <% if (invoices.length > 0) { %>
+              <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                  <thead class="table-info">
+                    <tr>
+                      <th scope="col">System Invoice No</th>
+                      <th scope="col">Supplier Invoice No</th>
+                      <th scope="col">Invoice Date</th>
+                      <th scope="col">Total Amount with Tax</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% invoices.forEach(invoice => { %>
+
+           
+                        <% let invoiceDate = new Date(invoice.InvoiceDate); %>
+                        <% let today = new Date(); %>
+                        <% let isNew = invoiceDate.toDateString() === today.toDateString(); %>
+          
+                      <tr>
+                        <td><%= invoice.InvoiceNo %>"</td>
+                        <td>  
+                              <a class="text-decoration-none" href="/billing/downloadInvoices/:<%= invoice.SupplierInvoiceNo %>"> <% if (isNew) { %>
+                            <span class="badge bg-danger ms-2">New</span>
+                          <% } %><%= invoice.SupplierInvoiceNo %></a>
+                        </td>
+                        <td><%= new Date(invoice.InvoiceDate).toLocaleDateString('en-GB').replace(/\//g, '-') %></td>
+                        <td>₹<%= invoice.TotalAmount %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                No invoices found for this purchase order.
+              </div>
+            <% } %>
+
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+              <a href="/billing/viewPurchasePo" class="btn btn-primary px-4"><i class="bi bi-arrow-left me-2"></i>Back to Purchase Orders</a>
+            </div>
+          <% } else { %>
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+              <i class="bi bi-x-circle-fill me-2"></i>
+              Purchase order not found.
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </section>

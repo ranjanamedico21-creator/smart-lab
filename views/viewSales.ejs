@@ -1,0 +1,172 @@
+
+
+  <!-- Breadcrumb Section -->
+  <section class="py-3 py-md-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+        <ol class="breadcrumb mb-0 d-flex align-items-center">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary fw-medium">Home</a>
+          </li>
+          <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Sales List</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Main Content Section -->
+  <section class="pb-4 pb-md-5">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold fs-4 fs-md-3"><i class="bi bi-cart-check me-2"></i>Sales List</h4>
+        </div>
+
+        <div class="card-body p-3 p-md-4">
+          <%- include("./partials/messages"); %>
+
+          <!-- Search Form -->
+          <form action="/billing/viewSales" method="post" class="mb-4 p-3 bg-light rounded-3">
+            <div class="row g-3">
+              <div class="col-12 col-md-6 col-xl-3">
+                <label for="invoiceId" class="form-label fw-medium">Invoice No</label>
+                <input
+                  type="text"
+                  class="form-control rounded-2"
+                  id="invoiceId"
+                  name="InvoiceId"
+                  placeholder="Invoice No / Purchase Order"
+                  value="<%= typeof InvoiceId != 'undefined' ? InvoiceId : '' %>"
+                >
+              </div>
+              <div class="col-12 col-md-6 col-xl-3">
+                <label for="customer" class="form-label fw-medium">Customer</label>
+                <select
+                  name="Customer"
+                  class="form-control rounded-2"
+                  id="customer"
+                  data-live-search="true"
+                  aria-label="Select customer with live search"
+                >
+                  <option value="" selected>Select a Customer</option>
+                  <%  customers.forEach(function(customer) { %>
+                    <option
+                      value="<%= customer.Id %>"
+                      <% if(typeof Customer != 'undefined' && customer.Id == Customer) { %>selected<% } %>
+                    >
+                      <%= customer.CustomerName %>
+                    </option>
+                  <% }); %>
+                </select>
+
+             
+              </div>
+              <div class="col-12 col-md-6 col-xl-3">
+                <label for="FromDate" class="form-label fw-medium">From Date</label>
+                <input
+                  type="text"
+                  id="FromDate"
+                  class="form-control rounded-2"
+                  name="FromDate"
+                  placeholder="From Date"
+                  value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>"
+                  autocomplete="off"
+                >
+              </div>
+              <div class="col-12 col-md-6 col-xl-3">
+                <label for="ToDate" class="form-label fw-medium">To Date</label>
+                <input
+                  type="text"
+                  class="form-control rounded-2"
+                  id="ToDate"
+                  name="ToDate"
+                  placeholder="To Date"
+                  value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>"
+                  autocomplete="off"
+                >
+              </div>
+            </div>
+
+            <!-- Search Button -->
+            <div class="row g-3 mt-3">
+              <div class="col-12 col-md-6 col-xl-4 mx-md-auto">
+                <button class="btn btn-primary w-100 rounded-2 fw-medium" type="submit">
+                  <i class="bi bi-search me-2"></i>Search
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Sales Table -->
+          <div class="table-responsive rounded-3">
+            <table class="table table-hover table-striped align-middle mb-0">
+              <thead class="table-primary">
+                <tr>
+                  <th scope="col" class="text-center">#</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col">GST</th>
+                  <th scope="col">Invoice</th>
+                  <th scope="col">Product</th>
+                  <th scope="col" class="text-center">Qty</th>
+                  <th scope="col">Date</th>
+                  <th scope="col" class="text-center">Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% let i = 1; customerLists.forEach(function(customerList) { %>
+                  <tr>
+                    <td class="text-center"><%= i %>.</td>
+                    <td class="text-capitalize"><%= customerList.CustomerName %></td>
+                    <td class="text-capitalize"><%= customerList.GstNo %></td>
+                    <td>
+                      <a href="/billing/updateSales/<%=customerList.CustomerId%>/<%=customerList.InvoiceId%>"
+                        class="text-decoration-none text-primary fw-semibold">
+                        <%= customerList.InvoiceId %>
+                      </a>
+                    </td>
+                    <td class="text-capitalize"><%= customerList.Products %></td>
+                    <td class="text-center"><%= customerList.QuantitySold %></td>
+                    <td><%= customerList.SaledOn %></td>
+                    <td class="text-center">
+                      <a
+                        href="/billing/downloadSales/<%= customerList.InvoiceId %>/<%= customerList.CustomerId %>"
+                        class="btn btn-sm btn-outline-danger rounded-pill"
+                        title="Download PDF"
+                      >
+                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                      </a>&nbsp;
+                      <a href="/billing/viewSalesInHtml/<%= customerList.InvoiceId %>/<%= customerList.CustomerId %>" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill" aria-label="View Details">
+                        <i class="bi bi-eye-fill"></i>
+                      </a>
+                      
+                    </td>
+                  </tr>
+                <% i++; }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pagination Section -->
+  <section class="pb-4 mt-3">
+    <nav aria-label="Page navigation">
+      <div class="container">
+        <div class="d-flex justify-content-center">
+          <div class="w-100 overflow-auto">
+            <ul class="pagination pagination-sm gap-1 mt-4 flex-nowrap justify-content-center overflow-auto" id="pagination_Number" style="white-space: nowrap; scroll-behavior: smooth;">
+              <li class="page-item disabled">
+                <a class="page-link rounded-pill px-3 prev_link" href="#">Previous</a>
+              </li>
+              <!-- Page numbers will be inserted here via JavaScript -->
+              <li class="page-item">
+                <a class="page-link rounded-pill px-3 next_link" href="#">Next</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </section>

@@ -1,0 +1,100 @@
+
+<main class="d-flex flex-nowrap">
+  <!-- Sidebar -->
+  <div class="offcanvas-lg offcanvas-start bg-light flex-shrink-0 p-3" tabindex="-1" id="sidebar" style="width: 280px;">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Welcome</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="list-unstyled ps-0" id="sidebar-menu">
+        <li class="mb-1">
+          <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0" data-bs-toggle="collapse" data-bs-target="#home-collapse">
+            Patients
+          </button>
+          <div class="collapse" id="home-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+              <li><a href="/patient/getPatientListView" class="sidebar-link">Patients List</a></li>
+              <li><a href="/patient/registerPatient" class="sidebar-link">Register New Patient</a></li>
+              <li><a href="/patient/trackDuesAmount" class="sidebar-link">Track Dues Amount</a></li>
+              <li><a href="/patient/dailyDuesReceived" class="sidebar-link">Dues Received</a></li>
+              <li><a href="/report/viewCollection" class="sidebar-link">View Collection</a></li>
+            </ul>
+          </div>
+        </li>
+        <li class="mb-1">
+          <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse">
+            Referral
+          </button>
+          <div class="collapse" id="dashboard-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+              <li><a href="/clinic/registerClinic" class="sidebar-link">Register Clinic</a></li>
+              <li><a href="/doctor/registerDoctor" class="sidebar-link">Register Doctor</a></li>
+              <li><a href="/doctor/getDoctorListView" class="sidebar-link">Doctor List</a></li>
+              <li><a href="/clinic/getClinicListView" class="sidebar-link">Clinic List</a></li>
+            </ul>
+          </div>
+        </li>
+        <!-- Add more menu items here -->
+        <li class="mb-1">
+          <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#orders-collapse" aria-expanded="false">
+            Test
+          </button>
+          <div class="collapse" id="orders-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+              <li><a href="/test/createTest" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Create Test</a></li>
+              <li><a href="/test/registerSubTest" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Create Sub Test</a></li>
+              <li><a href="/test/getTestListView" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Test List</a></li>
+              <li><a href="/test/getSubTestListView" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Sub Test List</a></li>
+              <li><a href="/patient/viewThanksPaidPatientList" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Commission</a></li>
+              <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Returned</a></li>
+            </ul>
+          </div>
+        </li>
+        <li class="border-top my-3"></li>
+        <li class="mb-1">
+          <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#document-collapse" aria-expanded="false">Documents</button>
+          <div class="collapse" id="document-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+              <li><a href="/category/createDocumentCategory" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Create Document Category</a></li>
+              <li><a href="/category/getDocumentCategoryList" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Document Category List</a></li>
+              <li><a href="/report/displayDocumentDetails" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Document List</a></li>
+              <li><a href="/report/getDocumentUploadForm" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Document Upload</a></li>
+             </ul>
+          </div>
+        </li>
+        <li class="border-top my-3"></li>
+        <li class="mb-1">
+          <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="false">
+            Thanks
+          </button>
+          <div class="collapse" id="dashboard-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+              <li><a href="/doctor/" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Register Clinic</a></li>
+              <li><a href="/doctor/registerDoctor" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Register Doctor</a></li>
+              <li><a href="/doctor/getDoctorListView" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Doctor List</a></li>
+              <li><a href="/clinic/getClinicListView" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Clinic List</a></li>
+            </ul>
+          </div>
+        </li>
+        <li class="border-top my-3"></li>
+        <li class="mb-1">
+          <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+            Reports
+          </button>
+          <div class="collapse" id="account-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+              <li><a href="/report/getDiscountReport" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Discount</a></li>
+              <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Settings</a></li>
+              <li><a href="#" class="link-body-emphasis d-inline-flex text-decoration-none rounded">Sign out</a></li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+  <span class="navbar-toggler-icon"></span>
+</button>

@@ -1,0 +1,297 @@
+<!-- ✅ Edit Patient Details Page -->
+<section>
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">
+          Edit Patient Details
+        </li>
+      </ol>
+    </nav>
+  </section>
+  
+  <section class="mt-4">
+    <div class="container-fluid">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white rounded-top">
+          <h5 class="mb-0 text-center">Update Patient Details</h5>
+        </div>
+  
+        <div class="card-body">
+          <!-- Messages -->
+          <%- include ("./partials/messages"); %>
+  
+          <!-- Form -->
+          <form action="/patient/updatePatientDetails?id=<%=patientId%>" method="post" class="needs-validation" novalidate>
+            <div class="row g-4">
+              <!-- Left Section -->
+              <div class="col-lg-8">
+                
+                <!-- Date -->
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Date</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="date" placeholder="Date" value="" readonly>
+                    <span class="input-group-text bg-light">
+                      <i class="bi bi-calendar2-date-fill"></i>
+                    </span>
+                  </div>
+                </div>
+  
+                <!-- Title & Gender -->
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="title" class="form-label fw-semibold">Title</label>
+                    <select class="form-control" name="title" id="title" required>
+                      <option value="">Select Title</option>
+                      <option value="Dr." <% if(patientDetails && patientDetails.Title =='Dr.'){%>Selected <%}%>>Dr.</option>
+                      <option value="Mr." <% if(patientDetails && patientDetails.Title =='Mr.'){%>Selected <%}%>>Mr.</option>
+                      <option value="Mrs." <% if(patientDetails && patientDetails.Title =='Mrs.'){%>Selected <%}%>>Mrs.</option>
+                      <option value="Miss" <% if(patientDetails && patientDetails.Title =='Miss'){%>Selected <%}%>>Miss</option>
+                      <option value="Master" <% if(patientDetails && patientDetails.Title =='Master'){%>Selected <%}%>>Master</option>
+                      <option value="Baby Of" <% if(patientDetails && patientDetails.Title =='Baby Of'){%>Selected <%}%>>Baby Of</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="gender" class="form-label fw-semibold">Gender</label>
+                    <select class="form-control" name="gender" id="gender" required>
+                      <option value="">Select Gender</option>
+                      <option value="1" <% if(patientDetails && patientDetails.Gender =='1'){%>Selected <%}%>>Male</option>
+                      <option value="2" <% if(patientDetails && patientDetails.Gender =='2'){%>Selected <%}%>>Female</option>
+                    </select>
+                  </div>
+                </div>
+  
+                <!-- Name, Age & YMD -->
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <label for="patientName" class="form-label fw-semibold">Patient Name</label>
+                    <input type="text" class="form-control text-capitalize" name="patientName" id="patientName" placeholder="Patient Name" value="<%= patientDetails?.Name || '' %>" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="age" class="form-label fw-semibold">Age</label>
+                    <input type="text" class="form-control" name="age" id="age" placeholder="Age" value="<%= patientDetails?.Age || '' %>" required>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="ymd" class="form-label fw-semibold">Unit</label>
+                    <select class="form-control" name="ymd" id="ymd" required>
+                      <option value="">Select</option>
+                      <option value="Years" <% if(patientDetails && patientDetails.YMD =='Years'){%>Selected <%}%>>Years</option>
+                      <option value="Months" <% if(patientDetails && patientDetails.YMD =='Months'){%>Selected <%}%>>Months</option>
+                      <option value="Days" <% if(patientDetails && patientDetails.YMD =='Days'){%>Selected <%}%>>Days</option>
+                    </select>
+                  </div>
+                </div>
+  
+                <!-- Clinic & Doctor -->
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <label for="clinic" class="form-label fw-semibold">Clinic</label>
+                    <select class="form-control" name="clinic" id="clinic" data-live-search="true">
+                      <option value="">Select Clinic</option>
+                      <% clinics.forEach(function(clinic){ %>
+                        <option <% if(clinic && clinic.Id == patientDetails.ClinicId){%>Selected <%}%> value="<%= clinic.Id%>">
+                          <%=clinic.Name %> [<%=clinic.Address %>]
+                        </option>
+                      <%})%>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="doctor" class="form-label fw-semibold">Doctor</label>
+                    <select class="form-control" name="doctor" id="doctor">
+                      <option value="">Select Doctor</option>
+                      <% doctors.forEach(function(doctor){ %>
+                        <option <% if(doctor && doctor.Id == patientDetails.DoctorId){%>Selected <%}%> value="<%=doctor.Id%>">
+                          <%=doctor.FirstName%> <%=doctor.LastName%>
+                        </option>
+                      <%})%>
+                    </select>
+                  </div>
+                </div>
+  
+                <!-- Address & Qualification -->
+                <div class="row mt-3">
+                  <div class="col">
+                    <span class="fw-semibold">Address:</span>
+                    <span id="address" class="text-capitalize"></span>
+                  </div>
+                  <div class="col">
+                    <span class="fw-semibold">Qualification:</span>
+                    <span id="qualification" class="text-capitalize"></span>
+                  </div>
+                </div>
+  
+                <!-- Phone & Address -->
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <label for="phoneNumber" class="form-label fw-semibold">Phone Number</label>
+                    <input type="text" class="form-control" minlength="10" maxlength="10" name="phoneNumber" id="phoneNumber" placeholder="Phone Number" value="<%= patientDetails?.PhoneNumber || '' %>" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="patientAddress" class="form-label fw-semibold">Patient Address</label>
+                    <input type="text" class="form-control text-capitalize" name="patientAddress" id="patientAddress" placeholder="Patient Address" value="<%= patientDetails?.Address || '' %>">
+                  </div>
+                </div>
+  
+              </div>
+  
+              <!-- Right Section: Prescription Image -->
+              <div class="col-lg-4 text-center">
+                <label class="form-label fw-semibold">Clinic Prescription</label>
+                <img src="" class="img-fluid rounded shadow-sm border" alt="Clinic Prescription" id="clinicPrescription">
+              </div>
+            </div>
+  
+            <!-- Tests Section -->
+            <hr class="my-4">
+            <h6 class="fw-bold">Assign Tests</h6>
+            <div class="row mt-3">
+              <div class="col">
+                  <div id="liveErrorAlertPlaceholder"></div>
+              </div>
+          </div>
+  
+            <div class="row g-3">
+              <div class="col-md-3">
+                <select class="form-control" name="category" id="category">
+                  <option value="0">Select Category</option>
+                  <% categories.forEach(function(category){ %>
+                    <option id="<%= category.Id %>" value="<%= category.Id %>" data-category-id="<%= category.Id %>"><%= category.Name %></option>
+                  <% })%>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-control" name="test" id="test">
+                  <option value="0">Select Test</option>
+                  <% testDetails.forEach(function(test){ %>
+                    <option value="<%= test.Id %>" data-category-id="<%=test.CategoryId %>" data-price="<%=test.Price%>"><%=test.TestName %></option>
+                  <% })%>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <div class="input-group">
+                  <input type="number" class="form-control" name="price" id="price" placeholder="Price" readonly required>
+                  <span class="input-group-text">Rs</span>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="input-group">
+                  <input type="number" class="form-control" name="discount" id="discount" placeholder="Discount" value="<%= patientDetails?.Discount || 0 %>">
+                  <span class="input-group-text">Rs</span>
+                </div>
+              </div>
+              <div class="col-md-2 d-grid">
+                <button type="button" class="btn btn-outline-primary" id="addTest">
+                  <i class="bi bi-plus-circle me-1"></i> Add Test
+                </button>
+              </div>
+            </div>
+  
+            <!-- Tests Table -->
+            <div class="table-responsive mt-3">
+              <table class="table table-bordered table-striped align-middle text-center" id="displayTest">
+                <thead class="table-light">
+                  <tr>
+                    <th>Test Name</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+  
+            <!-- Payments & Discounts -->
+            <hr class="my-4">
+            <h6 class="fw-bold">Payment Details</h6>
+  
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="input-group">
+                  <input type="text" class="form-control" name="finalDiscount" id="finalDiscount" readonly value="<%= patientDetails?.Discount || 0 %>">
+                  <span class="input-group-text">Total Discount (Rs)</span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="input-group">
+                  <input type="text" class="form-control" name="discountApprovedBy" id="discountApprovedBy" value="<%= patientDetails?.DiscountApprovedBy || '' %>">
+                  <span class="input-group-text">Approved By</span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="input-group">
+                  <input type="number" class="form-control" name="grossAmount" id="grossAmount" readonly required value="<%= patientDetails?.GrossAmount || 0 %>">
+                  <span class="input-group-text">Gross (Rs)</span>
+                </div>
+              </div>
+            </div>
+  
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="number" class="form-control" name="cashPayment" id="cashPayment" value="<%= patientDetails?.CashPayment || 0 %>">
+                  <span class="input-group-text">Cash (Rs)</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="number" class="form-control" name="onlinePayment" id="onlinePayment" value="<%= patientDetails?.OnlinePayment || 0 %>">
+                  <span class="input-group-text">Online (Rs)</span>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Hidden Inputs -->
+            <input type="hidden" name="selectedTestDetails" id="selectedTestDetails" value="[]">
+            <input type="hidden" name="patientTestDetails" id="patientTestDetails" value="<%= patientTestDetails || '' %>">
+            <input type="hidden" name="selectedSubTestDetails" id="selectedSubTestDetails" value="[]">
+            <input type="hidden" name="patientSubTestDetails" id="patientSubTestDetails" value="<%= patientSubTestDetails || '' %>">
+            <input type="hidden" name="testLength" id="testLength" value="0">
+            <input type="hidden" name="subTestLength" id="subTestLength" value="0">
+  
+            <!-- Summary -->
+            <div class="row g-3 mt-3">
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text">Already Paid</span>
+                  <input type="number" readonly class="form-control-plaintext" id="amountAlreadyPaid">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text">Remaining</span>
+                  <input type="number" readonly class="form-control-plaintext" id="remainingAmount">
+                </div>
+              </div>
+            </div>
+  
+            <!-- Submit -->
+            <div class="d-flex justify-content-center gap-2 mt-3">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save2 me-2"></i> Update Patient
+              </button>
+              <a href="/patient/getPatientListView" class="btn btn-outline-secondary">
+                <i class="bi bi-list-ul me-1"></i> Patient List
+              </a>
+            </div>
+            <!-- Hidden SubTests -->
+            <ul class="invisible">
+              <% subTestDetails.forEach(function(subTest){ %>
+                <li class="mainTest<%=subTest.mainTestId%>" 
+                    data-sub-test-id="<%=subTest.subTestId%>"
+                    data-sub-test-name="<%=subTest.Name%>"
+                    data-sub-test-price="<%=subTest.Price%>"
+                    data-sub-test-discount="<%=subTest.Discount%>">
+                </li>
+              <%})%>
+            </ul>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  

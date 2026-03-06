@@ -1,0 +1,219 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+        <ol class="breadcrumb mb-0 fw-medium">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+          </li>
+          <li class="breadcrumb-item active text-dark" aria-current="page">Customer Registration</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <!-- Customer Registration Section -->
+  <section class="pb-5">
+    <div class="container-fluid">
+      <div class="card shadow border-0 rounded-4 bg-white overflow-hidden">
+        <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold">Customer Registration</h4>
+        </div>
+        <div class="card-body p-4">
+          <form id="customerForm" action="/billing/createCustomer" class="needs-validation" method="POST" novalidate>
+            <!-- Customer Details -->
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Customer Name</label>
+                <input type="text" name="CustomerName" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">Customer name is required.</div>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold">Mobile No</label>
+                <input type="text" name="MobileNo" class="form-control" pattern="\d{10}" required>
+                <div class="invalid-feedback">Enter a valid 10-digit mobile number.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">GST No</label>
+                <input type="text" name="GstNo" class="form-control text-uppercase" pattern="^[0-9A-Z]{15}$">
+                <div class="invalid-feedback">Enter a valid 15-character GST No.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">DL No</label>
+                <input type="text" name="DlNo" class="form-control text-uppercase" pattern="^[A-Za-z0-9\-\/]+$">
+                <div class="invalid-feedback">Enter a valid DL number.</div>
+              </div>
+            </div>
+  
+            <!-- Billing Address Fields -->
+            <h5 class="mt-4 mb-3 fw-semibold text-center">Billing Address</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Billing Address</label>
+                <input type="text" name="BillingAddress" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">Billing address is required.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">State</label>
+                <input type="text" name="BillingState" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">State is required.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">District</label>
+                <input type="text" name="BillingDistrict" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">District is required.</div>
+              </div>
+            </div>
+            <div class="row g-3 mt-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Pincode</label>
+                <input type="text" name="BillingPincode" class="form-control" pattern="\d{6}" required>
+                <div class="invalid-feedback">Enter a valid 6-digit pincode.</div>
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" id="copyAddress" class="form-check-input">
+                  <label for="copyAddress" class="form-check-label">Same as Billing</label>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Shipping Address Fields -->
+            <h5 class="mt-4 mb-3 fw-semibold text-center">Shipping Address</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Shipping Address</label>
+                <input type="text" name="SupplyAddress" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">Shipping address is required.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">State</label>
+                <input type="text" name="SupplyState" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">State is required.</div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">District</label>
+                <input type="text" name="SupplyDistrict" class="form-control text-capitalize" required>
+                <div class="invalid-feedback">District is required.</div>
+              </div>
+            </div>
+            <div class="row g-3 mt-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Pincode</label>
+                <input type="text" name="SupplyPincode" class="form-control" pattern="\d{6}" required>
+                <div class="invalid-feedback">Enter a valid 6-digit pincode.</div>
+              </div>
+            </div>
+  
+            <!-- Product & Supplier Section -->
+            <h5 class="mt-4 mb-3 fw-semibold">Products</h5>
+            <div id="productContainer">
+              <div class="row g-3 mb-3 product-row">
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Supplier</label>
+                  <select name="SupplierId[]" class="form-control supplierDropdown cSupplier text-uppercase" data-live-search="true" required>
+                    <option value="" disabled selected>Select a supplier</option>
+                    <% suppliers.forEach(supplier => { %>
+                      <option value="<%= supplier.Id %>"><%= supplier.Name %></option>
+                    <% }); %>
+                  </select>
+                  <div class="invalid-feedback">Select a supplier.</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold">Product</label>
+                  <select name="ProductId[]" class="form-control pproduct" data-live-search="true" required>
+                    <option value="" disabled selected>Select a product</option>
+                    <% products.forEach(product => { %>
+                      <option data-supplier-id="<%= product.SupplierId %>" value="<%= product.Id %>">
+                        <%= product.ProductName %>
+                      </option>
+                    <% }); %>
+                  </select>
+                  <div class="invalid-feedback">Select a product.</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-semibold">Selling Price</label>
+                  <input type="number" name="SellingPrice[]" class="form-control" step="0.01" required>
+                  <div class="invalid-feedback">Enter a valid selling price.</div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <button type="button" class="btn btn-danger rounded-circle removeProduct">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex gap-2 justify-content-center mt-4">
+              <button type="button" id="addProduct" class="btn btn-primary rounded-pill px-4 fw-medium">Add More</button>
+              <button type="submit" class="btn btn-success rounded-pill px-4 fw-medium">Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- JavaScript -->
+  <script>
+    // Copy Billing Address to Shipping Address
+    document.getElementById("copyAddress").addEventListener("change", function () {
+      ["Address", "State", "District", "Pincode"].forEach(field => {
+        const supplyInput = document.querySelector(`input[name='Supply${field}']`);
+        const billingInput = document.querySelector(`input[name='Billing${field}']`);
+        if (supplyInput && billingInput) {
+          supplyInput.value = this.checked ? billingInput.value : "";
+        }
+      });
+    });
+  
+    // Add More Products Functionality
+    document.getElementById("addProduct").addEventListener("click", function () {
+      const productContainer = document.getElementById("productContainer");
+      const newProductRow = document.createElement("div");
+      newProductRow.classList.add("row", "g-3", "mb-3", "product-row");
+      newProductRow.innerHTML = `
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Supplier</label>
+          <select name="SupplierId[]" class="form-control supplierDropdown cSupplier text-capitalize" data-live-search="true" required>
+            <option value="" disabled selected>Select a supplier</option>
+            <% suppliers.forEach(supplier => { %>
+              <option value="<%= supplier.Id %>"><%= supplier.Name %></option>
+            <% }); %>
+          </select>
+          <div class="invalid-feedback">Select a supplier.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Product</label>
+          <select name="ProductId[]" class="form-control pproduct text-capitalize" data-live-search="true" required>
+            <option value="" disabled selected>Select a product</option>
+            <% products.forEach(product => { %>
+              <option data-supplier-id="<%= product.SupplierId %>" value="<%= product.Id %>">
+                <%= product.ProductName %>
+              </option>
+            <% }); %>
+          </select>
+          <div class="invalid-feedback">Select a product.</div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Selling Price</label>
+          <input type="number" name="SellingPrice[]" class="form-control" step="0.01" required>
+          <div class="invalid-feedback">Enter a valid selling price.</div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="button" class="btn btn-danger rounded-circle removeProduct">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `;
+      $("select.cSupplier,select.pproduct").selectpicker("destroy");
+      productContainer.appendChild(newProductRow);
+      $("select.cSupplier,select.pproduct").selectpicker({ dropupAuto: false, container: "body" });
+    });
+  
+    // Remove Product Row
+    document.addEventListener("click", function (e) {
+      if (e.target.classList.contains("removeProduct") || e.target.closest(".removeProduct")) {
+        e.target.closest(".product-row").remove();
+      }
+    });
+  </script>

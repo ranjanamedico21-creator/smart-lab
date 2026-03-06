@@ -1,0 +1,32 @@
+<table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Dates</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Remarks</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% leaveRequests.forEach(leave => { %>
+        <tr>
+          <td><%= leave.UserName %></td>
+          <td><%= moment(leave.StartDate).format("DD-MM-YYYY") %> to <%= moment(leave.EndDate).format("DD-MM-YYYY") %></td>
+          <td><%= leave.Reason %></td>
+          <td><span class="badge bg-warning"><%= leave.Status %></span></td>
+          <td><%= leave.AdminRemarks || '-' %></td>
+          <td>
+            <form action="/user/adminActionOnLeave/<%= leave.Id %>" method="post" class="d-flex gap-2">
+              <input type="hidden" name="remarks" value="">
+              <button name="status" value="Approved" class="btn btn-success btn-sm">Approve</button>
+              <button name="status" value="Rejected" class="btn btn-danger btn-sm">Reject</button>
+              <button name="status" value="SentBack" class="btn btn-warning btn-sm">Send Back</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  

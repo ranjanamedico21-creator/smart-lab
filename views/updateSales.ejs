@@ -1,0 +1,202 @@
+<!-- Breadcrumb Section -->
+<section class="py-4 bg-light">
+    <div class="container-fluid">
+        <nav aria-label="breadcrumb" class="p-3 bg-white rounded-3 shadow-sm border">
+            <ol class="breadcrumb mb-0 fw-medium">
+                <li class="breadcrumb-item">
+                    <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-dark" aria-current="page">Update Sales</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Invoice Items Section -->
+<section class="container-fluid">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white text-center p-3">
+            <h5 class="mb-0">Update Sales Records</h5>
+        </div>
+        <div class="card-body p-0">
+            <form action="/billing/updateSales/<%=customerId%>/<%=invoiceId%>" method="POST" id="salesForm">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle mb-0" id="salesTable">
+                        <thead class="">
+                            <tr>
+                                <th scope="col" class="ps-4 py-3 fw-semibold">Sr. No.</th>
+                                <th scope="col" class="py-3 fw-semibold">Product/Service</th>
+                                <th scope="col" class="py-3 fw-semibold">HSN/SAC</th>
+                                <th scope="col" class="py-3 fw-semibold">Batch No.</th>
+                                <th scope="col" class="py-3 fw-semibold">Qty</th>
+                                <th scope="col" class="py-3 fw-semibold">Rate</th>
+                                <th scope="col" class="py-3 fw-semibold">Taxable Value</th>
+                                <th scope="col" class="py-3 fw-semibold">SGST (%)</th>
+                                <th scope="col" class="py-3 fw-semibold">SGST Amt</th>
+                                <th scope="col" class="py-3 fw-semibold">CGST (%)</th>
+                                <th scope="col" class="py-3 fw-semibold">CGST Amt</th>
+                                <th scope="col" class="py-3 fw-semibold">Total w/ Tax</th>
+                                <th scope="col" class="py-3 fw-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let i = 1; salesData.forEach(function(sales) { %>
+                                <tr data-id="<%= sales.SaleId %>">
+                                    <td class="ps-4 py-3 fw-medium text-muted serial-no"><%= i++ %>.</td>
+                                    <td class="py-3 fw-medium"><%= sales.ProductName %></td>
+                                    <td class="py-3"><%= sales.Hsn %></td>
+                                    <td class="py-3"><%= sales.BatchNumber %></td>
+                                    <td class="py-3 editable" onclick="makeEditable(this)">
+                                        <span class="badge bg-primary-subtle text-primary fw-normal"><%= sales.QuantitySold %></span>
+                                        <input type="number" class="form-control form-control-sm d-none" 
+                                               name="quantity_<%= sales.SaleId %>" 
+                                               value="<%= sales.QuantitySold %>">
+                                    </td>
+                                    <td class="py-3 editable rate" onclick="makeEditable(this)">
+                                        <span class="badge bg-success-subtle text-success fw-normal"> ₹<%= sales.SalePrice.toLocaleString() %></span>
+                                        <input type="number" class="form-control form-control-sm d-none" 
+                                               name="rate_<%= sales.SaleId %>" step="0.01"
+                                               value="<%= sales.SalePrice.toLocaleString() %>">
+                                       </td>
+                                    <td class="py-3 taxable-value">₹<%= sales.TotalValue.toLocaleString() %></td>
+                                    <td class="py-3 editable" onclick="makeEditable(this)">
+                                        <span class="badge bg-success-subtle text-success fw-normal"><%= sales.sgst %>%</span>
+                                        <input type="number" class="form-control form-control-sm d-none" 
+                                               name="sgst_<%= sales.SaleId %>" step="0.01"
+                                               value="<%= sales.sgst %>">
+                                    </td>
+                                    <td class="py-3 sgst-amount">₹<%= sales.SgstAmount.toLocaleString() %></td>
+                                    <td class="py-3 editable" onclick="makeEditable(this)">
+                                        <span class="badge bg-success-subtle text-success fw-normal"><%= sales.cgst %>%</span>
+                                        <input type="number" class="form-control form-control-sm d-none" 
+                                               name="cgst_<%= sales.SaleId %>" step="0.01"
+                                               value="<%= sales.cgst %>">
+                                    </td>
+                                    <td class="py-3 cgst-amount">₹<%= sales.CgstAmount.toLocaleString() %></td>
+                                    <td class="py-3 fw-medium text-primary total-with-tax">₹<%= sales.TotalValueWithTax.toLocaleString() %></td>
+                                    <td class="py-3">
+                                        <button type="button" class="btn btn-outline-danger btn-sm cancel-btn" 
+                                                data-id="<%= sales.Id %>">
+                                            Cancel
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white border-top-0 p-3 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        Update Sales
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmCancelModal" tabindex="-1" aria-labelledby="confirmCancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmCancelModalLabel">Confirm Cancellation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to cancel this sale? This action will remove the row.<b>Then Click on Update Sales Button </b> to complete the action.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelBtn">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const confirmCancelModal = new bootstrap.Modal(document.getElementById('confirmCancelModal'));
+    let rowToRemove = null;
+    let removedRows = [];
+
+    document.querySelectorAll('.cancel-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            rowToRemove = this.closest('tr');
+            confirmCancelModal.show();
+        });
+    });
+
+    document.getElementById('confirmCancelBtn').addEventListener('click', function () {
+        if (rowToRemove) {
+            let rowId = rowToRemove.getAttribute('data-id');
+            if (rowId) {
+                removedRows.push(rowId);
+            }
+            rowToRemove.remove();
+            confirmCancelModal.hide();
+            updateSerialNumbers();
+        }
+    });
+
+    function updateSerialNumbers() {
+        document.querySelectorAll('#salesTable tbody tr').forEach((row, index) => {
+            row.querySelector('.serial-no').textContent = `${index + 1}.`;
+        });
+    }
+
+    // Ensure edited values are submitted
+    document.getElementById("salesForm").addEventListener("submit", function (event) {
+        let removedRowsInput = document.createElement("input");
+        removedRowsInput.type = "hidden";
+        removedRowsInput.name = "removedRows";
+        removedRowsInput.value = JSON.stringify(removedRows);
+        this.appendChild(removedRowsInput);
+    });
+});
+
+// Make fields editable
+function makeEditable(td) {
+    let span = td.querySelector("span");
+    let input = td.querySelector("input");
+    if (span && input) {
+
+        console.log(span)
+        console.log('in n n span')
+
+        console.log(input);
+
+        console.log('i m input')
+        span.classList.add("d-none");
+        input.classList.remove("d-none");
+        input.focus();
+        input.addEventListener("blur", () => {
+            span.textContent = input.name.includes("quantity") ? 
+                input.value : `${input.value}%`;
+                span.textContent = input.name.includes("quantity") || input.name.includes("rate") 
+    ? input.value 
+    : `${input.value}%`;
+            span.classList.remove("d-none");
+            input.classList.add("d-none");
+            updateCalculations(td.closest("tr"));
+        }, { once: true });
+    }
+}
+
+function updateCalculations(row) {
+    const qty = parseFloat(row.querySelector("input[name^='quantity_']").value) || 0;
+    const rate = parseFloat(row.querySelector(".rate").textContent.replace("₹", "").replace(/,/g, "")) || 0;
+    const sgstPercent = parseFloat(row.querySelector("input[name^='sgst_']").value) || 0;
+    const cgstPercent = parseFloat(row.querySelector("input[name^='cgst_']").value) || 0;
+
+    const taxableValue = qty * rate;
+    const sgstAmount = (taxableValue * sgstPercent) / 100;
+    const cgstAmount = (taxableValue * cgstPercent) / 100;
+    const totalWithTax = taxableValue + sgstAmount + cgstAmount;
+
+    row.querySelector(".taxable-value").textContent = `₹${taxableValue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+    row.querySelector(".sgst-amount").textContent = `₹${sgstAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+    row.querySelector(".cgst-amount").textContent = `₹${cgstAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+    row.querySelector(".total-with-tax").textContent = `₹${totalWithTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+}
+</script>

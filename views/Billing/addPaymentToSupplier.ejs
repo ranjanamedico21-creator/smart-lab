@@ -1,0 +1,101 @@
+<!-- Bootstrap Icons CDN -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container">
+    <nav aria-label="breadcrumb" class="p-3 bg-light border rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0 fw-semibold fs-6">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">
+            <i class="bi bi-house-door me-1"></i>Home
+          </a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">
+          <i class="bi bi-truck me-1"></i>Add Supplier Payment
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Add Payment Section -->
+<section class="pb-5">
+  <div class="container">
+    <div class="card shadow-lg border-0 rounded-4 bg-white overflow-hidden">
+      <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold"><i class="bi bi-wallet2 me-2"></i>Add Supplier Payment</h4>
+      </div>
+      <div class="card-body p-4">
+        <%- include ("../partials/messages"); %>
+        <form action="/billing/addPaymentToSupplier" class="needs-validation" novalidate method="POST">
+          
+          <!-- First Row -->
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label for="supplierId" class="form-label fw-semibold">Supplier <span class="text-danger">*</span></label>
+              <select id="supplierId" name="supplierId" class="form-control" required>
+                <option value="">-- Select a supplier --</option>
+                <% suppliers.forEach(supplier => { %>
+                  <option <% if (typeof supplierId !== 'undefined' && supplier.Id == supplierId) { %> selected <% } %> value="<%= supplier.Id %>">
+                    <%= supplier.Name %>
+                  </option>
+                <% }); %>
+              </select>
+              <div class="invalid-feedback">Please select a supplier.</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="paymentDate" class="form-label fw-semibold">Payment Date <span class="text-danger">*</span></label>
+              <input type="text" id="FromDate" name="paymentDate" class="form-control"
+                placeholder="e.g., 03-03-2025"
+                value="<%= typeof paymentDate !== 'undefined' ? paymentDate : '' %>"
+                autocomplete="off" required>
+              <div class="invalid-feedback">Payment date is required.</div>
+            </div>
+          </div>
+
+          <!-- Second Row -->
+          <div class="row g-4 mt-1">
+            <div class="col-md-4">
+              <label for="paymentNo" class="form-label fw-semibold">Payment No <span class="text-danger">*</span></label>
+              <input type="text" id="paymentNo" name="paymentNo" class="form-control"
+                value="<%= typeof paymentNo !== 'undefined' ? paymentNo : '' %>" required>
+              <div class="invalid-feedback">Payment No is required.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="amountPaid" class="form-label fw-semibold">Amount Paid <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" id="amountPaid" name="amountPaid" class="form-control"
+                placeholder="e.g., 1000.00"
+                value="<%= typeof amountPaid !== 'undefined' ? amountPaid : '' %>" required>
+              <div class="invalid-feedback">Amount paid is required.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="paymentType" class="form-label fw-semibold">Payment Mode <span class="text-danger">*</span></label>
+              <select id="paymentType" name="paymentType" class="form-control" required>
+                <option value="">-- Select mode --</option>
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="Online">Online Transfer</option>
+                <option value="Cheque">Cheque</option>
+                <option value="UPI">UPI</option>
+              </select>
+              <div class="invalid-feedback">Please select a payment mode.</div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="row mt-4">
+            <div class="col text-center">
+              <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-semibold shadow-sm">
+                <i class="bi bi-check2-circle me-2"></i>Submit Payment
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,85 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Display Patho Report</li>
+      </ol>
+    </nav>
+  </section>
+  <section>
+    <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+        <div class="row fs-5 font-monospace">
+            <div class="col text-capitalize">
+                <%= patientDetail[0].Title %> <%= patientDetail[0].Name %>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-phone" viewBox="0 0 16 16">
+                    <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                    <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
+                </svg> +91<%= patientDetail[0].PhoneNumber %>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <hr>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th class="font-monospace">Referred By</th>
+                            <th class="font-monospace">Gross Amount</th>
+                            <th class="font-monospace">Date</th>
+                            <th class="font-monospace">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr <% if (patientDetail[0].DuesAmount > 0) { %>class="table-danger"<% } %>>
+                            <td class="text-capitalize">Dr. <%= patientDetail[0].FirstName %> <%= patientDetail[0].LastName %></td>
+                            <td><%= patientDetail[0].GrossAmount %></td>
+                            <td><%= patientDetail[0].RegisteredOn %></td>
+                            <td <% if (patientDetail[0].Status == 2) { %>class="text-danger"<% } %>>
+                                <% if (patientDetail[0].Status == 1) { %>
+                                    Active
+                                <% } else { %>
+                                    Cancelled
+                                <% } %>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="form-container mt-3">
+            <table class="table mb-0">
+                <thead>
+                    <tr class="table-primary">
+                        <th></th>
+                        <th>Patient Value</th>
+                        <th>Unit</th>
+                        <th>Value Range</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for (let header in groupedResults) { %>
+                        <tr class="header-section">
+                            <td colspan="5" class="text-uppercase fw-bold"><%= header %></td>
+                        </tr>
+                        <% groupedResults[header].forEach(param => { %>
+                            <% const existingData = savedData[param.SubParameterId] || {}; %>
+                            <tr>
+                                <td><%= param.SubParameterName %></td>
+                                <td><%= existingData.value || '' %></td>
+                                <td><%= param.Unit %></td>
+                                <td><%= parseFloat(param.MinVal).toFixed(2) %> - <%= parseFloat(param.MaxVal).toFixed(2) %></td>
+                                
+                            
+                                <td class="status-symbol <%= existingData.status ? '' : 'd-none' %>" 
+                                    id="status-<%= param.SubParameterId %>">
+                                    <%= existingData.status || '' %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

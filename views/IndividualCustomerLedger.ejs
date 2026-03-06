@@ -1,0 +1,61 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Customer Ledger</li>
+      </ol>
+    </nav>
+  </section>
+
+<section>
+    <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+        <div class="row text-center mt-3">
+            <div class="col">
+                <h4>Customer Ledger</h4>
+            </div>
+        </div>
+        <% if (customerDetails) { %>
+            <div class="mb-3">
+                <h3>Customer Details</h3>
+                <p><strong>Name:</strong> <%= customerDetails.CustomerName %></p>
+                <p><strong>Address:</strong> <%= customerDetails.BillingAddress %>,<%= customerDetails.BillingDistrict %>,
+                    <%= customerDetails.BillingState %>, <%= customerDetails.BillingPincode %>
+                </p>
+                <p><strong>Contact No:</strong> <%= customerDetails.MobileNo %></p>
+                <p><strong>GstIn No:</strong> <%= customerDetails.GstNo %></p>
+                <p><strong>Dl No:</strong> <%= customerDetails.DlNo %></p>
+            </div>
+        <% } %>
+    
+        <table class="table table-striped table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Debit (₹)</th>
+                    <th>Credit (₹)</th>
+                    <th>Balance (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (customerLedger && customerLedger.length > 0) { %>
+                    <% customerLedger.forEach((entry) => { %>
+                        <tr>
+                            <td><%= new Date(entry.Date).toLocaleString() %></td>
+                            <td><%= entry.Description %></td>
+                            <td><%= entry.Debit ? entry.Debit : '0' %></td>
+                            <td><%= entry.Credit ? entry.Credit : '-' %></td>
+                            <td><%= entry.Balance %></td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="text-center">No transactions found for this customer</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    
+       
+    </div>
+</section><!---ends here-->

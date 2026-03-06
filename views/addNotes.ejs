@@ -1,0 +1,45 @@
+<div class="container bg-white rounded border p-4">
+    <h1 class="mt-4 mb-4">Add Credit/Debit Note</h1>
+    <%- include ("./partials/messages"); %>
+    <form action="/billing/addNotes" method="POST">
+        <!-- Row for Sales ID and Notes Type -->
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="saleId" class="form-label">Sale Details</label>
+                <select id="saleId" name="saleId" class="form-control" required>
+                    <% sales.forEach(sale => { %>
+                        <option value="<%= sale.Id %>">
+                            Sale ID: <%= sale.Id %> - Customer: <%= sale.CustomerName %> - Product: <%= sale.ProductName %> - Batch: <%= sale.BatchNumber %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="notesType" class="form-label">Note Type</label>
+                <select id="noteType" name="noteType" class="form-control" required>
+                    <option value="credit">Credit</option>
+                    <option value="debit">Debit</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Row for Amount and Reason -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-6">
+                <label for="amount" class="form-label">Amount</label>
+                <input type="number" step="0.01" id="amount" name="amount" class="form-control" placeholder="Enter amount" required>
+            </div>
+            <div class="col-md-6">
+                <label for="reason" class="form-label">Reason</label>
+                <textarea id="reason" name="reason" class="form-control" rows="3" placeholder="Enter reason" required></textarea>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row mt-4">
+            <div class="col text-end">
+                <button type="submit" class="btn btn-primary">Add Note</button>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,246 @@
+
+  <!--style>
+    .old-value {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .new-value {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .timeline {
+      margin-top: 20px;
+    }
+  </style-->
+
+
+  <div class="container-fluid">
+    <h2>Current Patient Details</h2>
+    <table class="table table-responsive table-striped">
+      <thead>
+            <tr>
+                <th>#</th>
+                <th class="font-monospace">Patient Detail</th>
+                <th class="font-monospace">Referred By</th>
+                <th class="font-monospace">Gross Amount</th>
+                <th class="font-monospace">Date</th>
+                <th class="font-monospace">Status</th>
+                <th class="font-monospace">Action</th>
+            </tr>
+      </thead>
+      <tbody id="currentPatientDetails">
+        <tbody class="pagination-loop">
+            <% i=1;patientDetails.forEach(function(patient){ %>
+            <tr <% if(patient.DuesAmount>0){%>class="table-danger" <%}%>>
+              <th scope="row"><%=i%>.</th>
+              <td class="text-capitalize">
+                <p>
+                  <a href="/patient/getPatientDetail?patientId=<%=patient.Id%>" class="link-body-emphasis text-decoration-none"><%=patient.title%> <%=patient.Name%></a> 
+                  <span><%=patient.Age%> <%=patient.YMD%> | <%=patient.Gender %></span>
+                </p>
+                <p><%=patient.PhoneNumber%></p>
+              </td>
+              <td>
+                <p class="text-capitalize">Dr. <%= patient.FirstName%> <%= patient.LastName%></p>
+                <p class="text-capitalize"> <%= patient.Degree%></p>
+              </td>
+              <td><%= patient.GrossAmount%></td>
+              <td><%= patient.RegisteredOn%></td>
+              <td <% if(patient.Status==2){%>class="text-danger"<%}%>><% if(patient.Status==1){%>Active<%}else{%>Cancelled <%}%></td>
+              <td>
+              </td>
+            </tr>
+            <% i++; })%>
+          </tbody>
+      </tbody>
+    </table>
+
+    <h2>Patient Details History</h2>
+    <div id="patientHistoryTimeline" class="timeline">
+        <table class="table table-responsive table-striped">
+            <thead>
+                  <tr>
+                      <th>#</th>
+                      <th class="font-monospace">Patient Detail</th>
+                      <th class="font-monospace">Referred By</th>
+                      <th class="font-monospace">Gross Amount</th>
+                      <th class="font-monospace">Date</th>
+                      <th class="font-monospace">Status</th>
+                      <th class="font-monospace">Action</th>
+                  </tr>
+            </thead>
+            <tbody id="PatientDetailsHistory">
+              <tbody class="pagination-loop">
+                  <% i=1;patientDetailHistroy.forEach(function(patient){ %>
+                  <tr <% if(patient.DuesAmount>0){%>class="table-danger" <%}%>>
+                    <th scope="row"><%=i%>.</th>
+                    <td class="text-capitalize">
+                      <p>
+                        <a href="/patient/getPatientDetail?patientId=<%=patient.Id%>" class="link-body-emphasis text-decoration-none"><%=patient.title%> <%=patient.Name%></a> 
+                        <span><%=patient.Age%> <%=patient.YMD%> | <%=patient.Gender %></span>
+                      </p>
+                      <p><%=patient.PhoneNumber%></p>
+                    </td>
+                    <td>
+                      <p class="text-capitalize">Dr. <%= patient.FirstName%> <%= patient.LastName%></p>
+                      <p class="text-capitalize"> <%= patient.Degree%></p>
+                    </td>
+                    <td><%= patient.GrossAmount%></td>
+                    <td><%= patient.RegisteredOn%></td>
+                    <td <% if(patient.Status==2){%>class="text-danger"<%}%>><% if(patient.Status==1){%>Active<%}else{%>Cancelled <%}%></td>
+                    <td>
+                    </td>
+                  </tr>
+                  <% i++; })%>
+                </tbody>
+            </tbody>
+          </table>
+    </div>
+
+    <h2>Test Results</h2>
+    <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Test Name</th>
+           
+            <th>Price</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody class="pagination-loop">
+          <% i=1; patientTestDetail.forEach(function(test){ %>
+            <tr>
+              <th scope="row"><%= i %>.</th>
+              <td><%= test.TestName %></td>
+             
+              <td><%= test.Price %></td>
+              <td>
+               
+              </td>   
+            </tr>
+          <% i++ }) %>
+        </tbody>
+      </table>
+
+    <h2>Test Results History</h2>
+    <div id="testHistoryTimeline" class="timeline">
+        <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Test Name</th>
+               
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody class="pagination-loop">
+              <% i=1; patientTestHistoryDetail.forEach(function(test){ %>
+                <tr>
+                  <th scope="row"><%= i %>.</th>
+                  <td><%= test.TestName %></td>
+                 
+                  <td><%= test.Price %></td>
+                  <td>
+                   
+                  </td>   
+                </tr>
+              <% i++ }) %>
+            </tbody>
+          </table>
+    
+    </div>
+  </div>
+
+  <!--script>
+    const patientId = 1; // Example patientId, change this dynamically if needed.
+
+    async function fetchPatientData() {
+      try {
+        const patientDetailsRes = ;//await fetch(`/api/patient/${patientId}/details`);
+        const patientDetailsData =; //await patientDetailsRes.json();
+
+        const testResultsRes = await fetch(`/api/patient/${patientId}/tests`);
+        const testResultsData = await testResultsRes.json();
+
+        displayCurrentPatientDetails(patientDetailsData.currentDetails);
+        displayPatientHistoryTimeline(patientDetailsData.historyDetails);
+
+        displayCurrentTestResults(testResultsData.currentTests);
+        displayTestHistoryTimeline(testResultsData.historyTests);
+      } catch (error) {
+        console.error('Error fetching patient data:', error);
+      }
+    }
+
+    function displayCurrentPatientDetails(data) {
+      const tableBody = document.getElementById('currentPatientDetails');
+      tableBody.innerHTML = '';
+
+      Object.keys(data).forEach(field => {
+        const row = `<tr>
+          <td>${field}</td>
+          <td>${data[field]}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    function displayPatientHistoryTimeline(historyData) {
+      const timeline = document.getElementById('patientHistoryTimeline');
+      timeline.innerHTML = '';
+
+      historyData.forEach((history, index) => {
+        let timelineBlock = `<div class="card mb-3">
+          <div class="card-header">Change #${index + 1} (Date: ${history.changeDate})</div>
+          <div class="card-body">`;
+
+        Object.keys(history).forEach(field => {
+          if (field !== 'changeDate') {
+            timelineBlock += `<p><strong>${field}:</strong> ${history[field]}</p>`;
+          }
+        });
+
+        timelineBlock += '</div></div>';
+        timeline.insertAdjacentHTML('beforeend', timelineBlock);
+      });
+    }
+
+    function displayCurrentTestResults(data) {
+      const tableBody = document.getElementById('currentTestResults');
+      tableBody.innerHTML = '';
+
+      data.forEach(test => {
+        const row = `<tr>
+          <td>${test.testName}</td>
+          <td>${test.result}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    function displayTestHistoryTimeline(historyData) {
+      const timeline = document.getElementById('testHistoryTimeline');
+      timeline.innerHTML = '';
+
+      historyData.forEach((history, index) => {
+        let timelineBlock = `<div class="card mb-3">
+          <div class="card-header">Test Change #${index + 1} (Date: ${history.changeDate})</div>
+          <div class="card-body">`;
+
+        Object.keys(history).forEach(field => {
+          if (field !== 'changeDate') {
+            timelineBlock += `<p><strong>${field}:</strong> ${history[field]}</p>`;
+          }
+        });
+
+        timelineBlock += '</div></div>';
+        timeline.insertAdjacentHTML('beforeend', timelineBlock);
+      });
+    }
+
+    // Fetch and display the data on page load
+   // fetchPatientData();
+  </script-->
+

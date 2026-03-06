@@ -1,0 +1,84 @@
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">Clinic List View</li>
+    </ol>
+  </nav>
+</section>
+<section>
+  <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+    <div class="row text-center mt-3">
+      <div class="col">
+        <h4>Clinic Details</h4>
+      </div>
+    </div>
+    <div class="input-group mt-3 mb-3">
+      <input type="text" class="form-control tableSearch" placeholder="Filter clinic..." aria-label="Filter clinic">
+      <button class="btn btn-outline-secondary" type="button">🔍</button>
+    </div> 
+    <!-- Include messages -->
+    <%- include("./partials/messages"); %>
+
+    <!-- Responsive Table -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-primary text-center">
+          <tr>
+            <th>#</th>
+            <th>Clinic Name</th>
+            <th>Email</th>
+            <th>Phone Number</th>
+            <th>Address</th>
+            <th>Key Area</th>
+            <th>Landmark</th>
+            <th>Register Doctor</th>
+            <th>Edit</th>
+          </tr>
+        </thead>
+        <tbody class="pagination-loop text-center tableBody">
+          <% clinicDetails.forEach((clinic, index) => { %>
+            <tr>
+              <td><strong><%= index + 1 %>.</strong></td>
+              <td class="text-capitalize fw-semibold"><i class="bi bi-hospital"></i>&nbsp;<%= clinic.Name %></td>
+              <td ><%= clinic.Email %></td>
+              <td ><%= clinic.PhoneNumber %></td>
+              <td class="text-capitalize text-truncate" style="max-width: 180px;" 
+                    data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" data-bs-placement="top" title="<%= clinic.Address %>">
+                    <%= clinic.Address %>
+              </td>
+              <td class="text-capitalize"><%= clinic.KeyArea %></td>
+              <td class="text-capitalize"><%= clinic.LandMark %></td>
+              <td>
+                <a href="/clinic/attachDoctor/<%= clinic.Id %>" class="btn btn-sm btn-outline-primary">Attach Doctor</a>
+              </td>
+              <td>
+                <a href="/clinic/updateClinicDetails/edit?id=<%= clinic.Id %>" class="btn btn-sm btn-outline-success">Edit</a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<section class="pb-4 mt-3">
+  <nav aria-label="Page navigation">
+    <div class="container">
+      <div class="d-flex justify-content-center">
+        <div class="w-100 overflow-auto">
+          <ul class="pagination pagination-sm gap-1 mt-4 flex-nowrap justify-content-center overflow-auto" id="pagination_Number" style="white-space: nowrap; scroll-behavior: smooth;">
+            <li class="page-item disabled">
+              <a class="page-link rounded-pill px-3 prev_link" href="#">Previous</a>
+            </li>
+            <!-- Page numbers will be inserted here via JavaScript -->
+            <li class="page-item">
+              <a class="page-link rounded-pill px-3 next_link" href="#">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+</section>
+

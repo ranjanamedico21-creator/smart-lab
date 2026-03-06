@@ -1,0 +1,273 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm border">
+      <ol class="breadcrumb mb-0 fw-medium">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">
+            <i class="bi bi-house-door me-1"></i>Home
+          </a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">
+          View Purchase PO
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Purchase PO List -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+
+      <div class="card-header bg-primary bg-gradient text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">
+          <i class="bi bi-clipboard-data me-2"></i>Purchase PO List
+        </h4>
+      </div>
+
+      <div class="card-body p-4">
+        <%- include("../partials/messages") %>
+
+        <form action="/billing/viewPurchasePo" method="post" class="needs-validation" novalidate>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="purchaseInvoice" class="form-label fw-semibold">Invoice No</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="purchaseInvoice" 
+                name="PurchaseInvoiceNo" 
+                placeholder="Invoice No purchase order" 
+                value="<%= typeof PurchaseInvoiceNo != 'undefined' ? PurchaseInvoiceNo : '' %>">
+            </div>
+            <div class="col-md-6">
+              <label for="supplier" class="form-label fw-semibold">Select Supplier</label>
+              <select 
+                name="Supplier" 
+                class="form-control" 
+                id="supplier" 
+                data-live-search="true" 
+                aria-label="Select supplier with live search">
+                <option value="" selected>Select a Supplier</option>
+                <% let i = 1; supplierLists.forEach(function(supplier) { %>
+                  <option value="<%= supplier.Id %>" <% if(typeof Supplier != 'undefined' && supplier.Id == Supplier){%>selected<%}%>>
+                    <%= supplier.Name %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mt-3">
+            <div class="col-md-6">
+              <label for="FromDate" class="form-label fw-semibold">From Date</label>
+              <input 
+                type="text" 
+                id="FromDate" 
+                class="form-control" 
+                name="FromDate" 
+                placeholder="From date" 
+                value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>" 
+                autocomplete="off">
+            </div>
+            <div class="col-md-6">
+              <label for="ToDate" class="form-label fw-semibold">To Date</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="ToDate" 
+                name="ToDate" 
+                placeholder="To Date" 
+                value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>" 
+                autocomplete="off">
+            </div>
+          </div>
+          <div class="row g-3 mt-3">
+            <div class="col-md-6">
+              <button class="btn btn-primary w-100 rounded-pill fw-medium" type="submit">Search</button>
+            </div>
+          </div>
+        </form>
+
+        <hr class="my-4">
+
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+
+            <thead class="table-dark">
+              <tr>
+                <th>#</th>
+                <th>Supplier</th>
+                <th>Invoice No</th>
+                <th>Product</th>
+                <th class="text-end">Ordered</th>
+                <th class="text-end">Received</th>
+                <th style="min-width:180px">Progress</th>
+                <th>Status</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+
+            <tbody class="pagination-loop">
+
+            <% if (purchasePoLists && purchasePoLists.length > 0) { %>
+
+              <% purchasePoLists.forEach(function(invoice) { 
+                   const poProgress = Math.round((invoice.TotalReceivedQty / invoice.TotalOrderedQty) * 100);
+              %>
+
+              <!-- PO HEADER -->
+              <tr class="table-light border-top">
+                <td colspan="9" class="px-4 py-3">
+
+                  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-2">
+
+                    <div class="fw-semibold text-primary">
+                      <i class="bi bi-receipt-cutoff me-1"></i>
+                      <a href="/billing/invoiceDetails/<%=invoice.PurchaseOrderId %>"><%= invoice.PurchaseInvoiceNo %></a>
+                    </div>
+
+                    <div class="text-muted small">
+                      <i class="bi bi-person-circle me-1"></i>
+                      <%= invoice.SupplierName %>
+                    </div>
+
+                    <div class="small">
+                      <i class="bi bi-calendar-event me-1"></i>
+                      Ordered: <%= invoice.OrderDate %>
+                    </div>
+
+                    <div class="small">
+                      PO Date: <%= invoice.PurchasePoDate %>
+                    </div>
+
+                    <div>
+                      <% if (invoice.POStatus === 'Pending') { %>
+                        <span class="badge bg-warning text-dark">Pending</span>
+                      <% } else if (invoice.POStatus === 'Partially Received') { %>
+                        <span class="badge bg-info text-dark">Partially Received</span>
+                      <% } else { %>
+                        <span class="badge bg-success">Received</span>
+                      <% } %>
+                    </div>
+
+                    <div class="small text-muted">
+                      Supplier Inv: <%= invoice.SupplierInvoiceNo %>
+                    </div>
+                  </div>
+
+                  <!-- PO LEVEL PROGRESS -->
+                  <div class="progress" style="height: 20px;">
+                    <div
+                      class="progress-bar 
+                        <%= poProgress === 100 ? 'bg-success' : poProgress > 0 ? 'bg-info' : 'bg-warning' %>"
+                      style="width:<%= poProgress %>%">
+                      PO Progress: <%= poProgress %>%
+                    </div>
+                  </div>
+
+                </td>
+              </tr>
+
+              <!-- PRODUCT ROWS -->
+              <% invoice.Products.forEach(function(product, index) { 
+                   const prodProgress = Math.round((product.ReceivedQty / product.OrderedQty) * 100);
+                   const fullyReceived = product.ReceivedQty >= product.OrderedQty;
+              %>
+
+              <tr>
+                <td class="text-muted fw-medium"><%= index + 1 %></td>
+                <td><%= invoice.SupplierName %></td>
+                <td><%= invoice.PurchaseInvoiceNo %></td>
+                <td class="fw-medium"><%= product.ProductName %></td>
+
+                <td class="text-end fw-semibold">
+                  <%= product.OrderedQty %>
+                </td>
+
+                <td class="text-end text-success fw-semibold">
+                  <%= product.ReceivedQty %>
+                </td>
+
+                <!-- PRODUCT PROGRESS -->
+                <td>
+                  <div class="progress" style="height:16px;">
+                    <div
+                      class="progress-bar
+                        <%= prodProgress === 100 ? 'bg-success' : prodProgress > 0 ? 'bg-info' : 'bg-warning' %>"
+                      style="width:<%= prodProgress %>%">
+                      <%= prodProgress %>%
+                    </div>
+                  </div>
+                </td>
+
+                <!-- STATUS -->
+                <td>
+                  <% if (product.Status === 'Pending') { %>
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  <% } else if (product.Status === 'Partially Received') { %>
+                    <span class="badge bg-info text-dark">Partial</span>
+                  <% } else { %>
+                    <span class="badge bg-success">Received</span>
+                  <% } %>
+                </td>
+
+                <!-- ACTION -->
+                <td class="text-center">
+                  <a
+                    href="/billing/receivePurchaseOrder/<%= invoice.PurchaseOrderId %>"
+                    class="btn btn-sm btn-outline-primary <%= fullyReceived ? 'disabled' : '' %>"
+                    <%= fullyReceived ? 'aria-disabled=true' : '' %>>
+                    <i class="bi bi-box-arrow-in-down me-1"></i>
+                    Receive
+                  </a>
+                </td>
+              </tr>
+
+              <% }); %>
+
+              <% }); %>
+
+            <% } else { %>
+
+              <tr>
+                <td colspan="9" class="text-center py-5 text-muted">
+                  <i class="bi bi-folder-x fs-4 d-block mb-2"></i>
+                  No Purchase Orders Found
+                </td>
+              </tr>
+
+            <% } %>
+
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pagination Section -->
+<section class="pb-4 mt-3">
+  <nav aria-label="Page navigation">
+    <div class="container">
+      <div class="d-flex justify-content-center">
+        <div class="w-100 overflow-auto">
+          <ul class="pagination pagination-sm gap-1 mt-4 flex-nowrap justify-content-center overflow-auto" id="pagination_Number" style="white-space: nowrap; scroll-behavior: smooth;">
+            <li class="page-item disabled">
+              <a class="page-link rounded-pill px-3 prev_link" href="#">Previous</a>
+            </li>
+            <!-- Page numbers will be inserted here via JavaScript -->
+            <li class="page-item">
+              <a class="page-link rounded-pill px-3 next_link" href="#">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+</section>
+

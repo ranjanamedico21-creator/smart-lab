@@ -1,0 +1,148 @@
+<section class="py-3">
+  <nav aria-label="breadcrumb" class="p-3 bg-light rounded shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+      <li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Customer Ledger</li>
+    </ol>
+  </nav>
+</section>
+
+<section class="py-2">
+  <div class="container-fluid">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h4 class="text-center mb-3">Customer Ledger</h4>
+
+        <%- include("./partials/messages"); %>
+
+        <form action="/billing/customerLedger/<%= customerDetails.Id %>" method="post">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label for="financialYear" class="form-label">Financial Year</label>
+              <select id="financialYear" name="financialYear" data-selected="<%= typeof financialYear!= 'undefined' ? financialYear : '' %>" class="form-control">
+              </select>
+            </div>
+
+            <div class="col-md-5">
+              <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="currentFY">Current FY</button>
+                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="lastFY">Last FY</button>
+                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="last3Months">Last 3 Months</button>
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <label for="FromDate" class="form-label">From Date</label>
+              <input type="text" name="startDate" id="FromDate" class="form-control datepicker" value="<%= startDate || '' %>" autocomplete="off" placeholder="Start Date">
+            </div>
+
+            <div class="col-md-2">
+              <label for="ToDate" class="form-label">To Date</label>
+              <input type="text" name="endDate" id="ToDate" class="form-control datepicker" value="<%= endDate || '' %>" autocomplete="off" placeholder="End Date">
+            </div>
+
+            <div class="col-md-12 text-end">
+              <button type="submit" class="btn btn-primary mt-2"><i class="bi bi-filter-circle"></i> Apply Filter</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-3">
+  <div class="container">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+
+        <h5 class="mb-3 text-center">Customer Details</h5>
+
+        <% if (customerDetails) { %>
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <p><strong>Name:</strong> <span class="text-uppercase"><%= customerDetails.CustomerName %></span></p>
+              <p><strong>Address:</strong><span class="text-uppercase"><%= customerDetails.BillingAddress %>, <%= customerDetails.BillingDistrict %>, <%= customerDetails.BillingState %>, <%= customerDetails.BillingPincode %></span></p>
+              <p><strong>Contact:</strong> <%= customerDetails.MobileNo %></p>
+              <p class="text-uppercase"><strong>GSTIN:</strong> <%= customerDetails.GstNo %></p>
+              <p class="text-uppercase"><strong>DL No:</strong> <%= customerDetails.DlNo %></p>
+            </div>
+            <div class="col-md-2">
+              <a href="/billing/getCustomerList" class="btn btn-outline-primary" target="_blank"><i class="bi bi-people-fill"></i> Customer List</a>
+            </div>
+            <div class="col-md-2">
+              <a href="/billing/downloadLedgerInExcel/<%= customerDetails.Id%>/<%=startDate%>/<%=endDate%>" class="btn btn-success" target="_blank">
+                <i class="bi bi-file-earmark-excel"></i> Download Excel
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="/billing/customerLedgerInPdf/<%= customerDetails.Id%>/<%=startDate%>/<%=endDate%>"class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="/billing/addPayment?cId=<%= customerDetails.Id%>" class="btn btn-success" target="_blank">
+                <i class="bi bi-currency-rupee"></i> Add Payment
+              </a>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Debit (₹)</th>
+                <th>Credit (₹)</th>
+                <th>Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (customerLedger && customerLedger.length > 0) { %>
+                <% customerLedger.forEach((entry) => { %>
+                  <tr>
+                    <td><%= entry.Date %></td>
+                    <td>
+                      <% if (entry.Type === "Sale") { %>
+                          <a href="/billing/viewSalesInHtml/<%= entry.InvoiceId %>/<%= customerDetails.Id%>" class="text-decoration-none">
+                              <%= entry.Description %>
+                          </a>
+                      <% } else { %>
+                          <%= entry.Description %>
+                      <% } %>
+                    </td>
+                    
+                    <td><%= typeof entry.Debit === 'number' ? entry.Debit.toFixed(2) : '-' %></td>
+                    <td><%= typeof entry.Credit === 'number' ? entry.Credit.toFixed(2) : '-' %></td>
+                    <td class="fw-semibold">
+                      <%= entry.Balance || '-' %>
+                    </td>                    
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="text-muted">No transactions found for this customer</td>
+                </tr>
+              <% } %>
+            </tbody>
+            <tfoot class="fw-semibold">
+              <tr class="table-light">
+                <td colspan="2">Total</td>
+                <td><%= totalDebit.toFixed(2) %></td>
+                <td><%= totalCredit.toFixed(2) %></td>
+                <td></td>
+              </tr>
+              <tr class="table-light">
+                <td colspan="4">Closing Balance</td>
+                <td class="<%= closingBalance.includes('Dr') ? 'text-success' : 'text-danger' %>"><%= closingBalance %></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>

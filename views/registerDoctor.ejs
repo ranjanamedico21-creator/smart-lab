@@ -1,0 +1,230 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm mb-4">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+        <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Register Doctor</li>
+      </ol>
+    </nav>
+  </section>
+  
+  <section>
+    <div class="container-fluid my-5">
+      <div class="card shadow border-0 rounded-4 bg-white overflow-hidden">
+        <!-- Header -->
+        <div class="card-header bg-gradient bg-primary text-white py-4 text-center">
+          <h4 class="fw-bold mb-0">Register Doctor</h4>
+        </div>
+  
+        <!-- Messages Partial -->
+        <div class="px-4 pt-4">
+          <%- include ("./partials/messages"); %>
+        </div>
+  
+        <!-- Form Body -->
+        <div class="card-body p-4">
+          <form action="/doctor/registerDoctor" class="needs-validation" novalidate method="post">
+            <!-- Doctor Details -->
+            <h5 class="text-uppercase fw-semibold text-decoration-underline mb-4">Doctor Details</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="doctorFirstName" class="form-label">First Name (without 'Dr.' prefix)</label>
+                <input type="text" class="form-control text-capitalize" name="firstName" id="doctorFirstName"  required>
+              </div>
+              <div class="col-md-6">
+                <label for="lastName" class="form-label">Last Name</label>
+                <input type="text" class="form-control text-capitalize" name="lastName" id="lastName"  required>
+              </div>
+              <div class="col-md-6">
+                <label for="degree1" class="form-label">Degree 1</label>
+                <input type="text" class="form-control text-capitalize" name="degree1" id="degree1" required>
+              </div>
+              <div class="col-md-6">
+                <label for="degree2" class="form-label">Degree 2</label>
+                <input type="text" class="form-control text-capitalize" name="degree2" id="degree2"  required>
+              </div>
+              <div class="col-md-6">
+                <label for="degree3" class="form-label">Degree 3</label>
+                <input type="text" class="form-control text-capitalize" name="degree3" id="degree3"  required>
+              </div>
+              <div class="col-md-6">
+                <label for="degree4" class="form-label">Degree 4</label>
+                <input type="text" class="form-control text-capitalize" name="degree4" id="degree4" required>
+              </div>
+              <div class="col-md-6">
+                <label for="workedAt" class="form-label">Worked At</label>
+                <input type="text" class="form-control text-capitalize" name="workedAt" id="workedAt" >
+              </div>
+              <div class="col-md-6">
+                <label for="yearOfExperience" class="form-label">Years of Experience</label>
+                <input type="number" class="form-control" name="yearOfExperience" id="yearOfExperience"  required>
+              </div>
+              <div class="col-md-6">
+                <label for="authorizeForBloodTest" class="form-label">Authorize for Blood Test</label>
+                <select class="form-control" name="authorizeForBloodTest" id="authorizeForBloodTest" required>
+                  <option value="" disabled selected>Authorized To Take Blood Sample</option>
+                  <option value="1">Yes</option>
+                  <option value="2">No</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="award" class="form-label">Award</label>
+                <input type="text" class="form-control" name="award" id="award">
+              </div>
+              <div class="col-md-6">
+                <label for="registration" class="form-label">Registration No</label>
+                <input type="text" class="form-control text-capitalize" name="registration" id="registration" >
+              </div>
+              <div class="col-md-6">
+                <label for="instruction" class="form-label">Instruction</label>
+                <input type="text" class="form-control text-capitalize" name="instruction" id="instruction"  required>
+              </div>
+              <div class="col-md-6">
+                <label for="mobileNumberFirst" class="form-label">Mobile Number 1</label>
+                <input type="tel" class="form-control" id="mobileNumberFirst" name="mobileNumberFirst" placeholder="+1234567890" required pattern="^\+?\d{10,15}$">
+                <div class="form-text">Enter with country code (e.g., +1234567890).</div>
+              </div>
+              <div class="col-md-6">
+                <label for="mobileNumberSecond" class="form-label">Mobile Number 2</label>
+                <input type="tel" class="form-control" id="mobileNumberSecond" name="mobileNumberSecond" placeholder="+1234567890" required pattern="^\+?\d{10,15}$">
+                <div class="form-text">Enter with country code (e.g., +1234567890).</div>
+              </div>
+              <div class="col-md-6">
+                <label for="flatDiscount" class="form-label">Flat Discount</label>
+                <select name="flatDiscount" class="form-control" id="flatDiscount" required>
+                  <option value="0" selected>Select Flat Discount</option>
+                  <option value="1">0%</option>
+                  <option value="5">5%</option>
+                  <option value="10">10%</option>
+                  <option value="15">15%</option>
+                  <option value="20">20%</option>
+                  <option value="25">25%</option>
+                  <option value="30">30%</option>
+                  <option value="35">35%</option>
+                  <option value="40">40%</option>
+                  <option value="50">50%</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="specialistIn" class="form-label">Specialist In</label>
+                <input type="text" class="form-control text-capitalize" name="specialistIn" id="specialistIn"  required>
+              </div>
+            </div>
+  
+            <!-- Visiting Schedule -->
+            <h5 class="text-uppercase fw-semibold text-decoration-underline mt-5 mb-4">Add Visiting Schedule</h5>
+            <div id="visitingDaysContainer" class="mb-4">
+              <div class="row g-3 mb-3 visiting-day border rounded p-3 bg-light">
+                <div class="col-md-2">
+                  <label class="form-label">Area</label>
+                  <input type="text" class="form-control" name="area[]" required>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Day</label>
+                  <select class="form-control" name="days[]" required>
+                    <option value="" disabled selected>Select Day</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                    <option value="AllDay">All Day</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Start Time</label>
+                  <input type="time" class="form-control" name="startTimes[]" required>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">End Time</label>
+                  <input type="time" class="form-control" name="endTimes[]" required>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <button type="button" class="btn btn-danger w-100 remove-day">Remove</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline-primary rounded-pill mb-4" id="addDayButton">Add Day</button>
+  
+            <!-- Test Categories -->
+            <h5 class="text-uppercase fw-semibold text-decoration-underline mb-4">Test Categories</h5>
+            <% testCategoriesList.forEach(function(testCategory) { %>
+              <div class="row g-3 mb-3 align-items-center">
+                <label for="<%= testCategory.Name %>" class="col-sm-2 col-form-label fw-medium"><%= testCategory.Name %></label>
+                <div class="col-sm-6">
+                  <select name="<%= testCategory.Name %>" data-category-id="<%= testCategory.Id %>" class="form-control thanks" aria-label="<%= testCategory.Name %> Thanks" required>
+                    <option selected disabled value="">0%</option>
+                    <% for(let i = 20; i <= 50; i++) { %>
+                      <option value="<%= i %>"><%= i %>%</option>
+                    <% } %>
+                  </select>
+                </div>
+              </div>
+            <% }); %>
+  
+            <input type="hidden" name="thanksDetails" id="thanksDetails">
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary rounded-pill px-4 mt-4" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Register Doctor">Register Doctor</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const visitingDaysContainer = document.getElementById('visitingDaysContainer');
+      const addDayButton = document.getElementById('addDayButton');
+  
+      const visitingDayTemplate = `
+        <div class="row g-3 mb-3 visiting-day border rounded p-3 bg-light">
+          <div class="col-md-2">
+            <label class="form-label">Area</label>
+            <input type="text" class="form-control" name="area[]" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Day</label>
+            <select class="form-control" name="days[]" required>
+              <option value="" disabled selected>Select Day</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+              <option value="AllDay">All Day</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Start Time</label>
+            <input type="time" class="form-control" name="startTimes[]" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">End Time</label>
+            <input type="time" class="form-control" name="endTimes[]" required>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="button" class="btn btn-danger w-100 remove-day">Remove</button>
+          </div>
+        </div>
+      `;
+  
+      addDayButton.addEventListener('click', () => {
+        visitingDaysContainer.insertAdjacentHTML('beforeend', visitingDayTemplate);
+        attachRemoveHandlers();
+      });
+  
+      const attachRemoveHandlers = () => {
+        document.querySelectorAll('.remove-day').forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.target.closest('.visiting-day').remove();
+          });
+        });
+      };
+  
+      attachRemoveHandlers();
+    });
+  </script>

@@ -1,0 +1,223 @@
+<!-- Breadcrumb Section -->
+<section class="py-3 py-md-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+        <ol class="breadcrumb mb-0 d-flex align-items-center">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary fw-semibold">Home</a>
+          </li>
+          <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">
+            Return Sales
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <!-- Main Content Section -->
+  <section class="pb-4 pb-md-5">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold fs-4">
+            <i class="bi bi-arrow-return-right me-2"></i>Return Sales Records
+          </h4>
+        </div>
+  
+        <div class="card-body p-4 bg-light">
+          <form
+            action="/billing/salesreturn"
+            method="POST"
+            id="salesForm"
+            class="needs-validation"
+            novalidate
+          >
+            <!-- Row 1: Customer, Supplier, Product, Batch -->
+            <div class="row g-3">
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="customer" class="form-label fw-semibold">Customer</label>
+                <select
+                  name="Customer"
+                  id="customer"
+                  class="form-control rounded-3"
+                  required
+                >
+                  <option value="" selected>Select a Customer</option>
+                  <% customers.forEach(function(customer){ %>
+                    <option
+                      value="<%=customer.Id%>"
+                      <% if(typeof Customer != 'undefined' && customer.Id == Customer){%>selected <%}%>
+                    >
+                      <%=customer.CustomerName%>
+                    </option>
+                  <% }) %>
+                </select>
+              </div>
+  
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="supplier" class="form-label fw-semibold">Supplier</label>
+                <select
+                  name="Supplier"
+                  id="supplier"
+                  class="form-control rounded-3"
+                  required
+                >
+                  <option value="" selected>Select a Supplier</option>
+                  <% suppliers.forEach(function(supplier){ %>
+                    <option
+                      value="<%=supplier.Id%>"
+                      <% if(typeof Supplier != 'undefined' && supplier.Id == Supplier){%>selected <%}%>
+                    >
+                      <%=supplier.Name%>
+                    </option>
+                  <% }) %>
+                </select>
+              </div>
+  
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="product" class="form-label fw-semibold">Product</label>
+                <select
+                  name="Product"
+                  id="product"
+                  class="form-control rounded-3"
+                  required
+                >
+                  <option value="" selected>Select a Product</option>
+                  <% products.forEach(function(product){ %>
+                    <option
+                      data-supplier-id="<%=product.SupplierId %>"
+                      value="<%=product.Id%>"
+                      <% if(typeof Product != 'undefined' && product.Id == Product){%>selected <%}%>
+                    >
+                      <%=product.ProductName%>
+                    </option>
+                  <% }) %>
+                </select>
+              </div>
+  
+              <div class="col-12 col-md-6 col-lg-3">
+                <label for="batchCode" class="form-label fw-semibold">Batch Code</label>
+                <input
+                  type="text"
+                  name="BatchNumber"
+                  id="batchCode"
+                  class="form-control rounded-3"
+                  placeholder="Enter Batch Code"
+                  required
+                />
+              </div>
+            </div>
+  
+            <!-- Row 2: Quantity and Reason -->
+            <div class="row g-3 mt-3">
+              <div class="col-12 col-md-6">
+                <label for="quantity" class="form-label fw-semibold">Quantity to Return</label>
+                <input
+                  type="number"
+                  name="Quantity"
+                  id="quantity"
+                  class="form-control rounded-3"
+                  placeholder="Enter quantity"
+                  required
+                />
+              </div>
+  
+              <div class="col-12 col-md-6">
+                <label for="reason" class="form-label fw-semibold">Reason for Return</label>
+                <textarea
+                  name="Reason"
+                  id="reason"
+                  class="form-control rounded-3"
+                  rows="2"
+                  placeholder="Enter reason for return"
+                  required
+                ></textarea>
+              </div>
+            </div>
+  
+            <!-- Row 3: Item Condition -->
+            <div class="row g-3 mt-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold text-secondary mb-2">Item Condition</label>
+                <div class="d-flex flex-wrap gap-2">
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="condition"
+                    id="good"
+                    value="Good"
+                    autocomplete="off"
+                    checked
+                  />
+                  <label
+                    class="btn btn-outline-success rounded-pill px-4 py-2 fw-semibold"
+                    for="good"
+                  >
+                    ✅ Good
+                  </label>
+  
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="condition"
+                    id="defective"
+                    value="Defective"
+                    autocomplete="off"
+                  />
+                  <label
+                    class="btn btn-outline-warning rounded-pill px-4 py-2 fw-semibold"
+                    for="defective"
+                  >
+                    ⚠️ Defective
+                  </label>
+  
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="condition"
+                    id="expired"
+                    value="Expired"
+                    autocomplete="off"
+                  />
+                  <label
+                    class="btn btn-outline-danger rounded-pill px-4 py-2 fw-semibold"
+                    for="expired"
+                  >
+                    ⏳ Expired
+                  </label>
+  
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="condition"
+                    id="defective_expired"
+                    value="Defective & Expired"
+                    autocomplete="off"
+                  />
+                  <label
+                    class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold"
+                    for="defective_expired"
+                  >
+                    🚫 Defective & Expired
+                  </label>
+                </div>
+              </div>
+            </div>
+  
+            <!-- Submit Button -->
+            <div class="row g-3 mt-4">
+              <div class="col-12 col-md-6 col-xl-4 mx-auto">
+                <button
+                  type="submit"
+                  class="btn btn-primary w-100 rounded-3 fw-semibold py-2"
+                >
+                  <i class="bi bi-arrow-repeat me-2"></i>Return Sale
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Internship Resume</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f9;
+        }
+        .resume-container {
+            display: flex;
+            max-width: 900px;
+            margin: 2rem auto;
+            background: #fff;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .left-section {
+            width: 35%;
+            background: linear-gradient(135deg, #1f1f1f, #4b5563);
+            color: #fff;
+            padding: 2rem;
+        }
+        .right-section {
+            width: 65%;
+            padding: 2rem;
+            background: #fff;
+        }
+        .section-title {
+            font-weight: 600;
+            color: #1f1f1f;
+            margin-bottom: 1rem;
+            position: relative;
+            font-size: 1.25rem;
+        }
+        .section-title::after {
+            content: '';
+            width: 50px;
+            height: 3px;
+            background: #4b5563;
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+        }
+        .contact-item, .skill-item, .edu-item, .exp-item {
+            margin-bottom: 1rem;
+        }
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #fff;
+            margin-bottom: 1.5rem;
+        }
+        .social-links a {
+            color: #fff;
+            text-decoration: none;
+            margin-right: 1rem;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+        .social-links a:hover {
+            color: #d1d5db;
+        }
+        h2, h4 {
+            font-weight: 700;
+        }
+        p, li {
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        @media (max-width: 768px) {
+            .resume-container {
+                flex-direction: column;
+            }
+            .left-section, .right-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="resume-container">
+        <!-- Left Section: Personal Details -->
+        <div class="left-section">
+            <img src="<%=profileImage%>" alt="Profile Picture" class="profile-img">
+            <h2 class="text-2xl font-semibold mb-4">Sapna Raj</h2>
+            <p class="text-sm mb-6">Aspiring Legal Professional</p>
+
+            <div class="contact-item">
+                <h3 class="font-semibold">Contact</h3>
+                <p>Email:ssapnashree@gmail.com</p>
+                <p>Phone:+917634896724</p>
+                <p>Location:Noida,sector 76</p>
+            </div>
+
+            <div class="skill-item">
+                <h3 class="font-semibold">Skills</h3>
+                <ul class="list-disc list-inside text-sm">
+                    <li>Legal Research & Analysis</li>
+                    <li>Contract Drafting</li>
+                    <li>Case Management</li>
+                    <li>Communication & Negotiation</li>
+                    <li>MS Office Suite</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Section: Educational & Professional Details -->
+        <div class="right-section">
+            <h1 class="text-3xl font-bold mb-6">Professional Summary</h1>
+            <p class="text-sm text-gray-600 mb-6">
+                Dedicated and detail-oriented legal professional with a strong academic background in law, having completed LLB and passed the All India Bar (AIBE) Examination. Seeking an internship opportunity to apply legal research, drafting, and analytical skills in a dynamic legal environment.
+            </p>
+
+            <div class="edu-item">
+                <h3 class="section-title">Education</h3>
+                <div class="mb-4">
+                    <h4 class="font-semibold">All India Bar Examination (AIBE)</h4>
+                    <p class="text-sm text-gray-600">Bar Council of India</p>
+                    <p class="text-sm text-gray-500">2025</p>
+                </div>
+                <div class="mb-4">
+                    <h4 class="font-semibold">Bachelor of Laws (LLB)</h4>
+                    <p class="text-sm text-gray-600">RPS Law College Patna</p>
+                    <p class="text-sm text-gray-500">2021 - 2024</p>
+                </div>
+                <div class="mb-4">
+                    <h4 class="font-semibold">Master of Arts in Political Science</h4>
+                    <p class="text-sm text-gray-600">Lalit Narayan Mithila University</p>
+                    <p class="text-sm text-gray-500">2018-2020</p>
+                </div>
+                <div class="mb-4">
+                    <h4 class="font-semibold">Bachelor of Arts in Political Science</h4>
+                    <p class="text-sm text-gray-600">BhimRao Ambedkar University</p>
+                    <p class="text-sm text-gray-500">2013 - 2016</p>
+                </div>
+            </div>
+
+            <div class="exp-item">
+                
+                <ul class="list-disc list-inside text-sm text-gray-600">
+                    <li>Passed the All India Bar Examination on first attempt (2025)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

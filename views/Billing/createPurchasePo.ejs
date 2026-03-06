@@ -1,0 +1,289 @@
+
+<!-- Breadcrumb -->
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+        <ol class="breadcrumb mb-0 d-flex align-items-center">
+          <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+          <li class="breadcrumb-item active fw-bold" aria-current="page"> Purchase PO – Create Manually</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Purchase PO Form Section -->
+  <section class="pb-5">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold"><i class="bi bi-cart-plus me-2"></i>Purchase PO</h4>
+        </div>
+        
+        <div class="card-body p-4">
+          <%- include ("../partials/messages"); %>
+
+          <form action="/billing/createPurchasePo" class="needs-validation" novalidate method="POST">
+            <!-- Supplier Selection -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label for="supplierIdPurchasePo" class="form-label fw-bold">Supplier</label>
+                <select name="supplierId" id="supplierIdPurchasePo" class="form-control" required>
+                  <option value="" disabled selected>Select a supplier</option>
+                  <% suppliers.forEach(supplier => { %>
+                    <option value="<%= supplier.Id %>"><%= supplier.Name %></option>
+                  <% }); %>
+                </select>
+                <div class="invalid-feedback">Please select a supplier.</div>
+              </div>
+              <div class="col-md-4">
+                <label for="purchasePoDate" class="form-label fw-semibold">Po Date <span class="text-danger">*</span></label>
+                <input type="text" id="purchasePoDate" name="purchasePoDate" class="form-control"
+                  placeholder="e.g., 03-03-2025"
+                  value="<%= typeof purchasePoDate !== 'undefined' ? purchasePoDate : '' %>"
+                  autocomplete="off" required>
+                <div class="invalid-feedback">Purchase Po date is required.</div>
+              </div>
+            </div>
+
+            <!-- Product List Section -->
+            <div id="productList" class="mb-4">
+              <div class="product-item row g-3 mb-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-bold">Product</label>
+                  <select name="productId[]" class="form-control ppProduct"data-live-search="true" required>
+                    <option value="" disabled selected>Select a product</option>
+                    <% products.forEach(product => { %>
+                      <option data-supplier-id="<%= product.SupplierId %>" value="<%= product.Id %>"><%= product.ProductName %></option>
+                    <% }); %>
+                  </select>
+                  <div class="invalid-feedback">Please select a product.</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">Quantity</label>
+                  <input type="number" name="quantity[]" class="form-control" min="1" required>
+                  <div class="invalid-feedback">Quantity is required.</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">MRP</label>
+                  <input type="number" name="mrp[]" class="form-control" step="0.01" required>
+                  <div class="invalid-feedback">MRP is required.</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">Purchase Price</label>
+                  <input type="number" name="purchasePrice[]" class="form-control" step="0.01" required>
+                  <div class="invalid-feedback">Price is required.</div>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-bold">IGST (%)</label>
+                  <input type="number" name="igst[]" class="form-control" step="0.01" required>
+                  <div class="invalid-feedback">IGST is required.</div>
+                </div>
+                <div class="col-md-1 d-flex align-items-end justify-content-center">
+                  <!--button type="button" class="btn btn-danger removeProduct"><i class="bi bi-trash"></i></button-->
+                </div>
+              </div>
+            </div>
+
+            <!-- Add More Button -->
+            <div class="row mb-4">
+              <div class="col text-center">
+                <button type="button" id="addProduct" class="btn btn-success"><i class="bi bi-plus-circle me-2"></i>Add More</button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="row">
+              <div class="col text-center">
+                <button type="submit" class="btn btn-primary px-5">Submit Purchase PO</button>
+              </div>
+            </div>
+            <input type="hidden" name="supplierId" id="supplier">
+          </form>
+        </div>
+      </div>
+        <!-- OR separator -->
+    <div class="text-center my-3">
+      <span class="fw-bold text-muted">— OR —</span>
+    </div>
+
+    <!-- Option 2: Upload Purchase PO PDF -->
+   <!-- <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-secondary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">
+          <i class="bi bi-file-earmark-arrow-up me-2"></i>
+          Purchase PO – Upload PDF
+        </h4>
+      </div>
+
+      <div class="card-body p-4">
+        <form action="/billing/uploadPurchasePoPdf" class="needs-validation" novalidate method="POST" enctype="multipart/form-data">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label for="supplierIdPurchasePoPdf" class="form-label fw-bold">Supplier</label>
+              <select name="supplierId" id="supplierIdPurchasePoPdf" class="form-control" required>
+                <option value="" disabled selected>Select a supplier</option>
+                <% suppliers.forEach(supplier => { %>
+                  <option value="<%= supplier.Id %>"><%= supplier.Name %></option>
+                <% }); %>
+              </select>
+              <div class="invalid-feedback">Please select a supplier.</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="poPdfFile" class="form-label fw-bold">Upload PO (PDF)</label>
+              <input
+                class="form-control"
+                type="file"
+                id="poPdfFile"
+                name="poFile"
+                accept="application/pdf"
+                required
+              >
+              <div class="invalid-feedback">Please upload a valid PDF file.</div>
+            </div>
+          </div>
+
+         
+
+          <div class="row">
+            <div class="col text-center">
+              <button type="submit" class="btn btn-outline-secondary px-5">
+                Upload PO PDF
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      </div>-->
+    </div>
+  </section>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const supplierDropdown = document.getElementById("supplierIdPurchasePo");
+    const productList = document.getElementById("productList");
+    const addProductButton = document.getElementById("addProduct");
+    
+    const products = <%- JSON.stringify(products) %>; // Corrected way to pass products array
+
+    // Lock supplier selection after the first selection
+    supplierDropdown.addEventListener("change", function () {
+        supplierDropdown.disabled = true;
+        const supplierId= document.getElementById('supplierIdPurchasePo').value 
+        document.getElementById('supplier').value= supplierId 
+        //after changing the supplier only that supplier product is visible
+        $(".ppProduct > option").each(function () {
+            let attachedSupplierId = parseInt($(this).attr("data-supplier-id"));
+            $("select").selectpicker("destroy");
+            // make discount vield emptys
+            if (attachedSupplierId != supplierId) 
+                $(this).hide();  
+             else 
+                $(this).show();
+                
+                $('select').selectpicker({
+                    dropupAuto: false,
+                    container: 'body' // Append dropdown to body
+                  });
+        });
+
+
+    });
+
+    // Function to add a new product row
+    function addProductRow() {
+
+       // alert('hi')
+        const productList = document.getElementById("productList");
+
+let newProductRow = document.createElement("div");
+newProductRow.innerHTML = `
+    <div class="product-item row g-3 mb-3">
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Product</label>
+            <select name="productId[]" class="form-control ppProduct" data-live-search="true" required>
+                <option value="" disabled selected>Select a product</option>
+                <% products.forEach(product => { %>
+                    <option data-supplier-id="<%= product.SupplierId %>" value="<%= product.Id %>"><%= product.ProductName %></option>
+                <% }); %>
+            </select>
+            <div class="invalid-feedback">Please select a product.</div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Quantity</label>
+            <input type="number" name="quantity[]" class="form-control" min="1" required>
+            <div class="invalid-feedback">Quantity is required.</div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">MRP</label>
+            <input type="number" name="mrp[]" class="form-control" step="0.01" required>
+            <div class="invalid-feedback">MRP is required.</div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Purchase Price</label>
+            <input type="number" name="purchasePrice[]" class="form-control" step="0.01" required>
+            <div class="invalid-feedback">Price is required.</div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">IGST (%)</label>
+            <input type="number" name="igst[]" class="form-control" step="0.01" required>
+            <div class="invalid-feedback">IGST is required.</div>
+        </div>
+        <div class="col-md-1 d-flex align-items-end justify-content-center">
+            <button type="button" class="btn btn-danger removeProduct"><i class="bi bi-trash"></i></button>
+        </div>
+    </div>
+`;
+
+// Append the first child inside newProductRow (actual element)
+productList.appendChild(newProductRow.firstElementChild);
+applySelectPicker();
+
+        newProductRow.querySelectorAll(".form-control").forEach(input => {
+        input.classList.remove("is-invalid");
+    });
+        $(".ppProduct > option").each(function () {
+            let attachedSupplierId = parseInt($(this).attr("data-supplier-id"));
+            const supplierId= document.getElementById('supplierIdPurchasePo').value 
+            $("select").selectpicker("destroy");
+            // make discount vield emptys
+            if (attachedSupplierId != supplierId) 
+                $(this).hide();  
+             else 
+                $(this).show();
+                
+               
+        });
+        applySelectPicker(); // Reapply select picker
+    }
+
+    // Apply Bootstrap select picker
+    function applySelectPicker() {
+        $('select').selectpicker({
+                    dropupAuto: false,
+                    container: 'body' // Append dropdown to body
+                  });
+    }
+
+    // Event listener for adding products
+    addProductButton.addEventListener("click", function () {
+        addProductRow();
+    });
+
+    // Event listener for removing products
+    productList.addEventListener("click", function (event) {
+        if (event.target.closest(".removeProduct")) {
+            event.target.closest(".product-item").remove();
+
+            // If no products left, enable supplier dropdown again
+            if (productList.children.length === 0) {
+                supplierDropdown.disabled = false;
+            }
+        }
+    });
+
+    applySelectPicker(); // Initial call for existing select pickers
+});
+
+</script>
+
+

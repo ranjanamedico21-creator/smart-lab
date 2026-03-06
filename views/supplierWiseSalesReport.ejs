@@ -1,0 +1,184 @@
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item">
+        <a href="/user/home" class="text-decoration-none">Home</a>
+      </li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">
+        Sales Report
+      </li>
+    </ol>
+  </nav>
+</section>
+
+<section>
+  <div class="container-fluid rounded border bg-white p-3">
+
+    <div class="row text-center mb-3">
+      <div class="col">
+        <h4 class="fw-bold">Supplier Sales Report</h4>
+      </div>
+    </div>
+
+    <%- include("./partials/messages"); %>
+
+    <!-- FILTER FORM -->
+    <form action="/billing/salesReportSupplierWise" method="post">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <select name="Supplier" class="form-control">
+            <option value="" selected>Select a Supplier</option>
+            <% suppliers.forEach(function(supplier){ %>
+              <option value="<%=supplier.Id%>"
+                <% if(typeof Supplier != 'undefined' && supplier.Id == Supplier){ %>
+                  selected
+                <% } %>>
+                <%=supplier.Name%>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <div class="col-md-6">
+          <input type="text" id="FromDate" class="form-control"
+            name="FromDate" placeholder="From Date"
+            value="<%= typeof FromDate!= 'undefined' ? FromDate : '' %>"
+            autocomplete="off">
+        </div>
+
+        <div class="col-md-6">
+          <input type="text" id="ToDate" class="form-control"
+            name="ToDate" placeholder="To Date"
+            value="<%= typeof ToDate!= 'undefined' ? ToDate : '' %>"
+            autocomplete="off">
+        </div>
+      </div>
+
+      <div class="row g-3 mt-3">
+        <div class="col-md-6">
+          <button class="btn btn-primary w-100" name="action" value="search" type="submit">
+            Search
+          </button>
+        </div>
+        <div class="col-md-6">
+          <button class="btn btn-success w-100" name="action" value="download" type="submit">
+            Download
+          </button>
+        </div>
+      </div>
+      <input type="hidden" name="page" value="<%= pagination ? pagination.page : 1 %>">
+    </form>
+
+    <hr>
+
+    <!-- TABLE -->
+    <div class="table-responsive" style="max-height:500px; overflow-y:auto;">
+      <table class="table table-bordered table-striped align-middle">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th>#</th>
+            <th>Supplier</th>
+            <th>Product</th>
+            <th>Expiry</th>
+            <th>Opening Qty</th>
+            <th>Sold Qty</th>
+            <th>Closing Qty</th>
+            <th>Purchase Price</th>
+            <th>Remaining Stock Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%
+          let i = (pagination.page - 1) * pagination.limit + 1;
+          let currentSupplier = null;
+          let supplierSold = 0;
+          let supplierRemaining = 0;
+          
+          rows.forEach(function(row){
+          
+              if(currentSupplier !== row.SupplierName){
+                  if(currentSupplier !== null){
+          %>
+          <tr class="table-secondary fw-bold">
+              <td colspan="5">Supplier Total</td>
+              <td><%= supplierSold %></td>
+              <td></td>
+              <td></td>
+              <td><%= supplierRemaining.toFixed(2) %> Rs.</td>
+          </tr>
+          <%
+                  }
+                  supplierSold = 0;
+                  supplierRemaining = 0;
+                  currentSupplier = row.SupplierName;
+          %>
+          <tr class="table-primary fw-bold">
+              <td colspan="9">Supplier : <%= row.SupplierName %></td>
+          </tr>
+          <%
+              }
+          
+              supplierSold += Number(row.QuantitySold);
+              supplierRemaining += Number(row.RemainingStockTotalPrice);
+          %>
+          
+          <tr>
+              <td><%= i++ %></td>
+              <td><%= row.SupplierName %></td>
+              <td><%= row.ProductName %></td>
+              <td><%= row.ExpiryDate %></td>
+              <td><%= row.OpeningQuantity %></td>
+              <td><%= row.QuantitySold %></td>
+              <td><%= row.ClosingQuantity %></td>
+              <td><%= row.PurchasePrice %></td>
+              <td><%= row.RemainingStockTotalPrice.toFixed(2) %> Rs.</td>
+          </tr>
+          
+          <%
+          });
+          
+          if(currentSupplier !== null){
+          %>
+          <tr class="table-secondary fw-bold">
+              <td colspan="5">Supplier Total</td>
+              <td><%= supplierSold %></td>
+              <td></td>
+              <td></td>
+              <td><%= supplierRemaining.toFixed(2) %> Rs.</td>
+          </tr>
+          <% } %>
+          
+          <tr class="table-dark fw-bold">
+              <td colspan="5">Grand Total</td>
+              <td><%= grandTotals.grandSold %></td>
+              <td></td>
+              <td></td>
+              <td><%= grandTotals.grandRemainingValue.toFixed(2) %> Rs.</td>
+          </tr>
+          
+          </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<div class="d-flex justify-content-center mt-3">
+
+  <% if(pagination.page > 1){ %>
+  <a href="?page=<%= pagination.page - 1 %>&Supplier=<%= Supplier %>&FromDate=<%= FromDate %>&ToDate=<%= ToDate %>"
+     class="btn btn-outline-primary me-2">Previous</a>
+  <% } %>
+  
+  <span class="align-self-center me-2">
+  Page <%= pagination.page %> of <%= pagination.totalPages %>
+  </span>
+  
+  <% if(pagination.page < pagination.totalPages){ %>
+  <a href="?page=<%= pagination.page + 1 %>&Supplier=<%= Supplier %>&FromDate=<%= FromDate %>&ToDate=<%= ToDate %>"
+     class="btn btn-outline-primary">Next</a>
+  <% } %>
+  
+  </div>

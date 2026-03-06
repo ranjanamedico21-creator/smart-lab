@@ -1,0 +1,111 @@
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">Create Sub Test</li>
+    </ol>
+  </nav>
+</section>
+<section>
+  <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+    <div class="row mt-3 text-center">
+      <div class="col">
+        <h4>Create Sub Test</h4>
+      </div>
+    </div>
+    <%- include ("./partials/messages"); %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Test Name</th>
+          <th>Price</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">1.</th>
+          <td>
+            <%=testDetails[0].TestName%>
+          </td>
+          <td>
+            <%=testDetails[0].Price%>
+          </td>
+          <td>
+            <%=testDetails[0].Name%>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <% if(attachedTestLists){%>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Test Name</th>
+          <th>Price</th>
+          <th>Discount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% i=1;attachedTestLists.forEach(function(attachedTest){ %>
+          <tr>
+            <th scope="row">
+              <%=i%>.
+            </th>
+            <td class="text-capitalize"><%=attachedTest.Name%></td>
+            <td><%=attachedTest.Price%></td>
+          <td><%=attachedTest.Discount%></td>
+            <td>
+              <p><a href="/test/detachSubTest?subTestId=<%=attachedTest.subTestId %>&testId=<%=testDetails[0].Id%>" class="detach link-danger link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">Remove</a></p>
+            </td>
+            
+          </tr>
+          <%i++;}) %>
+      </tbody>
+    </table>
+    <%}%>
+  </div>
+</section>
+<section>
+  <div class="container rounded border bg-white">
+    <h4 class="mt-3">Register Test With Other Test </h4>
+    <h6 class="mt-3">Test Details</h6>
+    <form action="/test/attachTest?testId=<%=testDetails[0].Id%>" id="attachTest" method="post">
+      <div class="input-group mb-3">
+        <input type="text" class="form-control search" placeholder="search sub test" aria-label="search sub test" aria-describedby="search sub test">
+      </div>
+      <table class="table table-striped" id="filterTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Test Name</th>
+            <th>Price</th>
+            <th>Category</th>
+          </tr>
+        </thead>
+        <tbody class="pagination-loop">
+          <% i=1;testToBeAttahcedList.forEach(function(test){ %>
+          <tr>
+            <th scope="row"><%=i%>.</th>
+            <td class="text-capitalize"><%=test.Name%></td>
+            <td><%=test.Price%></td>
+            <td><%=test.categoryName%></td>
+            <td><div class="form-check">
+              <input class="form-check-input attachTest" type="checkbox" value="<%=test.SubTestId%>" name="subTest" Id="subTest<%=test.Id%>">
+              <label class="form-check-label" for="subTest<%=test.Id%>"">
+              </label>
+            </div></td>
+          </tr>
+          <% i++})%>
+        </tbody>
+      </table>
+      <button type="submit" class="btn btn-primary mt-3 mb-3">Attach Test</button>
+    </form>
+    <nav aria-label="Page navigation ">
+      <ul class="pagination pagination-lg pager justify-content-center" id="pagination_Number"></ul>
+    </nav>
+  </div>
+</section>

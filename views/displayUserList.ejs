@@ -1,0 +1,103 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Display User List</li>
+      </ol>
+    </nav>
+  </section>
+  <section>
+    <div class="container-fluid rounded border bg-white shadow-sm">
+        <div class="row mt-3 text-center">
+            <div class="col">
+                <h4>User List</h4>
+            </div>
+        </div>
+        <!-- Server-side rendered messages (optional) -->
+        <%- include ("./partials/messages"); %>
+                <!-- Table wrapped in a responsive div -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>User Id</th>
+                        <th>Registered On</th>
+                        <th>Phone Number</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Loop through users to display data -->
+                    <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.FirstName %>&nbsp; <%= user.LastName %></td>
+                        <td><%= user.Email %></td>
+                        <td><%= user.DateOfJoining %></td>
+                        <td><%= user.PhoneNumber %></td>
+                        <td>
+                            <p>
+                                <a href="/user/assignAuthorisation/<%=user.Id%>">Assign Authorisation</a>&nbsp;&nbsp;
+                                <a href="/user/assignRole/<%=user.Id%>" data-bs-user-id="<%=user.Id%>" data-bs-name="<%= user.FirstName %>&nbsp; <%= user.LastName %>" data-bs-toggle="modal" data-bs-target="#assignRole">Assign Role</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+<section>
+    <!-- Assign Role Modal -->
+<div class="modal fade" id="assignRole" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="assignRoleLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        
+        <!-- Modal Header -->
+        <div class="modal-header bg-primary text-white border-0 rounded-top">
+          <h5 class="modal-title fw-semibold" id="assignRoleLabel">
+            <i class="bi bi-person-gear me-2"></i>Assign a Role
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+  
+        <!-- Modal Body -->
+        <div class="modal-body px-4 py-4">
+          <form action="/user/assignRole" method="post" id="assignRoleForm" class="needs-validation" novalidate>
+            
+            <!-- Select Role -->
+            <div class="mb-3">
+              <label for="role" class="form-label fw-medium">Select a Role <span class="text-danger">*</span></label>
+              <select class="form-control" id="role" name="Role" required>
+                <option value="">-- Select Role --</option>
+                <% roles.forEach(function(role) { %>
+                  <option id="role<%= role.Id %>" value="<%= role.Id %>" data-role-id="<%= role.Id %>">
+                    <%= role.Name %>
+                  </option>
+                <% }); %>
+              </select>
+              <div class="invalid-feedback">
+                Please select a role before continuing.
+              </div>
+            </div>
+  
+            <!-- Hidden User ID -->
+            <input type="hidden" class="modal-user-id" id="userId" name="UserId" value="">
+  
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top pt-3">
+              <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                <i class="bi bi-x-circle me-1"></i> Cancel
+              </button>
+              <button type="submit" class="btn btn-success px-4 shadow-sm" form="assignRoleForm">
+                <i class="bi bi-check-circle me-1"></i> Confirm
+              </button>
+            </div>
+          </form>
+        </div>
+        
+      </div>
+    </div>
+  </div>  
+</section>

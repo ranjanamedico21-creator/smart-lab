@@ -1,0 +1,180 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+        <ol class="breadcrumb mb-0 fw-medium">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+          </li>
+          <li class="breadcrumb-item active text-dark" aria-current="page">Customer List</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <!-- Customer List Section -->
+  <div class="card-body p-0">
+
+    <!-- Messages -->
+    <div class="px-4 pt-3">
+      <%- include ("./partials/messages"); %>
+    </div>
+  
+    <% if (customers && customers.length > 0) { %>
+  
+    <!-- ================= DESKTOP TABLE ================= -->
+    <div class="table-responsive d-none d-md-block">
+      <table class="table align-middle table-hover mb-0">
+        <thead class="table-light text-uppercase small text-muted">
+          <tr>
+            <th class="ps-4">#</th>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>GST</th>
+            <th>DL</th>
+            <th>Created</th>
+            <th class="text-center">Price</th>
+            <th class="text-center pe-4">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% let i = 0; customers.forEach(function(customer) { i++ %>
+          <tr>
+            <td class="ps-4 text-muted fw-semibold"><%= i %></td>
+  
+            <td>
+              <a href="/billing/customerLedger/<%= customer.Id %>"
+                 class="fw-semibold text-decoration-none text-dark">
+                <%= customer.CustomerName %>
+              </a>
+            </td>
+  
+            <td><%= customer.MobileNo %></td>
+  
+            <td>
+              <% if (customer.GstNo) { %>
+                <span class="badge bg-success-subtle text-success border">
+                  <%= customer.GstNo %>
+                </span>
+              <% } else { %>
+                <span class="badge bg-light text-muted border">N/A</span>
+              <% } %>
+            </td>
+  
+            <td>
+              <% if (customer.DlNo) { %>
+                <span class="badge bg-info-subtle text-info border">
+                  <%= customer.DlNo %>
+                </span>
+              <% } else { %>
+                <span class="badge bg-light text-muted border">N/A</span>
+              <% } %>
+            </td>
+  
+            <td class="text-muted">
+              <%= new Date(customer.CreatedAt).toLocaleDateString('en-GB',{
+                day:'2-digit',month:'short',year:'numeric'
+              }) %>
+            </td>
+  
+            <td class="text-center">
+              <a href="/billing/updatePrice/<%= customer.Id %>"
+                 class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                Set
+              </a>
+            </td>
+  
+            <td class="text-center pe-4">
+              <a href="/billing/editCustomer/<%= customer.Id %>"
+                 class="btn btn-sm btn-light border rounded-circle">
+                <i class="bi bi-pencil text-primary"></i>
+              </a>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  
+  
+    <!-- ================= MOBILE CARD VIEW ================= -->
+    <div class="d-md-none p-3">
+  
+      <% let j = 0; customers.forEach(function(customer) { j++ %>
+  
+      <div class="card shadow-sm border-0 rounded-4 mb-3">
+  
+        <div class="card-body">
+  
+          <!-- Header Row -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0 fw-bold">
+              <%= j %>. <%= customer.CustomerName %>
+            </h6>
+  
+            <a href="/billing/editCustomer/<%= customer.Id %>"
+               class="btn btn-sm btn-light border rounded-circle">
+              <i class="bi bi-pencil text-primary"></i>
+            </a>
+          </div>
+  
+          <!-- Mobile -->
+          <div class="small text-muted mb-2">
+            <i class="bi bi-telephone me-1"></i>
+            <%= customer.MobileNo %>
+          </div>
+  
+          <!-- GST & DL -->
+          <div class="mb-2">
+            <% if (customer.GstNo) { %>
+              <span class="badge bg-success-subtle text-success border me-1">
+                GST: <%= customer.GstNo %>
+              </span>
+            <% } %>
+  
+            <% if (customer.DlNo) { %>
+              <span class="badge bg-info-subtle text-info border">
+                DL: <%= customer.DlNo %>
+              </span>
+            <% } %>
+          </div>
+  
+          <!-- Created Date -->
+          <div class="small text-muted mb-3">
+            Created:
+            <%= new Date(customer.CreatedAt).toLocaleDateString('en-GB',{
+              day:'2-digit',month:'short',year:'numeric'
+            }) %>
+          </div>
+  
+          <!-- Buttons -->
+          <div class="d-flex gap-2">
+            <a href="/billing/customerLedger/<%= customer.Id %>"
+               class="btn btn-sm btn-outline-secondary w-100 rounded-pill">
+              Ledger
+            </a>
+  
+            <a href="/billing/updatePrice/<%= customer.Id %>"
+               class="btn btn-sm btn-primary w-100 rounded-pill">
+              Set Price
+            </a>
+          </div>
+  
+        </div>
+      </div>
+  
+      <% }); %>
+  
+    </div>
+  
+    <% } else { %>
+  
+    <div class="text-center py-5">
+      <i class="bi bi-people display-6 text-muted d-block mb-3"></i>
+      <h6 class="fw-semibold text-muted">No customers found</h6>
+    </div>
+  
+    <% } %>
+  
+  </div>
+  

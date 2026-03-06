@@ -1,0 +1,346 @@
+
+<!-- Breadcrumb -->
+<section class="py-4">
+    <div class="container-xl">
+        <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+            <ol class="breadcrumb mb-0 d-flex align-items-center">
+                <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+                <li class="breadcrumb-item active fw-bold" aria-current="page">Add Sale</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Main Section -->
+<section class="pb-5">
+    <div class="container-fluid">
+        <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-cart-plus me-2"></i>Create New Sale</h4>
+            </div>
+
+            <div class="card-body p-4">
+                <form action="/billing/addSale" class="needs-validation" novalidate method="POST">
+                    <%- include ("./partials/messages"); %>
+
+                    <!-- Customer Selection -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="customerId" class="form-label fw-semibold text-dark">Select Customer</label>
+                            <select id="customerId" name="customerId" class="form-control shadow-sm" data-container="body" data-live-search="true" required>
+                                <option value="">Choose a customer</option>
+                                <% customers.forEach(customer => { %>
+                                    <option value="<%= customer.Id %>"><%= customer.CustomerName %></option>
+                                <% }); %>
+                            </select>
+                            <div class="invalid-feedback">Please select a customer.</div>
+                        </div>
+                    </div>
+
+                    <!-- CGST and SGST Inputs -->
+                    <!--div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="cgst" class="form-label fw-semibold text-dark">CGST (%)</label>
+                            <input 
+                                type="number" 
+                                id="cgst" 
+                                class="form-control shadow-sm" 
+                                name="cgst" 
+                                placeholder="Enter CGST (%)" 
+                                value="<%= typeof cgst !== 'undefined' ? cgst : '' %>" 
+                                autocomplete="off" 
+                                step="0.01" 
+                                required>
+                            <div class="invalid-feedback">Enter valid CGST percentage.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sgst" class="form-label fw-semibold text-dark">SGST (%)</label>
+                            <input 
+                                type="number" 
+                                id="sgst" 
+                                class="form-control shadow-sm" 
+                                name="sgst" 
+                                placeholder="Enter SGST (%)" 
+                                value="<%= typeof sgst !== 'undefined' ? sgst : '' %>" 
+                                autocomplete="off" 
+                                step="0.01" 
+                                required>
+                            <div class="invalid-feedback">Enter valid SGST percentage.</div>
+                        </div>
+                    </div-->
+                    <div class="row  g-3 mt-3">
+                        <div class="col">
+                            <div id="liveErrorAlertPlaceholder"></div>
+                        </div>
+                      </div>
+                    <!-- Stock Rows Container -->
+                    <h5 class="fw-bold mb-3">Sale Items</h5>
+                    <div id="stockRowsContainer" class="mb-4">
+                        <div class="stock-row p-3 bg-light rounded-3 mb-3">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="stockId_0" class="form-label fw-semibold text-dark">Stock Item</label>
+                                    <select id="stockId_0" name="stockId[]" class="form-control shadow-sm" data-container="body" data-live-search="true" required>
+                                        <option value="">Select stock</option>
+                                        <% stocks.forEach(stock => { %>
+                                            <option value="<%= stock.Id %>"data-igst="<%= stock.IGSTPercentage %>" data-product-id="<%=stock.ProductId %>">
+                                                <%= stock.ProductName %> - Batch: <%= stock.BatchNumber %> (Qty: <%= stock.Quantity %> | Exp: <%= stock.ExpiryDate %> | IGST:<%= stock.IGSTPercentage %>)
+                                            </option>
+                                        <% }); %>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a stock item.</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="quantitySold_0" class="form-label fw-semibold text-dark">Quantity Sold</label>
+                                    <input 
+                                        type="number" 
+                                        id="quantitySold_0" 
+                                        class="form-control shadow-sm" 
+                                        name="quantitySold[]" 
+                                        placeholder="Enter quantity" 
+                                        autocomplete="off" 
+                                        min="1" 
+                                        required>
+                                    <div class="invalid-feedback">Enter a valid quantity (min: 1).</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="cgst_0" class="form-label fw-semibold text-dark">CGST (%)</label>
+                                    <input 
+                                        type="number" 
+                                        id="cgst_0" 
+                                        class="form-control shadow-sm" 
+                                        name="cgst[]" 
+                                        placeholder="CGST" 
+                                        step="0.01" 
+                                        required>
+                                    <div class="invalid-feedback">Enter CGST.</div>
+                                </div>
+                        
+                                <div class="col-md-2">
+                                    <label for="sgst_0" class="form-label fw-semibold text-dark">SGST (%)</label>
+                                    <input 
+                                        type="number" 
+                                        id="sgst_0" 
+                                        class="form-control shadow-sm" 
+                                        name="sgst[]" 
+                                        placeholder="SGST" 
+                                        step="0.01" 
+                                        required>
+                                    <div class="invalid-feedback">Enter SGST.</div>
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-row"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="selected-stock-text mb-2 text-primary fw-semibold"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                   
+                      <!-- Add Stock Button -->
+            <div class="row mt-3">
+                <div class="col text-center">
+                    <button type="button" id="addRow" class="btn btn-success btn-sm"><i class="bi bi-plus-circle me-2"></i> Add Another Item</button>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="row mt-3 mb-3">
+                <div class="col text-center">
+                    <button type="submit" class="btn btn-primary">Complete Sale</button>
+                </div>
+            </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+     // Auto-fill CGST and SGST when stock is selected
+     $('#stockRowsContainer').on('change', 'select[name="stockId[]"]', function () {
+        const igst = parseFloat($(this).find(':selected').data('igst')) || 0;
+        const cgstSgst = (igst / 2).toFixed(2);
+        const $row = $(this).closest('.stock-row');
+        $row.find('input[name="cgst[]"]').val(cgstSgst);
+        $row.find('input[name="sgst[]"]').val(cgstSgst);
+
+          // Get selected option text
+        let selectedText = $(this).find(':selected').text();
+
+        // Find the .selected-stock-text div that comes right after this stock-row
+        let $displayDiv = $row.next('.row').find('.selected-stock-text');
+
+        // Update text
+        $displayDiv.text(selectedText || "");
+            
+    });
+    let rowCounter = 1;
+
+    // Initialize selectpicker
+    $("select").selectpicker();
+
+    // Reinitialize selectpicker function
+    const reinitializeSelectpicker = () => {
+        $("select").selectpicker("destroy").selectpicker();
+    };
+
+    // Add Row
+    $("#addRow").on('click', () => {
+        const container = $("#stockRowsContainer");
+        const newRow = $(`
+            <div class="stock-row p-3 bg-light rounded-3 mb-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="stockId_${rowCounter}" class="form-label fw-semibold text-dark">Stock Item</label>
+                        <select id="stockId_${rowCounter}" name="stockId[]" class="form-control shadow-sm" data-live-search="true" required>
+                            <option value="">Select stock</option>
+                            <% stocks.forEach(stock => { %>
+                                <option value="<%= stock.Id %>" data-igst="<%= stock.IGSTPercentage %>" data-product-id="<%=stock.ProductId %>">
+                                    <%= stock.KnownAs %> <%= stock.ProductName %> - Batch: <%= stock.BatchNumber %> (Qty: <%= stock.Quantity %> | Exp: <%= stock.ExpiryDate %> | IGST:<%= stock.IGSTPercentage %>)
+                                </option>
+                            <% }); %>
+                        </select>
+                        <div class="invalid-feedback">Please select a stock item.</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="quantitySold_${rowCounter}" class="form-label fw-semibold text-dark">Quantity Sold</label>
+                        <input 
+                            type="number" 
+                            id="quantitySold_${rowCounter}" 
+                            class="form-control shadow-sm" 
+                            name="quantitySold[]" 
+                            placeholder="Enter quantity" 
+                            autocomplete="off" 
+                            min="1" 
+                            required>
+                        <div class="invalid-feedback">Enter a valid quantity (min: 1).</div>
+                    </div>
+                    <div class="col-md-2">
+                                    <label for="cgst_${rowCounter}" class="form-label fw-semibold text-dark">CGST (%)</label>
+                                    <input 
+                                        type="number" 
+                                        id="cgst_${rowCounter}" 
+                                        class="form-control shadow-sm" 
+                                        name="cgst[]" 
+                                        placeholder="CGST" 
+                                        step="0.01" 
+                                        required>
+                                    <div class="invalid-feedback">Enter CGST.</div>
+                                </div>
+                        
+                                <div class="col-md-2">
+                                    <label for="sgst_${rowCounter}" class="form-label fw-semibold text-dark">SGST (%)</label>
+                                    <input 
+                                        type="number" 
+                                        id="sgst_${rowCounter}" 
+                                        class="form-control shadow-sm" 
+                                        name="sgst[]" 
+                                        placeholder="SGST" 
+                                        step="0.01" 
+                                        required>
+                                    <div class="invalid-feedback">Enter SGST.</div>
+                                </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-row"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="selected-stock-text mb-2 text-primary fw-semibold"></div>
+                </div>
+            </div>
+        `);
+        container.append(newRow);
+        rowCounter++;
+        reinitializeSelectpicker();
+    });
+
+    // Remove Row
+   /* $("#stockRowsContainer").on('click', '.remove-row', function() {
+        rowCounter= rowCounter-1;
+        $(this).closest('.stock-row').remove();
+    });*/
+    // Remove Row + its selected text block below it
+    $("#stockRowsContainer").on('click', '.remove-row', function() {
+        if (rowCounter <= 1) {
+           // TestManager.showAlert('', 'info') 
+            $("#liveErrorAlertPlaceholder").append(`
+                <div class="alert alert-info alert-dismissible" role="alert">
+                    <div>This is the last row which can not be deleted.</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `);
+        // Prevent removal if only one row left
+        return;
+    }
+        const $row = $(this).closest('.stock-row');
+
+        // If the very next sibling .row holds the selected-stock-text, remove it too
+        const $selectedRow = $row.next('.row');
+
+        if ($selectedRow.length && $selectedRow.find('.selected-stock-text').length) {
+            
+             $selectedRow.remove();
+        }
+
+        // Remove the stock row
+        $row.remove();
+
+        // keep your counter sane
+        rowCounter = Math.max(0, rowCounter - 1);
+    });
+
+
+    // Form Validation
+    $('form.needs-validation').on('submit', function(event) {
+        let isValid = true;
+
+        // Validate all stock rows
+        $('.stock-row').each(function() {
+            const $select = $(this).find('select');
+            const $quantity = $(this).find('input[type="number"]');
+            
+            if (!$select.val()) {
+                $select.addClass('is-invalid');
+                isValid = false;
+            } else {
+                $select.removeClass('is-invalid');
+            }
+
+            if (!$quantity.val() || Number($quantity.val()) < 1) {
+                $quantity.addClass('is-invalid');
+                isValid = false;
+            } else {
+                $quantity.removeClass('is-invalid');
+            }
+        });
+
+        if (!this.checkValidity() || !isValid) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        $(this).addClass('was-validated');
+    });
+
+    // Real-time input validation
+    $('form.needs-validation').find('input, select').on('input change', function() {
+        const $input = $(this);
+        if ($input.is('select') && $input.val()) {
+            $input.removeClass('is-invalid');
+        } else if ($input.is('input[type="number"]') && Number($input.val()) >= 1) {
+            $input.removeClass('is-invalid');
+        } else if ($input.is('input[type="number"]') && Number($input.val()) < 1) {
+            $input.addClass('is-invalid');
+        }
+    });
+});
+</script>

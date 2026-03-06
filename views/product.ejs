@@ -1,0 +1,108 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+        <ol class="breadcrumb mb-0 fw-medium">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+          </li>
+          <li class="breadcrumb-item active text-dark" aria-current="page">Products</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <!-- Product Registration Section -->
+  <section class="pb-5">
+    <div class="container-fluid">
+      <div class="card shadow border-0 rounded-4 bg-white overflow-hidden">
+        <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold">Product Registration</h4>
+        </div>
+        <div class="card-body p-4">
+          <h1 class="text-center mb-4 fw-bold text-dark"></h1>
+          <%- include ("./partials/messages"); %>
+          <form action="/billing/createProduct" method="post" class="needs-validation" novalidate>
+            <div class="row g-3">
+              <!-- Supplier Name -->
+              <div class="col-md-4">
+                <label for="supplier" class="form-label fw-semibold">Select Supplier</label>
+                <select name="supplier" class="form-control" id="supplier" data-live-search="true" aria-label="Select supplier with live search" required>
+                  <option value="" selected>Select a Supplier</option>
+                  <% let i = 1; supplierLists.forEach(function(supplierList) { %>
+                    <option value="<%= supplierList.Id %>" <% if(typeof productDetails.SupplierId != 'undefined' && supplierList.Id == productDetails.SupplierId){%>selected<%}%>>
+                      <%= supplierList.Name %>
+                    </option>
+                  <% }); %>
+                </select>
+                <div class="invalid-feedback">Please select a supplier.</div>
+              </div>
+              <!-- Product Name -->
+              <div class="col-md-3">
+                <label for="name" class="form-label fw-semibold">Product Name</label>
+                <input 
+                  type="text" 
+                  class="form-control text-capitalize" 
+                  value="<%= typeof productDetails.ProductName != 'undefined' ? productDetails.ProductName : '' %>" 
+                  name="name" 
+                  id="name" 
+                  placeholder="Product Name" 
+                  required>
+                <div class="invalid-feedback">Please enter a product name.</div>
+              </div>
+              <div class="col-md-3">
+                <label for="name" class="form-label fw-semibold">Known As</label>
+                <input 
+                  type="text" 
+                  class="form-control text-capitalize" 
+                  value="<%= typeof productDetails.KnownAs != 'undefined' ? productDetails.KnownAs : '' %>" 
+                  name="knownAs" 
+                  id="KnownAs" 
+                  placeholder="Known As" 
+                  required>
+                <div class="invalid-feedback">Please enter a specific name.</div>
+              </div>
+              <!-- HSN Code -->
+              <div class="col-md-2">
+                <label for="hsn" class="form-label fw-semibold">HSN Code</label>
+                <input 
+                  type="text" 
+                  class="form-control text-capitalize" 
+                  value="<%= typeof productDetails.Hsn != 'undefined' ? productDetails.Hsn : '' %>" 
+                  name="hsn" 
+                  id="hsn" 
+                  placeholder="HSN Code" 
+                  required>
+                <div class="invalid-feedback">Please enter an HSN code.</div>
+              </div>
+            </div>
+            <div class="row mt-4">
+              <div class="col text-center">
+                <button type="submit" class="btn btn-primary px-5 rounded-pill fw-medium">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Pagination Section -->
+  <!--section class="pb-4">
+    <div class="container">
+      <nav aria-label="Page navigation">
+        <ul class="pagination pagination-sm justify-content-center gap-1">
+          <li class="page-item disabled">
+            <a class="page-link rounded-pill px-3" href="#">Previous</a>
+          </li>
+        
+          <li class="page-item">
+            <a class="page-link rounded-pill px-3" href="#">1</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link rounded-pill px-3" href="#">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </section-->

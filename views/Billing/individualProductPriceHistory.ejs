@@ -1,0 +1,132 @@
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-semibold">
+        Purchase Price History
+      </h6>
+      <span class="text-muted small">
+        Total Records: <%= pagination.totalRecords %>
+      </span>
+    </div>
+  
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>PO Date</th>
+              <th>PO No</th>
+              <th>Supplier</th>
+              <th>Supp Invoice No</th>
+              <th class="text-end">Purchase Price</th>
+            </tr>
+          </thead>
+  
+          <tbody>
+            <% if (rows.length === 0) { %>
+              <tr>
+                <td colspan="5" class="text-center py-5">
+                  <div class="text-muted">
+                    <div class="mb-2 fs-4">📭</div>
+                    No purchase history available
+                  </div>
+                </td>
+              </tr>
+            <% } %>
+  
+            <% rows.forEach((row, index) => { %>
+              <tr class="<%= index === 0 ? 'table-success bg-opacity-25' : '' %>">
+                <td>
+                  <span class="badge bg-light text-dark">
+                    <%= new Date(row.PoDate).toLocaleDateString('en-GB').replace(/\//g, '-') %>
+                  </span>
+                </td>
+  
+                <td class="fw-semibold">
+                  <%= row.PurchaseOrderId %>
+                </td>
+  
+                <td>
+                  <span class="badge rounded-pill bg-secondary">
+                    <%= row.SupplierName %>
+                  </span>
+                </td>
+                <td>
+                  <% if (row.SupplierInvoiceNo) { %>
+                    <span class="fw-medium">
+                     <a href="/billing/invoiceDetails/<%=row.PurchaseOrderId%>">
+                        <%= row.SupplierInvoiceNo %>
+                    </a>
+                    </span>
+                  <% } else { %>
+                    <span class="text-muted">—</span>
+                  <% } %>
+                </td>
+  
+                <td class="text-end fw-bold text-nowrap">
+                  ₹ <%= Number(row.PurchasePrice).toFixed(2) %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% if (pagination.totalPages > 1) { %>
+    <nav class="mt-4">
+      <ul class="pagination justify-content-center pagination-sm">
+  
+        <!-- Prev -->
+        <li class="page-item <%= pagination.currentPage === 1 ? 'disabled' : '' %>">
+          <a class="page-link"
+             href="?productId=<%= productId %>&supplierId=<%= selectedSupplierId || '' %>&page=<%= pagination.currentPage - 1 %>">
+            ‹
+          </a>
+        </li>
+  
+        <% 
+          const start = Math.max(1, pagination.currentPage - 2);
+          const end = Math.min(pagination.totalPages, pagination.currentPage + 2);
+        %>
+  
+        <% if (start > 1) { %>
+          <li class="page-item">
+            <a class="page-link"
+               href="?productId=<%= productId %>&supplierId=<%= selectedSupplierId || '' %>&page=1">
+              1
+            </a>
+          </li>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        <% } %>
+  
+        <% for (let i = start; i <= end; i++) { %>
+          <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+            <a class="page-link"
+               href="?productId=<%= productId %>&supplierId=<%= selectedSupplierId || '' %>&page=<%= i %>">
+              <%= i %>
+            </a>
+          </li>
+        <% } %>
+  
+        <% if (end < pagination.totalPages) { %>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?productId=<%= productId %>&supplierId=<%= selectedSupplierId || '' %>&page=<%= pagination.totalPages %>">
+              <%= pagination.totalPages %>
+            </a>
+          </li>
+        <% } %>
+  
+        <!-- Next -->
+        <li class="page-item <%= pagination.currentPage === pagination.totalPages ? 'disabled' : '' %>">
+          <a class="page-link"
+             href="?productId=<%= productId %>&supplierId=<%= selectedSupplierId || '' %>&page=<%= pagination.currentPage + 1 %>">
+            ›
+          </a>
+        </li>
+  
+      </ul>
+    </nav>
+  <% } %>
+    

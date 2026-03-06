@@ -1,0 +1,77 @@
+<!-- Breadcrumb Navigation -->
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-gradient bg-light rounded-3 shadow-sm mb-4">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item">
+        <a href="/user/home" class="text-decoration-none text-primary fw-medium">Home</a>
+      </li>
+      <li class="breadcrumb-item active text-muted" aria-current="page">
+        Patient Report Creation
+      </li>
+    </ol>
+  </nav>
+</section>
+
+<!-- Patient Details Card -->
+<section>
+  <div class="container-fluid rounded-3 border bg-white shadow-sm p-4 mb-4">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <span class="fw-semibold text-secondary">Patient Name:</span>
+        <span class="ms-2"><%= patientDetail[0].Title %> <%= patientDetail[0].Name %></span>
+      </div>
+      <div class="col-md-3">
+        <span class="fw-semibold text-secondary">Age/Sex:</span>
+        <span class="ms-2"><%= patientDetail[0].Age %> <%= patientDetail[0].YMD %></span>
+      </div>
+      <div class="col-md-3">
+        <span class="fw-semibold text-secondary">Referred By:</span>
+        <span class="ms-2">Dr. <%= patientDetail[0].FirstName %> <%= patientDetail[0].LastName %></span>
+      </div>
+      <div class="col-md-3">
+        <span class="fw-semibold text-secondary">Date:</span>
+        <span class="ms-2"><%= patientDetail[0].RegisteredOn %></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Patient Report Section -->
+<section>
+  <div class="container-fluid rounded-3 border bg-white shadow-sm p-4">
+    <h4 class="mb-4 text-dark fw-semibold">Patient Report</h4>
+    <%- include ("./partials/messages"); %>
+    <form action="/report/saveReport?patientId=<%=patientId%>&testId=<%=testId%>" method="post" class="needs-validation" novalidate>
+      <div class="mb-4">
+        <textarea 
+          id="froala-editor-report" 
+          name="patientReport" 
+          class="form-control border-0 shadow-sm" 
+          style="min-height: 300px;"
+          aria-describedby="Enter Patient Report"
+        ><%= data %></textarea>
+      </div>
+      <div class="d-flex gap-3">
+        <button 
+          type="submit" 
+          class="btn btn-primary px-4 py-2 fw-medium" 
+          data-bs-toggle="tooltip" 
+          data-bs-placement="top" 
+          data-bs-title="Save Report"
+        >
+          Save
+        </button>
+        <button 
+          type="submit" 
+          class="btn btn-outline-primary px-4 py-2 fw-medium" 
+          data-bs-toggle="tooltip" 
+          data-bs-placement="top" 
+          data-bs-title="Sign Off Report"
+        >
+          Sign Off
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+

@@ -1,0 +1,68 @@
+<!-- views/user/myLeaves.ejs -->
+
+
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">My Leave Applications</h3>
+    <a href="/user/applyLeave" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-circle me-1"></i> Apply Leave
+    </a>
+  </div>
+
+  <% if (leaves && leaves.length > 0) { %>
+    <div class="table-responsive shadow-sm rounded">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Leave Type</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Admin Remarks</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% leaves.forEach((leave, index) => { %>
+            <tr>
+              <td><%= index + 1 %></td>
+              <td><%= leave.Name %></td>
+              <td><%= moment(leave.StartDate).format("DD-MM-YYYY") %></td>
+              <td><%= moment(leave.EndDate).format("DD-MM-YYYY") %></td>
+              <td><%= leave.Reason %></td>
+              <td>
+                <% if (leave.Status === 'Pending') { %>
+                  <span class="badge bg-warning text-dark">Pending</span>
+                <% } else if (leave.Status === 'Approved') { %>
+                  <span class="badge bg-success">Approved</span>
+                <% } else if (leave.Status === 'SentBack') { %>
+                  <span class="badge bg-danger">Sent Back</span>
+                <% } else if (leave.Status === 'Rejected') { %>
+                  <span class="badge bg-danger">Rejected</span>
+                <% } %>
+              </td>
+              <td><%= leave.AdminRemarks || '-' %></td>
+              <td>
+                <% if (leave.Status === 'SentBack') { %>
+                  <a href="/user/leaves/edit/<%= leave.id %>" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil-square"></i> Resubmit
+                  </a>
+                <% } else { %>
+                  <span class="text-muted">—</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="alert alert-info">
+      You haven’t applied for any leaves yet. Click <strong>Apply Leave</strong> to submit a request.
+    </div>
+  <% } %>
+</div>
+

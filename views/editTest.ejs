@@ -1,0 +1,160 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+    <div class="container-fluid">
+        <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+            <ol class="breadcrumb mb-0 fw-medium">
+                <li class="breadcrumb-item">
+                    <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-dark" aria-current="page">Edit Test</li>
+            </ol>
+        </nav>
+    </div>
+</section>
+
+<!-- Create Test Section -->
+<section class="pb-5">
+    <div class="container-fluid">
+        <div class="card shadow border-0 rounded-4 bg-white overflow-hidden">
+            <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+                <h4 class="mb-0 fw-bold">Edit Test</h4>
+            </div>
+            <div class="card-body p-4">
+                <%- include("./partials/messages"); %>
+
+                <form action="/test/updateTest/<%= testId %>" method="post" class="needs-validation" novalidate>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="mainCategory" class="form-label fw-medium">Main Category</label>
+                            <select class="form-control rounded-3" id="mainCategory" name="MainCategory" required>
+                                <option disabled value="">Select Category</option>
+                                <% categories.forEach(function(category) { %>
+                                    <option value="<%= category.Id %>" <%= category.Id == testDetails.CategoryId ? "selected" : "" %>><%= category.Name %></option>
+                                <% }) %>
+                            </select>
+                            <div class="invalid-feedback">Please select a category.</div>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="name" class="form-label fw-medium">Test Name</label>
+                            <input type="text" class="form-control text-capitalize rounded-3" id="name" name="Name" value="<%= testDetails.TestName %>" placeholder="Enter Test Name" required>
+                            <div class="invalid-feedback">Please enter a test name.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 pathology d-none">
+                        <div class="col-6">
+                            <label for="type" class="form-label fw-medium">Test Type</label>
+                            <select class="form-control rounded-3" name="Type" id="type" aria-label="Type of Pathological Test">
+                                <option value="1">Normal</option>
+                                <option value="2">Special</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="filmRequired" class="form-label fw-medium">Film Required</label>
+                            <select class="form-control rounded-3" id="filmRequired" name="FilmRequired" required>
+                                <option disabled value="">Select Which Film Required</option>
+                                <% filmTypes.forEach(function(film) { %>
+                                    <option value="<%= film.Id %>" <%= film.Id == testDetails.FilmTypeId ? "selected" : "" %>><%= film.Name %></option>
+                                <% }) %>
+                            </select>                            
+                            <div class="invalid-feedback">Please select a film option.</div>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="noOfFilms" class="form-label fw-medium ">Number of Films</label>
+                            <select class="form-control rounded-3" id="noOfFilms" name="NoOfFilms">
+                                <option disabled value="">Select No. of Films Required</option>
+                                <% for (let i = 0; i <= 5; i++) { %>
+                                    <option value="<%= i %>" <%= testDetails.NoOfFilm == i ? "selected" : "" %>><%= i %></option>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="timeTakenForReporting" class="form-label fw-medium">Time Taken for Reporting</label>
+                            <input type="text" class="form-control rounded-3" name="TimeTakenForReporting" id="timeTakenForReporting" value="<%=testDetails.TimeTakenForReporting%>" placeholder="e.g., 2 hours" required>
+                            <div class="invalid-feedback">Please enter reporting time.</div>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="day" class="form-label fw-medium">Days Required</label>
+                            <input type="number" class="form-control rounded-3" name="Day" id="day"  value="<%=testDetails.ReportingDay%>" placeholder="e.g., 1" required>
+                            <div class="invalid-feedback">Please enter number of days.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 pathology d-none">
+                        <div class="col-md-6 col-12">
+                            <label for="minAmountOfBlood" class="form-label fw-medium">Min Blood Amount (ml)</label>
+                            <input type="number" class="form-control rounded-3" name="MinAmountOfBlood" id="minAmountOfBlood"  value="<%=testDetails.MinAmountOfBlood%>" placeholder="e.g., 5" required>
+                            <div class="invalid-feedback">Please enter minimum blood amount.</div>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="maxAmountOfBlood" class="form-label fw-medium">Max Blood Amount (ml)</label>
+                            <input type="number" class="form-control rounded-3" name="MaxAmountOfBlood" id="maxAmountOfBlood" value="<%=testDetails.MaxAmountOfBlood%>" placeholder="e.g., 10" required>
+                            <div class="invalid-feedback">Please enter maximum blood amount.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="price" class="form-label fw-medium">Price (Rs)</label>
+                            <input type="number" class="form-control rounded-3" name="Price" id="price" value="<%= testDetails.Price %>" placeholder="e.g., 500" required>
+                            <div class="invalid-feedback">Please enter a price.</div>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="reportRequired" class="form-label fw-medium">Report Required</label>
+                            <select class="form-control rounded-3" name="reportRequired" id="reportRequired" required>
+                                <option disabled value="">Select Option</option>
+                                <option value="1" <%= testDetails.IsReportRequired == 1 ? "selected" : "" %>>Yes</option>
+                                <option value="0" <%= testDetails.IsReportRequired == 0 ? "selected" : "" %>>No</option>
+                            </select>
+                            <div class="invalid-feedback">Please select an option.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 pathology d-none">
+                        <div class="col-md-6 col-12">
+                            <label for="inversion" class="form-label fw-medium">Inversions Required</label>
+                            <input type="number" class="form-control rounded-3" name="Inversion" id="inversion"  value="<%= testDetails.Inversion %>" placeholder="e.g., 5" required>
+                            <div class="invalid-feedback">Please enter number of inversions.</div>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="parameter" class="form-label fw-medium">Number of Parameters</label>
+                            <input type="number" class="form-control rounded-3" name="Parameter" id="parameter" value="<%= testDetails.NoOfParameter %>" placeholder="e.g., 3" required>
+                            <div class="invalid-feedback">Please enter number of parameters.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <label for="descriptionOfTest" class="form-label fw-medium">Description</label>
+                            <textarea class="form-control rounded-3" name="Description" id="descriptionOfTest"  placeholder="Enter test description" rows="3"><%= testDetails.Description %></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <label for="froala-editor-male" class="form-label fw-medium">Template for Male</label>
+                            <textarea class="form-control rounded-3 template" name="templateForMale" id="froala-editor-male" placeholder="Enter template for male patients" rows="3"><%= testDetails.MaleTemplate %></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <label for="froala-editor-female" class="form-label fw-medium">Template for Female</label>
+                            <textarea class="form-control rounded-3 template" name="templateForFemale" id="froala-editor-female" placeholder="Enter template for female patients" rows="3"><%= testDetails.FeMaleTemplate %></textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-medium mt-3 mb-3">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

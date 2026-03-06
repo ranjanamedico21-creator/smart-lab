@@ -1,0 +1,46 @@
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">Category List View</li>
+    </ol>
+  </nav>
+</section>
+<section>
+  <div class="container-fluid rounded border bg-white shadow-sm">
+    <div class="row text-center mt-3">
+      <div class="col">
+        <h4>Category Details</h4>
+      </div>
+    </div>
+
+    <!-- Server-side rendered messages (optional) -->
+    <%- include ("./partials/messages"); %>
+
+    <!-- Responsive Table -->
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Category Name</th>
+            <th>Created By</th>
+            <th>Created On</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% i = 1; categoryDetails.forEach(function(category) { %>
+          <tr>
+            <th scope="row"><%= i %></th>
+            <td><%= category.Name %></td>
+            <td><%= category.FirstName %>&nbsp;<%= category.LastName %></td>
+            <td><%= category.CreatedOn %></td>
+            <td><a href="/category/editCategory/<%=category.Id%>" class="btn btn-sm btn-primary">Edit</a></td>
+          </tr>
+          <% i++; }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

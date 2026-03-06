@@ -1,0 +1,193 @@
+<!-- Breadcrumb Navigation -->
+<section class="bg-light py-2 py-md-3">
+    <nav aria-label="breadcrumb" class="container px-3 px-md-0">
+        <ol class="breadcrumb mb-0 flex-wrap">
+            <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+            <li class="breadcrumb-item active fw-bold" aria-current="page">Doctor Details</li>
+        </ol>
+    </nav>
+</section>
+
+<!-- Main Content -->
+<section class="container-fluid py-4 py-md-5">
+    <%- include ("./partials/messages"); %>
+    <div class="row g-3 g-md-4">
+        <!-- Doctor Profile Card -->
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm h-100 animate__animated animate__fadeIn">
+                <div class="card-header bg-gradient bg-primary text-white p-3 p-md-4">
+                    <h4 class="mb-0 text-center fs-5 fs-md-4">Doctor Profile</h4>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="row gy-3 gy-md-4">
+                        <div class="col-12 col-md-6">
+                            <h5 class="text-capitalize fw-bold mb-2 mb-md-3 fs-6 fs-md-5">
+                                <i class="bi bi-person me-2"></i>
+                                Dr. <%= doctorDetails.FirstName %> <%= doctorDetails.LastName %>
+                            </h5>
+                            <p class="mb-2 small"><i class="bi bi-telephone me-2"></i>
+                                <strong class="d-block d-md-inline">Phone:</strong> 
+                                <span class="d-block d-md-inline"><%= doctorDetails.MobileNumberFirst %></span>
+                            </p>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <p class="mb-2 small"><i class="bi bi-card-text me-2"></i>
+                                <strong class="d-block d-md-inline">Reg No:</strong> 
+                                <span class="d-block d-md-inline"><%= doctorDetails.Registration %></span>
+                            </p>
+                            <p class="mb-2 small"><i class="bi bi-clock-history me-2"></i>
+                                <strong class="d-block d-md-inline">Experience:</strong> 
+                                <span class="d-block d-md-inline"><%= doctorDetails.YearOfExperience %> years</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr class="my-3 my-md-4">
+
+                    <div class="row gy-3 gy-md-4 text-capitalize">
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <h6 class="fw-bold fs-6"><i class="bi bi-mortarboard me-2"></i>Degrees</h6>
+                            <ul class="list-unstyled ms-3 ms-md-4 small">
+                                <% if(doctorDetails.Degree1) { %><li><%= doctorDetails.Degree1 %></li><% } %>
+                                <% if(doctorDetails.Degree2) { %><li><%= doctorDetails.Degree2 %></li><% } %>
+                                <% if(doctorDetails.Degree3) { %><li><%= doctorDetails.Degree3 %></li><% } %>
+                                <% if(doctorDetails.Degree4) { %><li><%= doctorDetails.Degree4 %></li><% } %>
+                            </ul>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <h6 class="fw-bold fs-6"><i class="bi bi-award me-2"></i>Awards</h6>
+                            <ul class="list-unstyled ms-3 ms-md-4 small">
+                                <% if(doctorDetails.Award) { %><li><%= doctorDetails.Award %></li><% } %>
+                            </ul>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <h6 class="fw-bold text-center mb-2 mb-md-3 fs-6">
+                                <i class="bi bi-calendar-week me-2"></i>Visiting Schedule
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Day</th>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (visitingSchedule.length > 0) { %>
+                                            <% visitingSchedule.forEach(schedule => { %>
+                                                <tr>
+                                                    <td><%= schedule.DayOfWeek %></td>
+                                                    <td><%= schedule.StartTime %></td>
+                                                    <td><%= schedule.EndTime %></td>
+                                                </tr>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <tr><td colspan="3" class="text-center text-muted">No schedule</td></tr>
+                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 mt-md-4">
+                        <p class="mb-0 small"><i class="bi bi-tags me-2"></i>
+                            <strong>Flat Discount:</strong> <%= doctorDetails.FlatDiscount %>%
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Section -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 animate__animated animate__fadeIn">
+                <div class="card-header bg-gradient bg-success text-white p-3 p-md-4">
+                    <h4 class="mb-0 text-center fs-5 fs-md-4">Medical Test Commission</h4>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="row gy-2 gy-md-3">
+                        <% categoryCommissionDetail.forEach(function(category){ %>
+                            <div class="col-6 col-md-12">
+                                <div class="card border-0 shadow-sm commission-card">
+                                    <div class="card-body text-center py-2 py-md-3">
+                                        <h6 class="card-title mb-1 mb-md-2 small fw-bold"><%= category.Name %></h6>
+                                        <p class="card-text text-success fw-bold mb-0 small">
+                                            <%= category.CommissionRate %>%
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                        <div class="col-12 mt-3">
+                            <a href="/doctor/updateDoctorThanks?doctorId=<%=doctorDetails.Id%>" 
+                               class="btn btn-outline-primary w-100 btn-sm">
+                                <i class="bi bi-pencil-square me-2"></i>Update Commission
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!--Assigning Preffered Doctor choice if any to have doctor -->
+<section>
+    <div class="row g-3 g-md-4 mb-4">
+        <div class="col-6 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 animate__animated animate__fadeIn">
+                <div class="card-header bg-gradient bg-primary text-white p-3 p-md-4">
+                    <h4 class="mb-0 text-center fs-5 fs-md-4">Assign Preffered Doctor for Reporting(if any)</h4>
+                </div>
+                <form method="post" action="/doctor/associateReportingDoctor/<%=doctorDetails.Id%>" class="needs-validation" novalidate>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="row gy-2 gy-md-3">
+                            <div class="col">
+                                <select name="reportingDoctor" class="form-control"  name="reportingDoctor" id="reportingDoctor" aria-label="select a reporting doctor">
+                                    <option value="0">Select a reporting Doctor</option>
+                                    <% reportingDoctors.forEach(function(reportingDoctor){ %>
+                                        <option class="text-capitalize"   <% if(reportingDoctorId != 'undefined' && reportingDoctor.Id == reportingDoctorId){%>Selected <%}%> value="<%= reportingDoctor.Id%>">Dr.&nbsp;<%=reportingDoctor.FirstName %>&nbsp;<%=reportingDoctor.LastName %></option>
+                                    <%})%>
+                                </select>
+                            </div>
+                        </div>
+                        <input type="hidden" value="<%=marketingPersonId %>" name="marketingPerson">
+                        <div class="row mt-3">
+                            <div class="col">
+                                <button type="submit" class="btn btn-success rounded-pill px-4 fw-medium">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-6 col-lg-6">
+            <div class="card border-0 shadow-sm h-100 animate__animated animate__fadeIn">
+                <div class="card-header bg-gradient bg-success text-white p-3 p-md-4">
+                    <h4 class="mb-0 text-center fs-5 fs-md-4">Assign Marketing Person for Doctor(if any)</h4>
+                </div>
+                <form method="post" action="/doctor/associateMarketingPersonForDoctor/<%=doctorDetails.Id%>" class="needs-validation" novalidate>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="row gy-2 gy-md-3">
+                            <div class="col">
+                                <select name="marketingPerson" class="form-control"  name="marketingPerson" id="marketingPerson" aria-label="select a marketing person">
+                                    <option value="0">Select a Marketing Person</option>
+                                    <% marketingPersons.forEach(function(marketingPerson){ %>
+                                        <option class="text-capitalize"   <% if(typeof marketingPersonId != 'undefined' && marketingPerson.Id ==marketingPersonId){%>Selected <%}%> value="<%= marketingPerson.Id%>"><%=marketingPerson.FirstName %>&nbsp;<%=marketingPerson.LastName %></option>
+                                    <%})%>
+                                </select>
+                            </div>
+                        </div>
+                        <input type="hidden" value="<%=reportingDoctorId%>" name="reportingDoctor">
+                        <div class="row mt-3">
+                            <div class="col">
+                                <button type="submit" class="btn btn-success rounded-pill px-4 fw-medium">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

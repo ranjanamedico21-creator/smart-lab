@@ -1,0 +1,155 @@
+
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container">
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+      <ol class="breadcrumb mb-0 fw-medium">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">View Challan</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<div class="container-fluid my-5">
+  <%- include ("../partials/messages"); %>
+    <div class="card shadow border-0 rounded-4 bg-white overflow-hidden">
+      <!-- Messages Partial -->
+      <div class="px-4 pt-4">
+      
+      </div>
+  
+      <!-- Invoice Header -->
+      <div class="card-header bg-gradient bg-primary text-white py-4">
+        <div class="row align-items-center">
+          <div class="col-7 text-start">
+            <h4 class="fw-bold mb-1"><%= companyDetails.coreCompany %></h4>
+            <p class="text-white-75 mb-0"><%= companyDetails.coreCompanyAddress %></p>
+            <p class="text-white-75 mb-0">
+              Email: <%= companyDetails.coreCompanyEmail %> | Phone: <%= companyDetails.coreCompanyPhoneNumber %>
+            </p>
+          </div>
+          <div class="col-3 text-start">
+            <img src="/RanjanaImaging.PNG" alt="Company Logo" class="img-fluid" style="max-height:100px;">
+          </div>
+          <div class="col-2 text-end">
+            <a href="/billing/downloadChallan/<%= challanId %>/<%= customerDetails.Id %>" class="btn btn-outline-light btn-sm rounded-pill px-3" id="downloadPdf">
+              Download as PDF
+            </a>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Invoice Information -->
+      <div class="bg-light py-2 text-center border-bottom">
+        <div class="row g-0">
+          <div class="col">
+            <h6 class="fw-semibold mb-0">GSTIN: <%= companyDetails.coreCompanyGstNo %></h6>
+          </div>
+          <div class="col">
+            <h6 class="fw-bold mb-0">TAX INVOICE</h6>
+          </div>
+          <div class="col">
+            <h6 class="fw-semibold mb-0">Original for Recipient</h6>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Customer and Invoice Details -->
+      <div class="card-body p-4">
+        <div class="row g-4">
+          <div class="col-md-4 border-end">
+            <h6 class="text-center text-uppercase text-decoration-underline fw-semibold mb-3">Customer Details</h6>
+            <p class="text-capitalize mb-0">
+              <strong>Name:</strong> <%= customerDetails.CustomerName %><br>
+              <strong>Address:</strong> <%= customerDetails.BillingAddress %><br>
+              <strong>District:</strong> <%= customerDetails.BillingDistrict %>, 
+              <strong>State:</strong> <%= customerDetails.BillingState %>, 
+              <strong>Pincode:</strong> <%= customerDetails.BillingPincode %><br>
+              <strong>Phone:</strong> <%= customerDetails.MobileNo %>, 
+              <strong>GSTIN:</strong> <%= customerDetails.GstNo %>
+            </p>
+          </div>
+          <div class="col-md-4 border-end">
+            <h6 class="text-center text-uppercase text-decoration-underline fw-semibold mb-3">Customer Supply Address</h6>
+            <p class="text-capitalize mb-0">
+              <strong>Name:</strong> <%= customerDetails.CustomerName %><br>
+              <strong>Address:</strong> <%= customerDetails.SupplyAddress %><br>
+              <strong>District:</strong> <%= customerDetails.SupplyDistrict %>, 
+              <strong>State:</strong> <%= customerDetails.SupplyState %>, 
+              <strong>Pincode:</strong> <%= customerDetails.SupplyPincode %><br>
+              <strong>Phone:</strong> <%= customerDetails.MobileNo %>, 
+              <strong>GSTIN:</strong> <%= customerDetails.GstNo %>
+            </p>
+          </div>
+          <div class="col-md-4">
+            <h6 class="text-center text-uppercase text-decoration-underline fw-semibold mb-3">Invoice Details</h6>
+            <p class="mb-0">
+              <strong>Challan No.:</strong> <%= challanId %><br>
+              <strong>Challan Date:</strong> <%= challans[0].ChallanDate.toISOString().split("T")[0] %><br>
+              <strong>Delivery Date:</strong> <br>
+            </p>
+          </div>          
+        </div>
+  <hr>
+      <!-- Invoice Items Table -->
+<div class="table-responsive mt-4">
+    <table class="table table-hover table-striped align-middle table-borderless">
+      <thead class="bg-teal-800 bg-gradient">
+        <tr>
+          <th scope="col" class="ps-4 py-3 fw-semibold rounded-start">Sr. No.</th>
+          <th scope="col" class="py-3 fw-semibold">Name of Product</th>
+          <th scope="col" class="py-3 fw-semibold">Batch No.</th>
+          <th scope="col" class="py-3 fw-semibold">Expiry Date</th>
+          <th scope="col" class="py-3 fw-semibold">Qty</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% let i = 1; challans.forEach(function(challan) { %>
+          <tr class="transition-all hover-bg-light">
+            <td class="ps-4 py-3 fw-medium text-muted"><%= i++ %>.</td>
+            <td class="py-3 fw-medium"><%= challan.ProductName %></td>
+            <td class="py-3"><%= challan.BatchNumber %></td>
+            <td class="py-3"><%= challan.ExpiryDate.toISOString().split("T")[0] %></td>
+            <td class="py-3"><%= challan.QuantitySold %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>  
+        <!-- Bank and Summary Details -->
+        <div class="row g-4 mt-2">
+          <div class="col-md-12">
+            <h6 class="text-center text-uppercase text-decoration-underline fw-semibold mb-3">Bank Details</h6>
+            <p class="mb-0">
+              <strong>Bank Name:</strong> <%= companyDetails.coreCompanyBankName %><br>
+              <strong>Branch Name:</strong> <%= companyDetails.coreCompanyBranchName %><br>
+              <strong>Bank Account Number:</strong> <%= companyDetails.coreCompanyAccountNo %><br>
+              <strong>IFSC Code:</strong> <%= companyDetails.coreCompanyIFSCCode %>
+            </p>
+          </div>
+        </div>
+  
+        <!-- Terms and Conditions -->
+        <div class="row g-4 mt-4">
+          <div class="col-md-6 border-end">
+            <h6 class="text-uppercase text-decoration-underline fw-semibold mb-3">Terms and Conditions</h6>
+            <ul class="list-unstyled text-muted">
+              <li>1. Subject to Patna Jurisdiction.</li>
+              <li>2. Our responsibility ceases as soon as the goods leave our premises.</li>
+              <li>3. Goods once sold will not be taken back.</li>
+              <li>4. Delivery ex-premises.</li>
+            </ul>
+          </div>
+          <div class="col-md-6 text-center">
+            <h6 class="text-uppercase fw-semibold mb-3">Authorized Signatory</h6>
+            <p class="text-muted">(Place for signature)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  

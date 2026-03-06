@@ -1,0 +1,146 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+        <ol class="breadcrumb mb-0 d-flex align-items-center">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+          </li>
+          <li class="breadcrumb-item active fw-bold" aria-current="page">
+            Thanks Paid List
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <!-- Search and List Section -->
+  <section class="pb-5">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold">
+            <i class="bi bi-person-lines-fill me-2"></i>Patient List
+          </h4>
+        </div>
+        <div class="card-body p-4">
+          <%- include ("./partials/messages"); %>
+  
+          <!-- Search Form -->
+          <form action="/patient/searchThanksPaidPatient" method="post" class="mb-4">
+            <div class="row g-3">
+              <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="name"
+                  name="Name"
+                  placeholder="Enter Patient Name"
+                  value="<%= typeof Name!= 'undefined' ? Name : '' %>"
+                />
+              </div>
+              <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <select
+                  name="Doctor"
+                  class="form-control"
+                  id="doctor"
+                  data-live-search="true"
+                  aria-label="Select doctor"
+                >
+                  <option value="" selected>Select a Doctor</option>
+                  <%  doctorDetails.forEach(function(doctor){ %>
+                    <option
+                      value="<%=doctor.Id%>"
+                      <% if(typeof doctorId != 'undefined' && doctor.Id == doctorId){%>selected<%}%>
+                    >
+                      <%=doctor.FirstName%> <%=doctor.LastName%>
+                    </option>
+                  <%})%>
+                </select>
+              </div>
+              <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <input
+                  type="text"
+                  id="FromDate"
+                  class="form-control"
+                  name="FromDate"
+                  placeholder="From date"
+                  value="<%=fromDate%>"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="ToDate"
+                  name="ToDate"
+                  placeholder="To Date"
+                  value="<%=toDate%>"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="col-12">
+                <button class="btn btn-primary px-4 py-2" type="submit">Search</button>
+              </div>
+            </div>
+          </form>
+  
+          <!-- Patient List Table -->
+          <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+              <thead class="table-primary">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Patient Detail</th>
+                  <th scope="col">Thanks Paid To</th>
+                  <th scope="col">Thanks Amount</th>
+                  <th scope="col">Mobile No</th>
+                  <th scope="col">Paid On</th>
+                </tr>
+              </thead>
+              <tbody class="pagination-loop">
+                <% let i=0; patientsList.forEach(function(patient){ i++%>
+                  <tr <% if(patient.DuesAmount>0){%>class="table-danger"<%}%>>
+                    <td><%=i%>.</td>
+                    <td class="text-capitalize">
+                      <div>
+                        <a
+                          href="/patient/getPatientDetail?patientId=<%=patient.Id%>"
+                          class="link-primary text-decoration-none fw-medium"
+                        >
+                          <%=patient.title%> <%=patient.Name%>
+                        </a>
+                      </div>
+                      <small class="text-muted"><%=patient.Age%> <%=patient.YMD%> | <%=patient.Gender%></small>
+                      <div><small><%=patient.PhoneNumber%></small></div>
+                    </td>
+                    <td class="text-capitalize"><%= patient.ThanksGivenTo%></td>
+                    <td><%= patient.ThanksAmount%></td>
+                    <td><%= patient.ThanksGivenToMobile%></td>
+                    <td><%= patient.ThanksGivenOn%></td>
+                  </tr>
+                <%})%>
+              </tbody>
+            </table>
+          </div>
+  
+          <!-- Pagination Section -->
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm justify-content-center gap-1 mt-4" id="pagination_Number">
+              <li class="page-item disabled">
+                <a class="page-link rounded-pill px-3" href="#">Previous</a>
+              </li>
+              <!-- Dynamic pagination numbers can be added here via JS -->
+              <li class="page-item">
+                <a class="page-link rounded-pill px-3" href="#">1</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link rounded-pill px-3" href="#">Next</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </section>

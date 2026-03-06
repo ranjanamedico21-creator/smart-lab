@@ -1,0 +1,87 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0 d-flex align-items-center">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active fw-bold" aria-current="page">
+          Subparameter Reference Ranges
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Subparameters Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">
+          <i class="bi bi-table me-2"></i>Subparameters and Reference Ranges
+        </h4>
+      </div>
+      <div class="card-body p-4">
+        <!-- Loop through subparameters and display them -->
+        <div class="accordion" id="subparametersAccordion">
+          <% Object.keys(mappedSubParameterDetails).forEach((Id, index) => { %>
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="heading<%= index %>">
+                <button
+                  class="accordion-button"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapse<%= index %>"
+                  aria-expanded="true"
+                  aria-controls="collapse<%= index %>"
+                >
+                  <strong><%= mappedSubParameterDetails[Id].SubParameterName %></strong>
+                  (<%= mappedSubParameterDetails[Id].Unit %>, <%= mappedSubParameterDetails[Id].Header %>)
+                </button>
+              </h2>
+              <div
+                id="collapse<%= index %>"
+                class="accordion-collapse collapse"
+                aria-labelledby="heading<%= index %>"
+                data-bs-parent="#subparametersAccordion"
+              >
+                <div class="accordion-body">
+                  <!-- Display Age Ranges for Each Subparameter -->
+                  <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                      <thead class="table-primary">
+                        <tr>
+                          <th scope="col">Age Min</th>
+                          <th scope="col">Age Max</th>
+                          <th scope="col">Age Unit</th>
+                          <th scope="col">Minimum Value</th>
+                          <th scope="col">Maximum Value</th>
+                          <th scope="col">Gender</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% mappedSubParameterDetails[Id].Ranges.forEach(range => { %>
+                          <tr>
+                            <td><%= range.AgeMin %></td>
+                            <td><%= range.AgeMax %></td>
+                            <td><%= range.AgeUnit %></td>
+                            <td><%= range.MinVal %></td>
+                            <td><%= range.MaxVal %></td>
+                            <td><%= range.Gender %></td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                  <a href="/test/editSubParameter/<%=Id %>" class="text-primary">Edit</a>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,59 @@
+<section>
+  <div class="container-fluid bg-white vh-100 overflow-auto">
+    <%- include ("./partials/messages"); %>
+    <form action="/user/login" method="post" class="needs-validation" novalidate>
+      <div class="row">
+        <!-- Image Column -->
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-4 mb-lg-0 d-flex align-items-center">
+          <img src="/login.jpg" class="img-fluid h-sm-50" alt="Login Image">
+        </div>
+
+        <!-- Form Column -->
+        <div class="col-lg-6 col-md-6 col-sm-12 d-flex align-items-center">
+          <div class="w-100 p-3">
+            <div class="text-center mb-4">
+              <p class="fs-5 font-monospace">Login</p>
+            </div>
+
+            <!-- Email input -->
+            <div class="form-floating mb-3">
+              <input type="email" name="Email" id="Email" class="form-control" placeholder="Email address" required />
+              <label for="Email">Email address</label>
+              <div class="invalid-feedback">Enter user id.</div>
+            </div>
+
+            <!-- Password input -->
+            <div class="form-floating mb-3">
+              <input type="password" id="password" name="Password" class="form-control" placeholder="Password" required />
+              <label for="password">Password</label>
+              <div class="invalid-feedback">Enter password.</div>
+            </div>
+
+            <!-- Submit button -->
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+            </div>
+
+            <!-- Remember me and Forgot password -->
+            <div class="row mb-3">
+              <div class="col-6 d-flex justify-content-center">
+                <div class="form-check">
+                  <input class="form-check-input" name="rememberme" type="checkbox" id="rememberme" checked />
+                  <label class="form-check-label" for="rememberme">Remember me</label>
+                </div>
+              </div>
+              <div class="col-6 text-end">
+                <a href="#!">Forgot password?</a>
+              </div>
+            </div>
+
+            <!-- Register buttons -->
+            <div class="text-center">
+              <p>Not a member? <a href="/user/registerUser">Register</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>

@@ -1,0 +1,237 @@
+     
+  <!-- Breadcrumb -->
+  <section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+        <ol class="breadcrumb mb-0 d-flex align-items-center">
+          <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+          <li class="breadcrumb-item active fw-bold" aria-current="page">Receive Purchase PO</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Main Section -->
+  <section class="pb-5">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Receive Purchase Order & Generate Invoice</h4>
+        </div>
+        
+        <div class="card-body p-4">
+          <!-- Search Filters -->
+          <form action="/billing/receivePurchaseOrder" method="post" class="row g-3 mb-4">
+            <div class="col-md-3">
+              <input type="text" class="form-control" id="purchaseInvoice" name="PurchaseInvoiceNo" 
+                placeholder="Invoice No Purchase Order" value="<%= typeof PurchaseInvoiceNo != 'undefined' ? PurchaseInvoiceNo : '' %>">
+            </div>
+            <div class="col-md-3">
+              <select name="Supplier" class="form-control" id="supplier" aria-label="Select supplier">
+                <option value="" selected>Select a Supplier</option>
+                <% suppliers.forEach(function(supplier) { %>
+                  <option value="<%= supplier.Id %>" <% if(typeof Supplier != 'undefined' && supplier.Id == Supplier) { %>selected<% } %>><%= supplier.Name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <input type="text" id="FromDate" class="form-control" name="FromDate" 
+                placeholder="From Date" value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>" autocomplete="off">
+            </div>
+            <div class="col-md-2">
+              <input type="text" id="ToDate" class="form-control" name="ToDate" 
+                placeholder="To Date" value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>" autocomplete="off">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+          </form>
+
+          <!-- Purchase Order Details -->
+          <form action="/billing/generateInvoice" method="POST" id="invoiceForm" class="needs-validation" novalidate>
+            <input type="hidden" name="purchaseOrderId" id="purchasetestid" 
+              value="<%= (purchaseOrderDetails && purchaseOrderDetails.length > 0) ? purchaseOrderDetails[0].PurchaseOrderId : '' %>">
+            
+            <h5 class="fw-bold mb-3">Purchase Order Details</h5>
+            <div class="table-responsive">
+              <table class="table table-hover table-striped align-middle">
+                <thead class="table-primary">
+                  <tr>
+                    <th scope="col" class="col-1">Select</th>
+                    <th scope="col">Product Name</th>
+                    <th scope="col">Pur Inv No</th>
+                    <th scope="col">Ordered Qty</th>
+                    <th scope="col">Received Qty</th>
+                    <th scope="col">Purchase Price</th>
+                    <th scope="col">IGST %</th>
+                    <th scope="col">IGST Amount</th>
+                    <th scope="col">Total Amount</th>
+                    <th scope="col">Remaining Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% purchaseOrderDetails.forEach((item, index) => { %>
+                    <tr class="receivePurchaseTr">
+                      <td>
+                        <% if(item.RemainingQuantity) { %>
+                          <input type="checkbox" name="products[<%= index %>][selected]" class="form-check-input select-row" 
+                            data-index="<%= index %>">
+                        <% } %>
+                      </td>
+                      <td><%= item.ProductName %></td>
+                      <td><%= item.PurchaseInvoiceNo %></td>
+                      <td><%= item.Quantity %></td>
+                      <td>
+                        <% if(item.RemainingQuantity) { %>
+                          <input type="hidden" name="products[<%= index %>][productId]" value="<%= item.ProductId %>">
+                          <input type="hidden" name="products[<%= index %>][supplierId]" value="<%= item.SupplierId %>">
+                          <input type="number" class="form-control" name="products[<%= index %>][receivedQuantity]" 
+                            min="1" max="<%= item.RemainingQuantity %>" value="<%= item.ReceivedQuantity || 0 %>" required>
+                          <div class="invalid-feedback">Received quantity must be greater than 0 And lees that <%=item.RemainingQuantity%></div>
+                          <input type="text" class="form-control mt-2" name="products[<%= index %>][batchNumber]" 
+                            oninput="this.value = this.value.toUpperCase()" placeholder="Batch Number" required>
+                          <input type="hidden" name="products[<%= index %>][purchasePrice]" value="<%= item.PurchasePrice || 0 %>">
+                          <input type="text" class="form-control mt-2 mfgDate" placeholder="Mfg Date" 
+                            name="products[<%= index %>][mfgDate]" required>
+                          <input type="text" class="form-control mt-2 expiryDate" placeholder="Expiry Date" 
+                            name="products[<%= index %>][expiryDate]" required>
+                            <div class="d-flex align-items-center">
+                              <label for="freeQuantity_<%= index %>" class="me-2 fw-bold" style="min-width: 120px;">
+                                Free Quantity
+                              </label>
+                              <input type="number" class="form-control freeQuantity"
+                                     id="freeQuantity_<%= index %>"
+                                     name="products[<%= index %>][freeQuantity]" 
+                                     value="0"
+                                     placeholder="Enter Free Qty">
+                            </div>
+                            
+                        <% } else { %>
+                          <%= item.Quantity %>
+                        <% } %>
+                      </td>
+                      <td><%= item.PurchasePrice %></td>
+                      <td><%= item.IGSTPercentage %></td>
+                      <td><%= item.IGSTAmount %></td>
+                      <td><%= Number(item.IGSTAmount) + Number(item.ProductTotalAmount) %></td>
+                      <td><%= item.RemainingQuantity %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Supplier Invoice Number & Submit -->
+            <% if (purchaseOrderDetails && purchaseOrderDetails.length > 0 && purchaseOrderDetails[0].Status === 'Pending') { %>
+              <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                  <input type="text" class="form-control" placeholder="Supplier Invoice No" 
+                    oninput="this.value = this.value.toUpperCase()" id="supplierInvoiceNo" name="supplierInvoiceNo" required>
+                </div>
+                <div class="col-md-4 d-flex justify-content-center">
+                    <input type="text" id="invoicePoDate" class="form-control" name="invoicePoDate" 
+                      placeholder="Invoice Date" value="<%= typeof invoicePoDate != 'undefined' ? invoicePoDate : '' %>" autocomplete="off" required>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end">
+                  <button type="submit" class="btn btn-success">Generate Invoice</button>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col">
+                  <div id="checkboxError" class="invalid-feedback d-none">Please select at least one product.</div>
+                </div>
+              </div>
+            <% } %>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    document.addEventListener("DOMContentLoaded", function ()  {
+      const $form = $('#invoiceForm');
+      const $checkboxError = $('#checkboxError');
+
+      // Form submission handler
+      $form.on('submit', function(e) {
+        let isValid = true;
+        let atLeastOneChecked = false;
+
+        // Check if at least one checkbox is selected
+        const $checkedRows = $('.select-row:checked');
+        if ($checkedRows.length === 0) {
+          isValid = false;
+          $checkboxError.removeClass('d-none').addClass('d-block');
+          $('.select-row').closest('tr.receivePurchaseTr').addClass('bg-danger');
+        } else {
+          atLeastOneChecked = true;
+          $checkboxError.removeClass('d-block').addClass('d-none');
+          $('.select-row').closest('tr.receivePurchaseTr').removeClass('bg-danger');
+        }
+
+        // Validate selected rows' inputs
+        $checkedRows.each(function() {
+          const index = $(this).data('index');
+          const $rowInputs = $(`[name^="products[${index}]"]`).not('[type="hidden"]');
+          
+          $rowInputs.each(function() {
+            const $input = $(this);
+            const value = $input.val().trim();
+            
+            if (!value) { // Check if empty
+              $input.addClass('is-invalid');
+              isValid = false;
+            } else if ($input.attr('name').includes('receivedQuantity') && Number(value) <= 0) { // Check receivedQuantity > 0
+              $input.addClass('is-invalid');
+              isValid = false;
+            } else {
+              $input.removeClass('is-invalid');
+            }
+          });
+        });
+
+        // Standard Bootstrap validation
+        if (!this.checkValidity() || !isValid || !atLeastOneChecked) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // Disable inputs (except checkboxes) for unchecked rows
+        $('.select-row').each(function() {
+          const $checkbox = $(this);
+          const index = $checkbox.data('index');
+          const $rowInputs = $(`[name^="products[${index}]"]`).not('.select-row'); // Exclude checkbox
+          if (!$checkbox.is(':checked')) {
+            $rowInputs.prop('disabled', true);
+          }
+        });
+
+        $form.addClass('was-validated');
+      });
+
+      // Remove validation classes when input changes
+      $form.find('input').not('.select-row').on('input', function() {
+        const $input = $(this);
+        const value = $input.val().trim();
+        if (value && (!$input.attr('name').includes('receivedQuantity') || Number(value) > 0)) {
+          $input.removeClass('is-invalid');
+        }
+      });
+
+      // Reset disabled state on checkbox change
+      $('.select-row').on('change', function() {
+        const index = $(this).data('index');
+        const $rowInputs = $(`[name^="products[${index}]"]`).not('.select-row');
+        $rowInputs.prop('disabled', false);
+        
+        const $checkedRows = $('.select-row:checked');
+        if ($checkedRows.length > 0) {
+          $checkboxError.removeClass('d-block').addClass('d-none');
+          $('.select-row').closest('tr.receivePurchaseTr').removeClass('bg-danger');
+        } else {
+          $checkboxError.removeClass('d-none').addClass('d-block');
+          $('.select-row').closest('tr.receivePurchaseTr').addClass('bg-danger');
+        }
+      });
+    });
+  </script>

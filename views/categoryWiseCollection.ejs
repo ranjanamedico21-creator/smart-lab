@@ -1,0 +1,168 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb p-3 bg-light rounded-3 shadow-sm mb-0">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active fw-bold" aria-current="page">
+          Category Wise Collection
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Filter Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-success text-white text-center py-3">
+        <h1 class="h4 mb-0 fw-bold">
+          <i class="bi bi-funnel-fill me-2"></i>Category Wise Filter
+        </h1>
+      </div>
+      <div class="card-body p-4">
+        <%- include("./partials/messages") %>
+        <form action="/report/getCategoryWiseCollection" method="GET">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <input
+                type="text"
+                id="FromDate"
+                class="form-control"
+                name="FromDate"
+                placeholder="From Date"
+                value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>"
+                autocomplete="off"
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="text"
+                class="form-control"
+                id="ToDate"
+                name="ToDate"
+                placeholder="To Date"
+                value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <a href="/patient/getPatientListView" class="btn btn-outline-primary w-100 py-2" role="button">
+                Patient List
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="/patient/registerPatient" class="btn btn-outline-secondary w-100 py-2" role="button">
+                Register Patient
+              </a>
+            </div>
+            <div class="col-md-4">
+              <button type="submit" class="btn btn-success w-100 py-2">
+                Search
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Category Summary Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-warning text-dark text-center py-3">
+        <h1 class="h4 mb-0 fw-bold">
+          <i class="bi bi-bar-chart-fill me-2"></i>Category Wise Summary
+        </h1>
+      </div>
+      <div class="card-body p-4">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th scope="col">Category Name</th>
+                <th scope="col">Test Count</th>
+                <th scope="col">Total Price (₹)</th>
+                <th scope="col">Total Discount (₹)</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (categoryWiseCollections && categoryWiseCollections.length > 0) { %>
+                <% categoryWiseCollections.forEach(category => { %>
+                  <tr>
+                    <td><%= category.CategoryName || 'N/A' %></td>
+                    <td><%= category.TestCount || 0 %></td>
+                    <td><%= Number(category.TotalPrice || 0).toFixed(2) %></td>
+                    <td><%= Number(category.TotalDiscount || 0).toFixed(2) %></td>
+                    <td>
+                      <a
+                        href="/report/getTestWiseCollection/<%= category.CategoryId %>/<%= FromDate %>/<%= ToDate %>"
+                        class="btn btn-sm btn-primary"
+                      >
+                        View
+                      </a>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="text-center">No data available</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Test Summary Section -->
+<% if (typeof testWiseCollections !== 'undefined') { %>
+  <section class="pb-5">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-info text-white text-center py-3">
+          <h1 class="h4 mb-0 fw-bold">
+            <i class="bi bi-list-ul me-2"></i>Test Wise Summary
+          </h1>
+        </div>
+        <div class="card-body p-4">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">Test Name</th>
+                  <th scope="col">Test Count</th>
+                  <th scope="col">Total Price (₹)</th>
+                  <th scope="col">Total Discount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (testWiseCollections && testWiseCollections.length > 0) { %>
+                  <% testWiseCollections.forEach(test => { %>
+                    <tr>
+                      <td><%= test.TestName || 'N/A' %></td>
+                      <td><%= test.TestCount || 0 %></td>
+                      <td><%= Number(test.TotalPrice || 0).toFixed(2) %></td>
+                      <td><%= Number(test.TotalDiscount || 0).toFixed(2) %></td>
+                    </tr>
+                  <% }) %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+<% } %>

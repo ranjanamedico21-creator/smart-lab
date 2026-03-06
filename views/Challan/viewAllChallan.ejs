@@ -1,0 +1,240 @@
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+        <ol class="breadcrumb mb-0 fw-medium">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+          </li>
+          <li class="breadcrumb-item active text-dark" aria-current="page">View Challan</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <div class="container-fluid">
+    <%- include ("../partials/messages"); %>
+  
+    <!-- Search Card -->
+    <div class="card shadow border-0 rounded-4 bg-white mb-4">
+      <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+        <h5 class="mb-0 fw-bold">Search Challans</h5>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="/billing/viewChallans" class="row g-3 align-items-end">
+          <!-- Challan ID -->
+          <div class="col-md-3">
+            <label for="challanId" class="form-label">Challan ID</label>
+            <input type="text" class="form-control" id="challanId" name="challanId" placeholder="Enter Challan ID" value="<%= filters?.challanId || '' %>">
+          </div>
+  
+          <!-- Customer -->
+          <div class="col-md-3">
+            <label for="customerId" class="form-label">Customer</label>
+            <select class="form-control" data-live-search="true" id="customerId" name="customerId">
+              <option value="">All Customers</option>
+              <% customers?.forEach(c => { %>
+                <option value="<%= c.Id %>" <%= filters?.customerId == c.Id ? "selected" : "" %>><%= c.CustomerName %></option>
+              <% }) %>
+            </select>
+          </div>
+  
+          <!-- From Date -->
+          <div class="col-md-3">
+            <label for="fromDate" class="form-label">From Date</label>
+            <input type="text" class="form-control" id="FromDate" name="fromDate" autocomplete="off" value="<%= filters?.fromDate || '' %>">
+          </div>
+  
+          <!-- To Date -->
+          <div class="col-md-3">
+            <label for="toDate" class="form-label">To Date</label>
+            <input type="text" class="form-control" id="ToDate" name="toDate" autocomplete="off" value="<%= filters?.toDate || '' %>">
+          </div>
+  
+          <!-- Submit -->
+          <div class="col-12 text-end">
+            <a href="/billing/createChallan" class="btn btn-outline-secondary px-4">
+              <i class="bi bi-file-earmark-plus me-1"></i> Create Challan
+            </a>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-search me-1"></i> Search
+            </button>
+            <a href="/billing/viewChallans" class="btn btn-outline-secondary px-4">
+              <i class="bi bi-arrow-repeat me-1"></i> Reset
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <!-- Challan List -->
+    <div class="card shadow border-0 rounded-4 bg-white">
+      <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+        <h5 class="mb-0 fw-bold">Challan List</h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-striped mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% let serial = 1; %>
+            <% for (const custId in groupedChallans) { 
+                 const customer = groupedChallans[custId]; %>
+              <% for (const challanId in customer.challans) { 
+                   const challan = customer.challans[challanId]; 
+                   const isConverted = challan.SaleIds && challan.SaleIds.length > 0; %>
+                <tr>
+                  <td><%= serial++ %></td>
+                  <td>
+                    <a href="/billing/customerLedger/<%= custId %>" class="text-decoration-none text-uppercase">
+                      <%= customer.CustomerName %>
+                    </a>
+                  </td>
+                  <td><%= new Date(challan.ChallanDate).toLocaleDateString('en-GB').replace(/\//g, '-') %></td>
+                  <td><span class="badge <%= challan.Status === 'Delivered' ? 'bg-success' : 'bg-secondary' %>"><%= challan.Status %></span></td>
+              
+                    <td>
+                        <% if (challan.Status !== 'Cancelled') { %>
+                    <!-- Convert to Sale -->
+                                <button 
+                                        class="btn btn-sm btn-success action-btn" 
+                                        data-id="<%= challanId %>" 
+                                        data-customer="<%= customer.CustomerName %>"
+                                        data-customer-id="<%= custId %>"
+                                        data-action="convert"
+                                        <%= isConverted 
+                                                ? 'disabled data-bs-toggle="tooltip" data-bs-title="Already converted to Sale: ' + challan.SaleIds.join(', ') + '"' 
+                                                : '' %>>
+                                        <i class="bi bi-arrow-left-right me-1"></i> Convert to Sale
+                                </button>
+
+            
+                                <!-- View Products toggle -->
+                                <button 
+                                    class="btn btn-sm btn-outline-primary" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#products-<%= challanId %>">
+                                    <i class="bi bi-box-seam me-1"></i> View Products
+                                </button>
+            
+                                <% if (challan.Status !== 'Delivered') { %>
+                                <!-- Delivery -->
+                                <button 
+                                    class="btn btn-sm btn-success action-btn" 
+                                    data-id="<%= challanId %>" 
+                                    data-customer="<%= customer.CustomerName %>"
+                                    data-customer-id="<%= custId %>"
+                                    data-action="delivery">
+                                    <i class="bi bi-truck me-1"></i> Delivery
+                                </button>
+                                <% } %>
+            
+                                <!-- Cancel -->
+                                <button 
+                                    class="btn btn-sm btn-danger action-btn" 
+                                    data-id="<%= challanId %>" 
+                                    data-customer="<%= customer.CustomerName %>"
+                                    data-customer-id="<%= custId %>"
+                                    data-action="cancel"
+                                    <%= isConverted 
+                                        ? 'disabled data-bs-toggle="tooltip" data-bs-title="Challan already converted to Sale: ' + challan.SaleIds.join(', ') + '"' 
+                                        : '' %>>
+                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                            </button>
+                            <!--print challan-->
+                            <a 
+                                    href="/billing/viewChallan/<%= challanId %>/<%= custId %>" 
+                                    class="btn btn-sm btn-outline-dark" 
+                                    target="_blank"
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-title="Print Challan">
+                                    <i class="bi bi-printer me-1"></i> Print
+                            </a>
+                        <%}%>    
+                  </td>
+                </tr>
+  
+                <!-- Products Row -->
+                <tr class="collapse" id="products-<%= challanId %>">
+                  <td colspan="6">
+                    <table class="table table-sm mb-0 table-bordered">
+                      <thead>
+                        <tr class="table-light">
+                          <th>Product</th>
+                          <th>Batch</th>
+                          <th>Qty</th>
+                          <th>Expiry</th>
+                          <th>Sale IDs</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% challan.items.forEach(item => { %>
+                          <tr>
+                            <td><%= item.ProductName %></td>
+                            <td><%= item.BatchNumber %></td>
+                            <td><%= item.QuantitySold %></td>
+                            <td><%= item.ExpiryDate ? new Date(item.ExpiryDate).toISOString().slice(0,10) : '' %></td>
+                            <td><%= item.SaleId ? item.SaleId : '-' %></td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+  
+              <% } %>
+            <% } %>
+  
+            <% if (serial === 1) { %>
+              <tr>
+                <td colspan="6" class="text-center text-muted">No challans found</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Reusable Modal -->
+<div class="modal fade" id="confirmModalChallan" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+        
+        <!-- Header -->
+        <div class="modal-header bg-light border-0 rounded-top">
+            <h5 class="modal-title fw-semibold text-dark" id="modalTitle">Confirm Action</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body text-secondary fs-6" id="modalBody">
+            Are you sure you want to proceed with this action?
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer border-0 bg-light rounded-bottom">
+            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+            </button>
+            <form id="actionForm" method="POST" action="" class="m-0">
+            <input type="hidden" name="challanId" id="hiddenChallanId">
+            <input type="hidden" name="actionType" id="hiddenActionType">
+            <input type="hidden" name="customerId" id="hiddenCustomerId">
+            <button type="submit" id="modalConfirmBtn" class="btn btn-primary px-4">
+                <i class="bi bi-check-circle me-1"></i> Confirm
+            </button>
+            </form>
+        </div>
+
+        </div>
+    </div>
+</div>
+  

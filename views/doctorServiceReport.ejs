@@ -1,0 +1,153 @@
+ejs variable in script is causing error <!-- Breadcrumb -->
+<section class="py-4">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0 d-flex align-items-center">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active fw-semibold text-dark" aria-current="page">Doctor Patient Reference</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Filter Form -->
+<section class="pb-4">
+  <div class="container-xl">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body">
+        <form method="POST" action="/report/doctorPatientServiceReport" class="row g-4 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Category</label>
+            <select name="categoryId" class="form-control" required>
+              <% categories.forEach(cat => { %>
+                <option value="<%= cat.Id %>" <%= (typeof categoryId !== 'undefined' && cat.Id == categoryId) ? 'selected' : '' %>>
+                  <%= cat.Name %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Start Date</label>
+            <input type="text" id="FromDate" name="startDate" class="form-control" required 
+            value="<%= typeof startDate !== 'undefined' ? startDate : '' %>"  placeholder="DD-MM-YYYY">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">End Date</label>
+            <input type="text" id="ToDate" name="endDate" class="form-control" required 
+            value="<%= typeof endDate !== 'undefined' ? endDate : '' %>"  placeholder="DD-MM-YYYY">
+          </div>
+
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
+              <i class="bi bi-search me-2"></i> Generate
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Report Table -->
+<% if (reportData.length > 0) { %>
+  <section class="pb-5">
+    <div class="container-xl">
+      <!-- Excel Download Button -->
+      <div class="d-flex justify-content-end mb-3">
+        <a href="/billing/downloadDoctorPatientServiceRepoertInExcel/<%=startDate%>/<%=endDate%>" 
+           class="btn btn-outline-success shadow-sm d-flex align-items-center gap-2" target="_blank">
+          <i class="bi bi-file-earmark-excel"></i> Download Excel
+        </a>
+      </div>
+
+      <!-- Report Card -->
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-primary text-white fw-semibold text-center fs-5 rounded-top-4">
+          Doctor-wise Patient Report
+        </div>
+        <div class="card-body table-responsive">
+          <table class="table table-bordered table-hover align-middle table-responsive">
+            <thead class="table-primary text-center">
+              <tr>
+                <th>#</th>
+                <th class="text-start">Doctor Name</th>
+                <% months.forEach(month => { %>
+                  <th><%= month %></th>
+                <% }) %>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reportData.forEach((doc, i) => { %>
+                <tr>
+                  <td class="text-center"><%= i + 1 %></td>
+                  <td class="text-start fw-medium text-capitalize"><a href="/doctor/getDoctorDetail?doctorId=<%=doc.DoctorId%>">Dr. &nbsp;<%= doc.DoctorName %></a></td>
+                  <% months.forEach(month => { %>
+                    <td class="text-center"><%= doc[month] %></td>
+                  <% }) %>
+                  <td><%= months.reduce((sum, m) => sum + (doc[m] || 0), 0) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+<% } %>
+
+
+<% if (reportData.length > 0) { %>
+  <section class="pb-5">
+    <div class="container-xl">
+      
+      <!-- Download Button -->
+      <div class="d-flex justify-content-end mb-3">
+        <a href="/billing/downloadDoctorPatientServiceRepoertInExcel/<%=categoryId%>/<%=startDate%>/<%=endDate%>" 
+           class="btn btn-outline-success shadow-sm d-flex align-items-center gap-2" target="_blank">
+          <i class="bi bi-file-earmark-excel"></i> Download Excel
+        </a>
+      </div>
+  
+      <!-- Cards Grid -->
+      <div class="row g-4">
+        <% reportData.forEach((doc, i) => { %>
+          <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+              <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
+                <div class="fw-semibold text-truncate text-uppercase">Dr. <%= doc.DoctorName %></div>
+                <span class="badge bg-light text-primary fw-bold">#<%= i + 1 %></span>
+              </div>
+              <div class="card-body">
+                <ul class="list-group list-group-flush small">
+                  <% months.forEach(month => { %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <span><i class="bi bi-calendar3 me-1 text-primary"></i> <%= month %></span>
+                      <span class="badge bg-light text-dark rounded-pill"><%= doc[month] || 0 %></span>
+                    </li>
+                  <% }) %>
+                  <li class="list-group-item d-flex justify-content-between align-items-center fw-semibold text-success">
+                    Total Patients
+                    <span class="badge bg-success text-white rounded-pill">
+                      <%= months.reduce((sum, m) => sum + (doc[m] || 0), 0) %>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+              <div class="card-footer text-end">
+                <a href="/doctor/getDoctorDetail?doctorId=<%= doc.DoctorId %>" class="btn btn-outline-primary btn-sm">
+                  View Profile <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+  <% } %>
+  

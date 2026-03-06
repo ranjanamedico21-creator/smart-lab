@@ -1,0 +1,202 @@
+<!-- Breadcrumb Section -->
+<section class="py-3">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="bg-light p-3 rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+        <li class="breadcrumb-item active fw-semibold" aria-current="page">Doctor Visiting Schedule Report</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Main Content -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-header bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-check me-2"></i>Doctor Visiting Schedule Report</h4>
+      </div>
+      
+      <%- include ("./partials/messages"); %>
+
+      <div class="card-body p-4">
+        <!-- Filters -->
+        <form action="/schedule/getSchedule" method="post" class="row g-3 mb-4">
+          <div class="col-md-3">
+            <input type="text" class="form-control" name="area" placeholder="Enter Area Name"
+                value="<%= typeof area !== 'undefined' ? area : '' %>">
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control" name="doctorName" placeholder="Enter Doctor Name"
+                value="<%= typeof doctorName !== 'undefined' ? doctorName : '' %>">
+          </div>
+          <div class="col-md-3">
+            <select name="dayOfWeek" class="form-select">
+              <option value="" selected>Select Day</option>
+              <% ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','AllDay'].forEach(day => { %>
+                <option value="<%= day %>"><%= day %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-primary w-100">
+              <i class="bi bi-search me-1"></i>Search
+            </button>
+          </div>
+        </form>
+
+        <!-- Doctor Visit Log -->
+        <h5 class="fw-bold mb-3 border-bottom pb-2">Doctor Visit Log</h5>
+        <div class="row g-4">
+          <% doctorsListToBeVisted.forEach((doctor) => { %>
+            <div class="col-md-6 col-lg-4">
+              <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                  <div class="d-flex align-items-center mb-3">
+                    <div class="avatar bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                      <%= doctor.FirstName.charAt(0) %><%= doctor.LastName.charAt(0) %>
+                    </div>
+                    <div>
+                      <a href="/doctor/getDoctorDetail?doctorId=<%= doctor.Id %>" class="text-decoration-none text-dark">
+                        <h5 class="card-title mb-0 text-capitalize">Dr. 
+                          <%= doctor.FirstName.charAt(0).toUpperCase() + doctor.FirstName.slice(1).toLowerCase() %> 
+                          <%= doctor.LastName.charAt(0).toUpperCase() + doctor.LastName.slice(1).toLowerCase() %>
+                        </h5>
+                      </a>
+                      <div class="small text-muted"><i class="bi bi-briefcase me-1"></i><%= doctor.SpecialistIn %></div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <span class="badge bg-success me-1"><i class="bi bi-calendar-day me-1"></i><%= doctor.DayOfWeek %></span>
+                    <span class="badge bg-info text-dark"><i class="bi bi-check-circle me-1"></i><%= doctor.VisitCount %> Visits</span>
+                  </div>
+
+                  <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#doctorNotesModal-<%= doctor.Id %>">
+                      <i class="bi bi-file-text me-1"></i> View Notes
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#logVisitModal-<%= doctor.Id %>">
+                      <i class="bi bi-journal-plus me-1"></i> Log Visit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <% doctorsListToBeVisted.forEach((doctor) => { %>
+      <!-- Doctor Notes Modal -->
+      <div class="modal fade" id="doctorNotesModal-<%= doctor.Id %>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="modal-header bg-info text-white">
+              <h5 class="modal-title">
+                <i class="bi bi-journal-text me-2"></i>
+                Notes for Dr. 
+                <%= doctor.FirstName.charAt(0).toUpperCase() + doctor.FirstName.slice(1) %> 
+                <%= doctor.LastName.charAt(0).toUpperCase() + doctor.LastName.slice(1) %>
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body p-4" style="max-height: 400px; overflow-y: auto;">
+              <% if (doctor.VisitedDates.length > 0 && doctor.Notes.length > 0) { %>
+                <ul class="list-group list-group-flush">
+                  <% doctor.VisitedDates.forEach((date, idx) => { %>
+                    <li class="list-group-item px-0 py-3 border-bottom">
+                      <div class="d-flex flex-column">
+                        <span class="text-primary fw-semibold mb-1">
+                          <i class="bi bi-calendar-event me-1"></i><%= date %>
+                        </span>
+                        <p class="mb-0 text-dark">
+                          <%= doctor.Notes[idx] %>
+                        </p>
+                      </div>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } else { %>
+                <div class="text-center text-muted py-4">
+                  <i class="bi bi-info-circle display-5 mb-3"></i>
+                  <p class="mb-0">No visits or notes available for this doctor.</p>
+                </div>
+              <% } %>
+            </div>
+      
+          </div>
+        </div>
+      </div>
+      
+      <!-- Log Visit Modal -->
+        <div class="modal fade" id="logVisitModal-<%= doctor.Id %>" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+              
+              <!-- Modal Header -->
+              <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                  <i class="bi bi-calendar-check me-2"></i>
+                  Log Visit for Dr. 
+                  <%= doctor.FirstName.charAt(0).toUpperCase() + doctor.FirstName.slice(1) %> 
+                  <%= doctor.LastName.charAt(0).toUpperCase() + doctor.LastName.slice(1) %>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              
+              <!-- Modal Body -->
+              <div class="modal-body p-4">
+                <form action="/schedule/visiting-logs" method="POST" class="needs-validation" novalidate>
+                  <input type="hidden" name="doctorId" value="<%= doctor.Id %>">
+
+                  <!-- Notes Field -->
+                  <div class="form-floating mb-4">
+                    <textarea class="form-control" placeholder="Enter visit notes here..." id="notes" name="notes" style="height: 120px;" required></textarea>
+                    <label for="notes">Visit Notes</label>
+                    <div class="invalid-feedback">Please enter notes before submitting.</div>
+                  </div>
+
+                  <!-- Submit Button -->
+                  <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-send-check me-1"></i> Submit Log
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+    <% }); %>
+  </div>
+</section>
+
+<!-- Pagination -->
+<section>
+ <!-- Pagination -->
+  <nav aria-label="Page navigation">
+    <div class="container">
+      <div class="d-flex justify-content-center">
+        <div class="w-100 overflow-auto">
+          <ul class="pagination pagination-sm gap-1 mt-4 flex-nowrap justify-content-center overflow-auto" id="pagination_Number" style="white-space: nowrap; scroll-behavior: smooth;">
+            <li class="page-item disabled">
+              <a class="page-link rounded-pill px-3 prev_link" href="#">Previous</a>
+            </li>
+            <!-- Page numbers will be inserted here via JavaScript -->
+            <li class="page-item">
+              <a class="page-link rounded-pill px-3 next_link" href="#">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+</section>

@@ -1,0 +1,371 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container-fluid">
+    <nav
+      aria-label="breadcrumb"
+      class="p-3 bg-light rounded-3 shadow-sm"
+      style="--bs-breadcrumb-divider: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&quot;);"
+    >
+      <ol class="breadcrumb mb-0 d-flex align-items-center">
+        <li class="breadcrumb-item">
+          <a href="#" class="text-decoration-none text-primary">
+            Home/<%= typeof mappedSubParameterDetails != 'undefined' ? 'Edit Sub Test' : 'Create Sub Test' %>
+          </a>
+        </li>
+        <li class="breadcrumb-item active fw-bold" aria-current="page">
+          <%= typeof mappedSubParameterDetails != 'undefined' ? 'Edit Sub Test' : 'Create Sub Test' %>
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Form Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">
+          <i class="bi bi-plus-square me-2"></i>
+          <%= typeof mappedSubParameterDetails != 'undefined' ? 'Edit Subparameter' : 'Create a New Subparameter' %>
+        </h4>
+      </div>
+      <div class="card-body p-4">
+        <!-- Dynamic form action: POST for create or PUT for update -->
+        <form
+          action="<%= (typeof mappedSubParameterDetails !== 'undefined' && mappedSubParameterDetails.length > 0) ? `/test/editSubParameter/?subId=${subParameterId}` : '/test/createSubparameter' %>"
+          class="needs-validation"
+          method="POST"
+          novalidate
+        >
+          <div class="row g-3 mb-3">
+            <div class="col">
+              <div class="form-floating">
+                <input
+                  type="text"
+                  name="subParameter"
+                  id="subParameter"
+                  value="<%= typeof mappedSubParameterDetails != 'undefined' ? mappedSubParameterDetails[subParameterId].SubParameterName : '' %>"
+                  class="form-control"
+                  placeholder="Subparameter Name"
+                  required
+                />
+                <label for="subParameter">Sub Parameter Name</label>
+                <div class="invalid-feedback">Please enter a subparameter name.</div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-floating">
+                <input
+                  type="text"
+                  name="unit"
+                  id="unit"
+                  class="form-control"
+                  value="<%= typeof mappedSubParameterDetails != 'undefined' ? mappedSubParameterDetails[subParameterId].Unit : '' %>"
+                  placeholder="Unit"
+                  required
+                />
+                <label for="unit">Sub Parameter Unit</label>
+                <div class="invalid-feedback">Please enter a unit.</div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-floating">
+                <input
+                  type="text"
+                  name="subParameterHeader"
+                  id="subParameterHeader"
+                  value="<%= typeof mappedSubParameterDetails != 'undefined' ? mappedSubParameterDetails[subParameterId].Header : '' %>"
+                  class="form-control"
+                  placeholder="Sub Parameter Header"
+                />
+                <label for="subParameterHeader">Sub Parameter Header</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Age-Based Ranges Section -->
+          <h5 class="mt-4 fw-bold">Reference Ranges Based on Age Group</h5>
+          <div class="row mt-3">
+            <div class="col">
+              <div id="liveErrorAlertPlaceholder"></div>
+            </div>
+          </div>
+
+          <!-- Display existing ranges if in edit mode -->
+          <% if (editMode && mappedSubParameterDetails?.[subParameterId]?.Ranges?.length > 0) { %>
+            <% mappedSubParameterDetails[subParameterId].Ranges.forEach((range, index) => { %>
+              <div class="row g-3 mb-3">
+                <div class="col">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      name="age_min[]"
+                      id="age_min_<%= index + 1 %>"
+                      class="form-control"
+                      value="<%= range.AgeMin %>"
+                      placeholder="Age Min"
+                      required
+                    />
+                    <label for="age_min_<%= index + 1 %>">Age Min</label>
+                    <div class="invalid-feedback">Please enter a minimum age.</div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      name="age_max[]"
+                      id="age_max_<%= index + 1 %>"
+                      class="form-control"
+                      value="<%= range.AgeMax %>"
+                      placeholder="Age Max"
+                      required
+                    />
+                    <label for="age_max_<%= index + 1 %>">Age Max</label>
+                    <div class="invalid-feedback">Please enter a maximum age.</div>
+                  </div>
+                </div>
+                <div class="col">
+                  <select class="form-select" id="age_unit_<%= index + 1 %>" name="age_unit[]">
+                    <option value="1" <%= range.AgeUnit === 1 ? 'selected' : '' %>>Days</option>
+                    <option value="2" <%= range.AgeUnit === 2 ? 'selected' : '' %>>Month</option>
+                    <option value="3" <%= range.AgeUnit === 3 ? 'selected' : '' %>>Year</option>
+                  </select>
+                </div>
+                <div class="col">
+                  <select class="form-select" id="gender_<%= index + 1 %>" name="gender[]">
+                    <option value="1" <%= range.Gender === 1 ? 'selected' : '' %>>Male</option>
+                    <option value="2" <%= range.Gender === 2 ? 'selected' : '' %>>Female</option>
+                    <option value="3" <%= range.Gender === 3 ? 'selected' : '' %>>Both</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      name="min_value[]"
+                      id="min_value_<%= index + 1 %>"
+                      class="form-control"
+                      value="<%= range.MinVal %>"
+                      placeholder="Minimum Value"
+                      required
+                    />
+                    <label for="min_value_<%= index + 1 %>">Minimum Value</label>
+                    <div class="invalid-feedback">Please enter a minimum value.</div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      name="max_value[]"
+                      id="max_value_<%= index + 1 %>"
+                      class="form-control"
+                      value="<%= range.MaxVal %>"
+                      placeholder="Maximum Value"
+                      required
+                    />
+                    <label for="max_value_<%= index + 1 %>">Maximum Value</label>
+                    <div class="invalid-feedback">Please enter a maximum value.</div>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <!-- Empty form fields for new creation -->
+            <div class="row g-3 mb-3">
+              <div class="col">
+                <div class="form-floating">
+                  <input
+                    type="number"
+                    name="age_min[]"
+                    id="age_min_1"
+                    class="form-control"
+                    placeholder="Age Min"
+                    required
+                  />
+                  <label for="age_min_1">Age Min</label>
+                  <div class="invalid-feedback">Please enter a minimum age.</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-floating">
+                  <input
+                    type="number"
+                    name="age_max[]"
+                    id="age_max_1"
+                    class="form-control"
+                    placeholder="Age Max"
+                    required
+                  />
+                  <label for="age_max_1">Age Max</label>
+                  <div class="invalid-feedback">Please enter a maximum age.</div>
+                </div>
+              </div>
+              <div class="col">
+                <select class="form-select" id="age_unit_1" name="age_unit[]">
+                  <option value="1">Days</option>
+                  <option value="2">Month</option>
+                  <option value="3">Year</option>
+                </select>
+              </div>
+              <div class="col">
+                <select class="form-select" id="gender_1" name="gender[]">
+                  <option value="1">Male</option>
+                  <option value="2">Female</option>
+                  <option value="3">Both</option>
+                </select>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col">
+                <div class="form-floating">
+                  <input
+                    type="number"
+                    name="min_value[]"
+                    id="min_value_1"
+                    step="any"
+                    class="form-control"
+                    placeholder="Minimum Value"
+                    required
+                  />
+                  <label for="min_value_1">Minimum Value</label>
+                  <div class="invalid-feedback">Please enter a minimum value.</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="form-floating">
+                  <input
+                    type="number"
+                    name="max_value[]"
+                    id="max_value_1"
+                    step="any"
+                    class="form-control"
+                    placeholder="Maximum Value"
+                    required
+                  />
+                  <label for="max_value_1">Maximum Value</label>
+                  <div class="invalid-feedback">Please enter a maximum value.</div>
+                </div>
+              </div>
+            </div>
+          <% } %>
+
+          <!-- Additional Ranges -->
+          <div id="additionalRanges"></div>
+
+          <!-- Add more ranges button and Submit Button -->
+          <div class="row g-3">
+            <div class="col-3">
+              <div class="d-grid">
+                <button type="button" class="btn btn-outline-primary py-2" onclick="addRange()">
+                  Add Another Age Group
+                </button>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary py-2">
+                  <%= typeof mappedSubParameterDetails != 'undefined' ? 'Update Subparameter' : 'Create Subparameter' %>
+                </button>
+              </div>
+            </div>
+          </div>
+          <input
+            type="hidden"
+            id="rangeCounter"
+            value="<%= typeof mappedSubParameterDetails != 'undefined' ? mappedSubParameterDetails[subParameterId].Ranges.length : 1 %>"
+          >
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  let rangeCounter = document.getElementById("rangeCounter").value; // Initialize the counter
+
+  function addRange() {
+    // Get the last age group fields
+    const lastAgeMin = document.querySelector(`#age_min_${rangeCounter}`);
+    const lastAgeMax = document.querySelector(`#age_max_${rangeCounter}`);
+    const lastMinValue = document.querySelector(`#min_value_${rangeCounter}`);
+    const lastMaxValue = document.querySelector(`#max_value_${rangeCounter}`);
+
+    // Validate that the last fields are filled before adding a new age group
+    if (lastAgeMin.value === "" || lastAgeMax.value === "" || lastMinValue.value === "" || lastMaxValue.value === "") {
+      appendAlert("You have not filled all the parameters.", "danger");
+      return;
+    }
+
+    // Increment counter for the new age group
+    rangeCounter++;
+
+    const rangeHtml = `
+      <h6 class="mt-3 fw-bold">Age Group ${rangeCounter}</h6>
+      <div class="row g-3 mb-3">
+        <div class="col">
+          <div class="form-floating">
+            <input type="number" name="age_min[]" id="age_min_${rangeCounter}" class="form-control" placeholder="Age Min" required />
+            <label for="age_min_${rangeCounter}">Age Min</label>
+            <div class="invalid-feedback">Please enter a minimum age.</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <input type="number" name="age_max[]" id="age_max_${rangeCounter}" class="form-control" placeholder="Age Max" required />
+            <label for="age_max_${rangeCounter}">Age Max</label>
+            <div class="invalid-feedback">Please enter a maximum age.</div>
+          </div>
+        </div>
+        <div class="col">
+          <select class="form-select" id="age_unit_${rangeCounter}" name="age_unit[]">
+            <option value="1">Days</option>
+            <option value="2">Month</option>
+            <option value="3">Year</option>
+          </select>
+        </div>
+        <div class="col">
+          <select class="form-select" id="gender_${rangeCounter}" name="gender[]">
+            <option value="1">Male</option>
+            <option value="2">Female</option>
+            <option value="3">Both</option>
+          </select>
+        </div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col">
+          <div class="form-floating">
+            <input type="number" name="min_value[]" id="min_value_${rangeCounter}" step="any" class="form-control" placeholder="Minimum Value" required />
+            <label for="min_value_${rangeCounter}">Minimum Value</label>
+            <div class="invalid-feedback">Please enter a minimum value.</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <input type="number" name="max_value[]" id="max_value_${rangeCounter}" step="any" class="form-control" placeholder="Maximum Value" required />
+            <label for="max_value_${rangeCounter}">Maximum Value</label>
+            <div class="invalid-feedback">Please enter a maximum value.</div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById("additionalRanges").insertAdjacentHTML("beforeend", rangeHtml);
+  }
+
+  // Assuming appendAlert is defined elsewhere; if not, here's a basic implementation
+  function appendAlert(message, type) {
+    const alertPlaceholder = document.getElementById("liveErrorAlertPlaceholder");
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.append(wrapper);
+  }
+</script>

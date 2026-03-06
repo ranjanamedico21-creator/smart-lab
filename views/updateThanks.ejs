@@ -1,0 +1,200 @@
+<section class="py-4">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="p-3 bg-light rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0 d-flex align-items-center">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+        <li class="breadcrumb-item active fw-bold" aria-current="page">Update Thanks</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="card-header bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">Doctor Profile</h4>
+      </div>
+      
+      <%- include ("./partials/messages"); %>
+      
+      <div class="card-body p-4">
+        <!-- Doctor Information -->
+        <div class="row g-4 mb-4">
+          <div class="col-lg-6">
+            <h5 class="text-capitalize fw-bold mb-3">
+              <i class="bi bi-person me-2"></i>
+              Dr. <%= doctorDetails.FirstName %> <%= doctorDetails.LastName %>
+            </h5>
+            <p class="mb-2"><i class="bi bi-telephone me-2"></i><strong>Phone:</strong> <%=doctorDetails.MobileNumberFirst %></p>
+          </div>
+          <div class="col-lg-6">
+            <p class="text-capitalize mb-2"><i class="bi bi-card-text me-2"></i><strong>Registration:</strong> <%= doctorDetails.Registration %></p>
+            <p class="mb-2"><i class="bi bi-hourglass-split me-2"></i><strong>Experience:</strong> <%= doctorDetails.YearOfExperience %> years</p>
+          </div>
+        </div>
+
+        <!-- Degrees, Category, and Form -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-4">
+            <p class="fw-bold"><i class="bi bi-mortarboard me-2"></i>Degrees:</p>
+            <ul class="text-capitalize list-unstyled ps-4">
+              <li><%= doctorDetails.Degree1 %></li>
+              <li><%= doctorDetails.Degree2 %></li>
+              <li><%= doctorDetails.Degree3 %></li>
+              <li><%= doctorDetails.Degree4 %></li>
+            </ul>
+          </div>
+          
+          <div class="col-md-4 col-lg-3">
+            <select name="SelectDoctorThanksCategory" class="form-control" id="selectDoctorThanksCategory">
+              <option value="">Select a category</option>
+              <% categoryCommissionDetail.forEach(function(category){ %>
+                <option class="text-capitalize" data-thanks-category-id="<%=category.Id %>" 
+                        data-thanks="<%=category.CommissionRate %>" 
+                        value="<%=category.CommissionRate %>">
+                  <%= category.Name %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          
+          <div class="col-md-4">
+            <form action="/doctor/updateThanks" class="needs-validation row g-3" novalidate method="post">
+              <div class="col-6">
+                <input type="text" class="form-control" name="doctorCategoryThanks" 
+                       id="doctorCategoryThanks" placeholder="Enter Thanks" required>
+                <div class="invalid-feedback">Please enter thanks amount</div>
+              </div>
+              <div class="col-6">
+                <button type="submit" class="btn btn-primary w-100 h-100">Update</button>
+              </div>
+              <input type="hidden" name="doctorThanksCategory" id="doctorThanksCategory" />
+              <input type="hidden" name="doctorId" value="<%= doctorDetails.Id %>" />
+            </form>
+          </div>
+        </div>
+
+        <!-- Flat Discount -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <p class="mb-0"><i class="bi bi-tags me-2"></i><strong>Flat Discount:</strong> <%= doctorDetails.FlatDiscount %></p>
+          </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="bg-light p-3 rounded-3 mb-4">
+          <p class="text-center mb-3 text-muted fw-bold">Update your test thanks by selecting a category and test name</p>
+          
+          <form action="/test/searchTest" method="post" class="needs-validation row g-3" novalidate>
+            <div class="col-md-4 col-lg-3">
+              <select name="SelectDoctorThanksCategorySearch" class="form-control" 
+                      id="selectDoctorThanksCategorySearch" required>
+                <option value="">Select a category</option>
+                <% categoryCommissionDetail.forEach(function(category){ %>
+                  <option class="text-capitalize" 
+                          <% if(typeof categoryId != 'undefined' && category.Id == categoryId){ %> selected <% } %> 
+                          data-thanks="<%=category.CommissionRate %>" 
+                          value="<%=category.Id %>">
+                    <%= category.Name %>
+                  </option>
+                <% }) %>
+              </select>
+              <div class="invalid-feedback">Please select a category</div>
+            </div>
+            
+            <div class="col-md-4">
+              <input type="text" id="searchTest" name="searchTest" class="form-control" 
+                     placeholder="Enter Test Name" required 
+                     value="<%= typeof searchedTest != 'undefined' ? searchedTest : '' %>">
+              <div class="invalid-feedback">Please enter test name</div>
+            </div>
+            
+            <div class="col-md-4">
+              <input type="hidden" name="doctorId" value="<%= doctorDetails.Id %>">
+              <button class="btn btn-primary w-100" type="submit">Search</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Test Table -->
+        <form action="/doctor/updateTestWiseThanksForADoctor" method="POST" id="updateThanksForm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-primary">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Test Name</th>
+                  <th scope="col">Current Thanks</th>
+                  <th scope="col">New Thanks</th>
+                  <th scope="col">Select</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if(typeof testDetails !='undefined'){%>
+                <% let i = 1; testDetails.forEach(function(test){ %>
+                <tr>
+                  <th scope="row"><%= i %>.</th>
+                  <td><%= test.TestName %></td>
+                  <td><%= test.Commission %></td>
+                  <td>
+                    <input type="number" class="form-control" 
+                           name="newThanks_<%= test.Id %>" 
+                           id="newThanks_<%= test.Id %>" 
+                           placeholder="Enter New Thanks" 
+                           step="0.01" disabled>
+                  </td>
+                  <td>
+                    <div class="form-check">
+                      <input type="checkbox" name="selectedTests[]" 
+                             value="<%= test.Id %>" 
+                             class="form-check-input" 
+                             onchange="toggleInput('<%= test.Id %>')">
+                    </div>
+                  </td>
+                </tr>
+                <% i++; }) %>
+                <%}%>
+              </tbody>
+            </table>
+          </div>
+
+          <input type="hidden" name="doctorId" value="<%= doctorDetails.Id %>">
+          <input type="hidden" name="searchTest" id="searchedTestName" />
+          <input type="hidden" name="SelectDoctorThanksCategorySearch" id="selectedCategory" />
+          <button type="submit" class="btn btn-primary mt-3">Update Selected Tests</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bootstrap Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<script>
+/*$(document).ready(function() {
+  // Form validation
+  $('form.needs-validation').each(function() {
+    $(this).on('submit', function(e) {
+      if (!this.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      $(this).addClass('was-validated');
+    });
+  });
+});*/
+
+// Toggle input field
+function toggleInput(testId) {
+  const checkbox = document.querySelector(`input[value="${testId}"]`);
+  const inputField = document.getElementById(`newThanks_${testId}`);
+  $('#selectedCategory').val($('#selectDoctorThanksCategorySearch').val());
+  $('#searchedTestName').val($('#searchTest').val());
+  inputField.disabled = !checkbox.checked;
+  if (!checkbox.checked) {
+    inputField.value = '';
+  }
+}
+</script>

@@ -1,0 +1,239 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+        <ol class="breadcrumb mb-0 fw-medium">
+          <li class="breadcrumb-item">
+            <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+          </li>
+          <li class="breadcrumb-item active text-dark" aria-current="page">Product Pricing</li>
+        </ol>
+      </nav>
+    </div>
+  </section>
+  
+  <!-- Update Product Price Section -->
+  <section class="pb-4">
+    <div class="container-fluid">
+  
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+  
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-tags me-2 text-primary"></i>Product Pricing Setup
+              </h5>
+              <small class="text-muted">
+                Select customer and supplier to configure pricing
+              </small>
+            </div>
+          </div>
+  
+          <%- include ("./partials/messages"); %>
+  
+          <form action="/billing/updatePrice" method="post" class="row g-3 align-items-end">
+  
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Customer</label>
+              <select name="customerId" class="form-control" required>
+                <option value="">Choose customer</option>
+                <% customers.forEach(customer => { %>
+                  <option value="<%= customer.Id %>"
+                    <% if(typeof customerId != 'undefined' && customer.Id == customerId){%>selected<%}%>>
+                    <%= customer.CustomerName %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+  
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Supplier</label>
+              <select name="supplierId" class="form-control" required>
+                <option value="">Choose supplier</option>
+                <% suppliers.forEach(supplier => { %>
+                  <option value="<%= supplier.Id %>"
+                    <% if(typeof supplierId != 'undefined' && supplier.Id == supplierId){%>selected<%}%>>
+                    <%= supplier.Name %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+  
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                <i class="bi bi-search me-1"></i> Load
+              </button>
+            </div>
+  
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  
+  <!-- Set Product Price Section -->
+  <section class="pb-5">
+    <div class="container-fluid">
+  
+      <div class="card shadow-sm border-0 rounded-4">
+  
+        <div class="card-header bg-white border-bottom py-3 px-4">
+          <h6 class="fw-bold mb-0">
+            <i class="bi bi-currency-rupee me-2 text-success"></i>
+            Set Customer Product Pricing
+          </h6>
+        </div>
+  
+        <% if (productPricingForCustomer && productPricingForCustomer.length > 0) { %>
+  
+        <!-- ================= DESKTOP TABLE ================= -->
+        <div class="table-responsive d-none d-md-block">
+          <table class="table align-middle table-hover mb-0">
+            <thead class="table-light small text-uppercase text-muted">
+              <tr>
+                <th class="ps-4">#</th>
+                <th>Supplier</th>
+                <th>Product</th>
+                <th>Batch Info</th>
+                <th width="250">Customer Price</th>
+              </tr>
+            </thead>
+  
+            <tbody>
+              <% let i = 0; productPricingForCustomer.forEach(function(customer) { i++ %>
+              <tr>
+  
+                <td class="ps-4 text-muted fw-semibold"><%= i %></td>
+  
+                <td><%= customer.SupplierName %></td>
+  
+                <td class="fw-semibold"><%= customer.ProductName %></td>
+  
+                <td>
+                  <div class="small text-muted">
+                    Batch: <strong><%= customer.BatchNumber %></strong><br>
+                    MRP: ₹<%= customer.MRP %> |
+                    PP: ₹<%= customer.PurchasePrice %>
+                  </div>
+                </td>
+  
+                <td>
+                  <form action="/billing/setCustomerPrice/<%=customer.CustomerId%>/<%=customer.ProductId%>/<%=customer.SupplierId%>/<%=customer.StockId%>"
+                        method="post"
+                        class="d-flex gap-2">
+  
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">₹</span>
+                      <input type="number"
+                             name="newProductPrice"
+                             step="0.01"
+                             value="<%= customer.SellingPrice %>"
+                             class="form-control"
+                             required>
+                    </div>
+  
+                    <button type="submit"
+                            class="btn btn-sm btn-success rounded-pill px-3">
+                      Save
+                    </button>
+  
+                  </form>
+                </td>
+  
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+  
+  
+        <!-- ================= MOBILE CARD VIEW ================= -->
+        <div class="d-md-none p-3">
+  
+          <% j = 0; productPricingForCustomer.forEach(function(customer) { j++ %>
+  
+          <div class="card border-0 shadow-sm rounded-4 mb-3">
+            <div class="card-body">
+  
+              <div class="d-flex justify-content-between mb-2">
+                <h6 class="fw-bold mb-0">
+                  <%= j %>. <%= customer.ProductName %>
+                </h6>
+              </div>
+  
+              <div class="small text-muted mb-2">
+                Supplier: <%= customer.SupplierName %>
+              </div>
+  
+              <div class="small text-muted mb-3">
+                Batch: <strong><%= customer.BatchNumber %></strong><br>
+                MRP: ₹<%= customer.MRP %> |
+                PP: ₹<%= customer.PurchasePrice %>
+              </div>
+  
+              <form action="/billing/setCustomerPrice/<%=customer.CustomerId%>/<%=customer.ProductId%>/<%=customer.SupplierId%>"
+                    method="post"
+                    class="d-flex gap-2">
+  
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">₹</span>
+                  <input type="number"
+                         name="newProductPrice"
+                         step="0.01"
+                         value="<%= customer.SellingPrice %>"
+                         class="form-control"
+                         required>
+                </div>
+  
+                <button type="submit"
+                        class="btn btn-success btn-sm rounded-pill px-3">
+                  Save
+                </button>
+  
+              </form>
+  
+            </div>
+          </div>
+  
+          <% }); %>
+  
+        </div>
+  
+        <% } else { %>
+  
+        <div class="text-center py-5">
+          <i class="bi bi-box-seam display-6 text-muted mb-3 d-block"></i>
+          <h6 class="fw-semibold text-muted">No products available</h6>
+          <p class="text-muted small mb-0">
+            Select customer and supplier to load products.
+          </p>
+        </div>
+  
+        <% } %>
+  
+      </div>
+    </div>
+  </section>
+  
+  <section>
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+      <div class="container">
+        <div class="d-flex justify-content-center">
+          <div class="w-100 overflow-auto">
+            <ul class="pagination pagination-sm gap-1 mt-4 flex-nowrap justify-content-center overflow-auto" id="pagination_Number" style="white-space: nowrap; scroll-behavior: smooth;">
+              <li class="page-item disabled">
+                <a class="page-link rounded-pill px-3 prev_link" href="#">Previous</a>
+              </li>
+              <!-- Page numbers will be inserted here via JavaScript -->
+              <li class="page-item">
+                <a class="page-link rounded-pill px-3 next_link" href="#">Next</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </section>

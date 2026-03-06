@@ -1,0 +1,243 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none">Home</a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">
+          Non Movable Stocks
+        </li>
+      </ol>
+    </nav>
+  </section>
+  
+  <section>
+    <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+  
+      <!-- Header -->
+      <div class="row fs-6 font-monospace mt-3 align-items-center">
+        <div class="col text-capitalize">
+          <span class="mb-1 d-block">
+            <i class="bi bi-box-seam me-2 text-primary"></i>
+            <strong>Non Movable / Expiring Stock</strong>
+          </span>
+          <span class="text-muted mb-1 d-block">
+            Batches that are expired, expiring soon, or not moving since last sale/stock creation.
+          </span>
+        </div>
+  
+        <div class="col-auto">
+          <a
+            href="/billing/nonMovableStocks?<% if (selectedSupplierId) { %>supplierId=<%= selectedSupplierId %>&<% } %><% if (search) { %>search=<%= encodeURIComponent(search) %>&<% } %>download=true"
+            class="btn btn-sm btn-success"
+          >
+            <i class="bi bi-file-earmark-excel me-1"></i> Download Excel
+          </a>
+        </div>
+      </div>
+  
+      <%- include("./partials/messages"); %>
+  
+      <hr>
+  
+      <!-- Filters: Supplier + Product search -->
+      <form method="GET" action="/billing/nonMovableStocks" class="row g-3 align-items-end mb-3">
+        <div class="col-md-3">
+          <label for="supplierId" class="form-label font-monospace">Supplier</label>
+          <select name="supplierId" id="supplierId" class="form-control form-control-sm">
+            <option value="">All Suppliers</option>
+            <% if (suppliers && suppliers.length) { %>
+              <% suppliers.forEach(function(s) { %>
+                <option value="<%= s.Id %>" <%= (selectedSupplierId && selectedSupplierId == s.Id ? 'selected' : '') %>>
+                  <%= s.Name %>
+                </option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+  
+        <div class="col-md-4">
+          <label for="search" class="form-label font-monospace">Product Search</label>
+          <input
+            type="text"
+            id="search"
+            name="search"
+            class="form-control form-control-sm"
+            placeholder="Search by product name"
+            value="<%= search || '' %>"
+          >
+        </div>
+  
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary btn-sm mt-3 mt-md-0">
+            <i class="bi bi-funnel me-1"></i> Filter
+          </button>
+        </div>
+      </form>
+  
+      <!-- Summary cards -->
+      <div class="row mb-3">
+        <div class="col-md-3 mb-2">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+              <div class="small text-muted">Total Batches</div>
+              <div class="fs-5 fw-bold"><%= summary.totalCount || 0 %></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-2">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+              <div class="small text-muted">Total Current Stock</div>
+              <div class="fs-5 fw-bold"><%= summary.totalCurrentStock || 0 %></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2 mb-2">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+              <div class="small text-muted">Expired</div>
+              <div class="fs-5 fw-bold text-danger"><%= summary.expiredCount || 0 %></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2 mb-2">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+              <div class="small text-muted">Expiring Soon</div>
+              <div class="fs-5 fw-bold text-warning"><%= summary.expiringSoonCount || 0 %></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2 mb-2">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body py-2">
+              <div class="small text-muted">Non Moving</div>
+              <div class="fs-5 fw-bold text-secondary"><%= summary.nonMovingCount || 0 %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Legend -->
+      <div class="row mb-2">
+        <div class="col-auto small">
+          <span class="badge bg-danger me-1">&nbsp;</span> Expired
+        </div>
+        <div class="col-auto small">
+          <span class="badge bg-warning text-dark me-1">&nbsp;</span> Expiring Soon
+        </div>
+        <div class="col-auto small">
+          <span class="badge bg-secondary me-1">&nbsp;</span> Non Moving (&gt;= 2 months)
+        </div>
+      </div>
+  
+      <!-- Table -->
+      <div class="table-responsive mb-3">
+        <table class="table table-striped table-hover table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th class="font-monospace">Supplier</th>
+              <th class="font-monospace">Product</th>
+              <th class="font-monospace">Batch</th>
+              <th class="font-monospace text-end">Stock Qty</th>
+              <th class="font-monospace text-end">Sold Qty</th>
+              <th class="font-monospace text-end">Current Stock</th>
+              <th class="font-monospace">Expiry Date</th>
+              <th class="font-monospace">Last Sale Date</th>
+              <th class="font-monospace">Movement Age</th>
+              <th class="font-monospace">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!stocks || stocks.length === 0) { %>
+              <tr>
+                <td colspan="10" class="text-center text-muted py-3">
+                  No non-movable or expiring stock found for the selected criteria.
+                </td>
+              </tr>
+            <% } else { %>
+              <% stocks.forEach(function(row) { 
+                 let rowClass = '';
+                 if (row.StatusFlag === 'EXPIRED') rowClass = 'table-danger';
+                 else if (row.StatusFlag === 'EXPIRING_SOON') rowClass = 'table-warning';
+                 else if (row.StatusFlag === 'NON_MOVING') rowClass = 'table-secondary';
+              %>
+                <tr class="<%= rowClass %>">
+                  <td class="text-capitalize"><%= row.SupplierName || '-' %></td>
+                  <td class="text-capitalize"><%= row.ProductName %></td>
+                  <td class="text-uppercase"><%= row.BatchNumber || '-' %></td>
+                  <td class="text-end"><%= row.BatchQuantity %></td>
+                  <td class="text-end"><%= row.QuantitySold %></td>
+                  <td class="text-end fw-bold"><%= row.CurrentStock %></td>
+                  <td class="text-muted">
+                    <% if (row.ExpiryDate) { %>
+                      <i class="bi bi-calendar-event"></i>
+                      <%= new Date(row.ExpiryDate).toLocaleDateString('en-GB').replace(/\//g, '-') %>
+                    <% } %>
+                  </td>
+                  <td class="text-muted">
+                    <% if (row.LastSaleDate) { %>
+                      <i class="bi bi-cash-coin"></i>
+                      <%= new Date(row.LastSaleDate).toLocaleDateString('en-GB').replace(/\//g, '-') %>
+                    <% } else { %>
+                      <span class="text-muted small">No sale</span>
+                    <% } %>
+                  </td>
+                  <td class="text-capitalize">
+                    <%= row.MovementAge %> 
+                    <% if (row.DaysSinceMovement != null) { %>
+                      <small class="text-muted">(<%= row.DaysSinceMovement %> days)</small>
+                    <% } %>
+                  </td>
+                  <td class="fw-semibold">
+                    <% if (row.StatusFlag === 'EXPIRED') { %>
+                      <span class="text-danger"><i class="bi bi-exclamation-octagon-fill me-1"></i>Expired</span>
+                    <% } else if (row.StatusFlag === 'EXPIRING_SOON') { %>
+                      <span class="text-warning"><i class="bi bi-alarm-fill me-1"></i>Expiring Soon</span>
+                    <% } else if (row.StatusFlag === 'NON_MOVING') { %>
+                      <span class="text-secondary"><i class="bi bi-arrow-repeat me-1"></i>Non Moving</span>
+                    <% } else { %>
+                      <span class="text-success"><i class="bi bi-check-circle me-1"></i>OK</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- Pagination -->
+      <% if (totalPages && totalPages > 1) { %>
+        <nav aria-label="Page navigation" class="mb-3">
+          <ul class="pagination pagination-sm justify-content-end">
+            <% const baseQuery = (pageNum) => {
+                 let q = [];
+                 if (selectedSupplierId) q.push('supplierId=' + selectedSupplierId);
+                 if (search) q.push('search=' + encodeURIComponent(search));
+                 q.push('page=' + pageNum);
+                 return '/billing/nonMovableStocks?' + q.join('&');
+               };
+            %>
+  
+            <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+              <a class="page-link" href="<%= page > 1 ? baseQuery(page - 1) : '#' %>">Previous</a>
+            </li>
+  
+            <% for (let p = 1; p <= totalPages; p++) { %>
+              <li class="page-item <%= p === page ? 'active' : '' %>">
+                <a class="page-link" href="<%= baseQuery(p) %>"><%= p %></a>
+              </li>
+            <% } %>
+  
+            <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+              <a class="page-link" href="<%= page < totalPages ? baseQuery(page + 1) : '#' %>">Next</a>
+            </li>
+          </ul>
+        </nav>
+      <% } %>
+  
+    </div>
+  </section>
+  

@@ -1,0 +1,148 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+        <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Attach Sub Parameter</li>
+        </ol>
+    </nav>
+</section>
+<section>
+
+</section>
+    <!-- Main Container -->
+    <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+        <div class="row mt-3 text-center">
+            <div class="col">
+                <h4>Sub Parameter</h4>
+            </div>
+        </div>
+        <%- include ("./partials/messages"); %>
+        
+        <!-- Test Information Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Test Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Test Name</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">1.</th>
+                            <td><%= testData[0].TestName %></td>
+                            <td><%= testData[0].Price %> Rs.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Attached Parameters Table -->
+        <% if(attachedSubParameterLists.length > 0) { %>
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Attached Sub Parameters</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Parameter Name</th>
+                                <th>Header</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let i = 1; attachedSubParameterLists.forEach(function(attachedParameter) { %>
+                            <tr>
+                                <th scope="row"><%= i %>.</th>
+                                <td class="text-capitalize"><%= attachedParameter.SubParameterName %></td>
+                                <td><%= attachedParameter.Header %></td>
+                                <td>
+                                    <a href="/test/detachSubParameter/<%= attachedParameter.Id %>/<%= attachedParameter.SubParameterId %>" class="btn btn-danger btn-sm">Remove</a>
+                                </td>
+                            </tr>
+                            <% i++; }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Register Parameter Form -->
+        <% if(unAttachedSubParameterLists.length>0){%>
+            <h4 class="mt-4">Register Parameter With Other Test</h4>
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Available Sub Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/test/attachSubParameter/<%= testData[0].Id %>" id="attachSubParameter" method="post">
+                        <div class="row mt-3">
+                            <div class="col">
+                                <div id="liveErrorAlertPlaceholder"></div>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="Search sub test" aria-label="Search sub test">
+                            <button class="btn btn-outline-secondary" type="button">Search</button>
+                        </div>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Parameter Name</th>
+                                    <th>Header</th>
+                                    <th>Select</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% let j = 1; unAttachedSubParameterLists.forEach(function(subParameter) { %>
+                                <tr>
+                                    <th scope="row"><%= j %>.</th>
+                                    <td class="text-capitalize"><%= subParameter.SubParameterName %></td>
+                                    <td><%= subParameter.Header %></td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input attachSubParameterCheckbox" type="checkbox" name="subParameter[]" value="<%= subParameter.Id %>">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% j++; }) %>
+                            </tbody>
+                        </table>
+                        <!-- Pagination (optional) -->
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+                                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                            </ul>
+                        </nav>
+                        <button type="submit" class="btn btn-success mt-3">Attach Selected Parameters</button>
+                    </form>
+                </div>
+            </div>
+            <%}%>
+        </div>
+    </section>
+
+    <!-- JavaScript to handle form validation for checkboxes -->
+    <script>
+    document.getElementById('attachSubParameter').addEventListener('submit', function(event) {
+        const checkboxes = document.querySelectorAll('.attachSubParameterCheckbox:checked');
+        if (checkboxes.length === 0) {
+        event.preventDefault();
+        appendAlert("You have not selected any Parameter.", "danger");
+        }
+    });
+    </script>

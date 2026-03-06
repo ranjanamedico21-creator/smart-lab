@@ -1,0 +1,443 @@
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+          <li class="breadcrumb-item active text-dark" aria-current="page">Patient Details</li>
+      </ol>
+  </nav>
+</section>
+<section>
+  <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+    <div class="row fs-6 font-monospace mt-3 align-items-center">
+      <div class="col text-capitalize">
+        <span class="mb-1">
+          <%= patientDetail[0].Title %> <%= patientDetail[0].Name %>
+        </span>
+    
+        <!-- Age and Gender with Icons -->
+        <span class="text-muted mb-1">
+          <% if(patientDetail[0].Gender == 1) { %>  
+              <i class="bi bi-gender-male text-info"></i> Male  
+          <% } else { %>  
+              <i class="bi bi-gender-female text-danger"></i> Female  
+          <% } %>
+          | <%= patientDetail[0].Age %> <%= patientDetail[0].YMD %>
+        </span>
+      
+        <!-- Phone Number -->
+        <span class="mb-1">
+          <i class="bi bi-phone text-success" style="font-size: 1rem;"></i> 
+          <span class="fw-medium">+91 <%= patientDetail[0].PhoneNumber %></span>
+        </span>
+    
+        <!-- Edit & View Actions -->
+        <span class="mb-1">
+          <a data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" data-bs-placement="top"
+            title="Edit Patient"
+            href="/patient/editPatientDetails?id=<%=patientDetail[0].Id%>"
+            class="text-primary text-decoration-none me-2">
+            <i class="bi bi-pencil-square"></i>
+          </a>
+        </span>
+        <span class="mb-1">
+          <a data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip" data-bs-placement="top"
+            title="View Patient List"
+            href="/patient/getPatientListView"
+            class="text-primary text-decoration-none me-2">
+            <i class="bi bi-list"></i>
+          </a>
+        </span>
+      </div>
+    
+      <!-- Entry / Exit Button -->
+      <div class="col-auto">
+        <% if (isPatientEntered) { %>
+          <form action="/patientQueue/mark-exit/<%= patientDetail[0].Id %>" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-danger btn-sm">
+              <i class="bi bi-box-arrow-right"></i> Mark Exit
+            </button>
+          </form>
+        <% } else { %>
+          <form action="/patientQueue/mark-entry/<%= patientDetail[0].Id %>" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-success btn-sm">
+              <i class="bi bi-box-arrow-in-right"></i> Mark Entry
+            </button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+    
+      <%- include ("./partials/messages"); %>
+    <hr>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th class="font-monospace">Reffered By</th>
+          <th class="font-monospace">Gross Amount</th>
+          <th class="font-monospace">Dues Amount</th>
+          <th class="font-monospace">Discount</th>
+          <th class="font-monospace">Discount Approved By</th>
+          <th class="font-monospace">Visited On</th>
+          <th class="font-monospace">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr <% if(patientDetail[0].DuesAmount>0){%>class="table-danger" <%}%>>
+          <td class="text-capitalize">
+            <strong class="text-teal">Dr. <%= patientDetail[0].DoctorFirstName %> <%= patientDetail[0].DoctorLastName %></strong>
+            <br>
+            <small class="text-muted"><i class="bi bi-clipboard-heart"></i> <%= patientDetail[0].DoctorSpecialistIn %></small>
+        </td>
+        <td class="fw-bold fs-6">
+          ₹ <%= patientDetail[0].GrossAmount %>
+      </td>
+      <td class="fw-bold fs-6">
+        ₹ <%= patientDetail[0].DuesAmount %>
+      </td>
+      <td class="text-capitalize">
+        ₹ <strong class="text-teal"><%=patientDetail[0].Discount %></strong> 
+      </td>
+      <td class="text-capitalize">
+        <strong class="text-teal"> <%=patientDetail[0].DiscountApprovedBy %></strong>
+      </td>
+      <td class="text-muted fs-6">
+          <i class="bi bi-calendar-event"></i> <%= patientDetail[0].RegisteredOn %>
+      </td>
+        <td class="<% if(patientDetail[0].Status == 1) { %>text-success<% } else if(patientDetail[0].Status == 2) { %>text-danger<% } %>">
+          <% if(patientDetail[0].Status == 1) { %> Active <% } else { %> Cancelled <% } %>
+      </td>
+      </tr>
+      </tbody>
+    </table> 
+    <div class="row mt-3">
+      <div class ="col">Test Details</div>
+    </div> 
+    <hr>
+    <form id="completeTestsForm" method="POST" action="/patient/markTestCompleted/<%= patientDetail[0].Id %>">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>
+              <input type="checkbox" id="selectAll" class="form-check-input">
+            </th>
+            <th class="font-monospace">Test Name</th>
+            <th class="font-monospace">Added On</th>
+            <th class="font-monospace">Reporting Time</th>
+            <th class="font-monospace">Action</th>
+            <th class="font-monospace">Report</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% i=1; %>
+          <% patientTestDetail.forEach(function(patientData){ %>
+            <tr>
+              <td>
+                <% if(patientData.TestStatus){ %>
+                  <span class="badge bg-success">Completed</span>
+                <% } else { %>
+                  <input type="checkbox" name="selectedTests[]" value="<%= patientData.TestId %>" class="form-check-input test-checkbox">
+                <% } %>
+              </td>
+              <td class="text-uppercase"><%= patientData.TestName %></td>
+              <td><%= patientDetail[0].RegisteredOn %></td>
+              <td><%= patientData.ReportingTime %></td>
+    
+              <!-- ✅ KEEPING YOUR EXISTING ACTION CODE -->
+              <td>
+                <%if(patientData.IsReportRequired && patientDetail[0].Status!=2){%>
+                  <span>
+                    <% if (patientData.categoryName.toLowerCase() === 'pathology') { %>
+                      <a role='button' href="/report/pathologyReport/<%=patientId%>/<%=patientData.TestId%>" 
+                         data-bs-toggle="tooltip" data-bs-placement="top" 
+                         title="Create Report" class="text-decoration-none link-dark">
+                        <i class="bi bi-pencil-square"></i>
+                      </a>
+                    <% } else { %>
+                      <a role='button' href="/report/createReport?patientId=<%=patientId%>&testId=<%=patientData.TestId%>" 
+                         data-bs-toggle="tooltip" data-bs-placement="top" 
+                         title="Create Report" class="text-decoration-none link-dark">
+                        <i class="bi bi-pencil-square"></i>
+                      </a>
+                    <% } %>
+                  </span>
+                  <% if(patientData.ReportReady && patientDetail[0].Status!=2 ){ %>
+                    <!-- your download icons -->
+                    <span>
+                      <a href="/report/downloadReportAsPdf?patientId=<%=patientId%>&testId=<%=patientData.TestId%>" 
+                         data-bs-toggle="tooltip" title="Download Report" 
+                         class="text-decoration-none link-dark">
+                        <i class="bi bi-download"></i>
+                      </a>
+                    </span>
+                    <span>
+                      <a href="/report/downloadReportAsPdf?patientId=<%=patientId%>&testId=<%=patientData.TestId%>&header=false" 
+                         data-bs-toggle="tooltip" title="Download Report With Header" 
+                         class="text-decoration-none link-dark">
+                        <i class="bi bi-file-earmark-pdf text-danger"></i>
+                      </a>
+                    </span>
+                    <span>
+                      <a href="/report/downloadReportAsDoc?patientId=<%=patientId%>&testId=<%=patientData.TestId%>&header=false" 
+                         data-bs-toggle="tooltip" title="Download Report As Word" 
+                         class="text-decoration-none link-dark">
+                        <i class="bi bi-file-earmark-word text-primary"></i>
+                      </a>
+                    </span>
+                    <span>
+                      <a href="/report/generateLinkForReportDownload?patientId=<%=patientId%>&testId=<%=patientData.TestId%>&header=false" 
+                         data-bs-toggle="tooltip" title="Generate Report Link" 
+                         class="text-decoration-none link-dark">
+                        <i class="bi bi-box-arrow-right"></i>
+                      </a>
+                    </span>
+                    <span>
+                      <i class="bi bi-whatsapp text-success"></i>
+                    </span>
+                  <% } %>
+                <% } %>
+              </td>
+    
+              <!-- ✅ Report column with green check / red cross -->
+              <td>
+                <% if(patientData.ReportReady && patientDetail[0].Status!=2){ %>
+                  <i class="bi bi-check text-success"></i>
+                <% } else if(!patientData.ReportReady && patientDetail[0].Status!=2) { %>
+                  <i class="bi bi-x text-danger"></i>
+                <% } %>
+              </td>
+            </tr>
+            <% i++ }) %>
+        </tbody>
+      </table>
+    
+      <!-- ✅ Complete Button -->
+      <button type="button" id="completeBtn" class="btn btn-primary mt-3 mb-3">
+        <i class="bi bi-check2-circle me-2"></i> Complete Selected
+      </button>
+      
+    </form>
+    
+  </div>
+</section>
+<% if(!patientDetail[0].ThanksGivenTo && patientDetail[0].Status!=2){%>
+<section>
+  <hr>
+  <div class="container bg-white mt-3 mb-3 p-3">
+    <form action="/patient/thanks/?patientId=<%= patientDetail[0].Id %>" method="post" class="needs-validation" novalidate>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="thanksGivenTo" id="thanksGivenTo" placeholder="Thanks Given To" required>
+          <div class="invalid-feedback">Enter Name of the person</div>
+        </div>
+        <div class="col-md-3">
+          <input type="int" class="form-control" name="thanksPaidMobile" id="thanksPaidMobile" placeholder="Thanks Mobile" required>
+          <div class="invalid-feedback">Enter Mobile Number whom thanks to be paid.</div>
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="thanksAmount" id="thanksAmount" placeholder="Thanks Amount" required>
+          <div class="invalid-feedback">Enter Thanks Amount.</div>
+        </div>
+        <div class="col-md-3 d-flex align-items-center">
+          <button type="submit" class="btn btn-primary w-100">Thanks Submit</button>
+        </div>
+      </div>
+    </form>
+    <div class="row">
+      <div class="col">
+        <%} else{%>
+          <hr>
+          <div class="row mt-3">
+            <div class="col">
+              <h5 class="text-capitalize text-dark text-center"> Thanks Details</h6>
+            </div>
+          </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Mobile Number</th>
+                  <th scope="col">Amount</th>
+                  <th scope="col">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-capitalize">Mr.&nbsp;<%=patientDetail[0].ThanksGivenTo%></td>
+                  <td><%=patientDetail[0].ThanksGivenToMobile%></td>
+                  <td><%=patientDetail[0].ThanksAmount%></td>
+                  <td><%= new Date(patientDetail[0].ThanksGivenOn).toLocaleDateString('en-GB').replace(/\//g, '-')%></td>
+                </tr>
+              </tbody>
+            </table>
+            <%}%>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+  <section class="container my-4">
+    <div class="bg-white p-4 rounded shadow">
+      <h4 class="text-center text-uppercase mb-4">Patient Deliverables</h4>
+     
+  
+      <table class="table table-hover table-bordered align-middle mt-3">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Test Name</th>
+            <th>Component</th>
+            <th>Generated</th>
+            <th>Delivered</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% testList.forEach(test => { %>
+            <% test.Components.forEach((component, idx) => { %>
+              <tr>
+                <% if (idx === 0) { %>
+                  <td rowspan="<%= test.Components.length %>" class="fw-bold text-center"><%= test.TestName %></td>
+                <% } %>
+                <td class="text-center text-uppercase"><%= component.ComponentType %></td>
+                <td class="text-center">
+                  <% if (component.IsGenerated) { %>
+                    ✅ <small><%= component.GeneratedOnFormatted %></small>
+                  <% } else { %>
+                    ❌
+                  <% } %>
+                </td>
+                <td class="text-center">
+                  <% if (component.IsDelivered) { %>
+                    ✅ <small><%= component.DeliveredOnFormatted %></small>
+                  <% } else { %>
+                    ❌
+                  <% } %>
+                </td>
+                <td class="text-center">
+                  <% if (!component.IsGenerated) { %>
+                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#confirmModal" data-action="generate" data-refid="<%= component.PatientTestRefId %>" data-type="<%= component.ComponentType %>">Mark Generated</button>
+                   
+                  <% } else if (!component.IsDelivered) { %>
+                   
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#confirmModal" data-action="deliver"  data-refid="<%= component.PatientTestRefId %>" data-type="<%= component.ComponentType %>">Mark Delivered</button>
+
+                  <% } else { %>
+                    <span class="text-success">✅ Delivered</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" id="modalForm">
+          <input type="hidden" name="patientTestRefId" id="modalRefId">
+          <input type="hidden" name="componentType" id="modalComponentType">
+          <input type="hidden" name="patientId" id="patientId" value="<%=patientDetail[0].Id %>">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title text-uppercase" id="confirmModalLabel">Confirm Action</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+              Are you sure?
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Yes, Confirm</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+
+<!-- Warning Modal (No Checkbox Selected) -->
+<div class="modal fade" id="warningModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i> Warning</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body fs-5">
+        Please select at least one test before completing.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-dark" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Confirm Modal (Confirm Completion) -->
+<div class="modal fade" id="completeConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i> Confirm Completion</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body fs-5">
+        Are you sure you want to mark the selected tests as <span class="fw-bold text-success">completed</span>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="confirmComplete" class="btn btn-success">Yes, Complete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+<script>
+  const confirmModal = document.getElementById('confirmModal')
+  confirmModal.addEventListener('show.bs.modal', function (event) {
+   // alert('i m in righ')
+    const button = event.relatedTarget
+    const action = button.getAttribute('data-action')?.trim();
+   // console.log(action);
+
+    const refId = button.getAttribute('data-refid')
+   // console.log(refId);
+
+    const type = button.getAttribute('data-type')
+
+    console.log(type)
+
+    const modalTitle = confirmModal.querySelector('#confirmModalLabel')
+    const modalBody = confirmModal.querySelector('#modalBody')
+    const modalForm = confirmModal.querySelector('#modalForm')
+    const modalRefId = confirmModal.querySelector('#modalRefId')
+    const modalComponentType = confirmModal.querySelector('#modalComponentType')
+
+    modalRefId.value = refId
+    modalComponentType.value = type
+    if (action === 'generate') {
+     // alert('i m in ')
+     // alert(action)
+      modalForm.action = '/patient/mark-generated'
+      //alert(modalForm.action)
+      modalBody.innerHTML = `Are you sure you want to <strong>generate</strong> <u>${type}</u>?`
+    } else {
+     // alert(action)
+      modalForm.action = '/patient/mark-delivered'
+      modalBody.innerHTML = `Are you sure you want to <strong>mark as delivered</strong> <u>${type}</u>?`
+    }
+  })
+
+</script>
+
+
+   
+
+  

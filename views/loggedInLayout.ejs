@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Template</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta2/dist/css/bootstrap-select.min.css">
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/common.css">
+  <title><%=title%></title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/froalacss">
+</head>
+<body>
+  <!-- Navbar -->
+  <!--nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="/logo.png" alt="Logo">
+        <%=BRAND_NAME%>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="/home">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/aboutUs">About Us</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/contactUs">Contact Us</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/user/logout">Log Out</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav-->
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="/logo.png" alt="Logo" class="me-2" style="height: 40px;">
+        <%= BRAND_NAME %>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+              data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+  
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/home">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/aboutUs">About Us</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/contactUs">Contact Us</a>
+          </li>
+  
+          <!-- Profile Dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" 
+               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-person-circle me-1"></i> Profile
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+              <li><a class="dropdown-item" href="/user/applyLeave">Apply Leave</a></li>
+              <li><a class="dropdown-item" href="/user/myLeave">My Leave</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="/user/logout">Logout</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <style>
+  /* Show dropdown on hover only for desktop */
+  @media (min-width: 992px) { 
+    .navbar .dropdown:hover .dropdown-menu {
+      display: block;
+      margin-top: 0;
+    }
+  }
+  </style>
+  
+
+  <!-- Main section with sidebar and content -->
+  <div class="flex-fill">
+    <!-- Sidebar -->
+    <div id="sidebar" class="d-flex flex-column  vh-110 overflow-auto p-3">
+      <h4 class="mb-4">Menu</h4>
+      <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+          <a href="#" class="nav-link active">Dashboard</a>
+        </li>
+        <li>
+          <a href="#submenu1" data-bs-toggle="collapse" class="nav-link">Patients</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu1">
+            <li><a href="/patient/getPatientListView" class="nav-link">Patient List</a></li>
+            <li><a href="/patient/registerPatient" class="nav-link">Register Patient</a></li>
+            <li><a href="/patient/trackDuesAmount" class="nav-link">Dues Amount</a></li>
+            <li><a href="/patient/dailyDuesReceived" class="nav-link">Dues Received</a></li>
+            <li><a href="/report/viewCollection" class="nav-link">View Collection</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu2" data-bs-toggle="collapse" class="nav-link">Refferal</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu2">
+            <li><a href="/clinic/registerClinic" class="nav-link">Register Clinic</a></li>
+            <li><a href="/doctor/registerDoctor" class="nav-link">Register Doctor</a></li>
+            <li><a href="/doctor/getDoctorListView" class="nav-link">Doctors List</a></li>
+            <li><a href="/clinic/getClinicListView" class="nav-link">Clinic List</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu3" data-bs-toggle="collapse" class="nav-link">Test</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu3">
+            <li><a href="/category/createCategory" class="nav-link">Create Category</a></li>
+            <li><a href="/test/createTest" class="nav-link">Create Test</a></li>
+            <li><a href="/test/registerSubTest" class="nav-link">Create Sub Test</a></li>
+            <li><a href="/category/getCategoryListView" class="nav-link">Category List</a></li>
+            <li><a href="/test/getTestListView" class="nav-link">Test List</a></li>
+            <li><a href="/test/getSubParameterPage" class="nav-link">Sub Parameter View</a></li>
+            <li><a href="/test/createSubparameter" class="nav-link">Create Sub Parameter</a></li>
+            <li><a href="/test/getSubParamaterView" class="nav-link">Sub Test List</a></li>
+            <li><a href="/patient/viewThanksPaidPatientList" class="nav-link">Thanks List</a></li>
+            
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu4" data-bs-toggle="collapse" class="nav-link">Reports</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu4">
+            <li><a href="/report/getDiscountReport" class="nav-link">Discount</a></li>
+            <li><a href="/patient/patientHistory" class="nav-link">Patient History</a></li>
+            <li><a href="/schedule/getSchedule" class="nav-link">Marketing Schedule</a></li>
+            <li><a href="/report/getCategoryWiseCollection" class="nav-link">Category Wise Patient</a></li>
+            <li><a href="/report/doctorPatientServiceReport" class="nav-link">Doctor Service Patient</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu5" data-bs-toggle="collapse" class="nav-link">Documents</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu5">
+            <li><a href="/category/createDocumentCategory" class="nav-link">Docs Category</a></li>
+            <li><a href="/category/getDocumentCategoryList"class="nav-link">Category List</a></li>
+            <li><a href="/report/displayDocumentDetails" class="nav-link">Docs List</a></li>
+            <li><a href="/report/getDocumentUploadForm" class="nav-link">Upload Docs</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu6" data-bs-toggle="collapse" class="nav-link">Thanks</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu6">
+            <li><a href="/doctor/getDoctorWiseThanks" class="nav-link">Doctos Thanks List</a></li>
+            <li><a href="/patient/viewThanksPaidPatientList" class="nav-link">Thanks Paid List</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu7" data-bs-toggle="collapse" class="nav-link">Billing</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu7">
+            <li><a href="/billing/createSupplier" class="nav-link">Create Supplier</a></li>
+            <li><a href="/billing/getSupplierList" class="nav-link">View Supplier List</a></li>
+            <li><a href="/billing/createPurchasePo" class="nav-link">Purchase Po</a></li>
+            <li><a href="/billing/viewPurchasePo" class="nav-link">View Purchase Po</a></li>
+            <li><a href="/billing/createProduct" class="nav-link">Create Product</a></li>
+            <li><a href="/billing/getProductList" class="nav-link">View Product List</a></li>
+            <li><a href="/billing/createCustomer" class="nav-link">Create Customer</a></li>
+            <li><a href="/billing/getCustomerList" class="nav-link">Customers List</a></li>
+            <li><a href="/billing/addStock" class="nav-link">Add Stock</a></li>
+            <li><a href="/billing/getStockList" class="nav-link">Stock List</a></li>
+            <li><a href="/billing/addSale" class="nav-link">Add Sale</a></li>
+            <li><a href="/billing/viewSales" class="nav-link">View Sale</a></li>
+            <li><a href="/billing/salesReportCustomerWise" class="nav-link">Sales Report</a></li>
+            <li><a href="/billing/salesReportSupplierWise" class="nav-link">Sales Report</a></li>
+            <li><a href="/billing/salesReturn" class="nav-link">Sales Return</a></li>
+            <li><a href="/billing/addPayment" class="nav-link">Add Payment</a></li>
+            <li><a href="/billing/addPaymentToSupplier" class="nav-link">Add Payment</a></li>
+            <li><a href="/billing/customerListWithDues" class="nav-link">Customer Dues</a></li>
+            <li><a href="/admin/updateCarryForward" class="nav-link">Finacial Update</a></li>
+            <li><a href="/billing/createChallan" class="nav-link">Create Challan</a></li>
+            <li><a href="/billing/viewChallans" class="nav-link">View All Challan</a></li>
+            <li><a href="/billing/nonMovableStocks" class="nav-link">View Non Movable Stocks</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#submenu8" data-bs-toggle="collapse" class="nav-link">Admin</a>
+          <ul class="collapse list-unstyled ps-3 submenu" id="submenu8">
+            <li><a href="/user/getUserList" class="nav-link">User List</a></li>
+            
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Main content area -->
+    <div id="main-content">
+      <div class="content-area">
+        <%- body %>
+      </div>
+
+      <!-- Footer -->
+     
+    </div>
+  </div>
+  <!--ADDING JQUERY -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+  <script src="/pagination.js"></script>
+  <script src="/core.js"></script>
+  <script src="/sidebars.js"></script>
+  <script src="/froalajs"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+  <!-- Include stylesheet -->
+
+
+
+
+<!-- Include the Quill library -->
+<!--script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script-->
+
+  <script>
+     var editor = new FroalaEditor("textarea#froala-editor-male", {toolbarButtons: ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript', 'fontFamily', 'fontSize', 'color', 'backgroundColor', 'align', 'formatOL', 'formatUL', 'indent', 'outdent', 'insertImage', 'insertLink', 'insertTable', 'insertVideo', 'undo', 'redo'],
+                                                                height: 400,width:1200});
+     var editor = new FroalaEditor("textarea#froala-editor-female", {toolbarButtons: ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript', 'fontFamily', 'fontSize', 'color', 'backgroundColor', 'align', 'formatOL', 'formatUL', 'indent', 'outdent', 'insertImage', 'insertLink', 'insertTable', 'insertVideo', 'undo', 'redo'],
+                                                                height: 400,width:1200});
+    var editor = new FroalaEditor("textarea#froala-editor-report", {toolbarInline: false,toolbarButtons: ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript', 'fontFamily', 'fontSize', 'color', 'backgroundColor', 'align', 'formatOL', 'formatUL', 'indent', 'outdent', 'insertImage', 'insertLink', 'insertTable', 'insertVideo', 'undo', 'redo','getPDF','print'],
+                                                                height: 700,width:1100});
+
+    </script>
+    <!-- Initialize Quill editor -->
+
+</body>
+</html>
+
+

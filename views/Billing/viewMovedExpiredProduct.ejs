@@ -1,0 +1,286 @@
+<div class="container-fluid py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">Expired Stock Settlement</h4>
+            <small class="text-muted">
+                Total Records: <%= pagination.totalRecords %>
+            </small>
+        </div>
+    </div>
+    <!-- 🔷 Summary Cards -->
+    <%
+        let totalExpired = 0;
+        let totalSettled = 0;
+        let totalRemaining = 0;
+
+        expiredList.forEach(row => {
+            totalExpired += Number(row.ExpiredAmount || 0);
+            totalSettled += Number(row.SettledAmount || 0);
+            totalRemaining += Number(row.RemainingAmount || 0);
+        });
+    %>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center rounded-3">
+                <div class="card-body">
+                    <div class="text-muted small">Total Expired</div>
+                    <h5 class="fw-bold text-danger mb-0">
+                        ₹ <%= totalExpired.toFixed(2) %>
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center rounded-3">
+                <div class="card-body">
+                    <div class="text-muted small">Total Settled</div>
+                    <h5 class="fw-bold text-primary mb-0">
+                        ₹ <%= totalSettled.toFixed(2) %>
+                    </h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center rounded-3">
+                <div class="card-body">
+                    <div class="text-muted small">Total Remaining</div>
+                    <h5 class="fw-bold text-success mb-0">
+                        ₹ <%= totalRemaining.toFixed(2) %>
+                    </h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include("../partials/messages"); %>
+
+    <!-- 🔷 FILTER SECTION -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" action="/expired-stock">
+                <div class="row g-3 align-items-end">
+
+                    <!-- Supplier -->
+                    <div class="col-md-4">
+                        <label class="form-label">Supplier</label>
+                        <select name="supplierId" class="form-control">
+                            <option value="">All Suppliers</option>
+                            <% suppliers.forEach(s => { %>
+                                <option value="<%= s.Id %>"
+                                    <%= filters.supplierId == s.Id ? 'selected' : '' %>>
+                                    <%= s.Name %>
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-control">
+                            <option value="">All</option>
+                            <option value="PENDING" <%= filters.status === 'PENDING' ? 'selected' : '' %>>Pending</option>
+                            <option value="PARTIAL" <%= filters.status === 'PARTIAL' ? 'selected' : '' %>>Partial</option>
+                            <option value="SETTLED" <%= filters.status === 'SETTLED' ? 'selected' : '' %>>Settled</option>
+                        </select>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100">
+                            <i class="bi bi-search me-1"></i> Filter
+                        </button>
+                    </div>
+
+                    <div class="col-md-2">
+                        <a href="/expired-stock" class="btn btn-outline-secondary w-100">
+                            Reset
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🔷 TABLE -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light border-bottom">
+                        <tr class="text-uppercase small text-secondary">
+                            <th>#</th>
+                            <th>Supplier</th>
+                            <th>Product</th>
+                            <th>Batch</th>
+                            <th>Expiry</th>
+                            <th class="text-end">Qty</th>
+                            <th class="text-end">Expired ₹</th>
+                            <th class="text-end">Settled ₹</th>
+                            <th class="text-end">Remaining ₹</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <% if (expiredList.length === 0) { %>
+                        <tr>
+                            <td colspan="11" class="text-center py-5 text-muted">
+                                No expired records found
+                            </td>
+                        </tr>
+                    <% } %>
+
+                    <% expiredList.forEach((row, i) => {
+
+                        const settled = Number(row.SettledAmount || 0);
+                        const remaining = Number(row.RemainingAmount || 0);
+
+                        const serial = ((pagination.currentPage - 1) * pagination.limit) + i + 1;
+
+                        let statusClass = 'bg-danger-subtle text-danger';
+                        let statusText = 'PENDING';
+
+                        if (remaining <= 0) {
+                            statusClass = 'bg-success-subtle text-success';
+                            statusText = 'SETTLED';
+                        } else if (settled > 0) {
+                            statusClass = 'bg-warning-subtle text-warning';
+                            statusText = 'PARTIAL';
+                        }
+                    %>
+
+                    <tr class="<%= remaining <= 0 ? 'table-success' : '' %>">
+
+                        <td><%= serial %></td>
+                        <td class="fw-semibold"><%= row.SupplierName %></td>
+                        <td><%= row.ProductName %></td>
+
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary">
+                                <%= row.BatchNumber %>
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="badge bg-danger-subtle text-danger">
+                                <%= new Date(row.ExpiryDate).toLocaleDateString('en-GB').replace(/\//g, '-') %>
+                            </span>
+                        </td>
+
+                        <td class="text-end"><%= row.ExpiredQty %></td>
+                        <td class="text-end">₹ <%= Number(row.ExpiredAmount).toFixed(2) %></td>
+                        <td class="text-end text-primary">₹ <%= settled.toFixed(2) %></td>
+
+                        <td class="text-end fw-bold <%= remaining > 0 ? 'text-danger' : 'text-success' %>">
+                            ₹ <%= remaining.toFixed(2) %>
+                        </td>
+
+                        <td class="text-center">
+                            <span class="badge <%= statusClass %> px-3 py-2">
+                                <%= statusText %>
+                            </span>
+                        </td>
+
+                        <td class="text-center">
+                            <% if (remaining > 0) { %>
+                                <button 
+                                    class="btn btn-sm btn-outline-primary open-settle-modal"
+                                    data-id="<%= row.Id %>"
+                                    data-product="<%= row.ProductName %>"
+                                    data-supplier="<%= row.SupplierName %>"
+                                    data-remaining="<%= row.RemainingAmount %>"
+                                    data-supplierId="<%= row.SupplierId %>">
+                                    Settle
+                                </button>
+
+                            <% } else { %>
+                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                    Completed
+                                </span>
+                            <% } %>
+                        </td>
+
+                    </tr>
+
+                    <% }) %>
+
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔷 PAGINATION -->
+    <% if (pagination.totalPages > 1) { %>
+        <nav class="mt-4">
+            <ul class="pagination pagination-sm justify-content-center">
+
+                <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                    <li class="page-item <%= pagination.currentPage === i ? 'active' : '' %>">
+                        <a class="page-link"
+                           href="?page=<%= i %>
+                           &supplierId=<%= filters.supplierId || '' %>
+                           &status=<%= filters.status || '' %>">
+                            <%= i %>
+                        </a>
+                    </li>
+                <% } %>
+
+            </ul>
+        </nav>
+    <% } %>
+
+</div>
+<div class="modal fade" id="settlementModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content shadow">
+  
+        <div class="modal-header">
+          <h5 class="modal-title">Expired Stock Settlement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+  
+        <div class="modal-body">
+  
+          <div class="alert alert-warning small">
+            <strong>Product:</strong> <span id="modalProduct"></span><br>
+            <strong>Supplier:</strong> <span id="modalSupplier"></span><br>
+            <strong>Remaining Amount:</strong> ₹ <span id="modalRemaining"></span>
+          </div>
+  
+          <!-- Invoice Search -->
+          <div class="mb-3">
+            <label>Search Supplier Invoice</label>
+            <input type="text" 
+                   id="invoiceSearch"
+                   class="form-control"
+                   placeholder="Type invoice number...">
+          </div>
+  
+          <!-- Invoice list -->
+          <div id="invoiceList" class="list-group mb-3"></div>
+  
+          <!-- Products -->
+          <div id="invoiceProducts"></div>
+  
+        </div>
+  
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" id="confirmSettlement">Confirm</button>
+        </div>
+  
+      </div>
+    </div>
+  </div>
+  

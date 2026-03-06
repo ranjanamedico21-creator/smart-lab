@@ -1,0 +1,308 @@
+
+<!-- Breadcrumb -->
+<section class="py-4">
+  <div class="container-fluid">
+    <nav class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+      <ol class="breadcrumb mb-0 fw-medium">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">
+            <i class="bi bi-house-door me-1"></i>Home
+          </a>
+        </li>
+        <li class="breadcrumb-item active text-dark">Stocks</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Stocks Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+
+      <!-- Header -->
+      <div class="card-header bg-primary bg-gradient text-white py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+          <div>
+            <h4 class="mb-0 fw-bold">Stock Inventory</h4>
+            <small class="text-white-50">Enterprise stock management overview</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary -->
+      <div class="card-body border-bottom bg-light-subtle">
+
+        <div class="row g-3 text-center">
+
+          <div class="col-md-4">
+            <div class="p-3 kpi-box shadow-sm">
+              <div class="text-muted small">Total Products</div>
+              <div class="fs-4 fw-bold"><%= stocks.length %></div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 kpi-box shadow-sm">
+              <div class="text-muted small">Total Quantity</div>
+              <div class="fs-4 fw-bold text-primary">
+                <%= stocks.reduce((sum, s) => sum + Number(s.TotalQuantity || 0), 0) %>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 kpi-box shadow-sm">
+              <div class="text-muted small">Low Stock (≤5)</div>
+              <div class="fs-4 fw-bold text-danger">
+                <%= stocks.filter(s => Number(s.TotalQuantity) <= 5).length %>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card-body border-bottom">
+        <form action="/billing/getStockList" method="post" class="row g-3 align-items-end">
+
+          <div class="col-md-6">
+            <label class="form-label small text-muted fw-semibold">
+              <i class="bi bi-truck me-1"></i>Supplier
+            </label>
+            <select name="Supplier" class="form-control">
+              <option value="">All Suppliers</option>
+              <% suppliers.forEach(function(supplier){ %>
+                <option value="<%= supplier.Id %>"
+                  <%= (typeof supplierId !== 'undefined' && supplierId == supplier.Id) ? 'selected' : '' %>>
+                  <%= supplier.Name %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <button class="btn btn-primary w-100" name="action" value="search">
+              <i class="bi bi-search me-1"></i>Search
+            </button>
+          </div>
+
+          <div class="col-md-3">
+            <button class="btn btn-outline-primary w-100" name="action" value="download">
+              <i class="bi bi-download me-1"></i>Download
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Table -->
+      <div class="card-body p-0">
+
+        <% if (stocks && stocks.length > 0) { %>
+      
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+      
+            <thead class="table-light sticky-top text-uppercase small text-muted">
+              <tr>
+                <th class="ps-4">#</th>
+                <th>Supplier</th>
+                <th>Product</th>
+                <th class="text-center">Batch</th>
+                <th class="text-center">Expiry</th>
+                <th class="text-end pe-4">Quantity</th>
+                <th class="text-center">Stock Status</th>
+                <th class="text-center">Expiry Status</th>
+              </tr>
+            </thead>
+      
+            <tbody>
+      
+              <% let i = 0; %>
+              <% const today = new Date(); %>
+      
+              <% stocks.forEach(stock => { %>
+      
+                <% stock.Batches.forEach(batch => { 
+                     i++;
+                     const qty = Number(batch.Quantity || 0);
+      
+                     // ---------------------------
+                     // STOCK STATUS LOGIC
+                     // ---------------------------
+                     let stockBadge = 'bg-success';
+                     let stockText = 'Healthy';
+      
+                     if (qty <= 0) {
+                       stockBadge = 'bg-secondary';
+                       stockText = 'Out';
+                     } else if (qty <= 5) {
+                       stockBadge = 'bg-danger';
+                       stockText = 'Low';
+                     } else if (qty <= 20) {
+                       stockBadge = 'bg-warning';
+                       stockText = 'Medium';
+                     }
+      
+                     // ---------------------------
+                     // EXPIRY STATUS LOGIC
+                     // ---------------------------
+                     
+                  let expiryBadge = 'bg-success';
+                  let expiryText = 'Valid';
+                  let expiryDate = null;
+
+                  if (batch.ExpiryDate) {
+
+                    // Format expected: DD-MM-YYYY
+                    const parts = batch.ExpiryDate.split('-');
+
+                    if (parts.length === 3) {
+                      const day = parseInt(parts[0], 10);
+                      const month = parseInt(parts[1], 10) - 1; // JS month is 0-based
+                      const year = parseInt(parts[2], 10);
+
+                      expiryDate = new Date(year, month, day);
+
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+
+                      const threeMonthsLater = new Date(today);
+                      threeMonthsLater.setMonth(today.getMonth() + 3);
+
+                      if (expiryDate < today) {
+                        expiryBadge = 'bg-danger';
+                        expiryText = 'Expired';
+                      } 
+                      else if (expiryDate <= threeMonthsLater) {
+                        expiryBadge = 'bg-warning';
+                        expiryText = 'Expiring Soon';
+                      }
+                    }
+                  }
+
+                %>
+      
+                <tr>
+      
+                  <td class="ps-4 text-muted fw-medium"><%= i %></td>
+      
+                  <td class="fw-semibold">
+                    <%= stock.SupplierName %>
+                  </td>
+      
+                  <td>
+                    <a href="/billing/stockDetails/<%= stock.ProductId %>"
+                       class="text-decoration-none text-capitalize fw-semibold text-dark">
+                      <%= stock.ProductName %>
+                    </a>
+                  </td>
+      
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark border">
+                      <%= batch.BatchNumber %>
+                    </span>
+                  </td>
+      
+                  <td class="text-center">
+                    <% if (batch.ExpiryDate) { %>
+                      <%= batch.ExpiryDate %>
+                    <% } else { %>
+                      -
+                    <% } %>
+                  </td>
+      
+                  <td class="text-end pe-4 fw-semibold">
+                    <%= qty %>
+                  </td>
+      
+                  <!-- Stock Status -->
+                  <td class="text-center">
+                    <span class="badge <%= stockBadge %> px-3 py-2 rounded-pill">
+                      <%= stockText %>
+                    </span>
+                  </td>
+      
+                  <!-- Expiry Status -->
+                  <td class="text-center">
+                    <span class="badge <%= expiryBadge %> px-3 py-2 rounded-pill">
+                      <%= expiryText %>
+                    </span>
+                  </td>
+      
+                </tr>
+      
+                <% }); %>
+      
+                <!-- Product Total Row -->
+                <tr class="table-light fw-bold">
+                  <td></td>
+                  <td></td>
+                  <td class="text-primary text-capitalize"><%= stock.ProductName %> Total</td>
+                  <td></td>
+                  <td></td>
+                  <td class="text-end pe-4">
+                    <%= stock.TotalQuantity %>
+                  </td>
+                  <td></td>
+                  <td></td>
+                </tr>
+      
+              <% }); %>
+      
+            </tbody>
+      
+          </table>
+        </div>
+      
+        <% } else { %>
+      
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-box-seam fs-3 mb-2 d-block"></i>
+          No stock records available
+        </div>
+      
+        <% } %>
+      
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<% if (totalPages > 1) { %>
+  <nav aria-label="Stock Pagination">
+    <ul class="pagination justify-content-center mt-4">
+  
+      <!-- Previous -->
+      <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+        <a class="page-link"
+           href="?page=<%= currentPage - 1 %>&Supplier=<%= supplierId || '' %>">
+          Previous
+        </a>
+      </li>
+  
+      <!-- Page Numbers -->
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+          <a class="page-link"
+             href="?page=<%= i %>&Supplier=<%= supplierId || '' %>">
+            <%= i %>
+          </a>
+        </li>
+      <% } %>
+  
+      <!-- Next -->
+      <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+        <a class="page-link"
+           href="?page=<%= currentPage + 1 %>&Supplier=<%= supplierId || '' %>">
+          Next
+        </a>
+      </li>
+  
+    </ul>
+  </nav>
+  <% } %>

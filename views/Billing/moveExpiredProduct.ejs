@@ -1,0 +1,184 @@
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="fw-semibold mb-0">Expired Stock Management</h5>
+            <small class="text-muted">Supplier-wise expired inventory</small>
+        </div>
+    </div>
+    <%- include ("../partials/messages"); %>
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <form method="GET" action="/billing/moveExpiredProduct">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Supplier</label>
+                        <select name="supplierId" class="form-control">
+                            <option value="">All Suppliers</option>
+                            <% suppliers.forEach(s => { %>
+                                <option value="<%= s.Id %>"
+                                    <%= filters.supplierId == s.Id ? 'selected' : '' %>>
+                                    <%= s.Name %>
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Product</label>
+                        <select name="productId" class="form-control">
+                            <option value="">All Products</option>
+                            <% products.forEach(p => { %>
+                                <option value="<%= p.Id %>"
+                                    <%= filters.productId == p.Id ? 'selected' : '' %>>
+                                    <%= p.ProductName %>
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <button class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <a href="/expired-stock" class="btn btn-outline-secondary w-100">
+                            Reset
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+    <form id="expiredStockForm" action="/billing/moveExpiredProduct" method="post">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light sticky-top border-bottom">
+                            <tr class="text-nowrap small text-uppercase text-secondary">
+                                <th class="text-center px-3">
+                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                </th>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>Batch</th>
+                                <th class="text-end">Qty</th>
+                                <th>Expiry</th>
+                                <th>Supplier</th>
+                            </tr>
+                        </thead>
+        
+                        <tbody class="border-top-0">
+                            <% if (expiredStock.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                            No expired stock found
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% } else { %>
+                                <% expiredStock.forEach((row, i) => { %>
+                                    <tr class="table-row-hover">
+                                        <td class="text-center px-3">
+                                            <input type="checkbox"
+                                                   class="form-check-input row-check"
+                                                   name="stockIds[]"
+                                                   value="<%= row.Id %>">
+                                        </td>
+        
+                                        <td class="text-muted"><%= i + 1 %></td>
+        
+                                        <td>
+                                            <div class="fw-semibold text-dark">
+                                                <%= row.ProductName %>
+                                            </div>
+                                        </td>
+        
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary">
+                                                <%= row.BatchNumber %>
+                                            </span>
+                                        </td>
+        
+                                        <td class="text-end">
+                                            <span class="badge bg-info-subtle text-info fw-semibold px-3">
+                                                <%= row.Quantity %>
+                                            </span>
+                                        </td>
+        
+                                        <td>
+                                            <span class="badge bg-danger-subtle text-danger fw-semibold px-3">
+                                                <i class="bi bi-calendar-x me-1"></i>
+                                                <%= row.ExpiryDate %>
+                                            </span>
+                                        </td>
+        
+                                        <td class="text-muted">
+                                            <i class="bi bi-truck me-1"></i>
+                                            <%= row.SupplierName %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div> 
+        <input type="hidden" name="page" value="<%= pagination.currentPage %>">
+        <input type="hidden" name="supplierId" value="<%= filters.supplierId %>">
+        <input type="hidden" name="productId" value="<%= filters.productId %>">
+            
+        <div class="row mt-3">
+            <div class="col">
+                <button  class="btn btn-danger btn-sm" id="moveSelectedBtn" disabled> <i class="bi bi-arrow-right-circle"></i>
+                    Move Selected
+                </button>
+            </div>
+        </div>
+        </form>
+        <% if (pagination.totalPages > 1) { %>
+            <nav class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center flex-wrap">
+                    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                        <li class="page-item <%= pagination.currentPage == i ? 'active' : '' %>">
+                            <a class="page-link"
+                               href="?page=<%= i %>&supplierId=<%= filters.supplierId || '' %>&productId=<%= filters.productId || '' %>">
+                                <%= i %>
+                            </a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+            <% } %>
+
+<!-- Action Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="actionModalTitle">Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" id="actionModalBody">
+                Are you sure?
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="actionModalConfirmBtn">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

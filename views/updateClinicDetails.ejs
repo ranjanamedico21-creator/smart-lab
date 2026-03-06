@@ -1,0 +1,186 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Register Clinics</li>
+      </ol>
+    </nav>
+  </section>
+
+<!--Hero section starts-->
+<section class="m-3">
+  <div class="container-fluid">
+    <div class="row mt-3 text-center">
+        <div class="col">
+            <h4>Clinic Registration Details</h4>
+        </div>
+    </div>
+      <%- include ("./partials/messages"); %>
+      <form action="/clinic/updateClinicDetails?id=<%=clinicId%>" class="needs-validation" novalidate method="post" enctype="multipart/form-data">
+          <div class="row mt-3">
+              <div class="col-8">
+                  <div class="row">
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" class="text-capitalize form-control" value="<%= typeof ClinicName!= 'undefined' ? ClinicName : '' %>" name="ClinicName" id="clinicName" placeholder="Clinic Name" required>
+                              <div class="invalid-feedback">Valid clinic name is required.</div>
+                          </div>
+                      </div>
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="email" class="form-control" value="<%= typeof Email!= 'undefined' ? Email : '' %>" name="Email" placeholder="Email" id="email" required>
+                              <div class="invalid-feedback">Valid email is required.</div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="row mt-3">
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="number" class="form-control" id="phoneNumber" placeholder="Phone Number" value="<%= typeof PhoneNumber!= 'undefined' ? PhoneNumber : '' %>" name="PhoneNumber" required>
+                              <div class="invalid-feedback">Valid phone number is required.</div>
+                          </div>
+                      </div>
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="number" class="form-control" value="<%= typeof SecondaryNumber!= 'undefined' ? SecondaryNumber : '' %>" id="SecondaryNumber" name="SecondaryNumber" placeholder="Secondary Phone Number">
+                          </div>
+                      </div>
+                  </div>
+                  <div class="row mt-3">
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" value="<%= typeof Address!= 'undefined' ? Address : '' %>" class="text-capitalize form-control" name="Address" id="address1" placeholder="Address Line 1" required>
+                              <div class="invalid-feedback">Address is required.</div>
+                          </div>
+                      </div>
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" value="<%= typeof AdditionalAddress!= 'undefined' ? AdditionalAddress : '' %>" id="address2" placeholder="Address Line 2" class="text-capitalize form-control" name="AdditionalAddress">
+                          </div>
+                      </div>
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" value="<%= typeof KeyArea!= 'undefined' ? KeyArea : '' %>" id="KeyArea" placeholder="Key Area" class="text-capitalize form-control" name="KeyArea">
+                          </div>
+                      </div>
+                  </div>
+                  <div class="row mt-3">
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" class="form-control text-capitalize" value="<%= typeof City!= 'undefined' ? City : '' %>" placeholder="City" id="city" name="City" required>
+                              <div class="invalid-feedback">City is required.</div>
+                          </div>
+                      </div>
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" placeholder="State" id="state" value="<%= typeof State!= 'undefined' ? State : '' %>" class="form-control text-capitalize" name="State" required>
+                              <div class="invalid-feedback">State is required.</div>
+                          </div>
+                      </div>
+                      <div class="col">
+                          <div class="input-group">
+                              <input type="text" placeholder="Pincode" id="pincode" value="<%= typeof Pincode!= 'undefined' ? Pincode : '' %>" class="form-control text-capitalize" name="Pincode" required>
+                              <div class="invalid-feedback">Pincode is required.</div>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="row mt-3">
+                      <div class="col-6">
+                          <div class="input-group">
+                              <input type="text" class="form-control text-capitalize" value="<%= typeof LandMark!= 'undefined' ? LandMark : '' %>" id="LandMark" placeholder="LandMark" name="LandMark" required>
+                              <div class="invalid-feedback">Landmark is required.</div>
+                          </div>
+                      </div>
+                      <div class="col-6">
+                          <select name="AssignedId" class="form-control" id="user" data-live-search="true" required>
+                              <option value="" selected>Assign a marketing person</option>
+                              <% i=1;users.forEach(function(user){ %>
+                              <option value="<%=user.Id%>" <% if(typeof AssignedTo != 'undefined' && user.Id == AssignedTo){%>Selected <%}%> ><%=user.FirstName%> <%=user.LastName%></option>
+                              <%})%>
+                          </select>
+                      </div>
+                  </div>
+                  <div class="row mt-4" >
+                    <div class="col-8">
+                          <label class="form-label">Upload Prescription (PDF)</label>
+                          <input type="file" class="form-control" id="pdfInput" accept="application/pdf">
+                    </div>
+                    <div class="col-4 mt-4">
+                      <button class="btn btn-primary" type="button" onclick="displayPDF()">Display</button>
+                    </div>
+                </div> 
+              </div>
+              <div class="col-4">
+                <div class="row">
+                  <div class="col">
+                    <h3>Prescription Preview</h3>
+                    <div id="canvasContainer"><canvas id="pdfCanvas"></canvas></div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col">
+                    <button class="btn btn-warning mt-2" id="cropButton" style="display: none;" type="button" onclick="cropImage()">Crop</button>
+                </div>
+              </div> 
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col">
+              <h3>Cropped Prescription</h3>
+              <img  id="croppedImage" class="img-fluid" alt="clinic prescription" src="/<%=ClinicName%>_<%=clinicId%>.jpg" />
+            </div>
+          </div>
+          <input type="file" name="clinicPrescription" id="croppedImageInput" style="display: none;">
+          <button type="submit" class="btn btn-primary mt-3 mb-3">Update Details</button>
+      </form>
+  </div>
+</section>
+
+<!-- End of .container -->
+
+<script>
+  let cropper;
+  let pdfCanvas = document.getElementById('pdfCanvas');
+
+  function displayPDF() {
+      const fileInput = document.getElementById('pdfInput').files[0];
+      if (!fileInput) return alert("Please select a PDF!");
+
+      const reader = new FileReader();
+      reader.onload = async function () {
+          const pdfData = new Uint8Array(reader.result);
+          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+          const page = await pdf.getPage(1);
+
+          const scale = 1.5;
+          const viewport = page.getViewport({ scale });
+
+          const context = pdfCanvas.getContext('2d');
+          pdfCanvas.width = viewport.width;
+          pdfCanvas.height = viewport.height;
+
+          await page.render({ canvasContext: context, viewport }).promise;
+
+          if (cropper) cropper.destroy();
+          cropper = new Cropper(pdfCanvas, { viewMode: 1 });
+
+          document.getElementById('cropButton').style.display = 'block';
+      };
+      reader.readAsArrayBuffer(fileInput);
+  }
+
+  function cropImage() {
+      const croppedCanvas = cropper.getCroppedCanvas();
+      croppedCanvas.toBlob((blob) => {
+          const file = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+
+          document.getElementById('croppedImageInput').files = dataTransfer.files;
+          document.getElementById('croppedImage').src = URL.createObjectURL(blob);
+          document.getElementById('croppedImage').style.display = 'block';
+          document.getElementById('submitButton').style.display = 'block';
+      }, 'image/jpeg');
+  }
+</script>

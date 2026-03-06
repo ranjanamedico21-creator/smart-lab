@@ -1,0 +1,34 @@
+<form action="/user/applyLeave" method="post" class="p-3 shadow rounded bg-light">
+    <!-- Leave Type -->
+    <div class="mb-3">
+      <label for="leaveType" class="form-label">Leave Type</label>
+      <select name="leaveTypeId" id="leaveType" class="form-control" required>
+        <option value="">-- Select Leave Type --</option>
+        <% leaveTypes.forEach(type => { %>
+          <option value="<%= type.Id %>"><%= type.Name %></option>
+        <% }) %>
+      </select>
+    </div>
+  
+    <!-- Start Date -->
+    <div class="mb-3">
+      <label for="startDate" class="form-label">Start Date</label>
+      <input type="date" id="startDate" name="startDate" class="form-control" required>
+    </div>
+  
+    <!-- End Date -->
+    <div class="mb-3">
+      <label for="endDate" class="form-label">End Date</label>
+      <input type="date" id="endDate" name="endDate" class="form-control" required>
+    </div>
+  
+    <!-- Reason -->
+    <div class="mb-3">
+      <label for="reason" class="form-label">Reason</label>
+      <textarea id="reason" name="reason" class="form-control"></textarea>
+    </div>
+  
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary">Apply Leave</button>
+  </form>
+  

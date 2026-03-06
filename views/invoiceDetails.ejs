@@ -1,0 +1,266 @@
+<section class="min-vh-100 py-4" 
+         style="background: linear-gradient(135deg,#eef2ff,#f8fafc);">
+
+<div class="container-fluid">
+
+  <!-- Top Action Bar -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body py-3 px-4">
+
+      <div class="d-flex flex-wrap justify-content-between align-items-center">
+
+        <div>
+          <h4 class="fw-bold mb-1">
+            <i class="bi bi-receipt-cutoff text-primary me-2"></i>
+            Invoice <span class="text-primary">
+              <%= purchaseOrder[0].PurchaseInvoiceNo %>
+            </span>
+          </h4>
+          <small class="text-muted">
+            Supplier: <%= purchaseOrder[0].SupplierName %>
+          </small>
+        </div>
+
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+
+          <button onclick="window.print()" 
+                  class="btn btn-light border rounded-pill px-3">
+            <i class="bi bi-printer me-2"></i>Print
+          </button>
+
+          <a href="/billing/downloadPo/<%= purchaseOrder[0].PurchaseInvoiceNo %>" 
+             class="btn btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-download me-2"></i>Download
+          </a>
+
+          <a href="/billing/addInvoice/<%= purchaseOrder[0].Id %>" 
+             class="btn btn-primary rounded-pill px-3 shadow-sm">
+            <i class="bi bi-plus-circle me-2"></i>Add Invoice
+          </a>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include("./partials/messages"); %>
+
+  <% if (purchaseOrder) { %>
+
+  <!-- Summary Stats -->
+  <div class="row g-4 mb-4">
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-body">
+          <small class="text-muted">Order Date</small>
+          <h6 class="fw-bold mt-2">
+            <%= new Date(purchaseOrder[0].OrderDate)
+              .toLocaleDateString('en-GB')
+              .replace(/\//g,'-') %>
+          </h6>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-body">
+          <small class="text-muted">Total Amount</small>
+          <h5 class="fw-bold text-success mt-2">
+            ₹<%= purchaseOrder[0].TotalAmountWithTax %>
+          </h5>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-body">
+          <small class="text-muted">Products</small>
+          <h5 class="fw-bold mt-2">
+            <%= purchaseOrder.length %>
+          </h5>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <div class="card-body">
+
+          <small class="text-muted">Completion</small>
+
+          <% 
+            let totalQty = 0;
+            let remainingQty = 0;
+            purchaseOrder.forEach(p=>{
+              totalQty += p.Quantity;
+              remainingQty += p.RemainingQuantity;
+            });
+            let completedPercent = 
+              Math.round(((totalQty - remainingQty)/totalQty)*100);
+          %>
+
+          <div class="progress mt-2" style="height:8px;">
+            <div class="progress-bar bg-success" 
+                 style="width:<%= completedPercent %>%">
+            </div>
+          </div>
+
+          <small class="fw-semibold">
+            <%= completedPercent %>% Completed
+          </small>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Products Section -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Products</h5>
+        <input type="text" 
+               class="form-control w-auto rounded-pill" 
+               placeholder="Search product..." 
+               id="productSearch">
+      </div>
+
+      <div class="table-responsive">
+        <table class="table align-middle table-hover">
+          <thead class="small text-muted text-uppercase">
+            <tr>
+              <th>Product</th>
+              <th>Ordered</th>
+              <th>Remaining</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="productTable">
+
+            <% purchaseOrder.forEach(product=>{ %>
+              <tr>
+                <td class="fw-semibold text-capitalize">
+                  <%= product.ProductName %>
+                </td>
+                <td><%= product.Quantity %></td>
+                <td>
+                  <span class="badge 
+                    <%= product.RemainingQuantity === 0
+                        ? 'bg-success'
+                        : 'bg-warning text-dark' %> 
+                    rounded-pill px-3">
+                    <%= product.RemainingQuantity %>
+                  </span>
+                </td>
+                <td>₹<%= product.PurchasePrice %></td>
+                <td class="fw-bold text-primary">
+                  ₹<%= product.TotalAmount %>
+                </td>
+              </tr>
+            <% }) %>
+
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Invoices Section -->
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body">
+
+      <h5 class="fw-bold mb-3">Invoices</h5>
+
+      <% if(invoices.length>0){ %>
+
+      <div class="table-responsive">
+        <table class="table align-middle table-hover">
+          <thead class="small text-muted text-uppercase">
+            <tr>
+              <th>System No</th>
+              <th>Supplier No</th>
+              <th>Date</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <% invoices.forEach(invoice=>{ 
+              let invoiceDate = new Date(invoice.InvoiceDate);
+              let today = new Date();
+              let isNew = invoiceDate.toDateString() === today.toDateString();
+            %>
+
+            <tr>
+              <td class="fw-semibold"><%= invoice.InvoiceNo %></td>
+
+              <td>
+                <a href="/billing/downloadInvoices/<%= invoice.SupplierInvoiceNo %>"
+                   class="text-decoration-none fw-semibold text-dark">
+                  <%= invoice.SupplierInvoiceNo %>
+                </a>
+
+                <% if(isNew){ %>
+                  <span class="badge bg-danger rounded-pill ms-2">
+                    New
+                  </span>
+                <% } %>
+              </td>
+
+              <td>
+                <%= invoiceDate.toLocaleDateString('en-GB')
+                  .replace(/\//g,'-') %>
+              </td>
+
+              <td class="fw-bold text-success">
+                ₹<%= invoice.TotalAmount %>
+              </td>
+
+            </tr>
+
+            <% }) %>
+
+          </tbody>
+        </table>
+      </div>
+
+      <% } else { %>
+
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-folder-x fs-2 d-block mb-2"></i>
+          No invoices available
+        </div>
+
+      <% } %>
+
+    </div>
+  </div>
+
+  <% } %>
+
+</div>
+</section>
+
+<script>
+  // Live Product Search
+  document.getElementById("productSearch")
+    ?.addEventListener("keyup", function () {
+      let value = this.value.toLowerCase();
+      document.querySelectorAll("#productTable tr")
+        .forEach(row => {
+          row.style.display = 
+            row.innerText.toLowerCase().includes(value)
+            ? ""
+            : "none";
+        });
+    });
+</script>
