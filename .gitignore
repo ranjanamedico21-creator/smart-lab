@@ -37,3 +37,6 @@ prescriptions/
 # Mac system files
 .AppleDouble
 .LSOverride
+config/google-vision.json
+.env
+node_modules
