@@ -1,0 +1,529 @@
+<%# views/Billing/paymentCorrection.ejs %>
+
+<style>
+:root {
+  --brand:#185FA5; --brand-text:#0C447C;
+  --surface:#fff; --surface-alt:#F8F9FB;
+  --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+  --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+  --success-bg:#EAF3DE; --success-text:#3B6D11;
+  --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+  --warning-bg:#FAEEDA; --warning-text:#854F0B;
+  --info-bg:#E6F1FB;    --info-text:#185FA5;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+  --shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);
+}
+.flatpickr-current-month {
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    appearance:auto !important;
+    height:auto !important;
+    width:auto !important;
+    padding:0 !important;
+}
+
+.flatpickr-current-month .numInputWrapper {
+    width:70px !important;
+}
+
+.flatpickr-current-month input.cur-year {
+    height:auto !important;
+    padding:0 !important;
+    border:none !important;
+    background:transparent !important;
+}
+.pc-wrapper { padding:16px 0 48px; }
+.pc-card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:visible; margin-bottom:20px; }
+
+.pc-header { display:flex; align-items:center; gap:14px; padding:20px 24px; border-bottom:1px solid var(--border); }
+.pc-header-icon { width:40px; height:40px; border-radius:var(--radius-sm); background:var(--warning-bg); display:flex; align-items:center; justify-content:center; color:var(--warning-text); font-size:18px; flex-shrink:0; }
+.pc-header-title { font-size:15px; font-weight:700; color:var(--text-primary); margin:0; }
+.pc-header-sub   { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+
+/* ── Search panel ── */
+.pc-search { padding:20px 24px; border-bottom:1px solid var(--border); background:var(--surface-alt); }
+.pc-search-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr auto;
+  gap:12px;
+  align-items:end;      /* align to bottom so labels don't shift heights */
+}
+.pc-field { display:flex; flex-direction:column; gap:5px; }
+.pc-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; line-height:1; }
+
+/* Native inputs and selects — consistent height 38px */
+.pc-input,
+.pc-search select {
+  width:100%;
+  height:38px;
+  border:1.5px solid var(--border-strong);
+  border-radius:var(--radius-sm);
+  padding:0 12px;
+  font-size:13px;
+  color:var(--text-primary);
+  background:#fff;
+  outline:none;
+  font-family:inherit;
+  transition:border-color .15s, box-shadow .15s;
+  box-sizing:border-box;
+  appearance:none;
+  -webkit-appearance:none;
+}
+.pc-input:focus,
+.pc-search select:focus {
+  border-color:var(--brand);
+  box-shadow:0 0 0 3px rgba(24,95,165,.1);
+}
+
+/* Tom Select — match the 38px height exactly */
+.pc-search .ts-wrapper { width:100%; }
+.pc-search .ts-wrapper.single .ts-control {
+  height:38px !important;
+  min-height:38px !important;
+  border:1.5px solid var(--border-strong) !important;
+  border-radius:var(--radius-sm) !important;
+  padding:0 12px !important;
+  font-size:13px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+  display:flex !important;
+  align-items:center !important;
+  box-sizing:border-box !important;
+  overflow:visible !important;
+}
+.pc-search .ts-wrapper.single:focus-within .ts-control {
+  border-color:var(--brand) !important;
+  box-shadow:0 0 0 3px rgba(24,95,165,.1) !important;
+}
+/* Flatpickr input — remove readonly grey tint, keep full height */
+.pc-input[readonly] { background:#fff; cursor:pointer; }
+/* Flatpickr calendar — ensure it appears above everything */
+.flatpickr-calendar { z-index:99999 !important; }
+
+.pc-btn-search {
+  height:38px;
+  display:flex; align-items:center; gap:6px;
+  padding:0 18px;
+  background:var(--brand); color:#fff;
+  border:none; border-radius:var(--radius-sm);
+  font-size:13px; font-weight:500; cursor:pointer;
+  white-space:nowrap; font-family:inherit;
+  transition:background .15s;
+}
+.pc-btn-search:hover { background:var(--brand-text); }
+
+/* Alerts */
+.pc-alert { display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-radius:var(--radius-sm); font-size:13px; line-height:1.5; }
+.pc-alert i { flex-shrink:0; margin-top:2px; font-size:14px; }
+.pc-alert-warning { background:var(--warning-bg); border:1px solid rgba(133,79,11,.15); color:var(--warning-text); }
+.pc-alert-success { background:var(--success-bg); border:1px solid rgba(59,109,17,.15);  color:var(--success-text); }
+
+/* Table */
+.pc-section { padding:20px 24px; }
+.pc-table { width:100%; border-collapse:collapse; }
+.pc-table thead th { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); padding:10px 14px; border-bottom:1px solid var(--border-strong); background:var(--surface-alt); text-align:left; white-space:nowrap; }
+.pc-table tbody td { padding:13px 14px; font-size:13px; color:var(--text-primary); border-bottom:1px solid var(--border); vertical-align:middle; }
+.pc-table tbody tr:last-child td { border-bottom:none; }
+.pc-table tbody tr:hover td { background:#fafbfc; }
+
+.btn-delete   { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; border:none; cursor:pointer; background:var(--danger-bg); color:var(--danger-text); }
+.btn-delete:hover { background:#f5d5d5; }
+.btn-transfer { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; border:none; cursor:pointer; background:var(--info-bg); color:var(--info-text); }
+.btn-transfer:hover { background:#d0e8f8; }
+
+.bdg { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; }
+.bdg-cash   { background:var(--success-bg); color:var(--success-text); }
+.bdg-online { background:var(--info-bg);    color:var(--info-text); }
+.bdg-cheque { background:var(--warning-bg); color:var(--warning-text); }
+.bdg-warn   { background:var(--warning-bg); color:var(--warning-text); }
+
+.pc-empty { display:flex; align-items:center; gap:8px; padding:20px; background:var(--surface-alt); border-radius:var(--radius-sm); border:1px solid var(--border); font-size:13px; color:var(--text-secondary); }
+
+/* ── Modals — use normal flow, not fixed/absolute ── */
+.pc-modal-wrap {
+  display:none;
+  background:rgba(0,0,0,.48);
+  padding:40px 16px;
+  justify-content:center;
+  align-items:flex-start;
+  border-radius:var(--radius-lg);
+  margin-top:16px;
+}
+.pc-modal-wrap.show { display:flex; }
+.pc-modal { background:#fff; border-radius:var(--radius-lg); max-width:480px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,.2); overflow:hidden; }
+.pc-modal-header { padding:18px 20px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.pc-modal-title { font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+.pc-modal-close { width:28px; height:28px; border-radius:6px; background:var(--surface-alt); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-hint); font-size:14px; }
+.pc-modal-close:hover { background:#f1f5f9; color:var(--text-primary); }
+.pc-modal-body { padding:20px; }
+.pc-modal-footer { padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+.pc-modal-btn { padding:9px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; border:none; font-family:inherit; }
+.pc-modal-btn-cancel  { background:var(--surface-alt); color:var(--text-secondary); border:1px solid var(--border); }
+.pc-modal-btn-danger  { background:#dc2626; color:#fff; }
+.pc-modal-btn-primary { background:var(--brand); color:#fff; }
+
+.pc-pay-strip { background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:16px; }
+.pc-pay-strip-row { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; padding:3px 0; }
+.pc-pay-strip-row .lbl { color:var(--text-secondary); }
+.pc-pay-strip-row .val { font-weight:600; color:var(--text-primary); font-family:'DM Mono',monospace; }
+.pc-pay-amount { font-size:22px; font-weight:700; color:var(--success-text); font-family:'DM Mono',monospace; margin-top:10px; }
+
+/* Transfer arrow row */
+.tr-arrow-row { display:flex; align-items:center; gap:10px; margin:14px 0; font-size:13px; }
+.tr-arrow-row .from { flex:1; text-align:right; font-weight:600; color:var(--danger-text); }
+.tr-arrow-row .to   { flex:1; font-weight:600; color:var(--brand); }
+
+/* Modal select — same height as search selects */
+.pc-modal select.pc-input { height:38px; }
+
+@media(max-width:768px) {
+  .pc-search-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+
+<%- include("../partials/messages") %>
+
+<div class="pc-wrapper">
+<div class="pc-card">
+
+  <!-- Header -->
+  <div class="pc-header">
+    <div class="pc-header-icon"><i class="bi bi-arrow-left-right"></i></div>
+    <div>
+      <p class="pc-header-title">Payment Correction</p>
+      <p class="pc-header-sub">Delete a wrong payment or transfer it to the correct customer</p>
+    </div>
+  </div>
+
+  <!-- Flash notifications -->
+  <% var flashMsgs = typeof notifications !== 'undefined' ? notifications : []; %>
+  <% if (flashMsgs.length) { %>
+  <div style="padding:16px 24px 0">
+    <% flashMsgs.forEach(function(n){ %>
+    <div class="pc-alert <%= n.type === 'success' ? 'pc-alert-success' : 'pc-alert-warning' %>">
+      <i class="bi <%= n.icon %>"></i>
+      <span><%= n.messages %></span>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <!-- Warning banner -->
+  <div style="padding:16px 24px 0">
+    <div class="pc-alert pc-alert-warning">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>
+        <strong>Use carefully.</strong>
+        Deleting removes the payment from the ledger permanently.
+        Transferring moves it to the correct customer — all accounting entries are reversed and re-posted automatically.
+      </span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="pc-search" style="margin-top:16px">
+    <form method="GET" action="/billing/paymentCorrection">
+      <div class="pc-search-grid">
+
+        <div class="pc-field">
+          <label class="pc-label" for="pcCustomer">Customer</label>
+          <select name="customerId" id="pcCustomer">
+            <option value="">Select customer</option>
+            <% (customers || []).forEach(function(c){ %>
+            <option value="<%= c.Id %>" <%= customerId == c.Id ? 'selected' : '' %>>
+              <%= c.CustomerName %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="pc-field">
+          <label class="pc-label" for="FromDate">From Date</label>
+          <input type="text" name="fromDate" id="FromDate" class="pc-input"
+            placeholder="dd-mm-yyyy" autocomplete="off" readonly value="<%= fromDate %>">
+        </div>
+
+        <div class="pc-field">
+          <label class="pc-label" for="ToDate">To Date</label>
+          <input type="text" name="toDate" id="ToDate" class="pc-input"
+            placeholder="dd-mm-yyyy" autocomplete="off" readonly value="<%= toDate %>">
+        </div>
+
+        <div class="pc-field" style="justify-content:flex-end">
+          <button type="submit" class="pc-btn-search">
+            <i class="bi bi-search"></i> Search
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- Payments table -->
+  <div class="pc-section">
+    <% if (!customerId) { %>
+      <div class="pc-empty">
+        <i class="bi bi-info-circle" style="color:var(--brand)"></i>
+        Select a customer above to view their payments.
+      </div>
+
+    <% } else if (!payments || payments.length === 0) { %>
+      <div class="pc-empty">
+        <i class="bi bi-check-circle" style="color:var(--success-text)"></i>
+        No payments found for this customer in the selected date range.
+      </div>
+
+    <% } else { %>
+    <div style="overflow-x:auto">
+      <table class="pc-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Payment No</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Mode</th>
+            <th>Corrections</th>
+            <th style="text-align:center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% payments.forEach(function(p, i){ %>
+          <%
+            var modeLC    = (p.PaymentType || '').toLowerCase();
+            var modeClass = modeLC === 'cash' ? 'bdg-cash' : (modeLC === 'online' || modeLC === 'upi') ? 'bdg-online' : 'bdg-cheque';
+            var modeIcon  = modeLC === 'cash' ? 'bi-cash-stack' : (modeLC === 'online' || modeLC === 'upi') ? 'bi-qr-code-scan' : 'bi-bank';
+            var amtDisplay = Number(p.Amount).toLocaleString('en-IN');
+          %>
+          <tr>
+            <td style="color:var(--text-hint);font-size:12px"><%= i+1 %></td>
+            <td><span style="font-weight:600;font-family:'DM Mono',monospace"><%= p.PaymentNo %></span></td>
+            <td class="text-capitalize"><span style="font-weight:500"><%= p.CustomerName %></span></td>
+            <td style="font-size:12.5px;white-space:nowrap"><%= p.PaymentDate %></td>
+            <td>
+              <span style="font-weight:700;font-family:'DM Mono',monospace;color:var(--success-text)">
+                &#8377;<%= amtDisplay %>
+              </span>
+            </td>
+            <td>
+              <span class="bdg <%= modeClass %>">
+                <i class="bi <%= modeIcon %>"></i> <%= p.PaymentType %>
+              </span>
+            </td>
+            <td>
+              <% if (p.CorrectionCount > 0) { %>
+                <span class="bdg bdg-warn">
+                  <i class="bi bi-clock-history"></i>
+                  <%= p.CorrectionCount %> correction<%= p.CorrectionCount > 1 ? 's' : '' %>
+                </span>
+              <% } else { %>
+                <span style="color:var(--text-hint);font-size:12px">—</span>
+              <% } %>
+            </td>
+            <td style="text-align:center">
+              <div style="display:flex;gap:6px;justify-content:center">
+                <button class="btn-transfer"
+                  data-payment-id="<%= p.Id %>"
+                  data-payment-no="<%= p.PaymentNo %>"
+                  data-amount="<%= amtDisplay %>"
+                  data-customer-name="<%= p.CustomerName %>"
+                  data-customer-id="<%= p.CustomerId %>"
+                  data-date="<%= p.PaymentDate %>"
+                  data-mode="<%= p.PaymentType %>"
+                  onclick="openTransferModal(this)">
+                  <i class="bi bi-arrow-left-right"></i> Transfer
+                </button>
+                <button class="btn-delete"
+                  data-payment-id="<%= p.Id %>"
+                  data-payment-no="<%= p.PaymentNo %>"
+                  data-amount="<%= amtDisplay %>"
+                  data-customer-name="<%= p.CustomerName %>"
+                  data-date="<%= p.PaymentDate %>"
+                  onclick="openDeleteModal(this)">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- ══ DELETE MODAL — in normal flow below table ══ -->
+  <div class="pc-modal-wrap" id="deleteModalWrap">
+    <div class="pc-modal">
+      <div class="pc-modal-header">
+        <div class="pc-modal-title" style="color:#dc2626">
+          <i class="bi bi-trash"></i> Delete Payment
+        </div>
+        <button type="button" class="pc-modal-close" onclick="closeModal('deleteModalWrap')">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <form action="/billing/deletePayment" method="POST">
+        <div class="pc-modal-body">
+          <div class="pc-pay-strip">
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Payment No</span>
+              <span class="val" id="del_payNo">—</span>
+            </div>
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Customer</span>
+              <span class="val" id="del_customer">—</span>
+            </div>
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Date</span>
+              <span class="val" id="del_date">—</span>
+            </div>
+            <div class="pc-pay-amount">&#8377;<span id="del_amount">0</span></div>
+          </div>
+          <div class="pc-alert pc-alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>This will <strong>permanently remove</strong> the payment from the ledger and reverse all accounting entries. This cannot be undone.</span>
+          </div>
+          <input type="hidden" name="paymentId"  id="del_paymentId">
+          <input type="hidden" name="customerId" value="<%= customerId %>">
+          <input type="hidden" name="fromDate"   value="<%= fromDate %>">
+          <input type="hidden" name="toDate"     value="<%= toDate %>">
+        </div>
+        <div class="pc-modal-footer">
+          <button type="button" class="pc-modal-btn pc-modal-btn-cancel"
+            onclick="closeModal('deleteModalWrap')">Cancel</button>
+          <button type="submit" class="pc-modal-btn pc-modal-btn-danger">
+            <i class="bi bi-trash me-1"></i> Yes, Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══ TRANSFER MODAL — in normal flow below table ══ -->
+  <div class="pc-modal-wrap" id="transferModalWrap">
+    <div class="pc-modal">
+      <div class="pc-modal-header">
+        <div class="pc-modal-title" style="color:var(--brand)">
+          <i class="bi bi-arrow-left-right"></i> Transfer Payment
+        </div>
+        <button type="button" class="pc-modal-close" onclick="closeModal('transferModalWrap')">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <form action="/billing/transferPayment" method="POST">
+        <div class="pc-modal-body">
+          <div class="pc-pay-strip">
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Payment No</span>
+              <span class="val" id="tr_payNo">—</span>
+            </div>
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Currently under</span>
+              <span class="val" id="tr_customer" style="color:var(--danger-text)">—</span>
+            </div>
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Date</span>
+              <span class="val" id="tr_date">—</span>
+            </div>
+            <div class="pc-pay-strip-row">
+              <span class="lbl">Mode</span>
+              <span class="val" id="tr_mode">—</span>
+            </div>
+            <div class="pc-pay-amount">&#8377;<span id="tr_amount">0</span></div>
+          </div>
+
+          <div class="tr-arrow-row">
+            <span class="from" id="tr_fromLabel">—</span>
+            <i class="bi bi-arrow-right" style="font-size:18px;color:var(--brand);flex-shrink:0"></i>
+            <span class="to">Correct Customer</span>
+          </div>
+
+          <div class="pc-field">
+            <label class="pc-label" for="tr_toCustomer">Transfer To (Correct Customer)</label>
+            <select name="toCustomerId" id="tr_toCustomer" class="pc-input" required style="height:38px;margin-top:5px">
+              <option value="">Select correct customer</option>
+              <% (customers || []).forEach(function(c){ %>
+              <option value="<%= c.Id %>"><%= c.CustomerName %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="pc-alert pc-alert-warning" style="margin-top:14px;margin-bottom:0">
+            <i class="bi bi-info-circle-fill"></i>
+            <span>The payment will be removed from the current customer and re-posted to the selected customer. All accounting entries update automatically.</span>
+          </div>
+
+          <input type="hidden" name="paymentId"      id="tr_paymentId">
+          <input type="hidden" name="fromCustomerId" id="tr_fromCustomerId">
+          <input type="hidden" name="fromDate"       value="<%= fromDate %>">
+          <input type="hidden" name="toDate"         value="<%= toDate %>">
+        </div>
+        <div class="pc-modal-footer">
+          <button type="button" class="pc-modal-btn pc-modal-btn-cancel"
+            onclick="closeModal('transferModalWrap')">Cancel</button>
+          <button type="submit" class="pc-modal-btn pc-modal-btn-primary">
+            <i class="bi bi-arrow-left-right me-1"></i> Transfer Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /pc-card -->
+</div><!-- /pc-wrapper -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Close modal when clicking the dark backdrop area
+  ['deleteModalWrap','transferModalWrap'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(e){
+      if (e.target === this) closeModal(id);
+    });
+  });
+
+});
+
+function openModal(id)  {
+  // Close any other open modal first
+  ['deleteModalWrap','transferModalWrap'].forEach(function(i){ if(i!==id) closeModal(i); });
+  document.getElementById(id).classList.add('show');
+  document.getElementById(id).scrollIntoView({ behavior:'smooth', block:'center' });
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function openDeleteModal(btn) {
+  document.getElementById('del_payNo').textContent    = btn.dataset.paymentNo;
+  document.getElementById('del_customer').textContent = btn.dataset.customerName;
+  document.getElementById('del_date').textContent     = btn.dataset.date;
+  document.getElementById('del_amount').textContent   = btn.dataset.amount;
+  document.getElementById('del_paymentId').value      = btn.dataset.paymentId;
+  openModal('deleteModalWrap');
+}
+
+function openTransferModal(btn) {
+  document.getElementById('tr_payNo').textContent       = btn.dataset.paymentNo;
+  document.getElementById('tr_customer').textContent    = btn.dataset.customerName;
+  document.getElementById('tr_date').textContent        = btn.dataset.date;
+  document.getElementById('tr_mode').textContent        = btn.dataset.mode;
+  document.getElementById('tr_amount').textContent      = btn.dataset.amount;
+  document.getElementById('tr_fromLabel').textContent   = btn.dataset.customerName;
+  document.getElementById('tr_paymentId').value         = btn.dataset.paymentId;
+  document.getElementById('tr_fromCustomerId').value    = btn.dataset.customerId;
+
+  // Disable current customer in the dropdown so user can't transfer to same
+  var sel = document.getElementById('tr_toCustomer');
+  Array.from(sel.options).forEach(function(opt){
+    opt.disabled = (opt.value === btn.dataset.customerId);
+    if (opt.disabled && opt.selected) { opt.selected = false; }
+  });
+  sel.value = '';
+
+  openModal('transferModalWrap');
+}
+</script>

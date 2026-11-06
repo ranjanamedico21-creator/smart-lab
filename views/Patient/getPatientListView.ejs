@@ -1,0 +1,671 @@
+<%
+  var rows = (typeof patientDetails !== 'undefined' && patientDetails) ? patientDetails : [];
+  var docs = (typeof doctorDetails  !== 'undefined' && doctorDetails)  ? doctorDetails  : [];
+  var cats = (typeof categories     !== 'undefined' && categories)     ? categories     : [];
+  var pg   = (typeof pagination     !== 'undefined' && pagination)     ? pagination     : null;
+  var f = {
+    BillNo:   typeof BillNo     !== 'undefined' && BillNo   ? String(BillNo)   : '',
+    Name:     typeof Name       !== 'undefined' && Name     ? String(Name)     : '',
+    FromDate: typeof FromDate   !== 'undefined' && FromDate ? String(FromDate) : '',
+    ToDate:   typeof ToDate     !== 'undefined' && ToDate   ? String(ToDate)   : '',
+    doctorId: typeof doctorId   !== 'undefined' && doctorId ? String(doctorId) : '',
+    Status:   typeof Status     !== 'undefined' && Status !== null && Status !== undefined ? String(Status) : '',
+    cat:      typeof categoryId !== 'undefined' && categoryId ? String(categoryId) : '',
+    adv:      typeof showAdvanceBookings !== 'undefined' && !!showAdvanceBookings,
+    dues:     typeof onlyDues !== 'undefined' && !!onlyDues
+  };
+  var docName = '', catName = '';
+  docs.forEach(function (d) { if (String(d.Id) === f.doctorId) docName = 'Dr. ' + [d.FirstName, d.LastName].join(' '); });
+  cats.forEach(function (c) { if (String(c.Id) === f.cat) catName = c.Name; });
+  var chips = [];
+  if (f.BillNo)        chips.push({ k: 'BillNo',  label: 'Bill #' + f.BillNo });
+  if (f.Name)          chips.push({ k: 'Name',    label: '“' + f.Name + '”' });
+  if (f.doctorId)      chips.push({ k: 'Doctor',  label: docName || 'Doctor' });
+  if (f.Status !== '') chips.push({ k: 'Status',  label: f.Status === '1' ? 'Active' : 'Cancelled' });
+  if (f.cat)           chips.push({ k: 'MainCategory', label: catName || 'Category' });
+  if (f.adv)           chips.push({ k: 'showAdvanceBookings', label: 'Advance bookings' });
+  if (f.dues)          chips.push({ k: 'patientWithOnlyDuesAmount', label: 'Only dues' });
+  var filterCount = chips.filter(function (c) { return ['Doctor','Status','MainCategory','showAdvanceBookings'].indexOf(c.k) !== -1; }).length;
+
+  var money   = function (n) { return '₹' + (Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
+  var startNo = pg ? pg.offset + 1 : 1;
+  var live    = rows.filter(function (p) { return String(p.Status) === '1'; });
+  var sumGross = live.reduce(function (a, p) { return a + (Number(p.GrossAmount) || 0); }, 0);
+  var sumDues  = live.reduce(function (a, p) { return a + (Number(p.DuesAmount)  || 0); }, 0);
+  var duesCnt  = live.filter(function (p) { return Number(p.DuesAmount) > 0; }).length;
+  var initials = function (n) { return String(n || '?').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toUpperCase(); };
+%>
+
+<style>
+  .pv{
+    --pv-bg:#f4f6fb; --pv-card:#fff; --pv-line:#e8ebf3; --pv-line-2:#f0f2f8;
+    --pv-ink:#101828; --pv-ink-2:#475467; --pv-ink-3:#98a2b3;
+    --pv-pri:#3056d3; --pv-pri-2:#2443b0; --pv-pri-soft:#eef2ff;
+    --pv-ok:#0f7b55; --pv-ok-soft:#e7f6ef; --pv-bad:#c0362c; --pv-bad-soft:#fdeeec;
+    --pv-warn:#b45309; --pv-warn-soft:#fff5e6; --pv-vio:#6941c6; --pv-vio-soft:#f3efff;
+    --pv-teal:#0e7490; --pv-teal-soft:#e7f6f9;
+    max-width:1440px; margin:0 auto; padding:8px 0 40px; color:var(--pv-ink);
+  }
+  /* Header */
+  .pv-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .pv-h1{font-size:1.45rem;font-weight:700;letter-spacing:-.02em;margin:0}
+  .pv-range{font-size:.82rem;color:var(--pv-ink-2);margin-top:2px;display:flex;align-items:center;gap:6px}
+  .pv-btn-pri{background:var(--pv-pri);border:0;color:#fff;font-weight:600;border-radius:10px;padding:9px 16px;box-shadow:0 1px 2px rgba(16,24,40,.08),0 4px 12px rgba(48,86,211,.25)}
+  .pv-btn-pri:hover{background:var(--pv-pri-2);color:#fff}
+
+  /* Stats */
+  .pv-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+  .pv-stat{background:var(--pv-card);border:1px solid var(--pv-line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+  .pv-stat-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+  .pv-stat-v{font-size:1.1rem;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+  .pv-stat-l{font-size:.74rem;color:var(--pv-ink-3)}
+
+  /* Card */
+  .pv-card{background:var(--pv-card);border:1px solid var(--pv-line);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04);overflow:hidden}
+
+  /* Toolbar */
+  .pv-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--pv-line)}
+  .pv-q{position:relative;flex:1 1 260px;max-width:420px}
+  .pv-q i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--pv-ink-3)}
+  .pv-q input{width:100%;height:40px;border:1px solid var(--pv-line);border-radius:10px;padding:0 64px 0 36px;font-size:.92rem;background:#f9fafc;transition:.15s}
+  .pv-q input:focus{outline:0;border-color:var(--pv-pri);background:#fff;box-shadow:0 0 0 4px rgba(48,86,211,.12)}
+  .pv-q kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#fff;border:1px solid var(--pv-line);color:var(--pv-ink-3);font-size:.68rem;border-radius:6px;padding:1px 6px;box-shadow:none}
+  .pv-seg{display:inline-flex;background:#f2f4f9;border-radius:10px;padding:3px;gap:2px}
+  .pv-seg button{border:0;background:transparent;font-size:.8rem;font-weight:600;color:var(--pv-ink-2);padding:6px 11px;border-radius:8px;white-space:nowrap}
+  .pv-seg button:hover{color:var(--pv-ink)}
+  .pv-seg button.on{background:#fff;color:var(--pv-pri);box-shadow:0 1px 3px rgba(16,24,40,.1)}
+  .pv-tool{height:40px;border:1px solid var(--pv-line);background:#fff;border-radius:10px;padding:0 12px;font-size:.84rem;font-weight:600;color:var(--pv-ink-2);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+  .pv-tool:hover{border-color:#cfd5e3;color:var(--pv-ink)}
+  .pv-tool.on{border-color:var(--pv-pri);color:var(--pv-pri);background:var(--pv-pri-soft)}
+  .pv-tool.dues.on{border-color:var(--pv-warn);color:var(--pv-warn);background:var(--pv-warn-soft)}
+  .pv-tool .cnt{background:var(--pv-pri);color:#fff;border-radius:99px;font-size:.66rem;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+
+  /* Filter panel */
+  .pv-panel{background:#fafbfe;border-bottom:1px solid var(--pv-line)}
+  .pv-panel-in{padding:14px}
+  .pv-panel .form-label{font-size:.72rem;font-weight:600;color:var(--pv-ink-2);margin-bottom:4px}
+  .pv-panel .form-control,.pv-panel .form-select{height:40px;border-radius:10px;border-color:var(--pv-line);font-size:.9rem}
+  .pv-panel .form-control:focus,.pv-panel .form-select:focus{border-color:var(--pv-pri);box-shadow:0 0 0 4px rgba(48,86,211,.12)}
+  .pv-switch{display:flex;align-items:center;gap:8px;height:40px;font-size:.86rem;font-weight:500;color:var(--pv-ink-2)}
+
+  /* Chips */
+  .pv-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 14px;border-bottom:1px solid var(--pv-line)}
+  .pv-chip{display:inline-flex;align-items:center;gap:6px;background:var(--pv-pri-soft);color:var(--pv-pri-2);border-radius:99px;padding:3px 6px 3px 11px;font-size:.78rem;font-weight:600}
+  .pv-chip button{border:0;background:rgba(48,86,211,.12);color:inherit;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;padding:0}
+  .pv-chip button:hover{background:var(--pv-pri);color:#fff}
+  .pv-clear{font-size:.78rem;font-weight:600;color:var(--pv-ink-3);text-decoration:none;margin-left:4px}
+  .pv-clear:hover{color:var(--pv-bad)}
+
+  /* Table */
+  .pv-table{width:100%;border-collapse:separate;border-spacing:0}
+  .pv-table thead th{position:sticky;top:0;z-index:1;background:#f8f9fc;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--pv-ink-3);padding:10px 14px;border-bottom:1px solid var(--pv-line);white-space:nowrap;text-align:left}
+  .pv-table tbody td{padding:12px 14px;border-bottom:1px solid var(--pv-line-2);vertical-align:middle;font-size:.875rem}
+  .pv-table tbody tr{transition:background .12s}
+  .pv-table tbody tr:hover{background:#f8faff}
+  .pv-table tbody tr td:first-child{border-left:3px solid transparent}
+  .pv-table tbody tr.is-adv td:first-child{border-left-color:var(--pv-vio)}
+  .pv-table tbody tr.is-due td:first-child{border-left-color:#f59e0b}
+  .pv-table tbody tr.is-off{background:#fcfcfd}
+  .pv-table tbody tr.is-off .pv-who,.pv-table tbody tr.is-off .pv-num{opacity:.55}
+  .pv-table tbody tr.is-off .pv-name{text-decoration:line-through;text-decoration-color:rgba(192,54,44,.5)}
+
+  .pv-who{display:flex;gap:11px;align-items:flex-start;min-width:240px}
+  .pv-av{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+  .pv-av.m{background:#e8efff;color:#2c4fc2}.pv-av.f{background:#fdebf3;color:#b4236c}.pv-av.o{background:#eef1f6;color:#475467}
+  .pv-name{font-weight:650;color:var(--pv-ink);text-decoration:none;text-transform:capitalize;line-height:1.25}
+  .pv-name:hover{color:var(--pv-pri)}
+  .pv-sub{font-size:.76rem;color:var(--pv-ink-3);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .pv-sub a{color:var(--pv-ink-2);text-decoration:none}
+  .pv-sub a:hover{color:var(--pv-pri)}
+  .pv-bill{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.72rem;background:#f2f4f9;color:var(--pv-ink-2);border-radius:6px;padding:1px 6px}
+  .pv-tests{font-size:.76rem;color:var(--pv-ink-2);margin-top:4px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pv-doc{font-weight:600;text-transform:capitalize;line-height:1.25}
+  .pv-num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .pv-pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 9px;font-size:.72rem;font-weight:600;white-space:nowrap;line-height:1.3}
+  .pv-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+  .pv-pill.nodot::before{display:none}
+  .p-ok{background:var(--pv-ok-soft);color:var(--pv-ok)}.p-bad{background:var(--pv-bad-soft);color:var(--pv-bad)}
+  .p-warn{background:var(--pv-warn-soft);color:var(--pv-warn)}.p-vio{background:var(--pv-vio-soft);color:var(--pv-vio)}
+  .p-teal{background:var(--pv-teal-soft);color:var(--pv-teal)}.p-gray{background:#f2f4f7;color:var(--pv-ink-2)}
+
+  .pv-prog{display:flex;align-items:center;gap:8px;min-width:120px}
+  .pv-prog-bar{flex:1;height:6px;background:#eef0f5;border-radius:99px;overflow:hidden;max-width:80px}
+  .pv-prog-bar span{display:block;height:100%;border-radius:99px}
+  .pv-prog-t{font-size:.74rem;font-weight:600;color:var(--pv-ink-2);white-space:nowrap}
+
+  .pv-acts{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+  .pv-ib{width:34px;height:34px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--pv-ink-2);display:inline-flex;align-items:center;justify-content:center;font-size:1rem;text-decoration:none;transition:.12s}
+  .pv-ib:hover{background:#f2f4f9;color:var(--pv-pri);border-color:var(--pv-line)}
+  .pv-ib.arr{width:auto;padding:0 10px;font-size:.78rem;font-weight:600;background:var(--pv-vio-soft);color:var(--pv-vio);gap:5px}
+  .pv-ib.arr:hover{background:var(--pv-vio);color:#fff}
+  .pv-menu .dropdown-item{font-size:.86rem;display:flex;align-items:center;gap:9px;padding:8px 14px}
+  .pv-menu .dropdown-item i{width:16px;text-align:center}
+
+  .pv-empty{padding:56px 16px;text-align:center}
+  .pv-empty-ic{width:64px;height:64px;border-radius:20px;background:var(--pv-pri-soft);color:var(--pv-pri);display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:12px}
+
+  .pv-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-top:1px solid var(--pv-line);background:#fcfcfe}
+  .pv-pages{display:flex;gap:4px;flex-wrap:wrap}
+  .pv-pages button{min-width:34px;height:34px;border-radius:9px;border:1px solid var(--pv-line);background:#fff;font-size:.82rem;font-weight:600;color:var(--pv-ink-2);padding:0 8px}
+  .pv-pages button:hover:not(:disabled){border-color:var(--pv-pri);color:var(--pv-pri)}
+  .pv-pages button.on{background:var(--pv-pri);border-color:var(--pv-pri);color:#fff}
+  .pv-pages button:disabled{opacity:.4}
+
+  @media (max-width:1199.98px){ .pv-stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:991.98px){
+    .pv-table thead{display:none}
+    .pv-table,.pv-table tbody,.pv-table tr,.pv-table td{display:block;width:100%}
+    .pv-table tbody tr{padding:12px 14px;border-bottom:8px solid var(--pv-bg);position:relative}
+    .pv-table tbody tr td{border:0;padding:0}
+    .pv-table tbody tr td:first-child{border-left:0}
+    .pv-table tbody tr.is-adv{box-shadow:inset 3px 0 0 var(--pv-vio)}
+    .pv-table tbody tr.is-due{box-shadow:inset 3px 0 0 #f59e0b}
+    .pv-table td.c-no{display:none}
+    .pv-table td.c-doc,.pv-table td.c-amt,.pv-table td.c-rep,.pv-table td.c-st{display:inline-block;width:auto;margin:10px 14px 0 0;vertical-align:top}
+    .pv-table td[data-l]::before{content:attr(data-l);display:block;font-size:.64rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--pv-ink-3);margin-bottom:2px}
+    .pv-table td.c-date{display:none}
+    .pv-table td.c-act{position:absolute;top:10px;right:8px;width:auto}
+    .pv-acts .hide-sm{display:none}
+    .pv-who{min-width:0;padding-right:84px}
+    .pv-tests{max-width:none;white-space:normal}
+  }
+  @media (max-width:575.98px){
+    .pv-top{align-items:center}
+    .pv-h1{font-size:1.2rem}
+    .pv-stats{gap:8px}
+    .pv-stat{padding:10px}
+    .pv-stat-ic{display:none}
+    .pv-q{max-width:none;flex-basis:100%}
+    .pv-seg{order:3;width:100%;overflow-x:auto}
+    .pv-seg button{flex:1}
+    .pv-q kbd{display:none}
+  }
+</style>
+
+<div class="pv">
+  <!-- Header -->
+  <div class="pv-top">
+    <div>
+      <h1 class="pv-h1">Patients</h1>
+      <div class="pv-range"><i class="bi bi-calendar3"></i><span id="pvRangeLbl"><%= f.FromDate && f.ToDate && f.FromDate !== f.ToDate ? f.FromDate + ' → ' + f.ToDate : (f.FromDate || 'Today') %></span></div>
+    </div>
+    <a href="/patient/registerPatient" class="btn pv-btn-pri"><i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">Register patient</span><span class="d-sm-none">New</span></a>
+  </div>
+
+  <%- include("../partials/messages"); %>
+
+  <!-- Stats (for the rows on this page) -->
+  <div class="pv-stats">
+    <div class="pv-stat"><div class="pv-stat-ic" style="background:var(--pv-pri-soft);color:var(--pv-pri)"><i class="bi bi-people"></i></div>
+      <div><div class="pv-stat-v"><%= pg ? pg.totalRecords : rows.length %></div><div class="pv-stat-l">Patients</div></div></div>
+    <div class="pv-stat"><div class="pv-stat-ic" style="background:var(--pv-ok-soft);color:var(--pv-ok)"><i class="bi bi-currency-rupee"></i></div>
+      <div><div class="pv-stat-v"><%= money(sumGross) %></div><div class="pv-stat-l">Billed<%= pg && pg.totalPages > 1 ? ' (this page)' : '' %></div></div></div>
+    <div class="pv-stat"><div class="pv-stat-ic" style="background:var(--pv-warn-soft);color:var(--pv-warn)"><i class="bi bi-hourglass-split"></i></div>
+      <div><div class="pv-stat-v" style="color:<%= sumDues > 0 ? 'var(--pv-bad)' : 'inherit' %>"><%= money(sumDues) %></div><div class="pv-stat-l"><%= duesCnt %> with dues</div></div></div>
+    <div class="pv-stat"><div class="pv-stat-ic" style="background:var(--pv-teal-soft);color:var(--pv-teal)"><i class="bi bi-file-earmark-check"></i></div>
+      <div><div class="pv-stat-v"><%= live.filter(function (p) { return p.ReportState === 'all'; }).length %> / <%= live.length %></div><div class="pv-stat-l">All reports ready</div></div></div>
+  </div>
+
+  <div class="pv-card">
+    <form action="/patient/searchPatient" method="post" id="pvForm" autocomplete="off">
+      <!-- Hidden real fields the server reads -->
+      <input type="hidden" name="BillNo" id="fBill" value="<%= f.BillNo %>">
+      <input type="hidden" name="Name"   id="fName" value="<%= f.Name %>">
+      <input type="hidden" name="page"   id="searchPageInput" value="<%= pg ? pg.currentPage : 1 %>">
+      <input type="hidden" name="patientWithOnlyDuesAmount" id="fDues" value="<%= f.dues ? '1' : '' %>">
+
+      <!-- Toolbar -->
+      <div class="pv-bar">
+        <div class="pv-q">
+          <i class="bi bi-search"></i>
+          <input type="search" id="pvQ" value="<%= f.BillNo || f.Name %>" placeholder="Search name or bill no." aria-label="Search by patient name or bill number">
+          <kbd>/</kbd>
+        </div>
+        <div class="pv-seg" role="group" aria-label="Date range">
+          <button type="button" data-range="today">Today</button>
+          <button type="button" data-range="yesterday">Yesterday</button>
+          <button type="button" data-range="7">7 days</button>
+          <button type="button" data-range="30">30 days</button>
+          <button type="button" data-range="custom" id="pvCustomBtn"><i class="bi bi-calendar-range"></i></button>
+        </div>
+        <button type="button" class="pv-tool dues <%= f.dues ? 'on' : '' %>" id="pvDuesBtn" aria-pressed="<%= f.dues %>">
+          <i class="bi bi-exclamation-circle"></i> Dues
+        </button>
+        <button type="button" class="pv-tool <%= filterCount ? 'on' : '' %>" data-bs-toggle="collapse" data-bs-target="#pvPanel" aria-expanded="false" aria-controls="pvPanel" id="pvFilterBtn">
+          <i class="bi bi-sliders2"></i> Filters <% if (filterCount) { %><span class="cnt"><%= filterCount %></span><% } %>
+        </button>
+      </div>
+
+      <!-- Filters (collapsed by default — saves page height) -->
+      <div class="collapse pv-panel" id="pvPanel">
+        <div class="pv-panel-in">
+          <div class="row g-3 align-items-end">
+            <div class="col-6 col-md-3 col-xl-2">
+              <label class="form-label" for="FromDate">From</label>
+              <input type="text" class="form-control" id="FromDate" name="FromDate" value="<%= f.FromDate %>" placeholder="dd-mm-yyyy">
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label class="form-label" for="ToDate">To</label>
+              <input type="text" class="form-control" id="ToDate" name="ToDate" value="<%= f.ToDate %>" placeholder="dd-mm-yyyy">
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+              <label class="form-label" for="spDoctorSelect">Referring doctor</label>
+              <select name="Doctor" id="spDoctorSelect" class="form-select">
+                <option value="">All doctors</option>
+                <% docs.forEach(function (d) { %><option value="<%= d.Id %>" <%= String(d.Id) === f.doctorId ? 'selected' : '' %>>Dr. <%= d.FirstName %> <%= d.LastName %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label class="form-label" for="spCategorySelect">Category</label>
+              <select class="form-select ts-exclude" id="spCategorySelect" name="MainCategory">
+                <option value="">All</option>
+                <% cats.forEach(function (c) { %><option value="<%= c.Id %>" <%= String(c.Id) === f.cat ? 'selected' : '' %>><%= c.Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-6 col-md-3 col-xl-1">
+              <label class="form-label" for="spStatusSelect">Status</label>
+              <select name="Status" id="spStatusSelect" class="form-select ts-exclude">
+                <option value="">All</option>
+                <option value="1" <%= f.Status === '1' ? 'selected' : '' %>>Active</option>
+                <option value="0" <%= f.Status === '0' ? 'selected' : '' %>>Cancelled</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+              <div class="form-check form-switch pv-switch m-0">
+                <input class="form-check-input m-0" type="checkbox" role="switch" id="showAdvanceBookings" name="showAdvanceBookings" value="1" <%= f.adv ? 'checked' : '' %>>
+                <label class="form-check-label" for="showAdvanceBookings">Advance bookings</label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 justify-content-end mt-3">
+            <a href="/patient/getPatientListView" class="btn btn-light border">Reset</a>
+            <button type="submit" class="btn pv-btn-pri"><i class="bi bi-funnel me-1"></i>Apply</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active filters -->
+      <% if (chips.length) { %>
+        <div class="pv-chips" aria-label="Active filters">
+          <span class="small text-secondary me-1">Showing:</span>
+          <% chips.forEach(function (c) { %>
+            <span class="pv-chip"><%= c.label %><button type="button" data-clear="<%= c.k %>" aria-label="Remove filter <%= c.label %>"><i class="bi bi-x"></i></button></span>
+          <% }) %>
+          <a href="/patient/getPatientListView" class="pv-clear">Clear all</a>
+        </div>
+      <% } %>
+    </form>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="pv-table">
+        <thead>
+          <tr><th style="width:44px">#</th><th>Patient</th><th>Referred by</th><th>Amount</th><th>Reports</th><th>Status</th><th>Date</th><th class="text-end">Actions</th></tr>
+        </thead>
+        <tbody>
+          <% if (!rows.length) { %>
+            <tr><td colspan="8">
+              <div class="pv-empty">
+                <div class="pv-empty-ic"><i class="bi bi-person-lines-fill"></i></div>
+                <div class="fw-semibold">No patients found</div>
+                <div class="small text-secondary mb-3"><%= chips.length ? 'Try removing a filter or changing the date range.' : 'No registrations for this date yet.' %></div>
+                <a href="/patient/registerPatient" class="btn pv-btn-pri btn-sm"><i class="bi bi-plus-lg me-1"></i>Register patient</a>
+              </div>
+            </td></tr>
+          <% } %>
+
+          <% rows.forEach(function (p, i) {
+               var active    = String(p.Status) === '1';
+               var advBooked = p.IsAdvanceBooking == 1 && p.BookingStatus === 'advance_booked';
+               var hasDue    = active && Number(p.DuesAmount) > 0;
+               var phone     = String(p.PhoneNumber || '').replace(/\D/g, '');
+               var g         = p.Gender == 1 ? 'm' : (p.Gender == 2 ? 'f' : 'o');
+               var total     = Number(p.TotalTests) || 0, ready = Number(p.ReportsReady) || 0;
+               var pct       = total ? Math.round(ready * 100 / total) : 0;
+               var barColor  = pct === 100 ? 'var(--pv-ok)' : (pct > 0 ? '#f59e0b' : '#cbd2dd');
+               var rowCls    = !active ? 'is-off' : (advBooked ? 'is-adv' : (hasDue ? 'is-due' : ''));
+          %>
+          <tr class="<%= rowCls %>">
+            <td class="c-no text-secondary small fw-semibold"><%= startNo + i %></td>
+
+            <td>
+              <div class="pv-who">
+                <div class="pv-av <%= g %>" aria-hidden="true"><%= initials(p.Name) %></div>
+                <div style="min-width:0">
+                  <a class="pv-name" href="/patient/getPatientDetail?patientId=<%= p.PatientId %>"><%= p.Title %> <%= p.Name %></a>
+                  <div class="pv-sub">
+                    <span class="pv-bill">#<%= p.PatientId %></span>
+                    <span><%= g === 'm' ? 'Male' : (g === 'f' ? 'Female' : 'Other') %>, <%= p.Age %> <%= String(p.YMD || '').charAt(0).toLowerCase() %></span>
+                    <% if (phone) { %><a href="tel:<%= phone %>"><i class="bi bi-telephone"></i> <%= p.PhoneNumber %></a><% } %>
+                  </div>
+                  <% if (p.TestNames) { %><div class="pv-tests" title="<%= p.TestNames %>"><i class="bi bi-clipboard2-pulse me-1"></i><%= p.TestNames %></div><% } %>
+                </div>
+              </div>
+            </td>
+
+            <td class="c-doc" data-l="Referred by">
+              <% if (p.DoctorFirstName) { %>
+                <div class="pv-doc">Dr. <%= p.DoctorFirstName %> <%= p.DoctorLastName %></div>
+                <% if (p.DoctorSpecialistIn) { %><div class="small text-secondary text-capitalize"><%= p.DoctorSpecialistIn %></div><% } %>
+              <% } else { %><span class="text-secondary">—</span><% } %>
+            </td>
+
+            <td class="c-amt" data-l="Amount">
+              <div class="pv-num"><%= money(p.GrossAmount) %></div>
+              <% if (hasDue) { %><span class="pv-pill p-bad nodot mt-1">Due <%= money(p.DuesAmount) %></span><% } %>
+              <% if (Number(p.ChangeToReturn) > 0 && !p.ChangeReturnedAt) { %><span class="pv-pill p-warn nodot mt-1"><i class="bi bi-arrow-return-left"></i> <%= money(p.ChangeToReturn) %></span><% } %>
+            </td>
+
+            <td class="c-rep" data-l="Reports">
+              <% if (!active) { %><span class="text-secondary small">—</span>
+              <% } else if (!total) { %><span class="pv-pill p-gray nodot">No tests</span>
+              <% } else { %>
+                <div class="pv-prog" title="<%= ready %> of <%= total %> reports ready">
+                  <div class="pv-prog-bar"><span style="width:<%= pct %>%;background:<%= barColor %>"></span></div>
+                  <span class="pv-prog-t"><%= ready %>/<%= total %></span>
+                </div>
+              <% } %>
+            </td>
+
+            <td class="c-st" data-l="Status">
+              <% if (!active) { %><span class="pv-pill p-bad">Cancelled</span>
+              <% } else if (advBooked) { %><span class="pv-pill p-vio">Advance · <%= p.AdvanceBookingDate %></span>
+              <% } else if (p.BookingStatus === 'arrived') { %><span class="pv-pill p-teal">Arrived</span>
+              <% } else { %><span class="pv-pill p-ok">Active</span><% } %>
+            </td>
+
+            <td class="c-date small text-secondary text-nowrap"><%= p.RegisteredOn %></td>
+
+            <td class="c-act">
+              <div class="pv-acts">
+                <% if (advBooked) { %>
+                  <button type="button" class="pv-ib arr hide-sm" data-bs-toggle="modal" data-bs-target="#arrivedModal"
+                          data-patient-id="<%= p.PatientId %>" data-patient-name="<%= p.Title %> <%= p.Name %>"
+                          data-dues="<%= p.DuesAmount %>" data-advance-date="<%= p.AdvanceBookingDate %>">
+                    <i class="bi bi-box-arrow-in-right"></i> Arrived</button>
+                <% } %>
+                <a class="pv-ib hide-sm" href="/patient/invoices/?id=<%= p.PatientId %>" target="_blank" rel="noopener" title="Print bill" data-bs-toggle="tooltip"><i class="bi bi-printer"></i></a>
+                <% if (active) { %>
+                  <a class="pv-ib hide-sm" href="/patient/editPatientDetails?id=<%= p.PatientId %>" title="Edit" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></a>
+                <% } %>
+                <div class="dropdown">
+                  <button class="pv-ib" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More actions for <%= p.Name %>"><i class="bi bi-three-dots-vertical"></i></button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 pv-menu">
+                    <li><a class="dropdown-item" href="/patient/getPatientDetail?patientId=<%= p.PatientId %>"><i class="bi bi-eye"></i>Open details</a></li>
+                    <li><a class="dropdown-item" href="/patient/invoices/?id=<%= p.PatientId %>" target="_blank" rel="noopener"><i class="bi bi-printer"></i>Print bill</a></li>
+                    <% if (active) { %><li><a class="dropdown-item" href="/patient/editPatientDetails?id=<%= p.PatientId %>"><i class="bi bi-pencil-square"></i>Edit</a></li><% } %>
+                    <% if (advBooked) { %>
+                      <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#arrivedModal"
+                          data-patient-id="<%= p.PatientId %>" data-patient-name="<%= p.Title %> <%= p.Name %>"
+                          data-dues="<%= p.DuesAmount %>" data-advance-date="<%= p.AdvanceBookingDate %>"><i class="bi bi-box-arrow-in-right"></i>Mark arrived</button></li>
+                    <% } %>
+                    <% if (phone.length === 10) { %>
+                      <li><a class="dropdown-item" href="https://wa.me/91<%= phone %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp text-success"></i>WhatsApp</a></li>
+                    <% } %>
+                    <% if (active) { %>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#cancelPatient"
+                          data-patient-id="<%= p.PatientId %>" data-patient-name="<%= p.Title %> <%= p.Name %>"
+                          data-cross-day="<%= p.CrossDayCancellation %>"><i class="bi bi-x-octagon"></i>Cancel patient</button></li>
+                    <% } %>
+                  </ul>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (pg && pg.totalRecords > 0) {
+         var s = Math.max(1, pg.currentPage - 2), e = Math.min(pg.totalPages, s + 4); s = Math.max(1, e - 4); %>
+      <div class="pv-foot">
+        <span class="small text-secondary">Showing <b><%= pg.offset + 1 %>–<%= Math.min(pg.offset + rows.length, pg.totalRecords) %></b> of <b><%= pg.totalRecords %></b></span>
+        <% if (pg.totalPages > 1) { %>
+          <nav class="pv-pages" aria-label="Pages">
+            <button type="button" data-page="<%= pg.currentPage - 1 %>" <%= pg.hasPrevPage ? '' : 'disabled' %> aria-label="Previous"><i class="bi bi-chevron-left"></i></button>
+            <% if (s > 1) { %><button type="button" data-page="1">1</button><% if (s > 2) { %><button type="button" disabled>…</button><% } %><% } %>
+            <% for (var q = s; q <= e; q++) { %><button type="button" data-page="<%= q %>" class="<%= q === pg.currentPage ? 'on' : '' %>" <%= q === pg.currentPage ? 'aria-current="page"' : '' %>><%= q %></button><% } %>
+            <% if (e < pg.totalPages) { %><% if (e < pg.totalPages - 1) { %><button type="button" disabled>…</button><% } %><button type="button" data-page="<%= pg.totalPages %>"><%= pg.totalPages %></button><% } %>
+            <button type="button" data-page="<%= pg.currentPage + 1 %>" <%= pg.hasNextPage ? '' : 'disabled' %> aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+          </nav>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- ── Arrived modal ── -->
+<div class="modal fade" id="arrivedModal" tabindex="-1" aria-labelledby="arrivedTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down" style="max-width:440px">
+    <div class="modal-content border-0" style="border-radius:16px">
+      <form action="/patient/markArrived" method="POST" id="arrivedForm">
+        <div class="modal-body p-4">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="pv-stat-ic" style="background:#f3efff;color:#6941c6;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem"><i class="bi bi-box-arrow-in-right"></i></div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-0" id="arrivedTitle" style="font-size:1.05rem">Patient arrived</h5>
+              <div class="small text-secondary"><span class="text-capitalize fw-semibold" id="arrivedPatientName"></span> · booked for <span id="arrivedApptDate"></span></div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <input type="hidden" name="patientId" id="arrivedPatientId">
+          <div id="arrivedNoDues" class="alert alert-success border-0 small mb-0 d-none"><i class="bi bi-check-circle-fill me-1"></i>Fully paid. Confirm to mark as arrived.</div>
+          <div id="arrivedDuesSection" class="d-none">
+            <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-3" style="background:#fff5e6">
+              <span class="small fw-semibold" style="color:#b45309">Balance due</span><strong style="color:#b45309" id="arrivedDuesAmount"></strong>
+            </div>
+            <div class="row g-2">
+              <div class="col-6"><label class="form-label small fw-semibold" for="arrivedCash">Cash ₹</label><input type="number" class="form-control" name="cashAmount" id="arrivedCash" value="0" min="0" inputmode="decimal"></div>
+              <div class="col-6"><label class="form-label small fw-semibold" for="arrivedOnline">Online ₹</label><input type="number" class="form-control" name="onlineAmount" id="arrivedOnline" value="0" min="0" inputmode="decimal"></div>
+            </div>
+            <div class="mt-2 d-none" id="arrivedOnlineSourceWrap">
+              <label class="form-label small fw-semibold" for="arrivedOnlineSource">Payment source</label>
+              <select class="form-select ts-exclude" name="onlineSourceId" id="arrivedOnlineSource">
+                <option value="">Select source</option>
+                <% (typeof onlineSources !== 'undefined' && onlineSources ? onlineSources : []).forEach(function (src) { %><option value="<%= src.Id %>"><%= src.Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="d-flex justify-content-between small mt-3"><span class="text-secondary">Remaining after payment</span><strong class="text-danger" id="arrivedRemainingDues">₹0</strong></div>
+            <div class="text-danger small mt-2 d-none" id="arrivedErr"></div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn text-white fw-semibold" style="background:#6941c6"><i class="bi bi-check2-circle me-1"></i>Confirm arrived</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── Cancel modal ── -->
+<div class="modal fade" id="cancelPatient" data-bs-backdrop="static" tabindex="-1" aria-labelledby="cancelPatientLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down" style="max-width:440px">
+    <div class="modal-content border-0" style="border-radius:16px">
+      <div class="modal-body p-4">
+        <div class="d-flex align-items-start gap-3 mb-3">
+          <div style="background:#fdeeec;color:#c0362c;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0"><i class="bi bi-x-octagon"></i></div>
+          <div class="flex-grow-1">
+            <h5 class="fw-bold mb-0" id="cancelPatientLabel" style="font-size:1.05rem">Cancel patient</h5>
+            <div class="small text-secondary text-capitalize" id="cpPatientName"></div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div id="cpChecking" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><div class="small text-secondary mt-2">Checking permission…</div></div>
+        <div id="cpBlocked" class="d-none">
+          <div class="d-flex gap-2 p-3 rounded-3 small" style="background:#fdeeec;color:#8f241c"><i class="bi bi-lock-fill"></i><span id="cpBlockedMsg"></span></div>
+          <div class="text-end mt-3"><button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button></div>
+        </div>
+        <form id="cpForm" class="d-none" action="/patient/cancelPatient" method="post" novalidate>
+          <div class="small p-2 px-3 rounded-3 mb-3 d-none" id="cpWarn" style="background:#fff5e6;color:#8a4205"></div>
+          <p class="small text-secondary mb-2">This cannot be undone. Payments are recorded as refunded and the doctor's commission is reversed.</p>
+          <label class="form-label small fw-semibold" for="cpReason">Reason <span class="text-danger">*</span></label>
+          <textarea class="form-control" id="cpReason" name="reason" rows="3" maxlength="500" placeholder="Why is this patient being cancelled?"></textarea>
+          <div class="invalid-feedback">Write a reason (at least 5 characters).</div>
+          <input type="hidden" name="cancelPatientId" id="cpPatientId">
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Keep patient</button>
+            <button type="submit" class="btn btn-danger fw-semibold" id="cpSubmit"><i class="bi bi-x-octagon me-1"></i>Cancel patient</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('pvForm');
+  var rupee = function (n) { return '₹' + (Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  var fmt = function (d) { return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear(); };
+  var daysAgo = function (n) { var d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
+
+  /* ── Quick search: number → bill no, text → name ── */
+  var q = $('pvQ');
+  function syncQuery() {
+    var v = q.value.trim();
+    if (/^\d+$/.test(v)) { $('fBill').value = v; $('fName').value = ''; }
+    else { $('fBill').value = ''; $('fName').value = v; }
+  }
+  q.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+  q.addEventListener('search', function () { if (!q.value) go(); });           // clicking the ✕ in the box
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); }
+  });
+
+  function go(page) {
+    syncQuery();
+    $('searchPageInput').value = page || 1;
+    form.submit();
+  }
+  form.addEventListener('submit', function (e) { e.preventDefault(); go(1); });   // "Apply" button
+
+  /* ── Date range segments ── */
+  var from = $('FromDate'), to = $('ToDate'), today = fmt(new Date());
+  var ranges = { today: [today, today], yesterday: [daysAgo(1), daysAgo(1)], '7': [daysAgo(6), today], '30': [daysAgo(29), today] };
+  var curFrom = from.value || today, curTo = to.value || today, matched = false;
+  document.querySelectorAll('[data-range]').forEach(function (b) {
+    var r = ranges[b.dataset.range];
+    if (r && r[0] === curFrom && r[1] === curTo) { b.classList.add('on'); matched = true; }
+    b.addEventListener('click', function () {
+      if (b.dataset.range === 'custom') {
+        var panel = $('pvPanel');
+        if (window.bootstrap) bootstrap.Collapse.getOrCreateInstance(panel).show(); else panel.classList.add('show');
+        setTimeout(function () { from.focus(); if (from._flatpickr) from._flatpickr.open(); }, 250);
+        return;
+      }
+      from.value = r[0]; to.value = r[1]; go(1);
+    });
+  });
+  if (!matched) $('pvCustomBtn').classList.add('on');
+
+  if (window.flatpickr) {
+    [from, to].forEach(function (el) { if (!el._flatpickr) flatpickr(el, { dateFormat: 'd-m-Y', disableMobile: true, allowInput: true, maxDate: new Date(Date.now() + 90 * 864e5) }); });
+  }
+
+  /* ── Dues toggle ── */
+  $('pvDuesBtn').addEventListener('click', function () { $('fDues').value = $('fDues').value ? '' : '1'; go(1); });
+
+  /* ── Remove one filter chip ── */
+  document.querySelectorAll('[data-clear]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.dataset.clear;
+      if (k === 'BillNo' || k === 'Name') q.value = '';
+      else if (k === 'patientWithOnlyDuesAmount') $('fDues').value = '';
+      else if (k === 'showAdvanceBookings') $('showAdvanceBookings').checked = false;
+      else { var el = form.querySelector('[name="' + k + '"]'); if (el) { el.value = ''; if (el.tomselect) el.tomselect.clear(true); } }
+      go(1);
+    });
+  });
+
+  /* ── Remember whether the filter panel was open ── */
+  var panel = $('pvPanel'), KEY = 'pv.filtersOpen';
+  try { if (localStorage.getItem(KEY) === '1') panel.classList.add('show'); } catch (_) {}
+  $('pvFilterBtn').setAttribute('aria-expanded', panel.classList.contains('show'));
+  panel.addEventListener('shown.bs.collapse',  function () { try { localStorage.setItem(KEY, '1'); } catch (_) {} });
+  panel.addEventListener('hidden.bs.collapse', function () { try { localStorage.setItem(KEY, '0'); } catch (_) {} });
+
+  /* ── Pagination keeps every filter ── */
+  document.querySelectorAll('[data-page]').forEach(function (b) {
+    b.addEventListener('click', function () { if (!b.disabled && !b.classList.contains('on')) go(Number(b.dataset.page)); });
+  });
+
+  /* ── Tooltips ── */
+  if (window.bootstrap && bootstrap.Tooltip) {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el, { container: 'body' }); });
+  }
+
+  /* ── Arrived modal ── */
+  var dues = 0;
+  $('arrivedModal').addEventListener('show.bs.modal', function (ev) {
+    var t = ev.relatedTarget; if (!t) return;
+    dues = Number(t.dataset.dues) || 0;
+    $('arrivedPatientId').value = t.dataset.patientId;
+    $('arrivedPatientName').textContent = t.dataset.patientName;
+    $('arrivedApptDate').textContent = t.dataset.advanceDate || '';
+    $('arrivedNoDues').classList.toggle('d-none', dues > 0);
+    $('arrivedDuesSection').classList.toggle('d-none', !(dues > 0));
+    $('arrivedDuesAmount').textContent = rupee(dues);
+    $('arrivedCash').value = 0; $('arrivedOnline').value = 0; $('arrivedErr').classList.add('d-none');
+    calcArr();
+  });
+  function calcArr() {
+    var c = Number($('arrivedCash').value) || 0, o = Number($('arrivedOnline').value) || 0;
+    $('arrivedOnlineSourceWrap').classList.toggle('d-none', !(o > 0));
+    $('arrivedRemainingDues').textContent = rupee(Math.max(0, dues - c - o));
+  }
+  ['arrivedCash', 'arrivedOnline'].forEach(function (id) { $(id).addEventListener('input', calcArr); });
+  $('arrivedForm').addEventListener('submit', function (e) {
+    var c = Number($('arrivedCash').value) || 0, o = Number($('arrivedOnline').value) || 0, err = '';
+    if (c < 0 || o < 0) err = 'Amounts cannot be negative.';
+    else if (c + o > dues) err = 'Payment is more than the balance due (' + rupee(dues) + ').';
+    else if (o > 0 && !$('arrivedOnlineSource').value) err = 'Select the online payment source.';
+    if (err) { e.preventDefault(); $('arrivedErr').textContent = err; $('arrivedErr').classList.remove('d-none'); }
+  });
+
+  /* ── Cancel modal ── */
+  function cpState(s) {
+    $('cpChecking').classList.toggle('d-none', s !== 'check');
+    $('cpBlocked').classList.toggle('d-none', s !== 'blocked');
+    $('cpForm').classList.toggle('d-none', s !== 'form');
+  }
+  $('cancelPatient').addEventListener('show.bs.modal', function (ev) {
+    var t = ev.relatedTarget; if (!t) return;
+    var id = t.dataset.patientId;
+    $('cpPatientName').textContent = t.dataset.patientName || '';
+    $('cpPatientId').value = id;
+    $('cpReason').value = ''; $('cpReason').classList.remove('is-invalid'); $('cpSubmit').disabled = false;
+    var warn = $('cpWarn');
+    warn.textContent = 'This patient was registered on an earlier day.';
+    warn.classList.toggle('d-none', t.dataset.crossDay !== '1');
+    cpState('check');
+    fetch('/patient/checkCancelAuth', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ patientId: id })
+    }).then(function (r) {
+      if (!r.ok || (r.headers.get('content-type') || '').indexOf('json') === -1) throw new Error(r.status === 401 ? 'session' : 'http');
+      return r.json();
+    }).then(function (d) {
+      if (d.warning) { warn.textContent = d.warning; warn.classList.remove('d-none'); }
+      if (d.allowed) { cpState('form'); setTimeout(function () { $('cpReason').focus(); }, 200); }
+      else { $('cpBlockedMsg').textContent = d.message || 'Permission required.'; cpState('blocked'); }
+    }).catch(function (e) {
+      $('cpBlockedMsg').textContent = e.message === 'session' ? 'Your session has expired. Please log in again.' : 'Could not check permission. Please try again.';
+      cpState('blocked');
+    });
+  });
+  $('cpForm').addEventListener('submit', function (e) {
+    var r = $('cpReason');
+    if (r.value.trim().length < 5) { e.preventDefault(); r.classList.add('is-invalid'); r.focus(); return; }
+    $('cpSubmit').disabled = true;
+  });
+  $('cpReason').addEventListener('input', function () { this.classList.remove('is-invalid'); });
+})();
+</script>

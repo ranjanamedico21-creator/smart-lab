@@ -1,0 +1,1591 @@
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap');
+    
+    :root {
+        --bg:              #f1f5f9;
+        --surface:         #ffffff;
+        --surface-2:       #f8fafc;
+        --border:          #e2e8f0;
+        --border-strong:   #cbd5e1;
+        --text-primary:    #0f172a;
+        --text-secondary:  #475569;
+        --text-muted:      #94a3b8;
+        --accent:          #6366f1;
+        --accent-light:    #eef2ff;
+        --success:         #10b981;
+        --success-bg:      #ecfdf5;
+        --success-border:  #6ee7b7;
+        --warning:         #f59e0b;
+        --warning-bg:      #fffbeb;
+        --warning-border:  #fde68a;
+        --danger:          #ef4444;
+        --danger-bg:       #fef2f2;
+        --danger-border:   #fecaca;
+        --info:            #0ea5e9;
+        --info-bg:         #f0f9ff;
+        --info-border:     #bae6fd;
+        --radius:          12px;
+        --radius-sm:       8px;
+        --shadow-sm:       0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+        --shadow:          0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+    }
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text-primary);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+    }
+    
+    .page { max-width: 1380px; margin: 0 auto; padding: 24px 20px; }
+    
+    /* ────────────────────────────── HEADER ── */
+    .header-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 20px 24px;
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .header-card h4 {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -.3px;
+        margin-bottom: 10px;
+    }
+    
+    .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 22px;
+    }
+    
+    .meta-chip {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12.5px;
+    }
+    
+    .meta-chip .lbl {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: var(--text-muted);
+    }
+    
+    .meta-chip .val {
+        font-family: 'DM Mono', monospace;
+        font-size: 12px;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    /* status badge */
+    .sbadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .3px;
+        white-space: nowrap;
+    }
+    .sbadge.settled  { background: var(--success-bg);  color: var(--success); border: 1px solid var(--success-border); }
+    .sbadge.partial  { background: var(--info-bg);      color: var(--info);    border: 1px solid var(--info-border);    }
+    .sbadge.pending  { background: var(--warning-bg);   color: #b45309;        border: 1px solid var(--warning-border); }
+    
+    .sbadge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .sbadge.settled .dot { animation: none; }
+    .sbadge.pending .dot, .sbadge.partial .dot { animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    
+    /* ────────────────────────────── SUMMARY STRIP ── */
+    .summary-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    
+    .s-tile {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 14px 18px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .s-tile .lbl {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+    
+    .s-tile .val {
+        font-family: 'DM Mono', monospace;
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -.5px;
+        color: var(--text-primary);
+    }
+    
+    .s-tile .val.green  { color: var(--success); }
+    .s-tile .val.blue   { color: var(--accent);  }
+    .s-tile .val.red    { color: var(--danger);  }
+    .s-tile .val.orange { color: var(--warning); }
+    
+    /* ────────────────────────────── CARD ── */
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+    
+    .card-head {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .card-head h6 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -.1px;
+    }
+    
+    .card-head .accent-bar {
+        width: 3px; height: 16px;
+        background: var(--accent);
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+    
+    /* ────────────────────────────── TABLES ── */
+    .table-wrap { overflow-x: auto; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    
+    thead tr {
+        background: var(--surface-2);
+        border-bottom: 2px solid var(--border-strong);
+    }
+    
+    thead th {
+        padding: 10px 13px;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+    
+    thead th.r { text-align: right; }
+    thead th.c { text-align: center; }
+    
+    tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background .12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    
+    td {
+        padding: 11px 13px;
+        vertical-align: middle;
+        color: var(--text-primary);
+    }
+    td.r { text-align: right; }
+    td.c { text-align: center; }
+    
+    .mono { font-family: 'DM Mono', monospace; font-size: 12.5px; }
+    
+    /* product cell */
+    .prod-name {
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.35;
+        white-space: normal;
+        max-width: 260px;
+    }
+    
+    .prod-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: 'DM Mono', monospace;
+        margin-top: 2px;
+    }
+    
+    /* qty pills */
+    .pill {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: 'DM Mono', monospace;
+    }
+    .pill-sent    { background: var(--info-bg);     color: var(--info);     border: 1px solid var(--info-border);    }
+    .pill-accepted{ background: var(--success-bg);  color: var(--success);  border: 1px solid var(--success-border); }
+    .pill-rejected{ background: var(--danger-bg);   color: var(--danger);   border: 1px solid var(--danger-border);  }
+    .pill-pending { background: var(--warning-bg);  color: #b45309;         border: 1px solid var(--warning-border); }
+    .pill-zero    { background: var(--surface-2);   color: var(--text-muted); border: 1px solid var(--border);       }
+    
+    /* row status badge */
+    .rbadge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 9px; border-radius: 100px;
+        font-size: 11px; font-weight: 700;
+    }
+    .rbadge.settled  { background: var(--success-bg); color: var(--success);  border:1px solid var(--success-border); }
+    .rbadge.partial  { background: var(--info-bg);    color: var(--info);     border:1px solid var(--info-border);    }
+    .rbadge.pending  { background: var(--warning-bg); color: #b45309;         border:1px solid var(--warning-border); }
+    .rbadge.rejected { background: var(--danger-bg);  color: var(--danger);   border:1px solid var(--danger-border);  }
+    
+    /* editable inputs */
+    .inp {
+        border: 1.5px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        padding: 7px 10px;
+        font-family: 'DM Mono', monospace;
+        font-size: 12.5px;
+        color: var(--text-primary);
+        text-align: right;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+        background: var(--surface);
+        width: 100px;
+    }
+    .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .inp.wide  { width: 130px; }
+    
+    /* ────────────────────────────── CREDIT NOTE TABLE ── */
+    .cn-table thead th { background: none; }
+    
+    .cn-amount-col { min-width: 100px; }
+    
+    /* amount breakdown mini */
+    .amt-block { line-height: 1.6; }
+    .amt-block .main  { font-family:'DM Mono',monospace; font-weight:600; font-size:13px; }
+    .amt-block .sub   { font-size:11px; color:var(--text-secondary); font-family:'DM Mono',monospace; }
+    
+    .cn-total-row td  {
+        background: var(--surface-2);
+        font-weight: 700;
+        border-top: 2px solid var(--border-strong) !important;
+    }
+    
+    /* ────────────────────────────── SETTLEMENT FOOTER ── */
+    .settle-footer {
+        padding: 18px 22px;
+        background: var(--surface-2);
+        border-top: 2px solid var(--border);
+    }
+    
+    .footer-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0,1fr));
+        gap: 14px;
+        align-items: end;
+    }
+    
+    .fld label {
+        display: block;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+    }
+    
+    .fld-input {
+        width: 100%;
+        border: 1.5px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        padding: 9px 13px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13.5px;
+        color: var(--text-primary);
+        outline: none;
+        background: var(--surface);
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .fld-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .fld-input[readonly] { background: var(--surface-2); color: var(--text-secondary); }
+    
+    .fld-sel {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 34px;
+        cursor: pointer;
+    }
+    
+    .total-box { text-align: right; }
+    .total-box .total-lbl { font-size: 10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); margin-bottom: 3px; }
+    .total-box .total-amt { font-family:'DM Mono',monospace; font-size:24px; font-weight:700; color:var(--success); letter-spacing:-1px; }
+    
+    /* ────────────────────────────── CARD FOOTER ── */
+    .cfoot {
+        padding: 12px 22px;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .btn {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 9px 22px; border-radius: var(--radius-sm);
+        font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 600;
+        cursor: pointer; border: none;
+        transition: background .18s, box-shadow .18s, transform .1s;
+    }
+    .btn:active { transform: translateY(1px); }
+    
+    .btn-save   { background: var(--success); color:#fff; box-shadow: 0 2px 8px rgba(16,185,129,.3); }
+    .btn-save:hover { background:#059669; box-shadow: 0 4px 14px rgba(16,185,129,.35); }
+    
+    .btn-final  { background: var(--danger);  color:#fff; box-shadow: 0 2px 8px rgba(239,68,68,.25); }
+    .btn-final:hover { background:#dc2626; }
+
+    /* ────────────────────────────── NEW: messages, Revise GST button, Revise GST window ── */
+    .flash-box { margin-bottom: 14px; }
+    .flash-box .alert { margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+
+    .btn-gst        { background: var(--accent-light); color: var(--accent); border: 1px solid #c7d2fe; padding: 7px 14px; font-size: 12.5px; }
+    .btn-gst:hover  { background: #e0e7ff; }
+    .btn-cancel     { background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--border-strong); }
+    .btn-cancel:hover { background: var(--border); }
+
+    .hdr-actions { display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+    .hdr-actions .btn { white-space: nowrap; }
+    .btn-danger-soft { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; padding: 7px 14px; font-size: 12.5px; }
+    .btn-danger-soft:hover:not(:disabled) { background: #fee2e2; }
+    .btn-danger-soft:disabled { opacity: .55; cursor: not-allowed; }
+    .sbadge.writeoff { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .sbadge.cancelled { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+    #addExpModal .modal-content, #cancelSettleModal .modal-content { border: 0; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; }
+    #addExpModal .modal-header, #cancelSettleModal .modal-header { padding: 16px 22px; border-bottom: 1px solid var(--border); }
+    #addExpModal .modal-body, #cancelSettleModal .modal-body { padding: 18px 22px; }
+    #addExpModal .modal-footer, #cancelSettleModal .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); gap: 10px; }
+    #addExpModal .modal-title, #cancelSettleModal .modal-title { font-size: 15px; font-weight: 700; }
+    #addExpModal .ax-row.on td { background: var(--warning-bg); }
+    #addExpModal .ax-row input[type=number] { width: 90px; text-align: right; }
+    #addExpModal .ax-row input:disabled { background: var(--surface-2); color: var(--text-muted); }
+    #addExpModal td, #addExpModal th { white-space: nowrap; }
+
+    #reviseGstModal .modal-content { border: 0; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; }
+    #reviseGstModal .modal-header  { padding: 16px 22px; border-bottom: 1px solid var(--border); }
+    #reviseGstModal .modal-body    { padding: 18px 22px; }
+    #reviseGstModal .modal-footer  { padding: 14px 22px; border-top: 1px solid var(--border); gap: 10px; }
+    #reviseGstModal .modal-title   { font-size: 15px; font-weight: 700; }
+    .rg-info   { background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+    .rg-quick  { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 12.5px; color: var(--text-secondary); }
+    .rg-qbtn   { border: 1px solid #c7d2fe; background: var(--accent-light); color: var(--accent); border-radius: 100px; padding: 4px 14px; font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit; }
+    .rg-qbtn:hover { background: #e0e7ff; }
+    .rg-row.changed td { background: var(--warning-bg); }
+    .rg-row.locked td   { background: var(--surface-2); color: var(--text-muted); }
+    .rg-note   { font-size: 10.5px; color: var(--info); font-family: 'DM Mono', monospace; }
+    .rg-hint   { font-size: 11.5px; color: var(--text-secondary); padding: 0 13px 10px; }
+    .rg-delta  { font-family: 'DM Mono', monospace; font-size: 11.5px; font-weight: 700; }
+    .rg-delta.down { color: var(--success); }
+    .rg-delta.up   { color: var(--danger); }
+    .rg-compare { font-family: 'DM Mono', monospace; font-size: 13px; }
+    .history-line { font-size: 12.5px; color: var(--text-secondary); padding: 6px 0; border-bottom: 1px dashed var(--border); }
+    .history-line:last-child { border-bottom: none; }
+    
+
+    /* ────────────────────────────── NEW: credit note per product ── */
+    .line-cn { font-family:'DM Mono',monospace; font-size:10.5px; color:var(--accent); margin-top:4px; white-space:nowrap; }
+    .own-cn-btn, .own-cn-off { display:block; margin:5px 0 0 auto; border:1px dashed #c7d2fe; background:var(--accent-light); color:var(--accent);
+        border-radius:6px; padding:2px 8px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .own-cn-btn[aria-expanded="true"] { border-style:solid; background:var(--accent); color:#fff; }
+    .own-cn-off { display:inline-block; margin:0; background:transparent; }
+    tr.own-cn-row td { background:var(--accent-light) !important; padding:10px 14px !important; }
+    .own-grid { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; position:sticky; left:14px; max-width:min(100%, calc(100vw - 60px)); }
+    .cfoot { flex-wrap:wrap; }
+    @media (max-width:600px) { .own-grid label, .own-grid .fld-input { width:100%; } }
+    .own-grid label { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); display:flex; flex-direction:column; gap:4px; }
+    .own-grid .fld-input { padding:6px 10px; font-size:13px; min-width:150px; }
+    .own-title { font-size:12.5px; color:var(--text-secondary); flex-basis:100%; }
+    .footer-head { font-size:12.5px; font-weight:700; color:var(--text-primary); margin-bottom:10px; }
+    .footer-head span { font-weight:400; color:var(--text-muted); }
+    .footer-hint { font-size:12px; color:var(--text-secondary); margin-top:12px; line-height:1.5; }
+    .total-sub { font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+    .req { color:var(--danger); }
+    .cn-item { display:flex; justify-content:space-between; gap:12px; padding:2px 0; border-bottom:1px dashed var(--border); }
+    .cn-item:last-child { border-bottom:0; }
+    #settleAlerts .alert { margin:12px 0 0; }
+    a.meta-chip:hover { border-color:var(--accent); }
+
+    /* ────────────────────────────── RESPONSIVE ── */
+    @media (max-width: 1100px) {
+        .footer-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    }
+    @media (max-width: 860px) {
+        .footer-grid { grid-template-columns: 1fr 1fr; }
+        .summary-strip { grid-template-columns: repeat(2, 1fr); }
+        .header-card { flex-direction: column; }
+    }
+    </style>
+    
+    <div class="page">
+    
+    <%
+    /* ── field-name normalisation & derived values ── */
+    expiryItems.forEach(r => {
+        if (r.AcceptedQuantity !== undefined && r.AcceptedQty === undefined)
+            r.AcceptedQty = r.AcceptedQuantity;
+        r.AcceptedQty  = parseFloat(r.AcceptedQty  || 0);
+        r.RejectedQty  = parseFloat(r.RejectedQty  || 0);
+        r.SentQty      = parseFloat(r.SentQty      || 0);
+        r.PendingQty   = parseFloat(r.PendingQty   || 0);
+        r.PurchasePrice   = parseFloat(r.PurchasePrice   || 0);
+        r.GSTPercent      = parseFloat(r.GSTPercent      || 0);
+        r.PurchaseWithGst = parseFloat(r.PurchaseWithGst || 0) || (r.PurchasePrice * (1 + r.GSTPercent / 100));
+        r.SettledAmount   = parseFloat(r.SettledAmount   || 0);
+    
+        /* per-row derived status */
+        if (r.PendingQty <= 0 && r.AcceptedQty > 0 && r.RejectedQty === 0) r._rowStatus = 'settled';
+        else if (r.PendingQty <= 0 && r.RejectedQty > 0)                    r._rowStatus = 'rejected';
+        else if (r.PendingQty <= 0 && r.AcceptedQty > 0)                    r._rowStatus = 'settled';
+        else if (r.AcceptedQty > 0 && r.PendingQty > 0)                     r._rowStatus = 'partial';
+        else                                                                  r._rowStatus = 'pending';
+    });
+    
+    const first = expiryItems[0] || {};
+    const hasPending = expiryItems.some(r => r.PendingQty > 0);
+    
+    /* summary numbers */
+    const totalSent     = expiryItems.reduce((s,r) => s + r.SentQty, 0);
+    const totalAccepted = expiryItems.reduce((s,r) => s + r.AcceptedQty, 0);
+    const totalRejected = expiryItems.reduce((s,r) => s + r.RejectedQty, 0);
+    const totalPending  = expiryItems.reduce((s,r) => s + r.PendingQty,  0);
+    const totalSettled  = expiryItems.reduce((s,r) => s + r.SettledAmount, 0);
+    const totalWrittenOff = expiryItems.reduce((s,r) => s + r.RejectedQty * r.PurchaseWithGst, 0);
+    const totalLineVal  = expiryItems.reduce((s,r) => s + r.PurchaseWithGst * r.SentQty, 0);
+    
+    /* credit-note totals */
+    let cnBaseTotal = 0, cnGstTotal = 0, cnGrandTotal = 0;
+    if (creditNotes && creditNotes.length) {
+        creditNotes.forEach(cn => {
+            cnBaseTotal  += parseFloat(cn.Amount      || 0);
+            cnGstTotal   += parseFloat(cn.GSTAmount   || 0);
+            cnGrandTotal += parseFloat(cn.TotalAmount || 0);
+        });
+    }
+    
+    /* badge config */
+    const statusCfg = {
+        SETTLED:         { cls:'settled', label:'Settled',         icon:'✓' },
+        PARTIAL_SETTLED: { cls:'partial', label:'Partial Settled', icon:'◑' },
+        PENDING:         { cls:'pending', label:'Pending',         icon:'●' },
+        CANCELLED:       { cls:'cancelled', label:'Cancelled',     icon:'✕' }
+    };
+    const sc = statusCfg[computedStatus] || statusCfg['PENDING'];
+    /* a finalized return can have rejected units: say so instead of a plain "Settled" */
+    const outcomeKey = locals.outcome || '';
+    if (outcomeKey === 'WRITTEN_OFF')               { sc.cls = 'writeoff'; sc.label = 'Written off (not approved)'; }
+    if (outcomeKey === 'SETTLED_PART_WRITTEN_OFF')  { sc.cls = 'partial';  sc.label = 'Settled - part written off'; }
+
+    /* NEW: messages from the server, and the data for the Revise GST window */
+    const flashMessages = locals.notifications || [];
+    const gstRev        = locals.gstRevision || null;
+    const dnHeader      = gstRev && gstRev.header ? gstRev.header : null;
+    const canRevise     = !!(dnHeader && dnHeader.DebitNoteId && gstRev.items.some(i => i.editable));
+    const act           = locals.actions || {};
+    const isCancelled   = !!act.isCancelled || (header && header.Status === 'CANCELLED');
+    const canAdd        = !!act.canAdd;
+    const canCancel     = !!act.canCancel;
+    const addable       = act.items || [];
+    const gstNum        = v => Number(v) || 0;
+    const gstMoney      = v => gstNum(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const historyLines  = dnHeader ? String(dnHeader.Remarks || '').split(/\r?\n/).filter(l => l.trim()) : [];
+    /* NEW: what was typed before an error (shown again), invoice suggestions, today */
+    const V             = locals.values || {};
+    const val           = k => (V[k] == null ? '' : String(V[k]));
+    const invoiceNos    = locals.recentInvoices || [];
+    const todayIso      = locals.today || new Date().toISOString().slice(0, 10);
+    const canEdit       = hasPending && computedStatus !== 'SETTLED' && !header.IsLocked && !isCancelled;
+    %>
+
+    <!-- ── NEW: messages (success / error) ── -->
+    <% if (flashMessages.length) { %>
+    <div class="flash-box">
+        <% flashMessages.forEach(function (m) { %>
+            <div class="alert alert-<%= m.type %> d-flex align-items-start gap-2" role="alert">
+                <i class="bi <%= m.icon || 'bi-info-circle-fill' %> mt-1"></i><div><%= m.messages %></div>
+            </div>
+        <% }) %>
+    </div>
+    <% } %>
+    
+    <% if (isCancelled) { %>
+    <div class="alert alert-secondary d-flex align-items-start gap-2 flash-box" role="alert" style="margin-bottom:14px">
+        <i class="bi bi-slash-circle-fill mt-1"></i>
+        <div><strong>This settlement is cancelled.</strong> The debit note was voided and the supplier balance was reversed. The products are available on the "send to supplier" list again. The history is below / in the debit note remarks.</div>
+    </div>
+    <% } %>
+
+    <!-- ── HEADER ── -->
+    <div class="header-card">
+        <div>
+            <h4>Supplier Expiry Settlement</h4>
+    
+            <% if (expiryItems.length > 0) { %>
+            <div class="meta-row">
+                <div class="meta-chip">
+                    <span class="lbl">Supplier</span>
+                    <span class="val"><%= first.SupplierName %></span>
+                </div>
+                <div class="meta-chip">
+                    <span class="lbl">Return No</span>
+                    <span class="val"><%= first.ReturnNumber %></span>
+                </div>
+                <% if (dnHeader && dnHeader.DebitNoteNumber) { %>
+                <div class="meta-chip">
+                    <span class="lbl">Debit Note</span>
+                    <span class="val"><%= dnHeader.DebitNoteNumber %></span>
+                </div>
+                <% } %>
+                <div class="meta-chip">
+                    <span class="lbl">Sent Date</span>
+                    <span class="val"><%= new Date(first.SentDate).toLocaleDateString('en-GB').replace(/\//g,'-') %></span>
+                </div>
+                <div class="meta-chip">
+                    <span class="lbl">Items</span>
+                    <span class="val"><%= expiryItems.length %></span>
+                </div>
+                <% if (creditNotes && creditNotes.length) { %>
+                <a class="meta-chip" href="#cnHistory" style="text-decoration:none">
+                    <span class="lbl">Credit notes</span>
+                    <span class="val"><%= creditNotes.length %> · ₹ <%= cnGrandTotal.toLocaleString('en-IN',{minimumFractionDigits:2}) %></span>
+                </a>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+    
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+            <span class="sbadge <%= sc.cls %>">
+                <span class="dot"></span>
+                <%= sc.label %>
+            </span>
+            <% const isSettledDone = !!act.isSettled || header.Status === 'SETTLED' || computedStatus === 'SETTLED'; %>
+            <% if (canRevise || canAdd || canCancel || (!isCancelled && !header.IsLocked && !isSettledDone)) { %>
+            <div class="hdr-actions">
+                <% if (canRevise) { %>
+            <button type="button" class="btn btn-gst" id="openReviseGst" title="Change the GST % of this debit note while it is waiting for the supplier's approval">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+                Revise GST
+            </button>
+                <% } %>
+                <% if (canAdd) { %>
+                <button type="button" class="btn btn-gst" data-open-modal="#addExpModal" title="Put more expired stock of this supplier on this settlement / debit note">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add expired product
+                </button>
+                <% } %>
+                <% if (canCancel) { %>
+                <button type="button" class="btn btn-danger-soft" data-open-modal="#cancelSettleModal" title="Cancel this settlement and its debit note">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    Cancel settlement
+                </button>
+                <% } else if (!isCancelled && !header.IsLocked && !isSettledDone && act.cancelBlockedReason) { %>
+                <button type="button" class="btn btn-danger-soft" disabled title="<%= act.cancelBlockedReason %>">
+                    Cancel settlement
+                </button>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+    </div>
+    
+    <!-- ── SUMMARY STRIP ── -->
+    <div class="summary-strip">
+        <div class="s-tile">
+            <div class="lbl">Sent Qty</div>
+            <div class="val blue"><%= totalSent.toFixed(2) %></div>
+        </div>
+        <div class="s-tile">
+            <div class="lbl">Accepted</div>
+            <div class="val green"><%= totalAccepted.toFixed(2) %></div>
+        </div>
+        <div class="s-tile">
+            <div class="lbl">Rejected</div>
+            <div class="val red"><%= totalRejected.toFixed(2) %></div>
+        </div>
+        <div class="s-tile">
+            <div class="lbl">Pending</div>
+            <div class="val orange"><%= totalPending.toFixed(2) %></div>
+        </div>
+        <div class="s-tile">
+            <div class="lbl">Total Line Value</div>
+            <div class="val" style="font-size:16px">₹ <%= totalLineVal.toLocaleString('en-IN',{minimumFractionDigits:2}) %></div>
+        </div>
+        <% if (dnHeader && dnHeader.DebitNoteId) { %>
+        <div class="s-tile">
+            <div class="lbl">Debit Note Total</div>
+            <div class="val blue" style="font-size:16px">₹ <%= gstMoney(dnHeader.TotalAmount) %></div>
+        </div>
+        <% } %>
+        <div class="s-tile">
+            <div class="lbl">Total Settled</div>
+            <div class="val green" style="font-size:16px">₹ <%= totalSettled.toLocaleString('en-IN',{minimumFractionDigits:2}) %></div>
+        </div>
+        <% if (totalRejected > 0) { %>
+        <div class="s-tile">
+            <div class="lbl">Written Off (not approved)</div>
+            <div class="val red" style="font-size:16px">₹ <%= totalWrittenOff.toLocaleString('en-IN',{minimumFractionDigits:2}) %></div>
+        </div>
+        <% } %>
+    </div>
+    
+    <!-- ── EXPIRY ITEMS TABLE ── -->
+    <div class="card">
+        <div class="card-head">
+            <span class="accent-bar"></span>
+            <h6>Expiry Return Items</h6>
+        </div>
+    
+        <form method="POST" action="/billing/settleExpiry">
+        <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Product / Batch</th>
+                <th class="r">Expiry</th>
+                <th class="r">Sent</th>
+                <th class="r">Accepted</th>
+                <th class="r">Rejected</th>
+                <th class="r">Pending</th>
+                <th class="r">Purchase ₹</th>
+                <th class="r">GST %</th>
+                <th class="r">Rate + GST</th>
+                <th class="r">Line Total</th>
+                <th class="c">Status</th>
+                <th class="r">Accept Qty</th>
+                <th class="r">Settlement ₹</th>
+            </tr>
+            </thead>
+            <tbody>
+    
+            <% expiryItems.forEach(row => {
+                const lineTotal = row.PurchaseWithGst * row.SentQty;
+            %>
+            <tr>
+    
+                <td>
+                    <div class="prod-name"><%= row.ProductName %></div>
+                    <div class="prod-sub"><%= row.BatchNumber %> &nbsp;·&nbsp;
+                        Exp: <%= new Date(row.ExpiryDate).toLocaleDateString('en-GB').replace(/\//g,'-') %>
+                    </div>
+                </td>
+    
+                <td class="r mono"><%= new Date(row.ExpiryDate).toLocaleDateString('en-GB').replace(/\//g,'-') %></td>
+    
+                <td class="r"><span class="pill pill-sent"><%= row.SentQty.toFixed(2) %></span></td>
+    
+                <td class="r">
+                    <span class="pill <%= row.AcceptedQty > 0 ? 'pill-accepted' : 'pill-zero' %>">
+                        <%= row.AcceptedQty.toFixed(2) %>
+                    </span>
+                </td>
+    
+                <td class="r">
+                    <span class="pill <%= row.RejectedQty > 0 ? 'pill-rejected' : 'pill-zero' %>">
+                        <%= row.RejectedQty.toFixed(2) %>
+                    </span>
+                </td>
+    
+                <td class="r">
+                    <span class="pill <%= row.PendingQty > 0 ? 'pill-pending' : 'pill-zero' %>">
+                        <%= row.PendingQty.toFixed(2) %>
+                    </span>
+                </td>
+    
+                <td class="r mono">₹ <%= row.PurchasePrice.toFixed(2) %></td>
+    
+                <td class="r mono"><%= row.GSTPercent.toFixed(2) %>%</td>
+    
+                <td class="r mono" style="color:var(--text-secondary)">
+                    ₹ <%= row.PurchaseWithGst.toFixed(4) %>
+                </td>
+    
+                <td class="r mono" style="font-weight:600">
+                    ₹ <%= lineTotal.toLocaleString('en-IN',{minimumFractionDigits:2}) %>
+                </td>
+    
+                <td class="c">
+                    <span class="rbadge <%= row._rowStatus %>">
+                        <%= row._rowStatus === 'settled'  ? '✓ Settled'  :
+                            row._rowStatus === 'partial'  ? '◑ Partial'  :
+                            row._rowStatus === 'rejected' ? '✕ Rejected' : '● Pending' %>
+                    </span>
+                    <% (row.CreditNotes || []).forEach(function (c) { %>
+                        <div class="line-cn" title="<%= [c.invoiceRefNo ? 'Invoice ' + c.invoiceRefNo : '', c.poNo ? 'PO ' + c.poNo : '', c.date].filter(Boolean).join(' · ') %>">
+                            <%= c.number || '—' %> · <%= c.qty %> u
+                        </div>
+                    <% }) %>
+                </td>
+    
+                <td class="r">
+                    <% if (row.PendingQty > 0 && computedStatus !== 'SETTLED' &&  (!header.IsLocked)) { %>
+                        <input type="number"
+                            name="acceptedQty_<%= row.ItemId %>"
+                            class="inp accepted-input"
+                            min="0" max="<%= row.PendingQty %>"
+                            placeholder="0.00"
+                            data-price="<%= row.PurchaseWithGst %>"
+                            data-pending="<%= row.PendingQty %>"
+                            data-item-id="<%= row.ItemId %>"
+                            value="<%= val('acceptedQty_' + row.ItemId) %>">
+                        <input type="hidden" name="itemIds[]" value="<%= row.ItemId %>">
+                        <button type="button" class="own-cn-btn" data-own-for="<%= row.ItemId %>" aria-expanded="<%= val('ownCn_' + row.ItemId) === '1' %>"
+                                title="This product has its own credit note number (different from the one below)">
+                            + own CN
+                        </button>
+                    <% } else { %>
+                        <span class="mono" style="font-weight:600;color:var(--success)">
+                            <%= row.AcceptedQty.toFixed(2) %>
+                        </span>
+                    <% } %>
+                </td>
+    
+                <td class="r">
+                    <% if (row.PendingQty > 0 && computedStatus !== 'SETTLED' && (!header.IsLocked)) { %>
+                        <input type="number"
+                            step="0.01"
+                            name="settlement_<%= row.ItemId %>"
+                            class="inp wide settlement-input"
+                            placeholder="0.00" readonly tabindex="-1"
+                            title="Accept Qty × Rate + GST (calculated)">
+                    <% } else { %>
+                        <span class="mono" style="font-weight:700;color:var(--success)">
+                            ₹ <%= row.SettledAmount.toFixed(2) %>
+                        </span>
+                    <% } %>
+                </td>
+    
+            </tr>
+            <% if (row.PendingQty > 0 && computedStatus !== 'SETTLED' && !header.IsLocked) { const own = val('ownCn_' + row.ItemId) === '1'; %>
+            <tr class="own-cn-row" data-own-row="<%= row.ItemId %>" <%= own ? '' : 'hidden' %>>
+                <td colspan="13">
+                    <input type="hidden" name="ownCn_<%= row.ItemId %>" value="<%= own ? '1' : '0' %>" class="own-flag">
+                    <div class="own-grid">
+                        <span class="own-title">Own credit note for <strong><%= row.ProductName %></strong></span>
+                        <label>CN No <input type="text" maxlength="60" class="fld-input own-cn" name="cnNo_<%= row.ItemId %>" value="<%= val('cnNo_' + row.ItemId) %>" placeholder="CN/25-26/…"></label>
+                        <label>CN Date <input type="date" class="fld-input" name="cnDate_<%= row.ItemId %>" value="<%= val('cnDate_' + row.ItemId) || todayIso %>" max="<%= todayIso %>"></label>
+                        <label>Invoice Ref No <input type="text" maxlength="60" class="fld-input" list="supInvoices" name="invRef_<%= row.ItemId %>" value="<%= val('invRef_' + row.ItemId) %>"></label>
+                        <label>PO No <input type="text" maxlength="60" class="fld-input" name="poNo_<%= row.ItemId %>" value="<%= val('poNo_' + row.ItemId) %>"></label>
+                        <button type="button" class="own-cn-off" data-own-for="<%= row.ItemId %>">Use the credit note below</button>
+                    </div>
+                </td>
+            </tr>
+            <% } %>
+            <% }) %>
+    
+            </tbody>
+        </table>
+        </div>
+    
+        <!-- settlement footer only when pending -->
+        <% if (hasPending && computedStatus !== 'SETTLED' && (!header.IsLocked)) { %>
+    
+        <div class="settle-footer">
+            <div class="footer-head">Credit note details <span>— used for every product above that has no own credit note</span></div>
+            <div class="footer-grid">
+    
+                <div class="fld">
+                    <label for="cnNumber">Credit Note No <span class="req" id="cnReq">*</span></label>
+                    <input type="text" id="cnNumber" name="creditNoteNumber" class="fld-input" maxlength="60" placeholder="CN/25-26/…" value="<%= val('creditNoteNumber') %>">
+                </div>
+
+                <div class="fld">
+                    <label for="cnDate">Credit Note Date</label>
+                    <input type="date" id="cnDate" name="creditNoteDate" class="fld-input" value="<%= val('creditNoteDate') || todayIso %>" max="<%= todayIso %>">
+                </div>
+
+                <div class="fld">
+                    <label for="invRef">Supplier Invoice Ref No</label>
+                    <input type="text" id="invRef" name="invoiceRefNo" class="fld-input" maxlength="60" list="supInvoices" placeholder="Invoice the credit is against / adjusted in" value="<%= val('invoiceRefNo') %>">
+                </div>
+
+                <div class="fld">
+                    <label for="poNo">PO No</label>
+                    <input type="text" id="poNo" name="poNo" class="fld-input" maxlength="60" placeholder="Purchase order no" value="<%= val('poNo') %>">
+                </div>
+    
+                <div class="fld">
+                    <label for="settleType">Settlement Type</label>
+                    <select name="settlementType" id="settleType" class="fld-input fld-sel">
+                        <option value="CREDIT_NOTE" <%= val('settlementType') === 'CREDIT_NOTE' ? 'selected' : '' %>>Credit Note</option>
+                        <option value="PRICE_ADJUSTMENT" <%= val('settlementType') === 'PRICE_ADJUSTMENT' ? 'selected' : '' %>>Next Purchase Adjustment</option>
+                        <option value="REPLACEMENT_STOCK" <%= val('settlementType') === 'REPLACEMENT_STOCK' ? 'selected' : '' %>>Replacement Stock</option>
+                    </select>
+                </div>
+
+                <div class="fld">
+                    <label>Credit Amount (₹)</label>
+                    <input type="number" step="0.01" name="creditAmount"
+                        id="creditAmount" class="fld-input" placeholder="0.00" readonly>
+                </div>
+    
+                <div class="total-box">
+                    <div class="total-lbl">Total Settlement</div>
+                    <div class="total-amt" id="totalSettlement">₹ 0.00</div>
+                    <div class="total-sub" id="cnCount"></div>
+                </div>
+    
+            </div>
+            <div class="footer-hint">
+                The supplier approved products on <strong>different credit notes</strong>? Click <strong>+ own CN</strong> on those products and enter their number there — one credit note is saved per number.
+                For <em>Next Purchase Adjustment</em> / <em>Replacement Stock</em> the Invoice Ref No or PO No is enough.
+            </div>
+            <datalist id="supInvoices">
+                <% invoiceNos.forEach(function (n) { %><option value="<%= n %>"></option><% }) %>
+            </datalist>
+            <div id="settleAlerts"></div>
+        </div>
+    
+        <input type="hidden" name="expReturnId" value="<%= expReturnId %>">
+        <!-- NEW: a page that is out of date cannot save; a double click saves only once -->
+        <input type="hidden" name="pageVersion" value="<%= locals.pageVersion || '' %>">
+        <input type="hidden" name="submitToken" value="<%= locals.submitToken || '' %>">
+            <% if(!header.IsLocked && !isCancelled && header.Status !== 'SETTLED' && computedStatus !== 'SETTLED'){%>
+                <div class="cfoot">
+                    <button type="submit" formaction="/billing/updateExpirySettlementList" class="btn btn-update">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        update Settlement
+                    </button>
+                    <button type="submit" class="btn btn-save">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Save Settlement
+                    </button>
+                    <button type="button" class="btn btn-final" id="openFinalize">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        Finalize & Close
+                    </button>
+                </div>
+            <%}%>
+    
+        <% } %>
+    
+        </form>
+    </div>
+    
+    <!-- ── CREDIT NOTE HISTORY ── (CHANGED: invoice ref, PO no, type and the products of every credit note) -->
+    <% if (creditNotes && creditNotes.length > 0) { %>
+    <div class="card" id="cnHistory">
+        <div class="card-head">
+            <span class="accent-bar"></span>
+            <h6>Credit Notes Received (<%= creditNotes.length %>)</h6>
+        </div>
+    
+        <div class="table-wrap">
+        <table class="cn-table">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Credit Note No.</th>
+                <th>CN Date</th>
+                <th>Invoice Ref No</th>
+                <th>PO No</th>
+                <th>Type</th>
+                <th>Products</th>
+                <th class="r">Base Amount ₹</th>
+                <th class="r">GST ₹</th>
+                <th class="r">Total Amount ₹</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% creditNotes.forEach((cn, idx) => { %>
+            <tr>
+                <td class="mono" style="color:var(--text-muted)"><%= idx + 1 %></td>
+                <td>
+                    <% if (cn.CreditNoteNumber && String(cn.CreditNoteNumber).trim()) { %>
+                        <span class="mono" style="font-weight:600"><%= cn.CreditNoteNumber %></span>
+                    <% } else { %>
+                        <span style="color:var(--text-muted);font-size:12px;font-style:italic">No CN number</span>
+                    <% } %>
+                    <div style="font-size:11px;color:var(--text-muted)">entered <%= new Date(cn.CreatedAt).toLocaleDateString('en-GB').replace(/\//g,'-') %></div>
+                </td>
+                <td class="mono"><%= cn.CreditDateText || new Date(cn.CreditDate).toLocaleDateString('en-GB').replace(/\//g,'-') %></td>
+                <td class="mono"><%= cn.SupplierInvoiceRefNo || '—' %></td>
+                <td class="mono"><%= cn.PoNo || '—' %></td>
+                <td style="font-size:12px"><%= cn.SettlementTypeLabel || 'Credit Note' %></td>
+                <td style="font-size:12.5px;min-width:200px">
+                    <% if (cn.items && cn.items.length) { %>
+                        <% cn.items.forEach(function (it) { %>
+                            <div class="cn-item"><span><%= it.ProductName %> <span class="mono" style="color:var(--text-muted)"><%= it.BatchNumber %></span></span>
+                                <span class="mono" title="<%= Number(it.Quantity) %> × ₹<%= Number(it.Rate).toFixed(2) %> + <%= Number(it.GSTPercent) %>% GST"><%= Number(it.Quantity) %> u · ₹<%= Number(it.TotalAmount).toLocaleString('en-IN',{minimumFractionDigits:2}) %></span></div>
+                        <% }) %>
+                    <% } else { %>
+                        <span style="color:var(--text-muted);font-style:italic">Products not recorded (saved before this update)</span>
+                        <% if (cn.Remarks) { %><div style="color:var(--text-secondary)"><%= cn.Remarks %></div><% } %>
+                    <% } %>
+                </td>
+                <td class="r mono">₹ <%= parseFloat(cn.Amount || 0).toLocaleString('en-IN',{minimumFractionDigits:2}) %></td>
+                <td class="r mono">₹ <%= parseFloat(cn.GSTAmount || 0).toLocaleString('en-IN',{minimumFractionDigits:2}) %></td>
+                <td class="r">
+                    <span class="mono" style="font-weight:700;color:var(--success)">
+                        ₹ <%= parseFloat(cn.TotalAmount || 0).toLocaleString('en-IN',{minimumFractionDigits:2}) %>
+                    </span>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+            <tfoot>
+            <tr class="cn-total-row">
+                <td colspan="7" style="text-align:right;color:var(--text-secondary);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">
+                    Grand Total
+                </td>
+                <td class="r mono">₹ <%= cnBaseTotal.toLocaleString('en-IN',{minimumFractionDigits:2}) %></td>
+                <td class="r mono">₹ <%= cnGstTotal.toLocaleString('en-IN',{minimumFractionDigits:2}) %></td>
+                <td class="r mono" style="color:var(--success)">₹ <%= cnGrandTotal.toLocaleString('en-IN',{minimumFractionDigits:2}) %></td>
+            </tr>
+            </tfoot>
+        </table>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- ── NEW: history of the debit note (GST revisions are written here) ── -->
+    <% if (historyLines.length) { %>
+    <div class="card">
+        <div class="card-head">
+            <span class="accent-bar"></span>
+            <h6>Debit Note History</h6>
+        </div>
+        <div style="padding:10px 20px">
+            <% historyLines.forEach(function (h) { %><div class="history-line"><%= h %></div><% }) %>
+        </div>
+    </div>
+    <% } %>
+    
+    </div><!-- /.page -->
+
+    <!-- ══════════════ NEW: REVISE GST WINDOW (opens from the "Revise GST" button) ══════════════ -->
+    <% if (canRevise) { %>
+    <div class="modal fade" id="reviseGstModal" tabindex="-1" aria-labelledby="reviseGstLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form class="modal-content" method="POST" action="/billing/reviseDebitNoteGst/<%= expReturnId %>" id="reviseGstForm" autocomplete="off">
+            <input type="hidden" name="submitToken" value="<%= (locals.submitToken || '') ? locals.submitToken + '-g' : '' %>">
+
+            <div class="modal-header">
+              <h5 class="modal-title" id="reviseGstLabel">Revise GST of debit note <%= dnHeader.DebitNoteNumber || '' %></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+              <div class="rg-info">
+                Use this while the debit note is <strong>waiting for the supplier's approval</strong>. It changes the debit note, the supplier ledger entry and the amount that is credited when you settle.
+                Use the GST % the supplier will show on their credit note (ask your CA if you are unsure), then <strong>print / send the debit note again</strong>.
+                Lines that are already accepted or settled are locked. The purchase invoice is never changed.
+              </div>
+
+              <div id="rgAlerts"></div>
+
+              <div class="rg-quick">
+                <span>Set all lines to</span>
+                <button type="button" class="rg-qbtn" data-gst="0">0%</button>
+                <button type="button" class="rg-qbtn" data-gst="5">5%</button>
+                <button type="button" class="rg-qbtn" data-gst="12">12%</button>
+                <button type="button" class="rg-qbtn" data-gst="18">18%</button>
+                <input type="number" id="rgCustom" class="inp" style="width:90px" min="0" max="100" step="0.01" placeholder="other %">
+                <button type="button" class="rg-qbtn" id="rgApplyCustom">Set</button>
+              </div>
+
+              <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th><th>Product / Batch</th><th class="r">Debit note qty</th><th class="r">Rate ₹</th><th class="r">Taxable ₹</th>
+                    <th class="r">GST % now</th><th class="r">New GST %</th><th class="r">New GST ₹</th><th class="r">New total ₹</th><th class="r">Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                <% gstRev.items.forEach(function (i, idx) { %>
+                  <tr class="rg-row <%= i.editable ? '' : 'locked' %>" data-taxable="<%= gstNum(i.Taxable).toFixed(2) %>"
+                      data-old-gst="<%= gstNum(i.GstPercent).toFixed(2) %>" data-old-total="<%= gstNum(i.Total).toFixed(2) %>" data-editable="<%= i.editable ? 1 : 0 %>">
+                    <td class="mono" style="color:var(--text-muted)"><%= idx + 1 %></td>
+                    <td>
+                      <div class="prod-name"><%= i.ProductName %></div>
+                      <div class="prod-sub"><%= i.BatchNumber %> &nbsp;·&nbsp; Exp: <%= i.ExpiryDate %></div>
+                    </td>
+                    <td class="r mono"><%= gstNum(i.Quantity) %><% if (i.qtyMismatch) { %><br><span class="rg-note">of <%= gstNum(i.ReturnQty) %> sent</span><% } %></td>
+                    <td class="r mono"><%= gstMoney(i.Rate) %></td>
+                    <td class="r mono"><%= gstMoney(i.Taxable) %></td>
+                    <td class="r mono"><%= gstNum(i.GstPercent) %>%</td>
+                    <td class="r">
+                      <% if (i.editable) { %>
+                        <input type="number" class="inp rg-gst" style="width:90px" name="gst_<%= i.ItemId %>" value="<%= gstNum(i.GstPercent).toFixed(2) %>" min="0" max="100" step="0.01">
+                      <% } else { %>
+                        <span class="rbadge pending" title="<%= i.lockedReason %>">locked</span>
+                      <% } %>
+                    </td>
+                    <td class="r mono rg-new-gst"><%= gstMoney(i.GstAmount) %></td>
+                    <td class="r mono rg-new-total" style="font-weight:600"><%= gstMoney(i.Total) %></td>
+                    <td class="r rg-new-delta"><span style="color:var(--text-muted)">–</span></td>
+                  </tr>
+                  <% if (!i.editable && i.lockedReason) { %>
+                  <tr class="rg-row locked"><td></td><td colspan="9" class="rg-hint">🔒 <%= i.lockedReason %></td></tr>
+                  <% } %>
+                  <% if (i.qtyMismatch) { %>
+                  <tr><td></td><td colspan="9" class="rg-hint">
+                    The debit note is for <strong><%= gstNum(i.Quantity) %></strong> unit(s); <strong><%= gstNum(i.ReturnQty) %></strong> were sent. If the supplier approved <%= gstNum(i.Quantity) %>,
+                    enter <strong><%= gstNum(i.Quantity) %></strong> as the accepted quantity when you settle; the other <%= gstNum(i.ReturnQty) - gstNum(i.Quantity) %> are written off when you finalize.
+                    Only the GST % changes here (the taxable value stays ₹ <%= gstMoney(i.Taxable) %>).
+                  </td></tr>
+                  <% } %>
+                <% }) %>
+                </tbody>
+              </table>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;margin-top:16px">
+                <div style="flex:1;min-width:260px">
+                  <div class="fld"><label for="rgReason">Reason (saved with the debit note)</label>
+                    <textarea class="fld-input" name="reason" id="rgReason" rows="2" maxlength="300" placeholder="e.g. GST rate reduced from 12% to 5%; supplier will issue the credit note at 5%"></textarea>
+                  </div>
+                  <label style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--text-secondary);margin-top:10px;cursor:pointer">
+                    <input type="checkbox" name="applyToRemaining" value="1" checked style="margin-top:3px">
+                    <span>Also use the new GST % for the quantity of these batches that is <strong>not yet in a debit note</strong>, so their next debit note starts at the same rate.</span>
+                  </label>
+                </div>
+                <div style="text-align:right;min-width:240px">
+                  <div class="fld"><label>Debit note total</label></div>
+                  <div class="rg-compare" id="rgCompare"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-save" id="rgSave">Save GST change</button>
+            </div>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+
+    <!-- ══════════════ NEW: FINALIZE CONFIRMATION WINDOW ══════════════ -->
+    <% if (!header.IsLocked && !isCancelled && header.Status !== 'SETTLED' && computedStatus !== 'SETTLED') { %>
+    <div class="modal fade" id="finalizeModal" tabindex="-1" aria-labelledby="finalizeLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border:0;border-radius:var(--radius);font-family:'DM Sans',sans-serif">
+          <div class="modal-header" style="padding:16px 22px">
+            <h5 class="modal-title" id="finalizeLabel" style="font-size:15px;font-weight:700">Finalize &amp; close this settlement?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" style="padding:18px 22px">
+            <div id="fzAlerts"></div>
+            <table class="table table-sm mb-3" style="font-size:13.5px">
+              <tbody>
+                <tr><td>Approved by supplier (credit note)</td><td class="text-end"><strong id="fzAccQty">0</strong> units</td><td class="text-end" style="color:var(--success)"><strong id="fzAccAmt">₹ 0.00</strong></td></tr>
+                <tr><td>Not approved - written off</td><td class="text-end"><strong id="fzRejQty">0</strong> units</td><td class="text-end" style="color:var(--danger)"><strong id="fzRejAmt">₹ 0.00</strong></td></tr>
+              </tbody>
+            </table>
+            <div class="rg-info mb-0">
+              The quantities you typed in <strong>Accept Qty</strong> are settled first. Every unit left over is treated as <strong>not approved</strong>: it is written off and removed from the supplier's balance.
+              After this the settlement is locked. <strong>This cannot be undone.</strong>
+            </div>
+          </div>
+          <div class="modal-footer" style="padding:14px 22px;gap:10px">
+            <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Go back</button>
+            <button type="button" class="btn btn-final" id="fzConfirm">Yes, finalize</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- ══════════════ NEW: ADD EXPIRED PRODUCT WINDOW ══════════════ -->
+    <% if (canAdd) { %>
+    <div class="modal fade" id="addExpModal" tabindex="-1" aria-labelledby="addExpLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form class="modal-content" method="POST" action="/billing/addExpiredToReturn/<%= expReturnId %>" id="addExpForm" autocomplete="off" novalidate>
+            <input type="hidden" name="submitToken" value="<%= (locals.submitToken || '') ? locals.submitToken + '-a' : '' %>">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addExpLabel">Add expired product to <%= dnHeader && dnHeader.DebitNoteNumber ? 'debit note ' + dnHeader.DebitNoteNumber : 'this settlement' %></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="rg-info">
+              Tick the expired stock of <strong><%= expiryItems.length ? expiryItems[0].SupplierName : 'this supplier' %></strong> you want to send with this settlement, and set the quantity and GST %.
+              The debit note total and the supplier ledger are updated together. The new lines wait for the supplier's approval like the others.
+            </div>
+            <div id="axAlerts"></div>
+            <% if (!addable.length) { %>
+              <div class="alert alert-info mb-0">No expired stock of this supplier is waiting to be sent.</div>
+            <% } else { %>
+            <div class="rg-quick">
+              <input type="text" id="axFilter" class="form-control form-control-sm" style="max-width:240px" placeholder="Search product / batch">
+              <span>GST % for ticked rows</span>
+              <button type="button" class="rg-qbtn" data-ax-gst="5">5%</button>
+              <button type="button" class="rg-qbtn" data-ax-gst="12">12%</button>
+              <button type="button" class="rg-qbtn" data-ax-gst="18">18%</button>
+            </div>
+            <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="c"><input type="checkbox" id="axAll" class="form-check-input" title="Tick all shown"></th>
+                  <th>Product / Batch</th><th class="r">Expiry</th><th class="r">Available</th><th class="r">Purchase ₹</th>
+                  <th class="r">Qty to send</th><th class="r">GST %</th><th class="r">Line total ₹</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% addable.forEach(function (a) { %>
+                <tr class="ax-row" data-rate="<%= gstNum(a.PurchasePrice) %>" data-search="<%= (a.ProductName + ' ' + a.BatchNumber).toLowerCase() %>">
+                  <td class="c"><input type="checkbox" class="form-check-input ax-pick" name="expiredIds" value="<%= a.Id %>"></td>
+                  <td><strong><%= a.ProductName %></strong><br><span class="rg-note">Batch <%= a.BatchNumber %></span></td>
+                  <td class="r"><%= a.ExpiryDate %></td>
+                  <td class="r"><%= gstNum(a.RemainingQty) %></td>
+                  <td class="r"><%= gstMoney(a.PurchasePrice) %></td>
+                  <td class="r"><input type="number" class="form-control form-control-sm d-inline-block ax-qty" name="qty_<%= a.Id %>" min="0.01" max="<%= gstNum(a.RemainingQty) %>" step="any" value="<%= gstNum(a.RemainingQty) %>" disabled></td>
+                  <td class="r"><input type="number" class="form-control form-control-sm d-inline-block ax-gst" name="gst_<%= a.Id %>" min="0" max="100" step="0.01" value="<%= gstNum(a.GSTPercent) %>" disabled></td>
+                  <td class="r ax-total">–</td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <span id="axCount" class="rg-note">0 selected</span>
+              <span>Adds to debit note: <strong id="axSum">₹ 0.00</strong></span>
+            </div>
+            <% } %>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Close</button>
+            <% if (addable.length) { %><button type="submit" class="btn btn-save" id="axSave">Add to settlement</button><% } %>
+          </div>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- ══════════════ NEW: CANCEL SETTLEMENT WINDOW ══════════════ -->
+    <% if (canCancel) { %>
+    <div class="modal fade" id="cancelSettleModal" tabindex="-1" aria-labelledby="cancelSettleLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="POST" action="/billing/cancelExpiryReturn/<%= expReturnId %>" id="cancelSettleForm" autocomplete="off">
+            <input type="hidden" name="submitToken" value="<%= (locals.submitToken || '') ? locals.submitToken + '-c' : '' %>">
+          <div class="modal-header">
+            <h5 class="modal-title" id="cancelSettleLabel">Cancel this settlement?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="rg-info">
+              This voids the whole settlement<%= dnHeader && dnHeader.DebitNoteNumber ? ' and debit note ' + dnHeader.DebitNoteNumber : '' %>
+              (₹ <%= dnHeader ? gstMoney(dnHeader.TotalAmount) : '0.00' %>). The supplier balance is reversed and every product goes back to the
+              "send to supplier" list so you can send it again. <strong>This cannot be undone.</strong>
+            </div>
+            <div id="csAlerts"></div>
+            <label for="csReason" class="form-label fw-semibold">Reason</label>
+            <textarea id="csReason" name="reason" class="form-control" rows="2" maxlength="300" placeholder="e.g. supplier asked to resend with corrected quantity"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Keep settlement</button>
+            <button type="submit" class="btn btn-final" id="csSave">Yes, cancel settlement</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <% } %>
+    
+    <script>
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('.settlement-input').forEach(i => {
+            total += parseFloat(i.value) || 0;
+        });
+        const fmt = total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        const ts = document.getElementById('totalSettlement');
+        const ca = document.getElementById('creditAmount');
+        if (ts) ts.textContent = '₹ ' + fmt;
+        if (ca) ca.value = total.toFixed(2);
+    }
+    
+    document.querySelectorAll('.accepted-input').forEach(input => {
+        input.addEventListener('input', function () {
+            let val     = parseFloat(this.value) || 0;
+            const max   = parseFloat(this.dataset.pending);
+            const price = parseFloat(this.dataset.price);
+            const id    = this.dataset.itemId;
+    
+            if (val > max) { val = max; this.value = max; }
+    
+            const si = document.querySelector(`[name="settlement_${id}"]`);
+            if (si) { si.value = (val * price).toFixed(2); calculateTotal(); }
+        });
+        if (input.value !== '') input.dispatchEvent(new Event('input'));        // values kept after an error
+    });
+    
+    document.querySelectorAll('.settlement-input').forEach(i => {
+        i.addEventListener('input', calculateTotal);
+    });
+    
+    calculateTotal();
+
+    /* NEW: own credit note per product, how many credit notes will be saved, checks before saving */
+    (function () {
+        var form = document.querySelector('form[action="/billing/settleExpiry"]');
+        if (!form) return;
+        var box = document.getElementById('settleAlerts');
+        var typeSel = form.querySelector('[name="settlementType"]');
+
+        function setOwn(id, on) {
+            var row = form.querySelector('[data-own-row="' + id + '"]');
+            if (!row) return;
+            row.hidden = !on;
+            row.querySelector('.own-flag').value = on ? '1' : '0';
+            var b = form.querySelector('.own-cn-btn[data-own-for="' + id + '"]');
+            if (b) { b.setAttribute('aria-expanded', on ? 'true' : 'false'); b.textContent = on ? '✓ own CN' : '+ own CN'; }
+            if (on) { var f = row.querySelector('.own-cn'); if (f) f.focus(); }
+            countNotes();
+        }
+        form.addEventListener('click', function (e) {
+            var b = e.target.closest('.own-cn-btn');
+            if (b) { setOwn(b.dataset.ownFor, b.getAttribute('aria-expanded') !== 'true'); return; }
+            var off = e.target.closest('.own-cn-off');
+            if (off) setOwn(off.dataset.ownFor, false);
+        });
+        Array.prototype.forEach.call(form.querySelectorAll('.own-cn-btn[aria-expanded="true"]'), function (b) { b.textContent = '✓ own CN'; });
+
+        /* the credit notes this save will create (same logic as the server) */
+        function plan() {
+            var t = typeSel ? typeSel.value : 'CREDIT_NOTE';
+            var page = { cn: v('creditNoteNumber'), inv: v('invoiceRefNo'), po: v('poNo'), d: v('creditNoteDate') };
+            var groups = {}, problems = [], lines = 0;
+            Array.prototype.forEach.call(form.querySelectorAll('.accepted-input'), function (i) {
+                var q = parseFloat(i.value);
+                if (!(q > 0)) return;
+                lines++;
+                var id = i.dataset.itemId, row = form.querySelector('[data-own-row="' + id + '"]');
+                var own = row && !row.hidden;
+                var r = own ? { cn: v('cnNo_' + id), inv: v('invRef_' + id), po: v('poNo_' + id), d: v('cnDate_' + id) || page.d } : page;
+                var name = i.closest('tr').querySelector('.prod-name');
+                name = name ? name.textContent.trim() : 'Item ' + id;
+                if (t === 'CREDIT_NOTE' && !r.cn) problems.push(name + ': enter the credit note number' + (own ? ' in its own credit note.' : '.'));
+                else if (!r.cn && !r.inv && !r.po) problems.push(name + ': enter the credit note no, invoice ref no or PO no.');
+                var key = [r.cn.toUpperCase(), r.inv.toUpperCase(), r.po.toUpperCase(), r.d].join('|');
+                groups[key] = groups[key] || { cn: r.cn, total: 0 };
+                groups[key].total += parseFloat(form.querySelector('[name="settlement_' + id + '"]').value) || 0;
+            });
+            var seen = {};
+            Object.keys(groups).forEach(function (k) {
+                var c = groups[k].cn.toUpperCase();
+                if (!c) return;
+                if (seen[c]) problems.push('Credit note ' + groups[k].cn + ' is entered with two different invoice ref / PO no / dates.');
+                seen[c] = 1;
+            });
+            return { groups: groups, problems: problems, lines: lines };
+        }
+        function v(name) { var el = form.querySelector('[name="' + name + '"]'); return el ? String(el.value || '').trim() : ''; }
+        function countNotes() {
+            var p = plan(), n = Object.keys(p.groups).length, el = document.getElementById('cnCount');
+            if (el) el.textContent = n ? n + ' credit note' + (n > 1 ? 's' : '') + ' · ' + p.lines + ' product' + (p.lines > 1 ? 's' : '') : '';
+            var req = document.getElementById('cnReq'); if (req) req.style.visibility = typeSel && typeSel.value !== 'CREDIT_NOTE' ? 'hidden' : 'visible';
+        }
+        form.addEventListener('input', countNotes);
+        form.addEventListener('change', countNotes);
+
+        // FIX: Enter in a box submitted the form with its FIRST button ("update Settlement") - Enter now does nothing
+        form.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault();
+        });
+        // FIX: after "Back" the browser may show this page from its cache with the buttons still disabled
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) Array.prototype.forEach.call(form.querySelectorAll('button'), function (b) { b.disabled = false; });
+        });
+        var sending = false;
+
+        window.checkSettlement = function () {           // also used by Finalize
+            var p = plan();
+            if (p.problems.length) {
+                box.innerHTML = '<div class="alert alert-danger" role="alert">' + p.problems.map(function (x) { return x.replace(/</g, '&lt;'); }).join('<br>') + '</div>';
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+            box.innerHTML = '';
+            return true;
+        };
+        form.addEventListener('submit', function (e) {
+            var submitter = e.submitter;
+            if (submitter && submitter.getAttribute('formaction')) return;          // "update Settlement" keeps its own rules
+            if (!plan().lines) { e.preventDefault(); box.innerHTML = '<div class="alert alert-warning" role="alert">Enter the Accept Qty of at least one product.</div>'; return; }
+            if (!window.checkSettlement()) { e.preventDefault(); return; }
+            if (sending) { e.preventDefault(); return; }                            // no double save
+            sending = true;
+            Array.prototype.forEach.call(form.querySelectorAll('.cfoot button'), function (b) { b.disabled = true; });
+            if (submitter) submitter.innerHTML = 'Saving…';
+        });
+        countNotes();
+    })();
+    </script>
+
+    <!-- NEW: the Revise GST window -->
+    <script>
+    (function () {
+        var openBtn = document.getElementById('openReviseGst');
+        var modalEl = document.getElementById('reviseGstModal');
+        var form = document.getElementById('reviseGstForm');
+        if (!openBtn || !modalEl || !form) return;
+
+        var rows = Array.prototype.slice.call(form.querySelectorAll('tr.rg-row[data-taxable]'));
+        var OLD_TOTAL = <%= canRevise ? gstNum(dnHeader.TotalAmount) : 0 %>;
+        var r2 = function (x) { return Math.round((Number(x) + Number.EPSILON) * 100) / 100; };          // same rounding as the server
+        var money = function (x) { return Number(x).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+        var alertsBox = document.getElementById('rgAlerts');
+
+        /* open / close: Bootstrap's modal, or a minimal fallback when Bootstrap's JS is not loaded */
+        var bsModal = window.bootstrap && window.bootstrap.Modal ? window.bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+        function closeFallback() { modalEl.classList.remove('show'); modalEl.style.display = 'none'; document.body.classList.remove('modal-open'); }
+        openBtn.addEventListener('click', function () {
+            if (bsModal) bsModal.show();
+            else { modalEl.style.display = 'block'; modalEl.classList.add('show'); document.body.classList.add('modal-open'); }
+        });
+        if (!bsModal) Array.prototype.forEach.call(modalEl.querySelectorAll('[data-bs-dismiss="modal"]'), function (b) { b.addEventListener('click', closeFallback); });
+
+        function notify(type, html) {
+            alertsBox.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' + html +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+        }
+        alertsBox.addEventListener('click', function (e) { if (e.target.classList && e.target.classList.contains('btn-close')) alertsBox.innerHTML = ''; });
+
+        function recalc() {
+            var sumNew = 0, changed = 0;
+            rows.forEach(function (tr) {
+                var taxable = parseFloat(tr.getAttribute('data-taxable'));
+                var oldGst = parseFloat(tr.getAttribute('data-old-gst'));
+                var oldTotal = parseFloat(tr.getAttribute('data-old-total'));
+                var inp = tr.querySelector('.rg-gst');
+                var g = inp ? parseFloat(inp.value) : oldGst;
+                var gstAmt = r2(taxable * (isNaN(g) ? oldGst : g) / 100);
+                var total = r2(taxable + gstAmt);
+                tr.querySelector('.rg-new-gst').textContent = money(gstAmt);
+                tr.querySelector('.rg-new-total').textContent = money(total);
+                var isChanged = !!inp && !isNaN(g) && r2(g) !== r2(oldGst);
+                tr.classList.toggle('changed', isChanged);
+                var delta = r2(total - oldTotal);
+                tr.querySelector('.rg-new-delta').innerHTML = isChanged
+                    ? '<span class="rg-delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta > 0 ? '+' : '') + money(delta) + '</span>'
+                    : '<span style="color:var(--text-muted)">–</span>';
+                if (isChanged) changed++;
+                sumNew += total;
+            });
+            sumNew = r2(sumNew);
+            var diff = r2(sumNew - OLD_TOTAL);
+            document.getElementById('rgCompare').innerHTML = '<del style="color:var(--text-muted)">₹ ' + money(OLD_TOTAL) + '</del> &rarr; <strong>₹ ' + money(sumNew) + '</strong>' +
+                (diff === 0 ? '' : ' <span class="rg-delta ' + (diff > 0 ? 'up' : 'down') + '">(' + (diff > 0 ? '+' : '') + money(diff) + ')</span>');
+            return { changed: changed, total: sumNew };
+        }
+
+        Array.prototype.forEach.call(form.querySelectorAll('.rg-gst'), function (i) { i.addEventListener('input', recalc); });
+
+        function setAll(v) {
+            v = parseFloat(v);
+            if (isNaN(v) || v < 0 || v > 100) { notify('warning', 'Enter a GST % between 0 and 100.'); return; }
+            alertsBox.innerHTML = '';
+            Array.prototype.forEach.call(form.querySelectorAll('.rg-gst'), function (i) { i.value = v.toFixed(2); });
+            recalc();
+        }
+        Array.prototype.forEach.call(form.querySelectorAll('.rg-qbtn[data-gst]'), function (b) { b.addEventListener('click', function () { setAll(b.getAttribute('data-gst')); }); });
+        document.getElementById('rgApplyCustom').addEventListener('click', function () { setAll(document.getElementById('rgCustom').value); });
+
+        form.addEventListener('submit', function (event) {
+            alertsBox.innerHTML = '';
+            var problems = [];
+            Array.prototype.forEach.call(form.querySelectorAll('.rg-gst'), function (i) {
+                var v = parseFloat(i.value);
+                var bad = isNaN(v) || v < 0 || v > 100;
+                i.style.borderColor = bad ? 'var(--danger)' : '';
+                if (bad && problems.indexOf('GST % must be a number between 0 and 100.') === -1) problems.push('GST % must be a number between 0 and 100.');
+            });
+            var reason = String(document.getElementById('rgReason').value || '').trim();
+            if (reason.length < 3) problems.push('Please write a short reason.');
+            var s = recalc();
+            if (!problems.length && s.changed === 0) problems.push('No GST % was changed.');
+            if (problems.length) { event.preventDefault(); notify('danger', problems.join('<br>')); return; }
+            document.getElementById('rgSave').disabled = true;            // no double submit; the form posts normally
+        });
+
+        recalc();
+    })();
+    </script>
+
+    <!-- NEW: Add expired product / Cancel settlement windows -->
+    <script>
+    (function () {
+        var r2 = function (x) { return Math.round((Number(x) + Number.EPSILON) * 100) / 100; };
+        var money = function (x) { return Number(x).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+        /* open buttons: Bootstrap's modal, or a minimal fallback when Bootstrap's JS is not loaded */
+        Array.prototype.forEach.call(document.querySelectorAll('[data-open-modal]'), function (btn) {
+            btn.addEventListener('click', function () {
+                var el = document.querySelector(btn.getAttribute('data-open-modal'));
+                if (!el) return;
+                if (window.bootstrap && window.bootstrap.Modal) { window.bootstrap.Modal.getOrCreateInstance(el).show(); return; }
+                el.style.display = 'block'; el.classList.add('show'); document.body.classList.add('modal-open');
+                Array.prototype.forEach.call(el.querySelectorAll('[data-bs-dismiss="modal"]'), function (b) {
+                    b.addEventListener('click', function () { el.classList.remove('show'); el.style.display = 'none'; document.body.classList.remove('modal-open'); });
+                });
+            });
+        });
+        function notify(box, type, html) {
+            box.innerHTML = '<div class="alert alert-' + type + '" role="alert">' + html + '</div>';
+        }
+
+        /* ---- add expired product ---- */
+        var form = document.getElementById('addExpForm');
+        if (form) {
+            var rows = Array.prototype.slice.call(form.querySelectorAll('tr.ax-row'));
+            var box = document.getElementById('axAlerts');
+            var recalc = function () {
+                var sum = 0, n = 0;
+                rows.forEach(function (tr) {
+                    var pick = tr.querySelector('.ax-pick'), q = tr.querySelector('.ax-qty'), g = tr.querySelector('.ax-gst');
+                    q.disabled = g.disabled = !pick.checked;
+                    tr.classList.toggle('on', pick.checked);
+                    var cell = tr.querySelector('.ax-total');
+                    if (!pick.checked) { cell.textContent = '–'; return; }
+                    var qty = parseFloat(q.value), gst = parseFloat(g.value), rate = parseFloat(tr.getAttribute('data-rate'));
+                    if (isNaN(qty) || isNaN(gst)) { cell.textContent = '–'; n++; return; }
+                    var taxable = r2(qty * rate), total = r2(taxable + r2(taxable * gst / 100));
+                    cell.textContent = money(total); sum += total; n++;
+                });
+                // FIX: with nothing left to add these two do not exist -> the error stopped the rest of this script
+                var ac = document.getElementById('axCount'), as = document.getElementById('axSum');
+                if (ac) ac.textContent = n + ' selected';
+                if (as) as.textContent = '₹ ' + money(r2(sum));
+            };
+            form.addEventListener('input', recalc);
+            form.addEventListener('change', recalc);
+            var all = document.getElementById('axAll');
+            if (all) all.addEventListener('change', function () {
+                rows.forEach(function (tr) { if (tr.style.display !== 'none') tr.querySelector('.ax-pick').checked = all.checked; });
+                recalc();
+            });
+            var filter = document.getElementById('axFilter');
+            if (filter) filter.addEventListener('input', function () {
+                var t = filter.value.trim().toLowerCase();
+                rows.forEach(function (tr) { tr.style.display = !t || tr.getAttribute('data-search').indexOf(t) !== -1 ? '' : 'none'; });
+            });
+            Array.prototype.forEach.call(form.querySelectorAll('[data-ax-gst]'), function (b) {
+                b.addEventListener('click', function () {
+                    rows.forEach(function (tr) { if (tr.querySelector('.ax-pick').checked) tr.querySelector('.ax-gst').value = b.getAttribute('data-ax-gst'); });
+                    recalc();
+                });
+            });
+            form.addEventListener('submit', function (e) {
+                var problems = [], picked = 0;
+                rows.forEach(function (tr) {
+                    if (!tr.querySelector('.ax-pick').checked) return;
+                    picked++;
+                    var q = tr.querySelector('.ax-qty'), g = tr.querySelector('.ax-gst');
+                    var qty = parseFloat(q.value), max = parseFloat(q.getAttribute('max')), gst = parseFloat(g.value);
+                    var badQ = isNaN(qty) || qty <= 0 || qty > max, badG = isNaN(gst) || gst < 0 || gst > 100;
+                    q.style.borderColor = badQ ? 'var(--danger)' : ''; g.style.borderColor = badG ? 'var(--danger)' : '';
+                    if (badQ) problems.push('Quantity must be more than 0 and at most the available quantity.');
+                    if (badG) problems.push('GST % must be between 0 and 100.');
+                });
+                if (!picked) problems.push('Tick at least one product.');
+                problems = problems.filter(function (p, i) { return problems.indexOf(p) === i; });
+                if (problems.length) { e.preventDefault(); notify(box, 'danger', problems.join('<br>')); return; }
+                document.getElementById('axSave').disabled = true;
+            });
+            recalc();
+        }
+
+        /* ---- cancel settlement ---- */
+        var cform = document.getElementById('cancelSettleForm');
+        if (cform) cform.addEventListener('submit', function (e) {
+            var reason = String(document.getElementById('csReason').value || '').trim();
+            if (reason.length < 3) { e.preventDefault(); notify(document.getElementById('csAlerts'), 'danger', 'Please write a short reason.'); return; }
+            document.getElementById('csSave').disabled = true;
+        });
+    })();
+    </script>
+
+    <!-- NEW: Finalize confirmation -->
+    <script>
+    (function () {
+        var openBtn = document.getElementById('openFinalize');
+        var modalEl = document.getElementById('finalizeModal');
+        if (!openBtn || !modalEl) return;
+        var form = openBtn.closest('form');
+        var r2 = function (x) { return Math.round((Number(x) + Number.EPSILON) * 100) / 100; };
+        var money = function (x) { return '₹ ' + Number(x).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+        var box = document.getElementById('fzAlerts');
+        var bs = window.bootstrap && window.bootstrap.Modal ? window.bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+
+        function totals() {
+            var t = { accQty: 0, accAmt: 0, rejQty: 0, rejAmt: 0, bad: false };
+            Array.prototype.forEach.call(form.querySelectorAll('.accepted-input'), function (i) {
+                var pending = parseFloat(i.getAttribute('data-pending')) || 0;
+                var price = parseFloat(i.getAttribute('data-price')) || 0;
+                var v = i.value === '' ? 0 : parseFloat(i.value);
+                if (isNaN(v) || v < 0 || v > pending) { t.bad = true; i.style.borderColor = 'var(--danger)'; v = 0; } else i.style.borderColor = '';
+                t.accQty += v; t.accAmt += v * price;
+                t.rejQty += pending - v; t.rejAmt += (pending - v) * price;
+            });
+            return t;
+        }
+        openBtn.addEventListener('click', function () {
+            box.innerHTML = '';
+            var t = totals();
+            document.getElementById('fzAccQty').textContent = r2(t.accQty);
+            document.getElementById('fzAccAmt').textContent = money(r2(t.accAmt));
+            document.getElementById('fzRejQty').textContent = r2(t.rejQty);
+            document.getElementById('fzRejAmt').textContent = money(r2(t.rejAmt));
+            document.getElementById('fzConfirm').disabled = false;
+            if (bs) bs.show(); else { modalEl.style.display = 'block'; modalEl.classList.add('show'); document.body.classList.add('modal-open'); }
+        });
+        if (!bs) Array.prototype.forEach.call(modalEl.querySelectorAll('[data-bs-dismiss="modal"]'), function (b) {
+            b.addEventListener('click', function () { modalEl.classList.remove('show'); modalEl.style.display = 'none'; document.body.classList.remove('modal-open'); });
+        });
+        document.getElementById('fzConfirm').addEventListener('click', function () {
+            var t = totals(), problems = [];
+            if (t.bad) problems.push('Accept Qty must be between 0 and the pending quantity.');
+            if (problems.length) { box.innerHTML = '<div class="alert alert-danger" role="alert">' + problems.join('<br>') + '</div>'; return; }
+            if (t.accQty > 0 && window.checkSettlement && !window.checkSettlement()) {
+                box.innerHTML = '<div class="alert alert-danger" role="alert">The credit note details are not complete - see the message under the credit note details.</div>'; return;
+            }
+            this.disabled = true;
+            form.setAttribute('action', '/billing/finalizeExpiry');
+            form.submit();
+        });
+    })();
+    </script>
+
+

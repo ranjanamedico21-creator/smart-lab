@@ -1,0 +1,675 @@
+
+<style>
+    :root { --sm-primary:#0d6efd; --sm-success:#16a34a; --sm-danger:#dc2626; }
+  
+    .color-dot { display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:middle; border:1px solid #cbd5e1; margin-right:6px; }
+  
+    .empty i { line-height:1; }
+  
+    /* Pills inside the gradient card header — white-on-primary, active pill flips to solid white */
+    .sm-nav-pills .nav-link {
+      color: rgba(255,255,255,.85);
+      font-weight: 500;
+      font-size: .875rem;
+      padding: .5rem 1rem;
+      border-radius: .5rem;
+    }
+    .sm-nav-pills .nav-link:hover { color:#fff; background:rgba(255,255,255,.12); }
+    .sm-nav-pills .nav-link.active { background:#fff; color:var(--sm-primary); font-weight:600; }
+  
+    .btn-icon {
+      width:32px; height:32px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:8px; border:1px solid #e2e8f0;
+    }
+    .btn-icon + .btn-icon { margin-left:4px; }
+    .btn-icon:hover { background:#f1f5f9; }
+  
+    .required::after { content:" *"; color:var(--sm-danger); }
+  
+    /* ── TomSelect double-border fix ──
+       TomSelect wraps the original <select class="form-select"> in a new
+       <div class="ts-wrapper form-select">, copying the form-select class
+       onto the wrapper. That leaves TWO elements both carrying Bootstrap's
+       .form-select border/padding/background — the wrapper AND the inner
+       .ts-control — which is the overlapping-border look. Strip Bootstrap's
+       native chrome off the wrapper and keep it only on .ts-control. */
+    .ts-wrapper.form-select {
+      position: relative;
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: none;
+      background: none;
+      box-shadow: none;
+      min-height: auto;
+    }
+    .ts-wrapper.form-select .ts-control {
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      min-height: calc(1.5em + 0.75rem + 2px);
+      background-color: #fff;
+      font-weight: 500;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .ts-wrapper.form-select.focus .ts-control {
+      border-color: #86b7fe;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .ts-wrapper.form-select .ts-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.15);
+      border: 1px solid #dee2e6;
+      z-index: 99999 !important;
+      background: #fff;
+      min-width: 100%;
+    }
+    .ts-wrapper.form-select .ts-dropdown-content {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 0.25rem 0;
+    }
+    .ts-wrapper.form-select .ts-dropdown .option {
+      padding: 0.6rem 1rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .ts-wrapper.form-select .ts-dropdown .option:hover,
+    .ts-wrapper.form-select .ts-dropdown .active {
+      background-color: rgba(13, 110, 253, 0.08);
+      color: #0d6efd;
+    }
+  
+    /* Fallback toast — only used if SweetAlert2 isn't loaded on this page */
+    .sm-toast-fallback {
+      position:fixed; top:16px; right:16px; padding:12px 18px; border-radius:8px;
+      color:#fff; font-weight:500; display:none; z-index:99999;
+      box-shadow:0 4px 12px rgba(0,0,0,.15);
+    }
+    .sm-toast-fallback.sm-show { display:block; }
+    .sm-toast-fallback.sm-success { background:var(--sm-success); }
+    .sm-toast-fallback.sm-error { background:var(--sm-danger); }
+  </style>
+  <section class="py-2">
+    <div class="container-fluid">
+      <div class="card border-0 shadow-lg rounded-4">
+  
+        <div class="card-header bg-primary bg-gradient text-white py-3">
+          <h5 class="mb-0 fw-semibold"><i class="bi bi-droplet-half me-2"></i>Specimen Master Configuration</h5>
+          <ul class="nav nav-pills sm-nav-pills mt-3 flex-wrap gap-1" id="smTabBar" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="tab-types" data-bs-toggle="pill" data-bs-target="#panel-types" type="button" role="tab" aria-controls="panel-types" aria-selected="true">
+                <i class="bi bi-droplet me-1"></i>Specimen Types
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-containers" data-bs-toggle="pill" data-bs-target="#panel-containers" type="button" role="tab" aria-controls="panel-containers" aria-selected="false">
+                <i class="bi bi-box-seam me-1"></i>Container Types
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-requirements" data-bs-toggle="pill" data-bs-target="#panel-requirements" type="button" role="tab" aria-controls="panel-requirements" aria-selected="false">
+                <i class="bi bi-clipboard2-pulse me-1"></i>Test Requirements
+              </button>
+            </li>
+          </ul>
+        </div>
+  
+        <div class="card-body p-4 bg-white">
+          <div class="tab-content" id="smTabContent">
+  
+            <!-- ==================== SPECIMEN TYPES ==================== -->
+            <div class="tab-pane fade show active" id="panel-types" role="tabpanel" aria-labelledby="tab-types">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="d-flex align-items-center gap-2">
+                  <h6 class="mb-0 fw-semibold text-dark">Specimen Types</h6>
+                  <span class="badge bg-primary rounded-pill px-3"><%= (specimenTypes||[]).length %></span>
+                </div>
+                <div class="d-flex gap-2">
+                  <div class="input-group input-group-sm" style="width:220px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0 sm-search" data-table="table-types" placeholder="Search types...">
+                  </div>
+                  <button class="btn btn-primary btn-sm fw-medium" type="button" onclick="smNewRow('type')">
+                    <i class="bi bi-plus-lg me-1"></i>Add
+                  </button>
+                </div>
+              </div>
+  
+              <% if (specimenTypes && specimenTypes.length) { %>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="table-types">
+                  <thead class="bg-primary bg-opacity-10 text-primary">
+                    <tr>
+                      <th class="ps-3">Code</th><th>Name</th><th>Description</th><th>Color</th>
+                      <th class="text-center">Order</th><th class="text-center">Status</th><th class="text-end pe-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% specimenTypes.forEach(t => { %>
+                    <tr>
+                      <td class="ps-3 fw-semibold text-dark"><%= t.TypeCode %></td>
+                      <td><%= t.TypeName %></td>
+                      <td class="text-secondary small"><%= t.Description || '-' %></td>
+                      <td><span class="color-dot" style="background:<%= t.ColorCode %>"></span><span class="small text-secondary"><%= t.ColorCode %></span></td>
+                      <td class="text-center text-secondary"><%= t.DisplayOrder %></td>
+                      <td class="text-center">
+                        <span class="badge rounded-pill px-3 py-2 <%= t.Status === 'active' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' %>"><%= t.Status %></span>
+                      </td>
+                      <td class="text-end pe-3">
+                        <button type="button" class="btn btn-icon btn-light" title="Edit" onclick='smEditRow("type", <%- JSON.stringify(t).replace(/'/g, "&#39;") %>)'>
+                          <i class="bi bi-pencil small"></i>
+                        </button>
+                        <button type="button" class="btn btn-icon btn-light" title="<%= t.Status === 'active' ? 'Deactivate' : 'Activate' %>" onclick="smToggleStatus('type', <%= t.Id %>, '<%= t.Status %>')">
+                          <i class="bi <%= t.Status === 'active' ? 'bi-toggle2-on text-success' : 'bi-toggle2-off text-secondary' %> fs-6"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <% } else { %>
+                <div class="empty text-center py-5 text-muted">
+                  <i class="bi bi-droplet fs-1 d-block mb-3 text-secondary opacity-25"></i>
+                  <span class="fs-6">No specimen types yet — add your first one to get started.</span>
+                </div>
+              <% } %>
+            </div>
+  
+            <!-- ==================== CONTAINER TYPES ==================== -->
+            <div class="tab-pane fade" id="panel-containers" role="tabpanel" aria-labelledby="tab-containers">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="d-flex align-items-center gap-2">
+                  <h6 class="mb-0 fw-semibold text-dark">Container Types</h6>
+                  <span class="badge bg-primary rounded-pill px-3"><%= (containerTypes||[]).length %></span>
+                </div>
+                <div class="d-flex gap-2">
+                  <div class="input-group input-group-sm" style="width:220px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0 sm-search" data-table="table-containers" placeholder="Search containers...">
+                  </div>
+                  <button class="btn btn-primary btn-sm fw-medium" type="button" onclick="smNewRow('container')">
+                    <i class="bi bi-plus-lg me-1"></i>Add
+                  </button>
+                </div>
+              </div>
+  
+              <% if (containerTypes && containerTypes.length) { %>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="table-containers">
+                  <thead class="bg-primary bg-opacity-10 text-primary">
+                    <tr>
+                      <th class="ps-3">Code</th><th>Name</th><th>Specimen Type</th><th>Cap</th><th>Color</th>
+                      <th class="text-center">Order</th><th class="text-center">Status</th><th class="text-end pe-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% containerTypes.forEach(c => { %>
+                    <tr>
+                      <td class="ps-3 fw-semibold text-dark"><%= c.ContainerCode %></td>
+                      <td><%= c.ContainerName %></td>
+                      <td class="text-secondary"><%= c.SpecimenTypeName %></td>
+                      <td><span class="color-dot" style="background:<%= c.CapColor || '#ccc' %>"></span><span class="small text-secondary"><%= c.CapColor || '-' %></span></td>
+                      <td><span class="color-dot" style="background:<%= c.ColorCode %>"></span><span class="small text-secondary"><%= c.ColorCode %></span></td>
+                      <td class="text-center text-secondary"><%= c.DisplayOrder %></td>
+                      <td class="text-center">
+                        <span class="badge rounded-pill px-3 py-2 <%= c.Status === 'active' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' %>"><%= c.Status %></span>
+                      </td>
+                      <td class="text-end pe-3">
+                        <button type="button" class="btn btn-icon btn-light" title="Edit" onclick='smEditRow("container", <%- JSON.stringify(c).replace(/'/g, "&#39;") %>)'>
+                          <i class="bi bi-pencil small"></i>
+                        </button>
+                        <button type="button" class="btn btn-icon btn-light" title="<%= c.Status === 'active' ? 'Deactivate' : 'Activate' %>" onclick="smToggleStatus('container', <%= c.Id %>, '<%= c.Status %>')">
+                          <i class="bi <%= c.Status === 'active' ? 'bi-toggle2-on text-success' : 'bi-toggle2-off text-secondary' %> fs-6"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <% } else { %>
+                <div class="empty text-center py-5 text-muted">
+                  <i class="bi bi-box-seam fs-1 d-block mb-3 text-secondary opacity-25"></i>
+                  <span class="fs-6">No container types yet — add your first one to get started.</span>
+                </div>
+              <% } %>
+            </div>
+  
+            <!-- ==================== TEST REQUIREMENTS ==================== -->
+            <div class="tab-pane fade" id="panel-requirements" role="tabpanel" aria-labelledby="tab-requirements">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="d-flex align-items-center gap-2">
+                  <h6 class="mb-0 fw-semibold text-dark">Test Specimen Requirements</h6>
+                  <span class="badge bg-primary rounded-pill px-3"><%= (requirements||[]).length %></span>
+                </div>
+                <div class="d-flex gap-2">
+                  <div class="input-group input-group-sm" style="width:220px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0 sm-search" data-table="table-requirements" placeholder="Search requirements...">
+                  </div>
+                  <button class="btn btn-primary btn-sm fw-medium" type="button" onclick="smNewRow('requirement')">
+                    <i class="bi bi-plus-lg me-1"></i>Add
+                  </button>
+                </div>
+              </div>
+  
+              <% if (requirements && requirements.length) { %>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="table-requirements">
+                  <thead class="bg-primary bg-opacity-10 text-primary">
+                    <tr>
+                      <th class="ps-3">Test</th><th>Specimen</th><th>Container</th><th>Dept</th><th>Volume</th>
+                      <th class="text-center">Inv.</th><th class="text-center">Default</th><th class="text-center">Status</th><th class="text-end pe-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% requirements.forEach(r => { %>
+                    <tr>
+                      <td class="ps-3 fw-semibold text-dark"><%= r.TestName %></td>
+                      <td class="text-secondary"><%= r.TypeName %></td>
+                      <td class="text-secondary"><%= r.ContainerName %></td>
+                      <td class="text-secondary"><%= r.DepartmentName || '-' %></td>
+                      <td class="text-secondary"><%= r.MinVolume ? r.MinVolume + (r.MaxVolume ? '-' + r.MaxVolume : '') + ' ml' : '-' %></td>
+                      <td class="text-center text-secondary"><%= r.Inversions || 0 %></td>
+                      <td class="text-center">
+                        <% if (r.IsDefault) { %><i class="bi bi-check-circle-fill text-success"></i><% } else { %><span class="text-secondary">-</span><% } %>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge rounded-pill px-3 py-2 <%= r.Status === 'active' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' %>"><%= r.Status %></span>
+                      </td>
+                      <td class="text-end pe-3">
+                        <button type="button" class="btn btn-icon btn-light" title="Edit" onclick='smEditRow("requirement", <%- JSON.stringify(r).replace(/'/g, "&#39;") %>)'>
+                          <i class="bi bi-pencil small"></i>
+                        </button>
+                        <button type="button" class="btn btn-icon btn-light" title="<%= r.Status === 'active' ? 'Deactivate' : 'Activate' %>" onclick="smToggleStatus('requirement', <%= r.Id %>, '<%= r.Status %>')">
+                          <i class="bi <%= r.Status === 'active' ? 'bi-toggle2-on text-success' : 'bi-toggle2-off text-secondary' %> fs-6"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+              <% } else { %>
+                <div class="empty text-center py-5 text-muted">
+                  <i class="bi bi-clipboard2-pulse fs-1 d-block mb-3 text-secondary opacity-25"></i>
+                  <span class="fs-6">No test requirements yet — add your first one to get started.</span>
+                </div>
+              <% } %>
+            </div>
+  
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- ==================== MODALS (native Bootstrap, matches rest of app) ==================== -->
+  
+  <!-- Specimen Type -->
+  <div class="modal fade" id="modal-type" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header bg-primary bg-gradient text-white">
+          <h5 class="modal-title fw-semibold"><i class="bi bi-droplet me-2"></i><span class="sm-modal-action">Add</span> Specimen Type</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="form-type" onsubmit="smSubmit(event, 'type')">
+          <input type="hidden" name="Id" value="">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label required small fw-medium text-secondary">Type Code</label>
+                <input class="form-control" name="TypeCode" required maxlength="20" placeholder="e.g. BLOOD">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required small fw-medium text-secondary">Type Name</label>
+                <input class="form-control" name="TypeName" required maxlength="100" placeholder="e.g. Blood">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-medium text-secondary">Description</label>
+                <textarea class="form-control" name="Description" maxlength="255" rows="2"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Color Code</label>
+                <input type="color" class="form-control form-control-color w-100" name="ColorCode" value="#cbd5e1">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Display Order</label>
+                <input type="number" class="form-control" name="DisplayOrder" value="0" min="0">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light fw-medium" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary fw-medium"><i class="bi bi-check-lg me-1"></i>Save Specimen Type</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Container Type -->
+  <div class="modal fade" id="modal-container" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header bg-primary bg-gradient text-white">
+          <h5 class="modal-title fw-semibold"><i class="bi bi-box-seam me-2"></i><span class="sm-modal-action">Add</span> Container Type</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="form-container" onsubmit="smSubmit(event, 'container')">
+          <input type="hidden" name="Id" value="">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label required small fw-medium text-secondary">Container Code</label>
+                <input class="form-control" name="ContainerCode" required maxlength="20" placeholder="e.g. EDTA">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required small fw-medium text-secondary">Container Name</label>
+                <input class="form-control" name="ContainerName" required maxlength="100" placeholder="e.g. EDTA Tube">
+              </div>
+              <div class="col-12">
+                <label class="form-label required small fw-medium text-secondary">Specimen Type</label>
+                <select class="form-select sm-tomselect" name="SpecimenTypeId" required>
+                  <option value="">Select specimen type...</option>
+                  <% (specimenTypes || []).forEach(t => { %>
+                    <option value="<%= t.Id %>"><%= t.TypeName %> (<%= t.TypeCode %>)</option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-medium text-secondary">Description</label>
+                <textarea class="form-control" name="Description" maxlength="255" rows="2"></textarea>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Container Color</label>
+                <input type="color" class="form-control form-control-color w-100" name="ColorCode" value="#94a3b8">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Cap Color</label>
+                <input type="color" class="form-control form-control-color w-100" name="CapColor" value="#64748b">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-medium text-secondary">Display Order</label>
+                <input type="number" class="form-control" name="DisplayOrder" value="0" min="0">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light fw-medium" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary fw-medium"><i class="bi bi-check-lg me-1"></i>Save Container</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Test Requirement -->
+  <div class="modal fade" id="modal-requirement" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header bg-primary bg-gradient text-white">
+          <h5 class="modal-title fw-semibold"><i class="bi bi-clipboard2-pulse me-2"></i><span class="sm-modal-action">Add</span> Test Requirement</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="form-requirement" onsubmit="smSubmit(event, 'requirement')">
+          <input type="hidden" name="Id" value="">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label required small fw-medium text-secondary">Main Test</label>
+                <select class="form-select sm-tomselect" name="MainTestId" required>
+                  <option value="">Select test...</option>
+                  <% (tests || []).forEach(t => { %>
+                    <option value="<%= t.Id %>"><%= t.TestName %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required small fw-medium text-secondary">Specimen Type</label>
+                <select class="form-select sm-tomselect" name="SpecimenTypeId" required>
+                  <option value="">Select...</option>
+                  <% (specimenTypes || []).forEach(t => { %>
+                    <option value="<%= t.Id %>"><%= t.TypeName %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label required small fw-medium text-secondary">Container Type</label>
+                <select class="form-select sm-tomselect" name="ContainerTypeId" required>
+                  <option value="">Select...</option>
+                  <% (containerTypes || []).forEach(c => { %>
+                    <option value="<%= c.Id %>"><%= c.ContainerName %> (<%= c.SpecimenTypeName %>)</option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Department</label>
+                <select class="form-select sm-tomselect" name="DepartmentId">
+                  <option value="">None</option>
+                  <% (departments || []).forEach(d => { %>
+                    <option value="<%= d.Id %>"><%= d.DepartmentName %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Is Default</label>
+                <select class="form-select" name="IsDefault">
+                  <option value="1">Yes</option>
+                  <option value="0" selected>No</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Min Volume (ml)</label>
+                <input type="number" step="0.1" min="0" class="form-control" name="MinVolume">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Max Volume (ml)</label>
+                <input type="number" step="0.1" min="0" class="form-control" name="MaxVolume">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-medium text-secondary">Inversions</label>
+                <input type="number" class="form-control" name="Inversions" value="0" min="0">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-medium text-secondary">Collection Instructions</label>
+                <textarea class="form-control" name="CollectionInstructions" maxlength="500" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light fw-medium" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary fw-medium"><i class="bi bi-check-lg me-1"></i>Save Requirement</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="sm-toast-fallback" id="sm-toast-fallback"></div>
+  
+  <script>
+  (function () {
+    "use strict";
+  
+    // ── Per-type config: adjust URLs here if your route names differ ──
+    // POST  <url>          → create   (already existed in your original code)
+    // PUT   <url>/:id       → update   (NEW — add this Express route)
+    // PATCH <url>/:id/status → toggle status (NEW — add this Express route)
+    const TYPE_CONFIG = {
+      type:        { url: '/pathology/specimen-types',              modal: 'modal-type',        form: 'form-type' },
+      container:   { url: '/pathology/container-types',             modal: 'modal-container',   form: 'form-container' },
+      requirement: { url: '/pathology/test-specimen-requirements',  modal: 'modal-requirement', form: 'form-requirement' }
+    };
+  
+    const modalInstances = {};
+    function getModal(type) {
+      const cfg = TYPE_CONFIG[type];
+      if (!modalInstances[type]) {
+        const el = document.getElementById(cfg.modal);
+        modalInstances[type] = new bootstrap.Modal(el, { backdrop: 'static' });
+        // Init TomSelect on this modal's selects the first time it's shown
+        // (initializing on hidden elements gives TomSelect a 0-width control).
+        el.addEventListener('shown.bs.modal', function initTs() {
+          el.querySelectorAll('select.sm-tomselect').forEach(sel => {
+            if (!sel.tomselect && typeof TomSelect !== 'undefined') {
+              new TomSelect(sel, { create: false, allowEmptyOption: true });
+            }
+          });
+        }, { once: true });
+      }
+      return modalInstances[type];
+    }
+  
+    function setSelectValue(form, name, value) {
+      const el = form.elements[name];
+      if (!el) return;
+      if (el.tomselect) el.tomselect.setValue(value ?? '', true);
+      else el.value = value ?? '';
+    }
+  
+    // ── Add (blank form) ──
+    window.smNewRow = function (type) {
+      const cfg = TYPE_CONFIG[type];
+      const form = document.getElementById(cfg.form);
+      form.reset();
+      form.elements['Id'].value = '';
+      document.querySelector('#' + cfg.modal + ' .sm-modal-action').textContent = 'Add';
+      form.querySelectorAll('select.sm-tomselect').forEach(sel => { if (sel.tomselect) sel.tomselect.setValue('', true); });
+      getModal(type).show();
+    };
+  
+    // ── Edit (prefill form from row data) ──
+    window.smEditRow = function (type, row) {
+      const cfg = TYPE_CONFIG[type];
+      const form = document.getElementById(cfg.form);
+      form.reset();
+      Object.keys(row).forEach(key => {
+        const el = form.elements[key];
+        if (!el) return;
+        let val = row[key];
+        if (typeof val === 'boolean') val = val ? '1' : '0';
+        if (el.tagName === 'SELECT') setSelectValue(form, key, val);
+        else el.value = val ?? '';
+      });
+      form.elements['Id'].value = row.Id;
+      document.querySelector('#' + cfg.modal + ' .sm-modal-action').textContent = 'Edit';
+      getModal(type).show();
+    };
+  
+    // ── Create / Update ──
+    window.smSubmit = async function (e, type) {
+      e.preventDefault();
+      const cfg = TYPE_CONFIG[type];
+      const form = e.target;
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerHTML : 'Save';
+      if (btn) { btn.disabled = true; btn.innerHTML = 'Saving...'; }
+  
+      try {
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        const id = data.Id;
+        delete data.Id;
+  
+        if (data.DisplayOrder !== undefined) data.DisplayOrder = parseInt(data.DisplayOrder, 10) || 0;
+        if (data.Inversions !== undefined) data.Inversions = parseInt(data.Inversions, 10) || 0;
+        data.MinVolume = data.MinVolume ? parseFloat(data.MinVolume) : null;
+        data.MaxVolume = data.MaxVolume ? parseFloat(data.MaxVolume) : null;
+        if (data.IsDefault !== undefined) data.IsDefault = data.IsDefault === '1';
+        if (data.DepartmentId === '') data.DepartmentId = null;
+  
+        const url = id ? `${cfg.url}/${id}` : cfg.url;
+        const method = id ? 'PUT' : 'POST';
+  
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const json = await res.json();
+  
+        if (res.ok && json.success) {
+          smToast(json.message || (id ? 'Updated successfully' : 'Saved successfully'));
+          getModal(type).hide();
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          smToast(json.message || 'Save failed', true);
+          console.error('Server error:', json);
+        }
+      } catch (err) {
+        smToast(err.message || 'Network error', true);
+        console.error('Fetch error:', err);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+      }
+    };
+  
+    // ── Activate / Deactivate ──
+    window.smToggleStatus = async function (type, id, currentStatus) {
+      const cfg = TYPE_CONFIG[type];
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const verb = newStatus === 'active' ? 'activate' : 'deactivate';
+  
+      const confirmed = typeof Swal !== 'undefined'
+        ? (await Swal.fire({
+            title: `${verb.charAt(0).toUpperCase() + verb.slice(1)} this record?`,
+            icon: 'question', showCancelButton: true,
+            confirmButtonText: `Yes, ${verb}`, confirmButtonColor: newStatus === 'active' ? '#16a34a' : '#dc2626'
+          })).isConfirmed
+        : window.confirm(`${verb.charAt(0).toUpperCase() + verb.slice(1)} this record?`);
+      if (!confirmed) return;
+  
+      try {
+        const res = await fetch(`${cfg.url}/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ Status: newStatus })
+        });
+        const json = await res.json();
+        if (res.ok && json.success) {
+          smToast(json.message || 'Status updated');
+          setTimeout(() => window.location.reload(), 400);
+        } else {
+          smToast(json.message || 'Status update failed', true);
+        }
+      } catch (err) {
+        smToast(err.message || 'Network error', true);
+      }
+    };
+  
+    // ── Toast (SweetAlert2 if available, else lightweight fallback) ──
+    function smToast(msg, isError) {
+      if (typeof Swal !== 'undefined') {
+        Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
+            .fire({ icon: isError ? 'error' : 'success', title: msg });
+        return;
+      }
+      const t = document.getElementById('sm-toast-fallback');
+      t.textContent = msg;
+      t.className = 'sm-toast-fallback sm-show ' + (isError ? 'sm-error' : 'sm-success');
+      setTimeout(() => t.classList.remove('sm-show'), 3500);
+    }
+  
+    // ── Per-table live search (client-side) ──
+    document.querySelectorAll('.sm-search').forEach(input => {
+      input.addEventListener('keyup', function () {
+        const term = this.value.trim().toLowerCase();
+        const table = document.getElementById(this.dataset.table);
+        if (!table) return;
+        table.querySelectorAll('tbody tr').forEach(row => {
+          row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+        });
+      });
+    });
+  })();
+  </script>
+  

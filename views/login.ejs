@@ -1,0 +1,185 @@
+<%
+  var brand = (typeof BRAND_NAME !== 'undefined' && BRAND_NAME) ? BRAND_NAME : 'SmartLab';
+%>
+<style>
+  .lg-wrap { min-height: 100vh; min-height: 100dvh; display: flex; background: #f0f4f8; }
+
+  /* Left image panel — desktop / tablet landscape only */
+  .lg-visual {
+    flex: 1 1 55%; position: relative; overflow: hidden;
+    background: #1e3a8a url('/login.jpg') center / cover no-repeat;
+  }
+  .lg-visual::after {                       /* soft overlay so the caption is readable */
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(15,23,42,0) 40%, rgba(15,23,42,.65) 100%);
+  }
+  .lg-visual-caption { position: absolute; left: 40px; right: 40px; bottom: 36px; z-index: 1; color: #fff; }
+  .lg-visual-caption h2 { font-size: 26px; font-weight: 700; margin: 0 0 6px; }
+  .lg-visual-caption p  { margin: 0; opacity: .85; font-size: 14px; }
+
+  /* Right form panel */
+  .lg-panel { flex: 1 1 45%; display: flex; align-items: center; justify-content: center; padding: 32px 20px; background: #fff; }
+  .lg-card  { width: 100%; max-width: 400px; }
+
+  .lg-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .lg-logo  { width: 42px; height: 42px; border-radius: 10px; background: #3b6ef6; color: #fff;
+              display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .lg-brand-name { font-weight: 700; font-size: 18px; color: #1a202c; line-height: 1.2; }
+  .lg-brand-sub  { font-size: 12px; color: #94a3b8; }
+
+  .lg-title { font-size: 24px; font-weight: 700; color: #1a202c; margin: 0 0 4px; }
+  .lg-sub   { font-size: 14px; color: #64748b; margin: 0 0 24px; }
+
+  .lg-card .form-control { height: 52px; border-radius: 10px; font-size: 16px; }   /* 16px stops iOS zoom-on-focus */
+  .lg-card .form-floating > label { padding-left: 14px; }
+  .lg-pass { position: relative; }
+  .lg-pass .form-control { padding-right: 48px; background-image: none !important; } /* no validation icon under the eye */
+  .lg-eye {
+    position: absolute; top: 0; right: 0; height: 52px; width: 48px; z-index: 5;
+    border: 0; background: none; color: #94a3b8; font-size: 18px;
+  }
+  .lg-eye:hover, .lg-eye:focus-visible { color: #3b6ef6; }
+  .lg-pass .invalid-feedback { padding-left: 4px; }
+
+  .lg-row  { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; font-size: 14px; }
+  .lg-row a { text-decoration: none; }
+  .lg-btn  { height: 50px; border-radius: 10px; font-weight: 600; font-size: 16px; }
+  .lg-foot { text-align: center; font-size: 14px; color: #64748b; margin-top: 22px; }
+  .lg-foot a { font-weight: 600; text-decoration: none; }
+  .lg-copy { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 28px; }
+
+  /* ── Tablet portrait & phones: hide the big image, show form on a soft background ── */
+  @media (max-width: 991.98px) {
+    .lg-visual { display: none; }
+    .lg-panel  { background: transparent; align-items: flex-start; padding: 32px 16px; }
+    .lg-card   { background: #fff; border-radius: 16px; padding: 28px 22px;
+                 box-shadow: 0 4px 16px rgba(0,0,0,.07), 0 2px 6px rgba(0,0,0,.04); margin-top: 4vh; }
+  }
+  /* Small phones */
+  @media (max-width: 380px) {
+    .lg-panel { padding: 16px 10px; }
+    .lg-card  { padding: 22px 16px; }
+    .lg-title { font-size: 21px; }
+  }
+</style>
+
+<section class="lg-wrap">
+
+  <!-- Image (desktop only) -->
+  <div class="lg-visual d-none d-lg-block" role="img" aria-label="<%= brand %>">
+    <div class="lg-visual-caption">
+      <h2><%= brand %></h2>
+      <p>Diagnostics &amp; imaging management — registration, billing and reporting in one place.</p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="lg-panel">
+    <div class="lg-card">
+
+      <div class="lg-brand">
+        <div class="lg-logo"><i class="bi bi-heart-pulse"></i></div>
+        <div>
+          <div class="lg-brand-name"><%= brand %></div>
+          <div class="lg-brand-sub">Staff portal</div>
+        </div>
+      </div>
+
+      <h1 class="lg-title">Welcome back</h1>
+      <p class="lg-sub">Sign in to continue to your dashboard.</p>
+
+      <%- include("./partials/messages"); %>
+
+      <form action="/user/login" method="post" class="needs-validation" id="loginForm" novalidate>
+
+        <div class="form-floating mb-3">
+          <input type="email" name="Email" id="Email" class="form-control"
+                 placeholder="Email address" autocomplete="username" inputmode="email"
+                 autocapitalize="off" spellcheck="false" required autofocus>
+          <label for="Email">Email address</label>
+          <div class="invalid-feedback">Enter a valid email address.</div>
+        </div>
+
+        <div class="form-floating mb-3 lg-pass">
+          <input type="password" id="password" name="Password" class="form-control"
+                 placeholder="Password" autocomplete="current-password" required>
+          <label for="password">Password</label>
+          <button type="button" class="lg-eye" id="togglePass" aria-label="Show password" aria-pressed="false">
+            <i class="bi bi-eye"></i>
+          </button>
+          <div class="invalid-feedback">Enter your password.</div>
+          <div class="form-text text-warning d-none" id="capsWarn"><i class="bi bi-capslock"></i> Caps Lock is on</div>
+        </div>
+
+        <div class="lg-row">
+          <div class="form-check m-0">
+            <input class="form-check-input" name="rememberme" type="checkbox" id="rememberme" checked>
+            <label class="form-check-label" for="rememberme">Remember me</label>
+          </div>
+          <a href="#!">Forgot password?</a>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary lg-btn" id="loginBtn">
+            <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+            <span class="lg-btn-lbl">Sign in</span>
+          </button>
+        </div>
+      </form>
+
+      <p class="lg-foot">Not a member? <a href="/user/registerUser">Register</a></p>
+      <p class="lg-copy">&copy; <%= new Date().getFullYear() %> <%= brand %></p>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.getElementById('loginForm');
+  var pass = document.getElementById('password');
+  var eye  = document.getElementById('togglePass');
+  var btn  = document.getElementById('loginBtn');
+  var caps = document.getElementById('capsWarn');
+
+  // Show / hide password
+  eye.addEventListener('click', function () {
+    var show = pass.type === 'password';
+    pass.type = show ? 'text' : 'password';
+    eye.setAttribute('aria-pressed', show);
+    eye.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    eye.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+    pass.focus();
+  });
+
+  // Caps Lock warning
+  ['keydown', 'keyup'].forEach(function (ev) {
+    pass.addEventListener(ev, function (e) {
+      if (e.getModifierState) caps.classList.toggle('d-none', !e.getModifierState('CapsLock'));
+    });
+  });
+
+  // Bootstrap validation (class "needs-validation" alone does nothing without this)
+  form.addEventListener('submit', function (e) {
+    var email = document.getElementById('Email');
+    email.value = email.value.trim();
+    if (!form.checkValidity()) {
+      e.preventDefault(); e.stopPropagation();
+      form.classList.add('was-validated');
+      var bad = form.querySelector(':invalid'); if (bad) bad.focus();
+      return;
+    }
+    // prevent double submit
+    btn.disabled = true;
+    btn.querySelector('.spinner-border').classList.remove('d-none');
+    btn.querySelector('.lg-btn-lbl').textContent = 'Signing in…';
+  });
+
+  // Re-enable the button if the user comes back with the Back button
+  window.addEventListener('pageshow', function () {
+    btn.disabled = false;
+    btn.querySelector('.spinner-border').classList.add('d-none');
+    btn.querySelector('.lg-btn-lbl').textContent = 'Sign in';
+  });
+})();
+</script>

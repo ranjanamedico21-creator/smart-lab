@@ -1,0 +1,195 @@
+<style>
+  .as-card { background:var(--card,#fff); border:1px solid var(--border,#e2e8f0); border-radius:var(--radius-lg,14px); overflow:hidden; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .as-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .as-header-left { display:flex; align-items:center; gap:10px; }
+  .as-icon { width:32px; height:32px; border-radius:8px; background:#E6F1FB; display:flex; align-items:center; justify-content:center; color:#185FA5; font-size:14px; flex-shrink:0; }
+  .as-title { font-size:14px; font-weight:600; color:var(--text-primary,#111); margin:0; }
+  .as-sub   { font-size:12px; color:var(--text-secondary,#666); margin:2px 0 0; }
+  .as-pill  { display:inline-block; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; }
+  .pill-blue   { background:#E6F1FB; color:#0C447C; }
+  .pill-purple { background:#EEEDFE; color:#3C3489; }
+  .pill-green  { background:#EAF3DE; color:#27500A; }
+  .pill-amber  { background:#FAEEDA; color:#633806; }
+  .as-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#666); margin-bottom:10px; }
+  .as-table { width:100%; border-collapse:collapse; }
+  .as-table thead th { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#666); padding:10px 16px; border-bottom:1px solid var(--border); text-align:left; background:var(--surface,#f8f9fb); }
+  .as-table tbody tr { border-bottom:1px solid var(--border); }
+  .as-table tbody tr:last-child { border-bottom:none; }
+  .as-table tbody tr:hover td { background:#f8fbff; }
+  .as-table tbody td { padding:11px 16px; font-size:13px; color:var(--text-primary,#111); vertical-align:middle; }
+  .as-num  { font-size:12px; color:var(--text-muted,#aaa); font-weight:500; }
+  .as-mono { font-family:'DM Mono',monospace; font-weight:500; font-size:13px; }
+  .as-remove { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:11.5px; font-weight:600; background:#FCEBEB; color:#791F1F; border:1px solid #F7C1C1; text-decoration:none; }
+  .as-remove:hover { background:#F7C1C1; }
+  .as-search-bar { padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface,#f8f9fb); display:flex; align-items:center; gap:10px; }
+  .as-search-wrap { position:relative; flex:1; display:flex; align-items:center; }
+  .as-search-icon { position:absolute; left:10px; font-size:13px; color:var(--text-muted,#aaa); pointer-events:none; }
+  .as-search-input { width:100%; height:36px; border:1px solid var(--border); border-radius:8px; padding:0 12px 0 32px; font-size:13px; background:#fff; color:var(--text-primary,#111); font-family:inherit; }
+  .as-attach-btn { height:36px; padding:0 20px; background:#185FA5; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .as-attach-btn:hover { background:#0C447C; }
+  .as-checkbox { width:15px; height:15px; cursor:pointer; accent-color:#185FA5; }
+  .as-footer { padding:12px 20px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface,#f8f9fb); }
+  .as-footer-info { font-size:12px; color:var(--text-secondary,#666); }
+  .sub-badge { display:inline-block; padding:1px 6px; border-radius:4px; font-size:9.5px; font-weight:700; background:#EEEDFE; color:#3C3489; margin-right:6px; vertical-align:middle; letter-spacing:.03em; }
+  </style>
+  
+  <%
+    const test = testDetails[0];
+    const catName = (test.Name || '').toLowerCase();
+    let catClass = 'pill-blue';
+    if (/pathol/i.test(catName)) catClass = 'pill-green';
+    else if (/bio/i.test(catName)) catClass = 'pill-amber';
+  %>
+  
+  <div class="as-card">
+  
+    <%# ── Header — main test info ── %>
+    <div class="as-header">
+      <div class="as-header-left">
+        <div class="as-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+        <div>
+          <p class="as-title text-capitalize"><%= test.TestName %></p>
+          <p class="as-sub">Attach sub-tests to this main test</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="as-pill <%= catClass %>"><%= test.Name %></span>
+        <span class="as-pill pill-blue" style="font-family:'DM Mono',monospace">
+          ₹ <%= Number(test.Price).toLocaleString('en-IN') %>
+        </span>
+      </div>
+    </div>
+  
+    <%- include("../partials/messages") %>
+  
+    <%# ── Currently attached sub-tests ── %>
+    <% if(attachedTestLists && attachedTestLists.length > 0) { %>
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border,#e2e8f0);background:var(--surface,#f8f9fb)">
+      <div class="as-section-label">
+        Currently attached
+        <span style="background:#EEEDFE;color:#3C3489;padding:1px 8px;border-radius:99px;margin-left:6px;font-size:10px">
+          <%= attachedTestLists.length %>
+        </span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="as-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Sub-test name</th>
+              <th>Price</th>
+              <th>Discount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% let j = 1; attachedTestLists.forEach(function(at){ %>
+            <tr>
+              <td class="as-num"><%= String(j).padStart(2,'0') %></td>
+              <td class="text-capitalize">
+                <span class="sub-badge">SUB</span><%= at.Name %>
+              </td>
+              <td class="as-mono">₹ <%= Number(at.Price).toLocaleString('en-IN') %></td>
+              <td class="as-mono">₹ <%= Number(at.Discount).toLocaleString('en-IN') %></td>
+              <td>
+                <a href="/test/detachSubTest?subTestId=<%= at.subTestId %>&testId=<%= test.Id %>"
+                   class="as-remove">
+                  <i class="bi bi-x" style="font-size:12px"></i> Remove
+                </a>
+              </td>
+            </tr>
+            <% j++; }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } %>
+  
+    <%# ── Search + Attach form ── %>
+    <form action="/test/attachTest?testId=<%= test.Id %>" id="attachTest" method="post">
+  
+      <div class="as-search-bar">
+        <div class="as-search-wrap">
+          <i class="bi bi-search as-search-icon"></i>
+          <input type="text" class="as-search-input search"
+            placeholder="Search sub-tests to attach…">
+        </div>
+        <button type="submit" class="as-attach-btn">
+          <i class="bi bi-plus-circle" style="font-size:13px"></i> Attach selected
+        </button>
+      </div>
+  
+      <div style="overflow-x:auto">
+        <table class="as-table" id="filterTable">
+          <thead>
+            <tr>
+              <th style="width:44px;text-align:center">
+                <input type="checkbox" class="as-checkbox" id="selectAllSubTests"
+                  title="Select all">
+              </th>
+              <th>#</th>
+              <th>Sub-test name</th>
+              <th>Price</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+          <tbody class="pagination-loop">
+            <% let k = 1; testToBeAttahcedList.forEach(function(sub){ %>
+            <tr>
+              <td style="text-align:center;padding:11px 16px">
+                <input class="as-checkbox attachTest"
+                  type="checkbox"
+                  value="<%= sub.SubTestId %>"
+                  name="subTest"
+                  id="subTest<%= sub.Id %>">
+              </td>
+              <td class="as-num"><%= String(k).padStart(2,'0') %></td>
+              <td class="text-capitalize" style="font-weight:600"><%= sub.Name %></td>
+              <td class="as-mono">₹ <%= Number(sub.Price).toLocaleString('en-IN') %></td>
+              <td>
+                <%
+                  const sc = (sub.categoryName || '').toLowerCase();
+                  let sClass = 'pill-blue';
+                  if(/pathol/i.test(sc)) sClass = 'pill-green';
+                  else if(/bio/i.test(sc)) sClass = 'pill-amber';
+                  else if(/radio/i.test(sc)) sClass = 'pill-blue';
+                %>
+                <span class="as-pill <%= sClass %>"><%= sub.categoryName %></span>
+              </td>
+            </tr>
+            <% k++; }) %>
+          </tbody>
+        </table>
+      </div>
+  
+      <div class="as-footer">
+        <span class="as-footer-info" id="asSelectedCount">0 selected</span>
+        <nav>
+          <ul class="pagination pagination-sm mb-0 gap-1" id="pagination_Number">
+            <li class="page-item"><a class="page-link rounded prev_link" href="#">←</a></li>
+            <li class="page-item"><a class="page-link rounded next_link" href="#">→</a></li>
+          </ul>
+        </nav>
+      </div>
+  
+    </form>
+  </div>
+  
+  <script>
+    // Select all toggle
+    document.getElementById("selectAllSubTests").addEventListener("change", function () {
+      document.querySelectorAll(".attachTest").forEach(cb => cb.checked = this.checked);
+      updateCount();
+    });
+  
+    // Live selected count
+    document.querySelectorAll(".attachTest").forEach(cb => {
+      cb.addEventListener("change", updateCount);
+    });
+  
+    function updateCount() {
+      const count = document.querySelectorAll(".attachTest:checked").length;
+      const el = document.getElementById("asSelectedCount");
+      if (el) el.textContent = count + " selected";
+    }
+  </script>

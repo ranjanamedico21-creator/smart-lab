@@ -1,0 +1,739 @@
+<%# views/dues/index.ejs — uses layout %>
+
+<style>
+  :root {
+    --brand:#185FA5; --brand-soft:#E6F1FB; --brand-text:#0C447C;
+    --surface:#fff; --surface-alt:#F8F9FB;
+    --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+    --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+    --success-bg:#EAF3DE; --success-text:#3B6D11;
+    --warning-bg:#FAEEDA; --warning-text:#854F0B;
+    --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+    --info-bg:#E6F1FB;    --info-text:#185FA5;
+    --purple-bg:#EEEDFE;  --purple-text:#534AB7;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+    --shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);
+  }
+
+  .dues-wrapper { padding:16px 0 40px; }
+  .dues-card    { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden; margin-bottom:16px; }
+
+  /* Header */
+  .dues-header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+  .dues-header-left { display:flex; align-items:center; gap:12px; }
+  .dues-header-icon { width:36px; height:36px; border-radius:var(--radius-sm); background:var(--warning-bg); display:flex; align-items:center; justify-content:center; color:var(--warning-text); font-size:16px; }
+  .dues-header-title { font-size:15px; font-weight:600; color:var(--text-primary); margin:0; }
+  .dues-header-sub   { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+  .dues-badge { font-size:11px; font-weight:500; padding:4px 10px; border-radius:99px; background:var(--warning-bg); color:var(--warning-text); }
+
+  /* Search */
+  .dues-search { padding:20px 24px; border-bottom:1px solid var(--border); background:var(--surface-alt); }
+  .dues-search-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr auto; gap:10px; align-items:flex-end; }
+  .dues-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:5px; }
+  .dues-input-wrap { display:flex; align-items:center; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:#fff; overflow:hidden; transition:border-color .15s; }
+  .dues-input-wrap:focus-within { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+  .dues-input-icon { padding:0 9px; color:var(--text-hint); font-size:12px; flex-shrink:0; }
+  .dues-input-wrap input { border:none; outline:none; background:transparent; font-size:13px; color:var(--text-primary); padding:8px 10px 8px 0; width:100%; font-family:inherit; }
+  .dues-input-wrap input::placeholder { color:var(--text-hint); }
+  .dues-btn-search { display:flex; align-items:center; gap:6px; padding:9px 18px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; white-space:nowrap; }
+  .dues-btn-search:hover { background:var(--brand-text); }
+
+  /* Doctor Tom Select to match other inputs */
+  #duesDoctor + .ts-wrapper { width:100%; }
+  #duesDoctor + .ts-wrapper .ts-control {
+    border:1px solid var(--border-strong)!important;
+    border-radius:var(--radius-sm)!important;
+    padding:8px 10px!important; font-size:13px!important;
+    background:#fff!important; min-height:unset!important;
+    box-shadow:none!important;
+  }
+  #duesDoctor + .ts-wrapper.focus .ts-control {
+    border-color:var(--brand)!important;
+    box-shadow:0 0 0 3px rgba(24,95,165,.1)!important;
+  }
+
+  /* KPI */
+  .dues-kpi { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--border); }
+  .dues-kpi-cell { padding:18px 24px; border-right:1px solid var(--border); }
+  .dues-kpi-cell:last-child { border-right:none; }
+  .dues-kpi-label { font-size:11px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
+  .dues-kpi-val   { font-size:20px; font-weight:600; font-family:'DM Mono',monospace; }
+  .dues-kpi-val.warning { color:var(--warning-text); }
+  .dues-kpi-val.danger  { color:var(--danger-text); }
+  .dues-kpi-val.success { color:var(--success-text); }
+  .dues-kpi-val.purple  { color:var(--purple-text); }
+  .dues-kpi-meta { font-size:11px; color:var(--text-hint); margin-top:3px; }
+
+  /* Table */
+  .dues-section { padding:20px 24px; }
+  .dues-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .dues-section-title { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:7px; }
+  .dues-count { font-size:11px; padding:2px 10px; border-radius:99px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-secondary); }
+  .dt { width:100%; border-collapse:collapse; }
+  .dt thead th { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary); padding:10px 12px; border-bottom:1px solid var(--border-strong); text-align:left; background:var(--surface-alt); }
+  .dt tbody td { padding:12px 12px; font-size:13px; color:var(--text-primary); border-bottom:1px solid var(--border); vertical-align:middle; }
+  .dt tbody tr:last-child td { border-bottom:none; }
+  .dt tbody tr:hover td { background:#fafbfc; }
+  .dt-sub { font-size:11px; color:var(--text-hint); display:block; margin-top:2px; }
+  .dt-link { color:var(--brand); text-decoration:none; font-weight:500; }
+  .dt-link:hover { text-decoration:underline; }
+
+  /* Badges */
+  .bdg { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .bdg-danger  { background:var(--danger-bg);  color:var(--danger-text); }
+  .bdg-warning { background:var(--warning-bg); color:var(--warning-text); }
+  .bdg-success { background:var(--success-bg); color:var(--success-text); }
+  .bdg-purple  { background:var(--purple-bg);  color:var(--purple-text); }
+  .bdg-info    { background:var(--info-bg);    color:var(--info-text); }
+
+  .btn-collect { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; border:none; cursor:pointer; background:var(--success-bg); color:var(--success-text); transition:background .15s; }
+  .btn-collect:hover { background:#d4ecbf; }
+  .dues-no-data { display:flex; align-items:center; gap:8px; padding:16px 20px; background:var(--surface-alt); border-radius:var(--radius-sm); border:1px solid var(--border); font-size:13px; color:var(--text-secondary); }
+
+  /* Collect Modal */
+  .cm-body { padding:24px; }
+  .cm-patient-strip { background:var(--warning-bg); border:1px solid rgba(133,79,11,.15); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:20px; }
+  .cm-patient-name { font-size:14px; font-weight:600; color:var(--text-primary); }
+  .cm-patient-meta { font-size:12px; color:var(--text-secondary); margin-top:4px; display:flex; gap:16px; flex-wrap:wrap; }
+  .cm-patient-meta span { display:flex; align-items:center; gap:5px; }
+  .cm-due-amount { font-size:20px; font-weight:700; font-family:'DM Mono',monospace; color:var(--danger-text); margin-top:6px; }
+  .cm-advance-strip { background:var(--purple-bg); border:1px solid rgba(83,74,183,.15); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:12.5px; color:var(--purple-text); font-weight:500; display:flex; align-items:center; gap:8px; }
+  .cm-same-day-strip { background:var(--info-bg); border:1px solid rgba(24,95,165,.15); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:12.5px; color:var(--info-text); font-weight:500; display:flex; align-items:center; gap:8px; }
+  .cm-field { margin-bottom:14px; }
+  .cm-label { font-size:11.5px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:5px; }
+  .cm-input { width:100%; height:38px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:0 12px; font-size:13.5px; color:var(--text-primary); background:#fff; transition:border-color .15s; }
+  .cm-input:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); outline:none; }
+  .cm-source-wrap { display:none; margin-top:10px; }
+  .cm-source-wrap.show { display:block; }
+  .cm-remaining { display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:12px 14px; background:var(--surface-alt); border-radius:var(--radius-sm); border:1px solid var(--border); }
+  .cm-remaining .lbl { font-size:12px; font-weight:500; color:var(--text-secondary); }
+  .cm-remaining .val { font-size:16px; font-weight:700; font-family:'DM Mono',monospace; color:var(--danger-text); }
+  .cm-remaining .val.clear { color:var(--success-text); }
+  .cm-history { margin-top:16px; }
+  .cm-history-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-hint); margin-bottom:8px; }
+  .cm-history-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .cm-history-row:last-child { border-bottom:none; }
+  .cm-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+  .cm-btn-cancel { padding:9px 20px; background:#fff; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-weight:500; color:var(--text-secondary); cursor:pointer; }
+  .cm-btn-confirm { padding:9px 24px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; min-width:140px; }
+  .cm-btn-confirm:hover { background:var(--brand-text); }
+
+  /* ── Toast notifications ── */
+  .dues-toast-wrap {
+    position:fixed; top:20px; right:20px; z-index:99999;
+    display:flex; flex-direction:column; gap:8px; pointer-events:none;
+  }
+  .dues-toast {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:12px 16px; border-radius:10px; min-width:280px; max-width:380px;
+    box-shadow:0 4px 20px rgba(0,0,0,.15); pointer-events:all;
+    animation:dues-toast-in .25s ease;
+    font-size:13px; font-weight:500; line-height:1.4;
+  }
+  @keyframes dues-toast-in { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:none; } }
+  .dues-toast.out { animation:dues-toast-out .2s ease forwards; }
+  @keyframes dues-toast-out { to { opacity:0; transform:translateX(24px); } }
+  .dues-toast-success { background:#1a3d1a; color:#a8f0a8; }
+  .dues-toast-error   { background:#3d1a1a; color:#f0a8a8; }
+  .dues-toast-warning { background:#3d2e1a; color:#f0d0a8; }
+  .dues-toast-info    { background:#1a2d3d; color:#a8d0f0; }
+  .dues-toast i { font-size:15px; flex-shrink:0; margin-top:1px; }
+  .dues-toast-close { margin-left:auto; background:none; border:none; color:inherit; opacity:.6; cursor:pointer; font-size:14px; padding:0 0 0 8px; flex-shrink:0; }
+  .dues-toast-close:hover { opacity:1; }
+
+  /* ── Confirm dialog ── */
+  .dues-confirm-backdrop {
+    position:fixed; inset:0; z-index:99998;
+    background:rgba(0,0,0,.45); display:flex;
+    align-items:center; justify-content:center;
+    animation:dues-bd-in .15s ease;
+  }
+  @keyframes dues-bd-in { from{opacity:0} to{opacity:1} }
+  .dues-confirm-box {
+    background:#fff; border-radius:14px; padding:28px 28px 22px;
+    max-width:380px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,.2);
+    animation:dues-box-in .2s ease;
+  }
+  @keyframes dues-box-in { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:none} }
+  .dues-confirm-icon { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; margin:0 auto 14px; }
+  .dues-confirm-icon.warning { background:var(--warning-bg); color:var(--warning-text); }
+  .dues-confirm-icon.danger  { background:var(--danger-bg);  color:var(--danger-text); }
+  .dues-confirm-title { font-size:15px; font-weight:700; color:var(--text-primary); text-align:center; margin-bottom:8px; }
+  .dues-confirm-msg   { font-size:13px; color:var(--text-secondary); text-align:center; line-height:1.55; margin-bottom:20px; }
+  .dues-confirm-actions { display:flex; gap:8px; justify-content:center; }
+  .dues-confirm-cancel { padding:9px 22px; background:#f8fafc; border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:500; color:var(--text-secondary); cursor:pointer; }
+  .dues-confirm-ok { padding:9px 22px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; color:#fff; }
+  .dues-confirm-ok.warning { background:#d97706; }
+  .dues-confirm-ok.danger  { background:#dc2626; }
+  .dues-confirm-ok.brand   { background:var(--brand); }
+
+  @media(max-width:991px) { .dues-search-grid { grid-template-columns:1fr 1fr 1fr; } .dues-kpi { grid-template-columns:1fr 1fr; } }
+  @media(max-width:576px) { .dues-search-grid { grid-template-columns:1fr 1fr; } .dues-kpi { grid-template-columns:1fr 1fr; } }
+</style>
+
+<!-- Toast container -->
+<div class="dues-toast-wrap" id="duestoastWrap"></div>
+
+<%
+  const n   = (v) => Number(v) || 0;
+  const fmt = (v) => n(v).toLocaleString('en-IN');
+  const pts = patients || [];
+  const totalDues     = pts.reduce((a,p) => a + n(p.DuesAmount), 0);
+  const totalPatients = pts.length;
+  const advanceDues   = pts.filter(p => p.IsAdvanceBooking == 1).reduce((a,p) => a + n(p.DuesAmount), 0);
+  const crossDayDues  = pts.filter(p => {
+    const today = new Date().toISOString().split('T')[0];
+    return p.RegisteredOnRaw && p.RegisteredOnRaw.split('T')[0] !== today;
+  }).reduce((a,p) => a + n(p.DuesAmount), 0);
+%>
+
+<div class="dues-wrapper">
+  <div class="dues-card">
+
+    <!-- Header -->
+    <div class="dues-header">
+      <div class="dues-header-left">
+        <div class="dues-header-icon"><i class="bi bi-exclamation-circle"></i></div>
+        <div>
+          <p class="dues-header-title">Patient Dues Tracker</p>
+          <p class="dues-header-sub">Search, track and collect outstanding dues</p>
+        </div>
+      </div>
+      <span class="dues-badge">
+        <i class="bi bi-circle-fill" style="font-size:7px;margin-right:4px"></i>
+        <%= totalPatients %> patient<%= totalPatients !== 1 ? 's' : '' %> with dues
+      </span>
+    </div>
+
+    <!-- Search -->
+    <div class="dues-search">
+      <form action="/patient/searchPatientWithDuesAmount" method="POST" id="duesSearchForm">
+        <div class="dues-search-grid">
+
+          <div>
+            <label class="dues-label" for="FromDate">From Date</label>
+            <div class="dues-input-wrap">
+              <span class="dues-input-icon"><i class="bi bi-calendar3"></i></span>
+              <input type="text" id="FromDate" name="FromDate" placeholder="From date"
+                autocomplete="off" readonly value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dues-label" for="ToDate">To Date</label>
+            <div class="dues-input-wrap">
+              <span class="dues-input-icon"><i class="bi bi-calendar3"></i></span>
+              <input type="text" id="ToDate" name="ToDate" placeholder="To date"
+                autocomplete="off" readonly value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dues-label" for="duesName">Patient Name</label>
+            <div class="dues-input-wrap">
+              <span class="dues-input-icon"><i class="bi bi-person"></i></span>
+              <input type="text" id="duesName" name="Name" placeholder="Search name"
+                value="<%= typeof Name != 'undefined' ? Name : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dues-label" for="duesBillNo">Bill No</label>
+            <div class="dues-input-wrap">
+              <span class="dues-input-icon"><i class="bi bi-hash"></i></span>
+              <input type="number" id="duesBillNo" name="BillNo" placeholder="Bill number"
+                value="<%= typeof BillNo != 'undefined' ? BillNo : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dues-label" for="duesDoctor">Doctor</label>
+            <select id="duesDoctor" name="Doctor">
+              <option value="">All Doctors</option>
+              <% (doctorDetails || []).forEach(function(doc){ %>
+              <option value="<%= doc.Id %>"
+                <% if(typeof Doctor != 'undefined' && Doctor == doc.Id){ %>selected<% } %>>
+                Dr. <%= doc.FirstName %> <%= doc.LastName %>
+              </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div>
+            <button type="submit" class="dues-btn-search">
+              <i class="bi bi-search"></i> Search
+            </button>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <!-- KPI -->
+    <div class="dues-kpi">
+      <div class="dues-kpi-cell">
+        <div class="dues-kpi-label">Total Dues</div>
+        <div class="dues-kpi-val danger">₹<%= fmt(totalDues) %></div>
+        <div class="dues-kpi-meta">Across all patients</div>
+      </div>
+      <div class="dues-kpi-cell">
+        <div class="dues-kpi-label">Patients</div>
+        <div class="dues-kpi-val warning"><%= totalPatients %></div>
+        <div class="dues-kpi-meta">With pending dues</div>
+      </div>
+      <div class="dues-kpi-cell">
+        <div class="dues-kpi-label">Cross-day Dues</div>
+        <div class="dues-kpi-val danger">₹<%= fmt(crossDayDues) %></div>
+        <div class="dues-kpi-meta">Previous days unpaid</div>
+      </div>
+      <div class="dues-kpi-cell">
+        <div class="dues-kpi-label">Advance Dues</div>
+        <div class="dues-kpi-val purple">₹<%= fmt(advanceDues) %></div>
+        <div class="dues-kpi-meta">From advance bookings</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="dues-section">
+      <div class="dues-section-head">
+        <span class="dues-section-title"><i class="bi bi-list-ul"></i> Patients With Outstanding Dues</span>
+        <span class="dues-count"><%= totalPatients %> records</span>
+      </div>
+
+      <% if (pts.length === 0) { %>
+        <div class="dues-no-data">
+          <i class="bi bi-check-circle text-success"></i>
+          No patients with outstanding dues found for this period.
+        </div>
+      <% } else { %>
+        <div style="overflow-x:auto">
+          <table class="dt">
+            <thead>
+              <tr>
+                <th>#</th><th>Patient</th><th>Doctor</th><th>Tests</th>
+                <th>Gross</th><th>Paid</th><th>Dues</th><th>Type</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% pts.forEach(function(p, i) {
+                const paid      = n(p.CashPayment) + n(p.OnlinePayment);
+                const isAdvance = p.IsAdvanceBooking == 1;
+                const today     = new Date().toISOString().split('T')[0];
+                const regDate   = p.RegisteredOnRaw ? p.RegisteredOnRaw.split('T')[0] : '';
+                const isSameDay = regDate === today;
+              %>
+              <tr>
+                <td style="color:var(--text-hint);font-size:12px"><%= p.PatientId %></td>
+                <td>
+                  <a class="dt-link text-capitalize" href="/patient/getPatientDetail?patientId=<%= p.PatientId %>">
+                    <%= p.Title %> <%= p.Name %>
+                  </a>
+                  <span class="dt-sub">
+                    <i class="bi bi-phone"></i> <%= p.PhoneNumber %> &nbsp;·&nbsp; Reg: <%= p.RegisteredOn %>
+                  </span>
+                  <% if (isAdvance) { %>
+                  <span class="dt-sub" style="color:var(--purple-text)">
+                    <i class="bi bi-calendar-plus"></i> Appt: <%= p.AdvanceBookingDate %>
+                    <% if (p.BookingStatus === 'advance_booked') { %> · Not yet arrived<% } else { %> · Arrived<% } %>
+                  </span>
+                  <% } %>
+                </td>
+                <td><span style="font-size:12.5px;font-weight:500">Dr. <%= p.DoctorFirstName %> <%= p.DoctorLastName %></span></td>
+                <td>
+                  <span style="font-size:11.5px;color:var(--text-secondary);max-width:160px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="<%= p.TestNames %>">
+                    <%= p.TestNames || '—' %>
+                  </span>
+                </td>
+                <td style="font-family:'DM Mono',monospace;font-weight:500">₹<%= fmt(p.GrossAmount) %></td>
+                <td style="font-family:'DM Mono',monospace;color:var(--success-text)">₹<%= fmt(paid) %></td>
+                <td><span class="bdg bdg-danger" style="font-family:'DM Mono',monospace">₹<%= fmt(p.DuesAmount) %></span></td>
+                <td>
+                  <% if (isAdvance && p.BookingStatus === 'advance_booked') { %>
+                    <span class="bdg bdg-purple"><i class="bi bi-calendar-clock"></i> Advance</span>
+                  <% } else if (isAdvance && p.BookingStatus === 'arrived') { %>
+                    <span class="bdg bdg-purple"><i class="bi bi-check2"></i> Arrived</span>
+                  <% } else if (isSameDay) { %>
+                    <span class="bdg bdg-info"><i class="bi bi-sun"></i> Today</span>
+                  <% } else { %>
+                    <span class="bdg bdg-warning"><i class="bi bi-clock-history"></i> Cross-day</span>
+                  <% } %>
+                </td>
+                <td>
+                  <button class="btn-collect"
+                    data-patient-id="<%= p.PatientId %>"
+                    data-patient-name="<%= p.Title %> <%= p.Name %>"
+                    data-dues="<%= p.DuesAmount %>"
+                    data-gross="<%= p.GrossAmount %>"
+                    data-paid="<%= paid %>"
+                    data-phone="<%= p.PhoneNumber %>"
+                    data-registered="<%= p.RegisteredOn %>"
+                    data-is-advance="<%= isAdvance ? 1 : 0 %>"
+                    data-is-same-day="<%= isSameDay ? 1 : 0 %>"
+                    data-appt-date="<%= p.AdvanceBookingDate || '' %>"
+                    data-booking-status="<%= p.BookingStatus %>"
+                    data-bs-toggle="modal"
+                    data-bs-target="#collectModal">
+                    <i class="bi bi-cash-coin"></i> Collect
+                  </button>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+  </div>
+</div>
+
+<!-- Collect Modal -->
+<div class="modal fade" id="collectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
+    <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden">
+      <div class="modal-header" style="background:var(--brand);border-radius:0;padding:16px 24px">
+        <h5 class="modal-title text-white fw-bold" style="font-size:14px">
+          <i class="bi bi-cash-coin me-2"></i>Collect Dues
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="collectDuesForm">
+        <div class="cm-body">
+          <input type="hidden" id="cm_patientId" name="patientId">
+          <div class="cm-patient-strip">
+            <div class="cm-patient-name text-capitalize" id="cm_patientName"></div>
+            <div class="cm-patient-meta">
+              <span><i class="bi bi-phone"></i><span id="cm_phone"></span></span>
+              <span><i class="bi bi-calendar-event"></i>Reg: <span id="cm_registered"></span></span>
+            </div>
+            <div class="cm-due-amount">₹<span id="cm_duesAmount"></span> pending</div>
+          </div>
+          <div class="cm-advance-strip" id="cm_advanceNotice" style="display:none">
+            <i class="bi bi-calendar-plus"></i>
+            <span>Advance booking — Appt: <strong id="cm_apptDate"></strong>. Collecting dues will mark patient as <strong>Arrived</strong>.</span>
+          </div>
+          <div class="cm-same-day-strip" id="cm_sameDayNotice" style="display:none">
+            <i class="bi bi-info-circle"></i>
+            <span>Same-day dues — will update today's settlement directly.</span>
+          </div>
+          <div class="cm-same-day-strip" id="cm_crossDayNotice"
+            style="display:none;background:var(--warning-bg);border-color:rgba(133,79,11,.15);color:var(--warning-text)">
+            <i class="bi bi-clock-history"></i>
+            <span>Previous-day dues — will be recorded in Dues Received ledger.</span>
+          </div>
+          <div class="cm-field">
+            <label class="cm-label"><i class="bi bi-cash-stack me-1"></i>Cash Amount (₹)</label>
+            <input type="number" class="cm-input" id="cm_cash" name="cashAmount" value="0" min="0">
+          </div>
+          <div class="cm-field">
+            <label class="cm-label"><i class="bi bi-qr-code-scan me-1"></i>Online Amount (₹)</label>
+            <input type="number" class="cm-input" id="cm_online" name="onlineAmount" value="0" min="0">
+            <div class="cm-source-wrap" id="cm_sourceWrap">
+              <label class="cm-label mt-2">Payment Source</label>
+              <select class="cm-input" id="cm_source" name="onlineSourceId">
+                <option value="">Select source</option>
+                <% (onlineSources || []).forEach(function(src){ %>
+                <option value="<%= src.Id %>"><%= src.Name %></option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+          <div class="cm-remaining">
+            <span class="lbl">Remaining after collection</span>
+            <span class="val" id="cm_remaining">₹0</span>
+          </div>
+          <div class="cm-history" id="cm_historyWrap" style="display:none">
+            <div class="cm-history-title">Previous Collections</div>
+            <div id="cm_historyRows"></div>
+          </div>
+        </div>
+        <div class="cm-footer">
+          <button type="button" class="cm-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="cm-btn-confirm" id="cm_confirmBtn">
+            <i class="bi bi-check2-circle me-1"></i>Confirm Collection
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── Toast system ──────────────────────────────────────────────────────
+  var TOAST_ICONS = {
+    success: 'bi-check-circle-fill',
+    error:   'bi-x-circle-fill',
+    warning: 'bi-exclamation-triangle-fill',
+    info:    'bi-info-circle-fill'
+  };
+
+  function showToast(message, type, duration) {
+    type     = type     || 'info';
+    duration = duration || 3500;
+    var wrap = document.getElementById('duestoastWrap');
+    if (!wrap) return;
+
+    var t = document.createElement('div');
+    t.className = 'dues-toast dues-toast-' + type;
+    t.innerHTML =
+      '<i class="bi ' + (TOAST_ICONS[type] || 'bi-info-circle-fill') + '"></i>' +
+      '<span style="flex:1">' + message + '</span>' +
+      '<button class="dues-toast-close" aria-label="Close"><i class="bi bi-x-lg"></i></button>';
+
+    t.querySelector('.dues-toast-close').addEventListener('click', function() {
+      dismissToast(t);
+    });
+    wrap.appendChild(t);
+    setTimeout(function() { dismissToast(t); }, duration);
+  }
+
+  function dismissToast(el) {
+    if (!el || el.classList.contains('out')) return;
+    el.classList.add('out');
+    setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+  }
+
+  // ── Confirm dialog (replaces window.confirm) ──────────────────────────
+  // Returns a Promise<boolean>
+  function showConfirm(opts) {
+    // opts: { title, message, confirmText, cancelText, type }
+    return new Promise(function(resolve) {
+      var type        = opts.type        || 'warning';
+      var confirmText = opts.confirmText || 'Confirm';
+      var cancelText  = opts.cancelText  || 'Cancel';
+      var iconMap     = { warning:'bi-exclamation-triangle-fill', danger:'bi-x-octagon-fill', brand:'bi-info-circle-fill' };
+
+      var backdrop = document.createElement('div');
+      backdrop.className = 'dues-confirm-backdrop';
+      backdrop.innerHTML =
+        '<div class="dues-confirm-box">' +
+          '<div class="dues-confirm-icon ' + type + '">' +
+            '<i class="bi ' + (iconMap[type]||'bi-question-circle-fill') + '"></i>' +
+          '</div>' +
+          '<div class="dues-confirm-title">' + (opts.title || 'Are you sure?') + '</div>' +
+          '<div class="dues-confirm-msg">'   + (opts.message || '') + '</div>' +
+          '<div class="dues-confirm-actions">' +
+            '<button class="dues-confirm-cancel">' + cancelText  + '</button>' +
+            '<button class="dues-confirm-ok ' + type + '">' + confirmText + '</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(backdrop);
+
+      function close(result) {
+        backdrop.style.animation = 'dues-bd-in .15s ease reverse forwards';
+        setTimeout(function() {
+          if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+          resolve(result);
+        }, 150);
+      }
+
+      backdrop.querySelector('.dues-confirm-cancel').addEventListener('click', function() { close(false); });
+      backdrop.querySelector('.dues-confirm-ok').addEventListener('click',     function() { close(true);  });
+      backdrop.addEventListener('click', function(e) { if (e.target === backdrop) close(false); });
+    });
+  }
+
+  // ── Flatpickr ─────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof flatpickr !== 'undefined') {
+      flatpickr('#FromDate', { dateFormat:'d-m-Y', allowInput:false });
+      flatpickr('#ToDate',   { dateFormat:'d-m-Y', allowInput:false });
+    }
+
+    // Check for success message in URL
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('success')) {
+      showToast(params.get('success'), 'success', 5000);
+      // Clean URL without reload
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  });
+
+  // ── Collection state ──────────────────────────────────────────────────
+  var _currentDues = 0;
+
+  function updateRemaining() {
+    var cash      = parseFloat(document.getElementById('cm_cash').value)   || 0;
+    var online    = parseFloat(document.getElementById('cm_online').value) || 0;
+    var remaining = Math.max(0, _currentDues - cash - online);
+    var el        = document.getElementById('cm_remaining');
+    if (!el) return;
+    el.textContent = '₹' + remaining.toLocaleString('en-IN');
+    el.className   = remaining === 0 ? 'val clear' : 'val';
+  }
+
+  function onOnlineChange() {
+    var online = parseFloat(document.getElementById('cm_online').value) || 0;
+    var wrap   = document.getElementById('cm_sourceWrap');
+    if (wrap) wrap.classList.toggle('show', online > 0);
+    updateRemaining();
+  }
+
+  // ── Wire inputs ───────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    var cashEl   = document.getElementById('cm_cash');
+    var onlineEl = document.getElementById('cm_online');
+
+    if (cashEl) {
+      cashEl.addEventListener('input', updateRemaining);
+      cashEl.addEventListener('focus', function() { if (parseFloat(this.value) === 0) this.value = ''; });
+      cashEl.addEventListener('blur',  function() { if (this.value === '') this.value = 0; });
+    }
+    if (onlineEl) {
+      onlineEl.addEventListener('input', onOnlineChange);
+      onlineEl.addEventListener('focus', function() { if (parseFloat(this.value) === 0) this.value = ''; });
+      onlineEl.addEventListener('blur',  function() { if (this.value === '') this.value = 0; });
+    }
+  });
+
+  // ── Modal open ────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('collectModal');
+    if (!modalEl) return;
+
+    modalEl.addEventListener('show.bs.modal', function (e) {
+      var btn = e.relatedTarget;
+      if (!btn) return;
+
+      var dues      = parseFloat(btn.getAttribute('data-dues')) || 0;
+      var isAdvance = btn.getAttribute('data-is-advance')  === '1';
+      var isSameDay = btn.getAttribute('data-is-same-day') === '1';
+      var patientId = btn.getAttribute('data-patient-id');
+
+      _currentDues = dues;
+
+      document.getElementById('cm_patientId').value         = patientId;
+      document.getElementById('cm_patientName').textContent = btn.getAttribute('data-patient-name');
+      document.getElementById('cm_phone').textContent       = btn.getAttribute('data-phone');
+      document.getElementById('cm_registered').textContent  = btn.getAttribute('data-registered');
+      document.getElementById('cm_duesAmount').textContent  = dues.toLocaleString('en-IN');
+      document.getElementById('cm_apptDate').textContent    = btn.getAttribute('data-appt-date') || '';
+      document.getElementById('cm_cash').value              = 0;
+      document.getElementById('cm_online').value            = 0;
+      document.getElementById('cm_source').value            = '';
+
+      var sourceWrap = document.getElementById('cm_sourceWrap');
+      if (sourceWrap) sourceWrap.classList.remove('show');
+
+      var remEl = document.getElementById('cm_remaining');
+      if (remEl) { remEl.textContent = '₹' + dues.toLocaleString('en-IN'); remEl.className = 'val'; }
+
+      document.getElementById('cm_advanceNotice').style.display   = isAdvance                  ? 'flex' : 'none';
+      document.getElementById('cm_sameDayNotice').style.display   = (!isAdvance && isSameDay)  ? 'flex' : 'none';
+      document.getElementById('cm_crossDayNotice').style.display  = (!isAdvance && !isSameDay) ? 'flex' : 'none';
+
+      var hw = document.getElementById('cm_historyWrap');
+      var hr = document.getElementById('cm_historyRows');
+      if (hw) hw.style.display = 'none';
+      if (hr) hr.innerHTML = '';
+
+      fetch('/patient/duesDetail?patientId=' + patientId)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          var history = (data.patient && data.patient.CollectionHistory) || [];
+          if (history.length > 0 && hw && hr) {
+            hw.style.display = 'block';
+            hr.innerHTML = history.map(function(h){
+              return '<div class="cm-history-row">' +
+                '<span style="color:var(--text-secondary)">' + h.collectedAt + ' — by ' + h.collectedBy + '</span>' +
+                '<span style="font-weight:600;font-family:\'DM Mono\',monospace">₹' + parseFloat(h.amount).toLocaleString('en-IN') +
+                '<span style="font-size:11px;color:var(--text-hint)"> (' + h.mode + ')</span></span>' +
+              '</div>';
+            }).join('');
+          }
+        })
+        .catch(function(){ if (hw) hw.style.display = 'none'; });
+    });
+
+    modalEl.addEventListener('hide.bs.modal', function () {
+      var active = document.activeElement;
+      if (active && modalEl.contains(active)) active.blur();
+    });
+  });
+
+  // ── Form submit — uses showConfirm + showToast, no alert() ───────────
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('collectDuesForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var cash   = parseFloat(document.getElementById('cm_cash').value)   || 0;
+      var online = parseFloat(document.getElementById('cm_online').value) || 0;
+      var total  = cash + online;
+
+      // Validation toasts — no alert()
+      if (total <= 0) {
+        showToast('Please enter an amount to collect.', 'warning');
+        return;
+      }
+      if (total > _currentDues) {
+        showToast('Amount ₹' + total.toLocaleString('en-IN') + ' exceeds dues ₹' + _currentDues.toLocaleString('en-IN'), 'error');
+        return;
+      }
+      if (online > 0 && !document.getElementById('cm_source').value) {
+        showToast('Please select a payment source for online payment.', 'warning');
+        return;
+      }
+
+      var patientName = document.getElementById('cm_patientName').textContent;
+
+      // Replace alert(patientId) with proper confirm dialog
+      showConfirm({
+        type:        'brand',
+        title:       'Confirm Collection',
+        message:     'Collect <strong>₹' + total.toLocaleString('en-IN') + '</strong> from <strong>' + patientName + '</strong>?' +
+                     '<br><span style="font-size:12px;color:var(--text-hint);display:block;margin-top:6px">' +
+                     (cash > 0   ? 'Cash: ₹' + cash.toLocaleString('en-IN')   : '') +
+                     (cash > 0 && online > 0 ? ' + ' : '') +
+                     (online > 0 ? 'Online: ₹' + online.toLocaleString('en-IN') : '') +
+                     '</span>',
+        confirmText: 'Yes, Collect',
+        cancelText:  'Cancel'
+      }).then(function(confirmed) {
+        if (!confirmed) return;
+
+        var btn = document.getElementById('cm_confirmBtn');
+        btn.disabled  = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
+
+        fetch('/patient/collectDues', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patientId:      document.getElementById('cm_patientId').value,
+            cashAmount:     cash,
+            onlineAmount:   online,
+            onlineSourceId: document.getElementById('cm_source').value
+          })
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (data.success) {
+            var modal = bootstrap.Modal.getInstance(document.getElementById('collectModal'));
+            if (modal) modal.hide();
+            // Show success toast then reload
+            showToast(data.message || 'Dues collected successfully!', 'success', 2500);
+            setTimeout(function(){ window.location.href = '/dues'; }, 1800);
+          } else {
+            showToast(data.message || 'Collection failed. Please try again.', 'error');
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Confirm Collection';
+          }
+        })
+        .catch(function(){
+          showToast('Network error. Please try again.', 'error');
+          btn.disabled  = false;
+          btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Confirm Collection';
+        });
+      });
+    });
+  });
+
+})();
+</script>

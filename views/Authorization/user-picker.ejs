@@ -1,0 +1,377 @@
+<section style="padding:0 0 2rem">
+
+  <nav style="display:flex;align-items:center;gap:6px;padding:0 0 1.25rem;font-size:13px;color:#888">
+    <a href="/user/home" style="color:#888;text-decoration:none">Home</a>
+    <span style="font-size:11px">›</span>
+    <span style="color:#111;font-weight:500">Access control</span>
+  </nav>
+
+  <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08)">
+      <div style="font-size:15px;font-weight:500">Access control</div>
+      <div style="font-size:12px;color:#888;margin-top:1px">Manage roles, access, qualification and report signature for each user.</div>
+    </div>
+
+    <div style="padding:16px 20px">
+      <input id="userSearch" type="text" placeholder="Search users…" onkeyup="filterUsers()"
+        style="width:100%;padding:10px 14px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;font-size:13px;margin-bottom:14px;outline:none">
+
+      <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#f7f7f7">
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">User</th>
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">Primary Role</th>
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">Qualification</th>
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:center;border-bottom:0.5px solid rgba(0,0,0,0.08)">Signature</th>
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:right;border-bottom:0.5px solid rgba(0,0,0,0.08);width:100px">Manage</th>
+            </tr>
+          </thead>
+          <tbody id="userTable">
+
+            <% if (users.length === 0) { %>
+              <tr><td colspan="5" style="padding:28px;text-align:center;font-size:13px;color:#aaa">No users found</td></tr>
+            <% } %>
+
+            <% users.forEach(function(u) { %>
+            <tr class="urow"
+                id="urow-<%= u.Id %>"
+                data-name="<%= (u.FullName || '').toLowerCase() %> <%= (u.PrimaryRole || '').toLowerCase() %>"
+                onmouseover="this.style.background='#fafafa'"
+                onmouseout="this.style.background=''">
+
+              <%# User name cell %>
+              <td style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px">
+                <div style="display:flex;align-items:center;gap:9px">
+                  <div style="width:26px;height:26px;border-radius:7px;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">
+                    <%= (u.FullName || 'U').trim().charAt(0).toUpperCase() %>
+                  </div>
+                  <span><%= u.FullName || ('User #' + u.Id) %></span>
+                  <% if (Number(u.IsItAdmin) === 1) { %>
+                    <span style="font-size:10px;font-weight:600;color:#9A6700;background:#FFF6E5;padding:2px 7px;border-radius:10px;border:0.5px solid rgba(212,167,44,0.3)">ADMIN</span>
+                  <% } %>
+                </div>
+              </td>
+
+              <%# Primary role cell %>
+              <td style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px;color:#555">
+                <%= u.PrimaryRole || '—' %>
+              </td>
+
+              <%# Qualification cell %>
+              <td style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px" id="qual-cell-<%= u.Id %>">
+                <% if (u.Qualification) { %>
+                  <span id="qual-text-<%= u.Id %>" style="color:#333"><%= u.Qualification %></span>
+                <% } else { %>
+                  <span id="qual-text-<%= u.Id %>" style="color:#bbb;font-style:italic">Not set</span>
+                <% } %>
+              </td>
+
+              <%# Signature cell %>
+              <td style="padding:8px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07);text-align:center" id="sig-cell-<%= u.Id %>">
+                <% if (u.SignaturePath) { %>
+                  <img src="/uploads/signatures/<%= u.SignaturePath.split('/').pop().split('\\').pop() %>"
+                       alt="Signature"
+                       id="sig-img-<%= u.Id %>"
+                       style="height:36px;max-width:120px;object-fit:contain;border:0.5px solid #e5e7eb;border-radius:4px;padding:2px;background:#fff;display:block;margin:0 auto 4px;cursor:pointer"
+                       title="Click to update" />
+                <% } else { %>
+                  <span id="sig-badge-<%= u.Id %>"
+                        style="font-size:11px;color:#aaa;background:#f5f5f5;padding:3px 8px;border-radius:6px;border:0.5px solid #e5e7eb;white-space:nowrap;display:inline-block;margin-bottom:4px">
+                    No signature
+                  </span>
+                <% } %>
+                <div>
+                  <button type="button"
+                          data-uid="<%= u.Id %>"
+                          data-name="<%= u.FullName || '' %>"
+                          data-qual="<%= u.Qualification || '' %>"
+                          data-hassig="<%= u.SignaturePath ? '1' : '0' %>"
+                          onclick="openSigModalFromBtn(this)"
+                          style="font-size:11px;color:#185FA5;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">
+                    <%= u.SignaturePath ? 'Update' : 'Upload' %>
+                  </button>
+                </div>
+              </td>
+
+              <%# Manage button cell %>
+              <td style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07);text-align:right">
+                <a href="/authorize/user/<%= u.Id %>"
+                  style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:6px;font-size:12px;font-weight:500;background:#185FA5;color:#fff;text-decoration:none">
+                  Manage
+                </a>
+              </td>
+
+            </tr>
+            <% }) %>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     SIGNATURE / QUALIFICATION MODAL
+═══════════════════════════════════════════════════ -->
+<div id="sigModalOverlay"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;align-items:center;justify-content:center;padding:24px">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,0.18);overflow:hidden">
+
+    <div style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:15px;font-weight:500" id="modalTitle">Upload Signature</div>
+        <div style="font-size:12px;color:#888;margin-top:2px" id="modalSubtitle"></div>
+      </div>
+      <button type="button" onclick="closeSigModal()"
+              style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;line-height:1;padding:4px">&#x2715;</button>
+    </div>
+
+    <div style="padding:20px">
+
+      <div id="currentSigWrap" style="display:none;margin-bottom:16px;text-align:center">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:6px">Current Signature</div>
+        <div style="border:0.5px solid #e5e7eb;border-radius:8px;padding:10px;background:#fafafa;display:inline-block">
+          <img id="currentSigImg" src="" alt="Current signature"
+               style="max-height:60px;max-width:300px;object-fit:contain" />
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:5px">
+          Qualification <span style="color:#888;font-weight:400">(shown below signature on report)</span>
+        </label>
+        <input type="text" id="modalQual" placeholder="e.g. DMRD, DNB (Rad.), MD"
+               style="width:100%;padding:9px 12px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px;outline:none;font-family:inherit" />
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:5px">
+          Signature Image <span id="fileLabel" style="color:#888;font-weight:400"></span>
+        </label>
+        <div id="dropZone"
+             onclick="document.getElementById('sigFileInput').click()"
+             ondragover="event.preventDefault();this.style.borderColor='#185FA5';this.style.background='#f0f7ff'"
+             ondragleave="this.style.borderColor='rgba(0,0,0,0.15)';this.style.background='#fafafa'"
+             ondrop="handleDrop(event)"
+             style="border:1.5px dashed rgba(0,0,0,0.15);border-radius:8px;background:#fafafa;padding:20px;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:22px;margin-bottom:6px">&#x270A;</div>
+          <div style="font-size:13px;color:#555">Click or drag and drop signature image</div>
+          <div style="font-size:11px;color:#aaa;margin-top:3px">JPG, PNG, WebP — max 2MB</div>
+        </div>
+        <input type="file" id="sigFileInput" accept="image/*" style="display:none" onchange="handleFileSelect(this)" />
+
+        <div id="newSigPreview" style="display:none;margin-top:10px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px">Preview</div>
+          <img id="newSigImg" src="" alt="New signature"
+               style="max-height:60px;max-width:300px;object-fit:contain;border:0.5px solid #e5e7eb;border-radius:6px;padding:6px;background:#fff" />
+        </div>
+      </div>
+
+      <div id="modalStatus" style="display:none;font-size:12px;padding:8px 12px;border-radius:6px;margin-bottom:12px"></div>
+
+    </div>
+
+    <div style="padding:12px 20px;border-top:0.5px solid rgba(0,0,0,0.08);display:flex;justify-content:flex-end;gap:8px">
+      <button type="button" onclick="closeSigModal()"
+              style="padding:8px 18px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:13px;cursor:pointer;font-family:inherit">
+        Cancel
+      </button>
+      <button type="button" id="modalSaveBtn" onclick="saveSignature()"
+              style="padding:8px 20px;border-radius:7px;border:none;background:#185FA5;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">
+        Save
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var _activeUserId = null;
+var _hasExisting  = false;
+var _selectedFile = null;
+
+// Called from data-* attributes — no inline EJS string interpolation needed
+function openSigModalFromBtn(btn) {
+  var userId    = btn.getAttribute('data-uid');
+  var userName  = btn.getAttribute('data-name');
+  var qual      = btn.getAttribute('data-qual');
+  var hasSig    = btn.getAttribute('data-hassig') === '1';
+  openSigModal(userId, userName, qual, hasSig);
+}
+
+function openSigModal(userId, userName, qual, hasSig) {
+  _activeUserId = userId;
+  _hasExisting  = hasSig;
+  _selectedFile = null;
+
+  document.getElementById('modalTitle').textContent    = hasSig ? 'Update Signature' : 'Upload Signature';
+  document.getElementById('modalSubtitle').textContent = userName || ('User #' + userId);
+  document.getElementById('modalQual').value           = qual || '';
+  document.getElementById('fileLabel').textContent     = hasSig ? '(upload new to replace existing)' : '(required for report PDF)';
+  document.getElementById('newSigPreview').style.display = 'none';
+  document.getElementById('newSigImg').src             = '';
+  document.getElementById('modalStatus').style.display = 'none';
+  document.getElementById('sigFileInput').value        = '';
+
+  var currentWrap = document.getElementById('currentSigWrap');
+  var currentImg  = document.getElementById('currentSigImg');
+  var sigImg      = document.getElementById('sig-img-' + userId);
+
+  if (hasSig && sigImg) {
+    currentImg.src            = sigImg.src;
+    currentWrap.style.display = 'block';
+  } else {
+    currentWrap.style.display = 'none';
+  }
+
+  var overlay = document.getElementById('sigModalOverlay');
+  overlay.style.display = 'flex';
+  setTimeout(function() { document.getElementById('modalQual').focus(); }, 80);
+}
+
+function closeSigModal() {
+  document.getElementById('sigModalOverlay').style.display = 'none';
+  _activeUserId = null;
+  _selectedFile = null;
+}
+
+document.getElementById('sigModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSigModal();
+});
+
+function handleFileSelect(input) {
+  if (input.files && input.files[0]) setFile(input.files[0]);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  var dz = document.getElementById('dropZone');
+  dz.style.borderColor = 'rgba(0,0,0,0.15)';
+  dz.style.background  = '#fafafa';
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+}
+
+function setFile(file) {
+  if (!file.type.startsWith('image/')) {
+    showModalStatus('Please select an image file.', 'error');
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    showModalStatus('File is too large. Maximum 2MB allowed.', 'error');
+    return;
+  }
+  _selectedFile = file;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('newSigImg').src             = e.target.result;
+    document.getElementById('newSigPreview').style.display = 'block';
+    document.getElementById('modalStatus').style.display   = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveSignature() {
+  if (!_activeUserId) return;
+
+  var qual = document.getElementById('modalQual').value.trim();
+
+  if (!_selectedFile && !qual && !_hasExisting) {
+    showModalStatus('Please upload a signature image or enter a qualification.', 'error');
+    return;
+  }
+
+  var btn = document.getElementById('modalSaveBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+  document.getElementById('modalStatus').style.display = 'none';
+
+  try {
+    var formData = new FormData();
+    formData.append('qualification', qual);
+    if (_selectedFile) formData.append('signature', _selectedFile);
+
+    var res  = await fetch('/authorize/user/' + _activeUserId + '/signature', {
+      method: 'POST',
+      body:   formData
+    });
+    var data = await res.json();
+
+    if (data.success) {
+      updateRow(_activeUserId, qual, data.signatureUrl);
+      showModalStatus('Saved successfully!', 'success');
+      setTimeout(closeSigModal, 900);
+    } else {
+      showModalStatus(data.message || 'Save failed.', 'error');
+    }
+  } catch (err) {
+    showModalStatus('Network error. Please try again.', 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = 'Save';
+  }
+}
+
+function updateRow(userId, qual, sigUrl) {
+  // Update qualification text
+  var qualEl = document.getElementById('qual-text-' + userId);
+  if (qualEl) {
+    qualEl.textContent     = qual || 'Not set';
+    qualEl.style.color     = qual ? '#333' : '#bbb';
+    qualEl.style.fontStyle = qual ? 'normal' : 'italic';
+  }
+
+  // Update signature cell
+  if (sigUrl) {
+    var existingImg = document.getElementById('sig-img-' + userId);
+    var sigCell     = document.getElementById('sig-cell-' + userId);
+
+    if (existingImg) {
+      existingImg.src = sigUrl + '?t=' + Date.now();
+    } else if (sigCell) {
+      var badge = document.getElementById('sig-badge-' + userId);
+      if (badge) badge.remove();
+
+      var img       = document.createElement('img');
+      img.id        = 'sig-img-' + userId;
+      img.src       = sigUrl;
+      img.alt       = 'Signature';
+      img.title     = 'Click to update';
+      img.style.cssText = 'height:36px;max-width:120px;object-fit:contain;border:0.5px solid #e5e7eb;border-radius:4px;padding:2px;background:#fff;display:block;margin:0 auto 4px;cursor:pointer';
+      img.onclick   = function() {
+        var uploadBtn = sigCell.querySelector('button');
+        openSigModal(userId, '', qual, true);
+      };
+      var btnDiv = sigCell.querySelector('div');
+      sigCell.insertBefore(img, btnDiv);
+    }
+
+    // Update the upload button's data-hassig so next open shows current sig
+    var uploadBtn = document.querySelector('[data-uid="' + userId + '"]');
+    if (uploadBtn) {
+      uploadBtn.setAttribute('data-hassig', '1');
+      uploadBtn.setAttribute('data-qual', qual);
+      uploadBtn.textContent = 'Update';
+    }
+
+    _hasExisting = true;
+  }
+}
+
+function showModalStatus(msg, type) {
+  var el          = document.getElementById('modalStatus');
+  el.textContent  = msg;
+  el.style.display   = 'block';
+  el.style.background = type === 'success' ? '#f0fdf4' : '#fff5f5';
+  el.style.color      = type === 'success' ? '#166534' : '#991b1b';
+  el.style.border     = '0.5px solid ' + (type === 'success' ? '#bbf7d0' : '#fecaca');
+}
+
+function filterUsers() {
+  var q = document.getElementById('userSearch').value.toLowerCase();
+  document.querySelectorAll('#userTable .urow').forEach(function(row) {
+    row.style.display = row.getAttribute('data-name').indexOf(q) !== -1 ? '' : 'none';
+  });
+}
+</script>

@@ -1,0 +1,88 @@
+<% var LIST = (typeof SubTestLists !== 'undefined' && SubTestLists) ? SubTestLists : []; %>
+<style>
+  .stx{--brand:#185FA5;--brand-soft:#E6F1FB;--ink:#111827;--ink2:#6B7280;--ink3:#9CA3AF;--line:rgba(0,0,0,.09);--bad:#A32D2D;--bads:#FCEBEB;--ok:#3B6D11;--oks:#EAF3DE;--warn:#854F0B;--warns:#FFF6E5;
+       width:100%;padding:12px 0 40px;color:var(--ink)}
+  .stx *{box-sizing:border-box}
+  .stx-crumb{font-size:12.5px;color:var(--ink2);margin-bottom:14px}.stx-crumb a{color:var(--brand);text-decoration:none}
+  .stx-card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);overflow:hidden;margin-bottom:16px}
+  .stx-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#fff,#F8F9FB)}
+  .stx-head-l{display:flex;align-items:center;gap:12px;min-width:0}
+  .stx-icon{width:42px;height:42px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .stx-title{font-size:17px;font-weight:700;margin:0;text-transform:capitalize}.stx-sub{font-size:13px;color:var(--ink2);margin:2px 0 0}
+  .stx-body{padding:22px}
+  .stx-msgs{padding:0 22px}.stx-msgs:empty{display:none}
+  .stx-err{margin:16px 22px 0;padding:12px 14px;border-radius:10px;background:var(--bads);color:var(--bad);font-size:13px}
+  .stx-err ul{margin:6px 0 0;padding-left:18px}
+  .stx-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .stx-grid .full{grid-column:1/-1}.stx-grid .two{grid-column:span 2}
+  @media(max-width:760px){.stx-grid{grid-template-columns:1fr 1fr}.stx-grid .two{grid-column:1/-1}}
+  @media(max-width:520px){.stx-grid{grid-template-columns:1fr}.stx-body{padding:16px}.stx-head{padding:14px 16px}}
+  .stx-label{font-size:11px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+  .stx-req{color:var(--bad)}
+  .stx-in{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:44px}
+  .stx-in:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px rgba(24,95,165,.08)}
+  .stx-in .pre{padding:0 10px 0 12px;color:var(--ink3);font-weight:600}
+  .stx-in input,.stx-in select{border:0;outline:0;background:transparent;flex:1;min-width:0;padding:10px 12px 10px 0;font-size:14.5px}
+  .stx-in select{padding-left:12px}
+  .stx-hint{font-size:12px;color:var(--ink3);margin-top:5px}
+  .stx-note{display:flex;gap:10px;background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink2)}
+  .stx-note i{color:var(--brand);font-size:16px}
+  .stx-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--line);background:#F8F9FB}
+  .stx-bar.sticky{position:sticky;bottom:0;z-index:5;box-shadow:0 -6px 16px rgba(0,0,0,.05)}
+  .stx-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
+  .stx-pri{background:var(--brand);color:#fff}.stx-pri:hover{background:#0C447C;color:#fff}.stx-pri:disabled{opacity:.6}
+  .stx-ghost{background:transparent;color:var(--ink2)}.stx-ghost:hover{background:rgba(0,0,0,.04);color:var(--ink)}
+  .stx-out{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}.stx-out:hover{background:var(--brand-soft)}
+  .stx-pill{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:3px 10px;background:#f2f4f7;color:var(--ink2);white-space:nowrap}
+  .stx-pill.ok{background:var(--oks);color:var(--ok)}.stx-pill.pri{background:var(--brand-soft);color:var(--brand)}.stx-pill.warn{background:var(--warns);color:var(--warn)}
+  .stx-table{width:100%;border-collapse:collapse;font-size:14px}
+  .stx-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);background:#FAFBFC;white-space:nowrap;text-align:left}
+  .stx-table td{padding:10px 12px;border-bottom:1px solid #f0f2f6;vertical-align:middle}
+  .stx-table tr:hover td{background:#FAFCFF}
+  .stx-search{position:relative;flex:1 1 240px;max-width:420px}
+  .stx-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+  .stx-search input{width:100%;height:40px;border:1.5px solid var(--line);border-radius:8px;padding:0 12px 0 36px;font-size:14px}
+  .stx-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line)}
+  .stx-empty{padding:48px 16px;text-align:center;color:var(--ink2)}
+  @media(max-width:520px){.stx-bar{padding:12px 16px}.stx-bar .stx-pri{flex:1}.stx-tools{padding:12px 16px}}
+</style>
+<div class="stx">
+  <div class="stx-crumb"><a href="/user/home">Home</a> › Sub-tests</div>
+  <div class="stx-card">
+    <div class="stx-head">
+      <div class="stx-head-l"><div class="stx-icon"><i class="bi bi-diagram-3"></i></div>
+        <div><p class="stx-title">Sub-tests</p><p class="stx-sub"><%= LIST.length %> sub-test<%= LIST.length === 1 ? '' : 's' %> · default price, discount and thanks</p></div></div>
+      <a href="/test/registerSubTest" class="stx-btn stx-pri"><i class="bi bi-plus-lg"></i> New sub-test</a>
+    </div>
+    <div class="stx-msgs"><%- include('../partials/messages') %></div>
+    <% if (LIST.length) { %>
+      <div class="stx-tools"><div class="stx-search"><i class="bi bi-search"></i><input type="search" id="stQ" placeholder="Search sub-test, category or test"></div></div>
+      <div class="table-responsive"><table class="stx-table">
+        <thead><tr><th>Sub-test</th><th class="d-none d-md-table-cell">Category</th><th>Price</th><th>Discount</th><th>Thanks</th>
+                   <th class="d-none d-lg-table-cell">Attached to</th><th class="d-none d-md-table-cell">Doctor rules</th><th></th></tr></thead>
+        <tbody id="stRows">
+          <% LIST.forEach(function (s) { %>
+            <tr data-q="<%= [s.Name, s.categoryName, s.AttachedTo].join(' ').toLowerCase() %>">
+              <td><b class="text-capitalize"><%= s.Name %></b><div class="d-md-none small text-secondary"><%= s.categoryName || '—' %></div></td>
+              <td class="d-none d-md-table-cell"><%= s.categoryName || '—' %></td>
+              <td>₹<%= s.Price %></td>
+              <td><%= Number(s.Discount) ? '₹' + s.Discount : '—' %></td>
+              <td><% if (Number(s.ThanksAmount)) { %><span class="stx-pill ok">₹<%= s.ThanksAmount %></span><% } else { %><span class="stx-pill" title="Not printed in thanks report unless a doctor wants it">No thanks</span><% } %></td>
+              <td class="d-none d-lg-table-cell small"><%= s.AttachedTo || '' %><% if (!Number(s.AttachedCount)) { %><span class="stx-pill warn">not attached</span><% } %></td>
+              <td class="d-none d-md-table-cell"><%= Number(s.DoctorRules) ? s.DoctorRules + ' doctor' + (Number(s.DoctorRules) === 1 ? '' : 's') : '—' %></td>
+              <td class="text-end"><a href="/test/editSubTest?SubTestId=<%= s.SubTestId %>" class="stx-btn stx-out" style="padding:6px 14px;font-size:13px"><i class="bi bi-pencil-square"></i><span class="d-none d-sm-inline">Edit</span></a></td>
+            </tr>
+          <% }) %>
+        </tbody></table></div>
+      <div class="stx-empty" id="stNone" hidden>No sub-test matches.</div>
+    <% } else { %>
+      <div class="stx-empty"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>No sub-tests yet.<br><a href="/test/registerSubTest" class="stx-btn stx-pri mt-3"><i class="bi bi-plus-lg"></i> Create the first sub-test</a></div>
+    <% } %>
+  </div>
+</div>
+<script>
+(function () { var q = document.getElementById('stQ'); if (!q) return;
+  q.addEventListener('input', function () { var v = q.value.trim().toLowerCase(), n = 0;
+    document.querySelectorAll('#stRows tr').forEach(function (r) { var ok = !v || r.dataset.q.indexOf(v) !== -1; r.hidden = !ok; if (ok) n++; });
+    document.getElementById('stNone').hidden = n > 0; }); })();
+</script>

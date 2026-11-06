@@ -1,0 +1,87 @@
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+  .upload-card {
+    max-width: 500px;
+    margin: auto;
+    border-radius: 12px;
+  }
+
+  .drop-area {
+    border: 2px dashed #0d6efd;
+    border-radius: 10px;
+    padding: 35px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8f9fa;
+    transition: 0.2s;
+  }
+
+  .drop-area:hover {
+    background: #eef4ff;
+  }
+
+  .file-name {
+    font-weight: 500;
+    margin-top: 10px;
+  }
+</style>
+
+<%- include("pickers") %>
+<div class="container mt-5">
+  <%- include("../partials/messages") %>
+  <div class="card shadow-sm upload-card p-4">
+    
+    <h5 class="text-center mb-3">
+      <i class="bi bi-file-earmark-excel text-primary"></i>
+      Upload Packet Excel
+    </h5>
+
+    <form action="/packet/uploadExcel" method="POST" enctype="multipart/form-data">
+      
+      <!-- Drop Area -->
+      <label class="drop-area w-100">
+        <i class="bi bi-cloud-upload fs-1 text-primary"></i>
+        <div class="mt-2 fw-semibold">Click to upload Excel file</div>
+        <small class="text-muted">.xlsx only, up to 5 MB</small>
+  
+        <input type="file" name="file" id="fileInput" accept=".xlsx" hidden required>
+      </label>
+
+      <!-- File name -->
+      <div id="fileName" class="file-name text-success text-center"></div>
+      <div class="my-3">
+        <label class="form-label fw-semibold" for="uploadMonth">Month</label>
+        <input type="text" class="form-control" name="month" id="uploadMonth" value="<%= month %>" required>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="type" id="ct" value="CT" required>
+        <label class="form-check-label" for="ct">
+          CT
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="type" id="mri" value="MRI">
+        <label class="form-check-label" for="mri">
+          MRI
+        </label>
+      </div>
+      <!-- Submit -->
+      <div class="d-grid mt-4">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-upload"></i> Upload
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () { pkvMonthPicker('#uploadMonth'); });
+  // Only for showing file name (minimal JS)
+  document.getElementById("fileInput").addEventListener("change", function () {
+    const file = this.files[0];
+    document.getElementById("fileName").textContent = file ? "✔ " + file.name : "";
+  });
+</script>

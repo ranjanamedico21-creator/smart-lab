@@ -1,0 +1,415 @@
+<!-- Purchase PO List -->
+<style>
+  /* ---------- TomSelect: strip wrapper Bootstrap chrome, style only .ts-control ---------- */
+  .ts-wrapper.form-control,
+  .ts-wrapper.form-select {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    height: auto;
+  }
+  .ts-wrapper .ts-control {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    min-height: 42px;
+    font-size: 0.95rem;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .ts-wrapper.focus .ts-control {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  }
+  .ts-dropdown {
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    z-index: 1056;
+  }
+  .ts-dropdown .option.active {
+    background-color: #0d6efd;
+    color: #fff;
+  }
+
+  /* ---------- Filter panel ---------- */
+  .po-filter-panel {
+    background: #f8f9fc;
+    border: 1px solid #eef0f4;
+    border-radius: 0.75rem;
+  }
+  .po-filter-panel .form-control {
+    min-height: 42px;
+    border-radius: 0.5rem;
+  }
+
+  /* ---------- PO group header row ---------- */
+  .po-group-row td {
+    background: linear-gradient(90deg, #f1f6ff 0%, #f8f9fc 60%, #f8f9fc 100%);
+    border-left: 4px solid #0d6efd;
+  }
+  .po-group-row .po-invoice-link {
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .po-group-row .po-invoice-link:hover {
+    text-decoration: underline;
+  }
+  .po-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: #6c757d;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 2rem;
+    padding: 0.25rem 0.75rem;
+  }
+  .po-meta-item i {
+    color: #0d6efd;
+  }
+
+  /* ---------- Table polish ---------- */
+  .po-table thead th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .po-table tbody tr.po-product-row:hover td {
+    background-color: #fbfcff;
+  }
+  .po-table .progress {
+    border-radius: 2rem;
+    background-color: #e9eef5;
+  }
+  .po-table .progress-bar {
+    border-radius: 2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  /* ---------- Empty state ---------- */
+  .po-empty-state i {
+    font-size: 2.5rem;
+    opacity: 0.4;
+  }
+
+  @media (max-width: 767.98px) {
+    .po-meta-item {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+    }
+  }
+</style>
+
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+
+      <div class="card-header bg-primary bg-gradient text-white py-3">
+        <div class="d-flex align-items-center justify-content-center">
+          <h4 class="mb-0 fw-bold">
+            <i class="bi bi-clipboard-data me-2"></i>Purchase PO List
+          </h4>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+        <%- include("../partials/messages") %>
+
+        <!-- ================= FILTERS ================= -->
+        <form action="/billing/viewPurchasePo" method="post" class="needs-validation" novalidate>
+          <div class="po-filter-panel p-3 p-md-4 mb-4">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-funnel-fill text-primary me-2"></i>
+              <span class="fw-semibold">Search Filters</span>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6 col-lg-3">
+                <label for="purchaseInvoice" class="form-label fw-semibold small text-muted">Invoice No</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="purchaseInvoice"
+                  name="PurchaseInvoiceNo"
+                  placeholder="Invoice No"
+                  value="<%= typeof PurchaseInvoiceNo != 'undefined' ? PurchaseInvoiceNo : '' %>">
+              </div>
+
+              <div class="col-md-6 col-lg-3">
+                <label for="supplier" class="form-label fw-semibold small text-muted">Supplier</label>
+                <select name="Supplier" id="supplier" aria-label="Select supplier">
+                  <option value="">Select a Supplier</option>
+                  <% supplierLists.forEach(function(supplier) { %>
+                    <option value="<%= supplier.Id %>" <% if (typeof Supplier != 'undefined' && supplier.Id == Supplier) { %>selected<% } %>>
+                      <%= supplier.Name %>
+                    </option>
+                  <% }); %>
+                </select>
+              </div>
+
+              <div class="col-md-6 col-lg-3">
+                <label for="FromDate" class="form-label fw-semibold small text-muted">From Date</label>
+                <input
+                  type="text"
+                  id="FromDate"
+                  class="form-control"
+                  name="FromDate"
+                  placeholder="From date"
+                  value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>"
+                  autocomplete="off">
+              </div>
+
+              <div class="col-md-6 col-lg-3">
+                <label for="ToDate" class="form-label fw-semibold small text-muted">To Date</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="ToDate"
+                  name="ToDate"
+                  placeholder="To Date"
+                  value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>"
+                  autocomplete="off">
+              </div>
+            </div>
+
+            <div class="row g-2 mt-3">
+              <div class="col-md-4 col-lg-3">
+                <button class="btn btn-primary w-100 rounded-pill fw-medium" type="submit">
+                  <i class="bi bi-search me-1"></i>Search
+                </button>
+              </div>
+              <div class="col-md-3 col-lg-2">
+                <a href="/billing/viewPurchasePo" class="btn btn-outline-secondary w-100 rounded-pill fw-medium">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                </a>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <!-- ================= TABLE ================= -->
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 po-table">
+
+            <thead class="table-dark">
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th class="text-end">Ordered</th>
+                <th class="text-end">Received</th>
+                <th class="text-end">Pending</th>
+                <th style="min-width:180px">Progress</th>
+                <th>Status</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+
+            <tbody class="pagination-loop">
+
+            <% if (purchasePoLists && purchasePoLists.length > 0) { %>
+
+              <% purchasePoLists.forEach(function(invoice) {
+                   const poProgress = invoice.TotalOrderedQty > 0
+                     ? Math.round((invoice.TotalReceivedQty / invoice.TotalOrderedQty) * 100)
+                     : 0;
+              %>
+
+              <!-- PO HEADER -->
+              <tr class="po-group-row border-top">
+                <td colspan="8" class="px-3 px-md-4 py-3">
+
+                  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                      <a href="/billing/invoiceDetails/<%= invoice.PurchaseOrderId %>" class="po-invoice-link text-primary">
+                        <i class="bi bi-receipt-cutoff me-1"></i><%= invoice.PurchaseInvoiceNo %>
+                      </a>
+
+                      <% if (invoice.POStatus === 'Pending') { %>
+                        <span class="badge rounded-pill bg-warning text-dark">Pending</span>
+                      <% } else if (invoice.POStatus === 'Partially Received') { %>
+                        <span class="badge rounded-pill bg-info text-dark">Partially Received</span>
+                      <% } else { %>
+                        <span class="badge rounded-pill bg-success">Received</span>
+                      <% } %>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                      <span class="po-meta-item">
+                        <i class="bi bi-person-circle"></i><%= invoice.SupplierName %>
+                      </span>
+                      <span class="po-meta-item">
+                        <i class="bi bi-calendar-event"></i>Ordered: <%= invoice.OrderDate %>
+                      </span>
+                      <span class="po-meta-item">
+                        <i class="bi bi-calendar-check"></i>PO Date: <%= invoice.PurchasePoDate %>
+                      </span>
+                      <span class="po-meta-item">
+                        <i class="bi bi-file-earmark-text"></i>Supplier Inv: <%= invoice.SupplierInvoiceNo %>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- PO LEVEL PROGRESS -->
+                  <div class="progress" style="height: 18px;">
+                    <div
+                      class="progress-bar <%= poProgress === 100 ? 'bg-success' : poProgress > 0 ? 'bg-info' : 'bg-warning' %>"
+                      role="progressbar"
+                      style="width:<%= poProgress %>%"
+                      aria-valuenow="<%= poProgress %>" aria-valuemin="0" aria-valuemax="100">
+                      <%= poProgress %>%
+                    </div>
+                  </div>
+
+                </td>
+              </tr>
+
+              <!-- PRODUCT ROWS -->
+              <% invoice.Products.forEach(function(product, index) {
+                   const prodProgress = product.OrderedQty > 0
+                     ? Math.round((product.ReceivedQty / product.OrderedQty) * 100)
+                     : 0;
+                   const pendingQty = Math.max(product.OrderedQty - product.ReceivedQty, 0);
+                   const fullyReceived = product.ReceivedQty >= product.OrderedQty;
+              %>
+
+              <tr class="po-product-row">
+                <td class="text-muted fw-medium"><%= index + 1 %></td>
+                <td class="fw-medium"><%= product.ProductName %></td>
+
+                <td class="text-end fw-semibold"><%= product.OrderedQty %></td>
+
+                <td class="text-end text-success fw-semibold"><%= product.ReceivedQty %></td>
+
+                <td class="text-end <%= pendingQty > 0 ? 'text-danger' : 'text-muted' %> fw-semibold">
+                  <%= pendingQty %>
+                </td>
+
+                <!-- PRODUCT PROGRESS -->
+                <td>
+                  <div class="progress" style="height:14px;">
+                    <div
+                      class="progress-bar <%= prodProgress === 100 ? 'bg-success' : prodProgress > 0 ? 'bg-info' : 'bg-warning' %>"
+                      role="progressbar"
+                      style="width:<%= prodProgress %>%"
+                      aria-valuenow="<%= prodProgress %>" aria-valuemin="0" aria-valuemax="100">
+                      <%= prodProgress %>%
+                    </div>
+                  </div>
+                </td>
+
+                <!-- STATUS -->
+                <td>
+                  <% if (product.Status === 'Pending') { %>
+                    <span class="badge rounded-pill bg-warning text-dark">Pending</span>
+                  <% } else if (product.Status === 'Partially Received') { %>
+                    <span class="badge rounded-pill bg-info text-dark">Partial</span>
+                  <% } else { %>
+                    <span class="badge rounded-pill bg-success">Received</span>
+                  <% } %>
+                </td>
+
+                <!-- ACTION -->
+                <td class="text-center">
+                  <a
+                    href="/billing/receivePurchaseOrder/<%= invoice.PurchaseOrderId %>"
+                    class="btn btn-sm btn-outline-primary rounded-pill <%= fullyReceived ? 'disabled' : '' %>"
+                    <%= fullyReceived ? 'aria-disabled=true tabindex=-1' : '' %>>
+                    <i class="bi bi-box-arrow-in-down me-1"></i>Receive
+                  </a>
+                </td>
+              </tr>
+
+              <% }); %>
+
+              <% }); %>
+
+            <% } else { %>
+
+              <tr>
+                <td colspan="8" class="text-center py-5 text-muted po-empty-state">
+                  <i class="bi bi-folder-x d-block mb-2"></i>
+                  <div class="fw-semibold mb-1">No Purchase Orders Found</div>
+                  <div class="small">Try changing the invoice number, supplier, or date range above.</div>
+                </td>
+              </tr>
+
+            <% } %>
+
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pagination Section -->
+<section class="pb-4 mt-3">
+  <nav aria-label="Page navigation">
+    <div class="container">
+      <div class="d-flex justify-content-center">
+        <div class="w-100 overflow-auto">
+          <ul class="pagination pagination-sm gap-1 mt-4 flex-nowrap justify-content-center overflow-auto" id="pagination_Number" style="white-space: nowrap; scroll-behavior: smooth;">
+            <li class="page-item disabled">
+              <a class="page-link rounded-pill px-3 prev_link" href="#">Previous</a>
+            </li>
+            <!-- Page numbers will be inserted here via JavaScript -->
+            <li class="page-item">
+              <a class="page-link rounded-pill px-3 next_link" href="#">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    // ---------- TomSelect: Supplier ----------
+    var supplierEl = document.getElementById('supplier');
+    if (supplierEl && !supplierEl.tomselect) {
+      new TomSelect('#supplier', {
+        create: false,
+        allowEmptyOption: true,
+        placeholder: 'Select a Supplier',
+        maxOptions: null,
+        plugins: ['clear_button'],
+        sortField: { field: 'text', direction: 'asc' }
+        // NOTE: no dropdownParent:'body' — dropdown stays inside the card (no overflow:hidden ancestor issue here)
+      });
+    }
+
+    // ---------- Flatpickr: date range ----------
+    if (typeof flatpickr !== 'undefined') {
+      var fromPicker = flatpickr('#FromDate', {
+        dateFormat: 'Y-m-d',
+        allowInput: true,
+        onChange: function (selectedDates) {
+          if (selectedDates.length && toPicker) {
+            toPicker.set('minDate', selectedDates[0]);
+          }
+        }
+      });
+
+      var toPicker = flatpickr('#ToDate', {
+        dateFormat: 'Y-m-d',
+        allowInput: true,
+        onChange: function (selectedDates) {
+          if (selectedDates.length && fromPicker) {
+            fromPicker.set('maxDate', selectedDates[0]);
+          }
+        }
+      });
+    }
+
+  });
+</script>

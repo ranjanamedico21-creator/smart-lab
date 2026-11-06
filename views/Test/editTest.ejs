@@ -1,0 +1,944 @@
+<style>
+  .ct-page {
+    --ct-bg: #f0f4f8;
+    --ct-surface: #ffffff;
+    --ct-surface-2: #f8fafc;
+    --ct-border: #e2e8f0;
+    --ct-focus: #3b6ef6;
+    --ct-primary: #3b6ef6;
+    --ct-primary-dark: #2a55d4;
+    --ct-primary-light: #ebf0ff;
+    --ct-accent: #06b6a2;
+    --ct-text: #1a202c;
+    --ct-text-2: #4a5568;
+    --ct-text-3: #94a3b8;
+    --ct-danger: #e53e3e;
+    --ct-warning: #d97706;
+    --ct-shadow: 0 4px 16px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04);
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    padding: 24px;
+    background: var(--ct-bg);
+    min-height: 100%;
+  }
+
+  .ct-page .ct-title    { font-size: 22px; font-weight: 700; color: var(--ct-text); letter-spacing: -0.4px; margin-bottom: 3px; }
+  .ct-page .ct-subtitle { font-size: 13px; color: var(--ct-text-3); margin-bottom: 24px; }
+  .ct-page .ct-card     { background: var(--ct-surface); border-radius: 16px; box-shadow: var(--ct-shadow); border: 1px solid var(--ct-border); overflow: hidden; max-width: 1100px; }
+
+  .ct-page .ct-section { padding: 22px 28px; border-bottom: 1px solid var(--ct-border); }
+  .ct-page .ct-section:last-of-type { border-bottom: none; }
+  .ct-page .ct-section-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--ct-text-3); margin-bottom: 18px; }
+  .ct-page .ct-section-label::after { content:''; flex:1; height:1px; background:var(--ct-border); }
+  .ct-page .ct-sec-icon { width:26px; height:26px; border-radius:6px; background:var(--ct-primary-light); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ct-page .ct-sec-icon svg { width:13px; height:13px; stroke:var(--ct-primary); fill:none; stroke-width:2; }
+  .ct-page .ct-path-section { background:linear-gradient(135deg,#fffbf0,#fff8ed); border-left:3px solid var(--ct-warning); }
+  .ct-page .ct-path-section .ct-sec-icon { background:#fef3c7; }
+  .ct-page .ct-path-section .ct-sec-icon svg { stroke:var(--ct-warning); }
+
+  .ct-page .ct-context-note { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:500; }
+  .ct-page .ct-context-note.path { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
+  .ct-page .ct-context-note svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
+
+  .ct-page .ct-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .ct-page .ct-row:last-child { margin-bottom:0; }
+  @media (max-width:600px) { .ct-page .ct-row { grid-template-columns:1fr; } .ct-page { padding:14px; } .ct-page .ct-section { padding:16px; } }
+
+  .ct-page .ct-fg { display:flex; flex-direction:column; gap:5px; }
+  .ct-page .ct-fg label { font-size:13px; font-weight:600; color:var(--ct-text-2); }
+  .ct-page .ct-fg label .req { color:var(--ct-danger); margin-left:2px; }
+  .ct-page .ct-fg input,
+  .ct-page .ct-fg select,
+  .ct-page .ct-fg textarea {
+    font-family:inherit; font-size:14px; color:var(--ct-text);
+    background:var(--ct-surface-2); border:1.5px solid var(--ct-border);
+    border-radius:8px; padding:9px 13px; outline:none;
+    transition:border-color .16s, box-shadow .16s, background .16s; width:100%;
+  }
+  .ct-page .ct-fg input:focus,
+  .ct-page .ct-fg select:focus,
+  .ct-page .ct-fg textarea:focus  { border-color:var(--ct-focus); background:#fff; box-shadow:0 0 0 3px rgba(59,110,246,.10); }
+  .ct-page .ct-fg.ct-error input,
+  .ct-page .ct-fg.ct-error select,
+  .ct-page .ct-fg.ct-error textarea { border-color:var(--ct-danger); box-shadow:0 0 0 3px rgba(229,62,62,.08); }
+  .ct-page .ct-err-msg  { font-size:12px; color:var(--ct-danger); display:none; }
+  .ct-page .ct-fg.ct-error .ct-err-msg { display:block; }
+  .ct-page .ct-hint     { font-size:12px; color:var(--ct-text-3); }
+
+  .ct-page select {
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:34px; cursor:pointer;
+  }
+  .ct-page select:disabled { opacity:.55; cursor:not-allowed; background-color:#f1f5f9; }
+
+  .ct-page .ct-pills { display:flex; flex-wrap:wrap; gap:9px; }
+  .ct-page .ct-pill  { padding:7px 16px; border-radius:50px; font-size:13px; font-weight:500; border:1.5px solid var(--ct-border); background:var(--ct-surface-2); color:var(--ct-text-2); cursor:pointer; transition:all .15s; user-select:none; display:flex; align-items:center; gap:6px; }
+  .ct-page .ct-pill:hover  { border-color:var(--ct-primary); color:var(--ct-primary); background:var(--ct-primary-light); }
+  .ct-page .ct-pill.sel-rad   { border-color:var(--ct-primary); background:var(--ct-primary); color:#fff; }
+  .ct-page .ct-pill.sel-path  { border-color:#b45309; background:#d97706; color:#fff; }
+  .ct-page .ct-pill.sel-usg   { border-color:#0891b2; background:#0e7490; color:#fff; }
+  .ct-page .ct-pill.sel-other { border-color:#7c3aed; background:#7c3aed; color:#fff; }
+  .ct-page .ct-pill.ct-locked { cursor:default; width:fit-content; }
+  .ct-page .ct-pill.ct-locked:hover { transform:none; }
+
+  .ct-page .ct-stepper { display:flex; align-items:center; background:var(--ct-surface-2); border:1.5px solid var(--ct-border); border-radius:8px; overflow:hidden; height:40px; }
+  .ct-page .ct-stepper:focus-within { border-color:var(--ct-focus); box-shadow:0 0 0 3px rgba(59,110,246,.10); }
+  .ct-page .ct-stepper button { background:none; border:none; width:36px; height:100%; font-size:17px; color:var(--ct-text-3); cursor:pointer; transition:background .14s,color .14s; display:flex; align-items:center; justify-content:center; }
+  .ct-page .ct-stepper button:hover { background:var(--ct-border); color:var(--ct-text); }
+  .ct-page .ct-stepper input  { flex:1; border:none !important; background:transparent !important; box-shadow:none !important; text-align:center; font-weight:600; font-size:14px; padding:0; min-width:0; }
+
+  .ct-page .ct-blood-row { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:end; }
+  .ct-page .ct-blood-sep { padding-bottom:10px; color:var(--ct-text-3); font-weight:600; text-align:center; font-size:13px; }
+
+  .ct-page .ct-toggle-wrap { display:flex; align-items:center; gap:11px; padding:9px 13px; background:var(--ct-surface-2); border:1.5px solid var(--ct-border); border-radius:8px; cursor:pointer; height:40px; transition:border-color .16s; }
+  .ct-page .ct-toggle-wrap:hover { border-color:var(--ct-focus); }
+  .ct-page .ct-track { width:36px; height:20px; background:var(--ct-border); border-radius:99px; position:relative; transition:background .2s; flex-shrink:0; }
+  .ct-page .ct-thumb { position:absolute; top:3px; left:3px; width:14px; height:14px; background:white; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+  .ct-page .ct-toggle-lbl { font-size:14px; color:var(--ct-text-2); font-weight:500; }
+  .ct-page input[type="checkbox"].ct-toggle-input { display:none; }
+  .ct-page input[type="checkbox"].ct-toggle-input:checked ~ .ct-toggle-wrap .ct-track { background:var(--ct-primary); }
+  .ct-page input[type="checkbox"].ct-toggle-input:checked ~ .ct-toggle-wrap .ct-thumb { transform:translateX(16px); }
+  .ct-page input[type="checkbox"].ct-toggle-input:checked ~ .ct-toggle-wrap .ct-toggle-lbl { color:var(--ct-primary); font-weight:600; }
+
+  .ct-page .ct-badge      { display:inline-flex; align-items:center; gap:6px; font-size:12px; border-radius:6px; padding:4px 10px; font-weight:500; margin-bottom:14px; }
+  .ct-page .ct-badge-warn { color:var(--ct-warning); background:#fef3c7; }
+  .ct-page .ct-badge-info { color:#0C447C; background:#E6F1FB; }
+  .ct-page .ct-badge svg  { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2; }
+
+  .ct-page .ct-existing-badge {
+    padding:10px 16px; background:#EAF3DE; border:1px solid #C0DD97;
+    border-radius:10px; font-size:12px; color:#27500A;
+    margin-bottom:12px; display:flex; align-items:center; gap:8px;
+  }
+
+  .ct-page .ct-tmpl-mode-btn { display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:8px; border:1.5px solid var(--ct-border); background:var(--ct-surface); font-size:13px; cursor:pointer; font-weight:500; }
+  .ct-page .ct-tmpl-mode-btn.ct-tmpl-active { background:var(--ct-primary-light) !important; border-color:var(--ct-primary) !important; color:var(--ct-primary); font-weight:600; }
+
+  .ct-page .ct-upload-zone { border:2px dashed var(--ct-border); border-radius:10px; padding:22px; text-align:center; background:var(--ct-surface-2); cursor:pointer; transition:all .2s; }
+  .ct-page .ct-upload-zone:hover { border-color:var(--ct-primary); background:var(--ct-primary-light); }
+  .ct-page .ct-upload-zone.ct-upload-err { border-color:var(--ct-danger); background:#fff5f5; }
+
+  .ct-page .ct-footer { padding:20px 28px; display:flex; align-items:center; justify-content:flex-end; gap:10px; background:var(--ct-surface-2); border-top:1px solid var(--ct-border); }
+  .ct-page .ct-btn { font-family:inherit; font-size:14px; font-weight:600; border:none; border-radius:8px; padding:9px 22px; cursor:pointer; transition:all .16s; display:flex; align-items:center; gap:6px; text-decoration:none; }
+  .ct-page .ct-btn svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; }
+  .ct-page .ct-btn-ghost   { background:transparent; color:var(--ct-text-2); border:1.5px solid var(--ct-border); }
+  .ct-page .ct-btn-ghost:hover { border-color:var(--ct-text-2); }
+  .ct-page .ct-btn-primary { background:var(--ct-primary); color:white; box-shadow:0 2px 8px rgba(59,110,246,.22); }
+  .ct-page .ct-btn-primary:hover { background:var(--ct-primary-dark); transform:translateY(-1px); box-shadow:0 4px 16px rgba(59,110,246,.30); }
+  .ct-page .ct-d-none { display:none !important; }
+
+  #ctToastStack {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none; max-width: 380px; width: calc(100vw - 40px);
+  }
+  .ct-toast {
+    display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px;
+    border-radius: 12px; background: #fff;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid transparent; pointer-events: all;
+    animation: ct-toast-in .28s cubic-bezier(.21,1.02,.73,1) forwards;
+    transition: opacity .2s, transform .2s;
+  }
+  .ct-toast.ct-toast-danger  { border-color: #e53e3e; }
+  .ct-toast.ct-toast-success { border-color: #38a169; }
+  .ct-toast.ct-toast-warning { border-color: #d97706; }
+  .ct-toast.ct-toast-info    { border-color: #3b82f6; }
+  .ct-toast-icon { flex-shrink:0; width:20px; height:20px; margin-top:1px; }
+  .ct-toast-icon svg { width:20px; height:20px; }
+  .ct-toast-body { flex:1; min-width:0; }
+  .ct-toast-title { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .ct-toast-msg   { font-size:13px; color:#4a5568; line-height:1.5; word-break:break-word; }
+  .ct-toast-close { flex-shrink:0; background:none; border:none; cursor:pointer; color:#94a3b8; padding:0; font-size:16px; line-height:1; margin-top:-1px; transition:color .15s; }
+  .ct-toast-close:hover { color:#1a202c; }
+  .ct-toast.ct-toast-out { opacity:0; transform:translateX(24px); pointer-events:none; }
+  @keyframes ct-toast-in { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
+
+  .ts-wrapper.ct-select .ts-control {
+    border: 1.5px solid var(--ct-border); border-radius: 8px; padding: 9px 34px 9px 13px;
+    background: var(--ct-surface-2); font-size: 14px; color: var(--ct-text); min-height: 40px; box-shadow: none;
+  }
+  .ts-wrapper.ct-select.focus .ts-control { border-color: var(--ct-focus); background: #fff; box-shadow: 0 0 0 3px rgba(59,110,246,.10); }
+  .ts-wrapper.ct-select.disabled .ts-control { opacity: .55; background-color: #f1f5f9; cursor: not-allowed; }
+  .ts-wrapper.ct-select .ts-dropdown { border: 1.5px solid var(--ct-border); border-radius: 8px; box-shadow: var(--ct-shadow); margin-top: 4px; }
+  .ts-wrapper.ct-select .ts-dropdown .option { padding: 8px 13px; font-size: 14px; }
+  .ts-wrapper.ct-select .ts-dropdown .option.active { background: var(--ct-primary-light); color: var(--ct-primary); }
+  .ts-wrapper.ct-select .ts-dropdown .option.selected { background: var(--ct-primary); color: #fff; }
+  .ts-wrapper.ct-select .ts-control .item { background: transparent; color: var(--ct-text); }
+</style>
+
+<!-- Breadcrumb -->
+<section class="py-3">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item"><a href="/test/list" class="text-decoration-none">Tests</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit Test</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<%
+  /* ── Bucket every category into the same groups Create Test uses ──────── */
+  function ctBucket(name) {
+    var n = (name || '').toLowerCase();
+    if (n.indexOf('pathology') !== -1) return 'pathology';
+    if (n.indexOf('mri') !== -1) return 'mri';
+    if (n.indexOf('usg') !== -1 || n.indexOf('ultrasound') !== -1) return 'usg';
+    if (n.indexOf('mammo') !== -1) return 'mammography';
+    if (n.indexOf('opg') !== -1) return 'opg';
+    if (n.indexOf('ct') !== -1 || n.indexOf('scan') !== -1) return 'ct';
+    if (n.indexOf('xray') !== -1 || n.indexOf('x-ray') !== -1 || n.indexOf('radio') !== -1) return 'radiology';
+    return 'other';
+  }
+
+  var currentCatId  = testDetails ? testDetails.CategoryId : null;
+  var currentBucket = null;
+  if (typeof categories !== 'undefined' && categories) {
+    for (var _ci = 0; _ci < categories.length; _ci++) {
+      if (categories[_ci].Id == currentCatId) { currentBucket = ctBucket(categories[_ci].Name); break; }
+    }
+  }
+  var isPathologySelected = (currentBucket === 'pathology');
+
+  var currentCategoryName = '';
+  if (typeof categories !== 'undefined' && categories) {
+    for (var _cn = 0; _cn < categories.length; _cn++) {
+      if (categories[_cn].Id == currentCatId) { currentCategoryName = categories[_cn].Name; break; }
+    }
+  }
+  var _lockCls = 'sel-rad';
+  if (currentBucket === 'pathology') _lockCls = 'sel-path';
+  else if (currentBucket === 'usg')  _lockCls = 'sel-usg';
+  else if (currentBucket === 'other') _lockCls = 'sel-other';
+
+  /* Preselected specimen / container (from existingSpecimenReq, may be null) */
+  var preSpecimenTypeId  = (existingSpecimenReq && existingSpecimenReq.SpecimenTypeId)  ? existingSpecimenReq.SpecimenTypeId  : '';
+  var preContainerTypeId = (existingSpecimenReq && existingSpecimenReq.ContainerTypeId) ? existingSpecimenReq.ContainerTypeId : '';
+%>
+
+<!-- Toast Stack -->
+<div id="ctToastStack"></div>
+
+<div class="ct-page">
+  <div class="ct-title">Edit Test</div>
+  <div class="ct-subtitle">Fields adjust automatically based on category — Pathology hides film fields; Radiology/CT/MRI/USG hides lab-sample fields.</div>
+
+  <div class="ct-card">
+
+    <form id="ctForm" action="/test/updateTest/<%= testId %>" method="post" enctype="multipart/form-data" novalidate>
+
+      <%- include("../partials/messages") %>
+
+      <!-- 1. Basic Information -->
+      <div class="ct-section">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2"/></svg>
+          </div>
+          Basic Information
+        </div>
+
+        <div class="ct-fg" style="margin-bottom:18px">
+          <label>Category</label>
+          <input type="hidden" id="ctMainCategory" name="MainCategory" value="<%= currentCatId || '' %>">
+          <div class="ct-pill ct-locked <%= _lockCls %>" id="ctLockedCategory" data-cat="<%= currentBucket %>">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2">
+              <rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+            </svg>
+            <%= currentCategoryName %>
+          </div>
+          <span class="ct-hint">Category can't be changed after a test is created.</span>
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label for="ctName">Test Name <span class="req">*</span></label>
+            <input type="text" id="ctName" name="Name" placeholder="e.g., Complete Blood Count"
+                   value="<%= testDetails.TestName || '' %>" required autocomplete="off">
+            <div class="ct-err-msg">Please enter a test name.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctPrice">Price (&#8377;) <span class="req">*</span></label>
+            <input type="number" id="ctPrice" name="Price" placeholder="e.g., 500"
+                   value="<%= testDetails.Price || '' %>" min="0" required>
+            <div class="ct-err-msg">Please enter a valid price.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Timing & Media -->
+      <div class="ct-section">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          Timing &amp; Media
+        </div>
+
+        <div class="ct-row" style="margin-bottom:16px">
+          <div class="ct-fg">
+            <label for="ctReportingTime">Reporting Time <span class="req">*</span></label>
+            <input type="text" id="ctReportingTime" name="TimeTakenForReporting"
+                   value="<%= testDetails.TimeTakenForReporting || '' %>"
+                   placeholder="e.g., 2 hours / Same day" required>
+            <div class="ct-err-msg">Please enter reporting time.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctDay">Test Duration (mins) <span class="req">*</span></label>
+            <input type="number" id="ctDay" name="Day"
+                   value="<%= testDetails.ReportingDay || '' %>"
+                   placeholder="e.g., 30" min="1" required>
+            <div class="ct-err-msg">Please enter test duration.</div>
+          </div>
+        </div>
+
+        <div class="ct-row" id="ctFilmRow" style="<%= isPathologySelected ? 'display:none' : '' %>">
+          <div class="ct-fg">
+            <label for="ctFilmType">Film Type Required <span class="req">*</span></label>
+            <select id="ctFilmType" name="FilmRequired" <%= isPathologySelected ? '' : 'required' %>>
+              <option value="" disabled <%= testDetails.FilmTypeId ? '' : 'selected' %>>Select film type</option>
+              <% if (typeof filmTypes !== 'undefined' && filmTypes) { %>
+                <% for (var fi = 0; fi < filmTypes.length; fi++) { %>
+                  <option value="<%= filmTypes[fi].Id %>" <%= (filmTypes[fi].Id == testDetails.FilmTypeId) ? 'selected' : '' %>>
+                    <%= filmTypes[fi].Name %>
+                  </option>
+                <% } %>
+              <% } %>
+            </select>
+            <div class="ct-err-msg">Please select a film type.</div>
+          </div>
+          <div class="ct-fg">
+            <label>Number of Films</label>
+            <div class="ct-stepper">
+              <button type="button" onclick="ctStep('ctNoOfFilms',-1)">&#8722;</button>
+              <input type="number" id="ctNoOfFilms" name="NoOfFilms"
+                     value="<%= testDetails.NoOfFilm || 0 %>" min="0" max="10" readonly>
+              <button type="button" onclick="ctStep('ctNoOfFilms',1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ct-context-note path <%= isPathologySelected ? '' : 'ct-d-none' %>" id="ctFilmPathMsg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+          Film / imaging media is not applicable for Pathology tests.
+        </div>
+      </div>
+
+      <!-- 3. Report Settings -->
+      <div class="ct-section">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          Report Settings
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label>Report Required <span class="req">*</span></label>
+            <input type="checkbox" class="ct-toggle-input" id="ctReportToggle" name="reportRequired" value="1"
+                   <%= (testDetails.IsReportRequired == 1) ? 'checked' : '' %>>
+            <label for="ctReportToggle" class="ct-toggle-wrap">
+              <div class="ct-track"><div class="ct-thumb"></div></div>
+              <span class="ct-toggle-lbl">
+                <%= (testDetails.IsReportRequired == 1) ? 'Report Required' : 'No Report Required' %>
+              </span>
+            </label>
+          </div>
+          <div class="ct-fg">
+            <label for="ctDesc">Description</label>
+            <textarea id="ctDesc" name="Description" placeholder="Brief description..." rows="2"><%= testDetails.Description || '' %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Pathology Details -->
+      <div class="ct-section ct-path-section <%= isPathologySelected ? '' : 'ct-d-none' %>" id="ctPathologySection">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18"/></svg>
+          </div>
+          Pathology Details
+        </div>
+
+        <div class="ct-badge ct-badge-warn">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Shown only for Pathology category
+        </div>
+
+        <div class="ct-row" style="margin-bottom:16px">
+          <div class="ct-fg">
+            <label>Number of Parameters <span class="req">*</span></label>
+            <div class="ct-stepper">
+              <button type="button" onclick="ctStep('ctParameter',-1)">&#8722;</button>
+              <input type="number" id="ctParameter" name="Parameter"
+                     value="<%= testDetails.NoOfParameter || 1 %>" min="1" max="100" readonly>
+              <button type="button" onclick="ctStep('ctParameter',1)">+</button>
+            </div>
+          </div>
+          <div class="ct-fg">
+            <label>Inversions Required</label>
+            <div class="ct-stepper">
+              <button type="button" onclick="ctStep('ctInversion',-1)">&#8722;</button>
+              <input type="number" id="ctInversion" name="Inversion"
+                     value="<%= testDetails.Inversion || 0 %>" min="0" max="20" readonly>
+              <button type="button" onclick="ctStep('ctInversion',1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:13px;font-weight:600;color:var(--ct-text-2);display:block;margin-bottom:7px">
+            Blood Sample Amount (ml) <span class="req">*</span>
+          </label>
+          <div class="ct-blood-row">
+            <div class="ct-fg">
+              <input type="number" id="ctMinBlood" name="MinAmountOfBlood"
+                     value="<%= testDetails.MinAmountOfBlood || '' %>"
+                     placeholder="Min e.g. 2" min="0" step="0.5">
+              <span class="ct-hint">Minimum volume</span>
+              <div class="ct-err-msg">Minimum blood volume required.</div>
+            </div>
+            <div class="ct-blood-sep">&#8211;</div>
+            <div class="ct-fg">
+              <input type="number" id="ctMaxBlood" name="MaxAmountOfBlood"
+                     value="<%= testDetails.MaxAmountOfBlood || '' %>"
+                     placeholder="Max e.g. 10" min="0" step="0.5">
+              <span class="ct-hint">Maximum volume</span>
+              <div class="ct-err-msg">Maximum blood volume required.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label>Specimen Type <span class="req">*</span></label>
+            <select name="SpecimenTypeId" id="ctSpecimenType" class="ct-select">
+              <option value="">&#8212; Not specified &#8212;</option>
+              <% if (typeof specimenTypes !== 'undefined' && specimenTypes && specimenTypes.length) { %>
+                <% for (var si = 0; si < specimenTypes.length; si++) { %>
+                  <option value="<%= specimenTypes[si].Id %>"
+                    <%= (String(specimenTypes[si].Id) === String(preSpecimenTypeId)) ? 'selected' : '' %>>
+                    <%= specimenTypes[si].Name || specimenTypes[si].TypeName || specimenTypes[si].SpecimenTypeName || ('Specimen #' + specimenTypes[si].Id) %>
+                  </option>
+                <% } %>
+              <% } %>
+            </select>
+            <div class="ct-err-msg">Please select a specimen type.</div>
+            <span class="ct-hint">e.g., Whole Blood, Serum, Urine</span>
+          </div>
+          <div class="ct-fg">
+            <label>Container / Tube Type <span class="req">*</span></label>
+            <select name="ContainerTypeId" id="ctContainerType" class="ct-select">
+              <option value="">&#8212; Not specified &#8212;</option>
+              <% if (typeof containerTypes !== 'undefined' && containerTypes && containerTypes.length) { %>
+                <% for (var cti = 0; cti < containerTypes.length; cti++) { %>
+                  <option value="<%= containerTypes[cti].Id %>"
+                    <%= (String(containerTypes[cti].Id) === String(preContainerTypeId)) ? 'selected' : '' %>>
+                    <%= containerTypes[cti].ContainerName || containerTypes[cti].Name || containerTypes[cti].TypeName || ('Container #' + containerTypes[cti].Id) %><% if (containerTypes[cti].CapColor) { %> — <%= containerTypes[cti].CapColor %> cap<% } %>
+                  </option>
+                <% } %>
+              <% } %>
+            </select>
+            <div class="ct-err-msg">Please select a container.</div>
+            <span class="ct-hint">e.g., EDTA Tube, SST, Plain Vial</span>
+          </div>
+        </div>
+
+        <% if (existingSpecimenReq && (existingSpecimenReq.SpecimenTypeName || existingSpecimenReq.ContainerTypeName)) { %>
+          <div class="ct-existing-badge" style="margin-top:12px">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#27500A;flex-shrink:0">
+              <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
+            </svg>
+            <span>Currently saved as <strong><%= existingSpecimenReq.SpecimenTypeName || '—' %></strong> collected in <strong><%= existingSpecimenReq.ContainerTypeName || '—' %></strong>. Change the selections above to update.</span>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- 5. Report Templates -->
+      <div class="ct-section <%= (testDetails.IsReportRequired == 1 && !isPathologySelected) ? '' : 'ct-d-none' %>" id="ctTemplateSection">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          Default Report Templates
+        </div>
+
+        <div class="ct-badge ct-badge-info">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+          Upload new templates to replace existing ones, or keep existing templates
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <label class="ct-tmpl-mode-btn <%= (templateMode === 'common') ? 'ct-tmpl-active' : '' %>" id="btnTemplateCommon">
+            <input type="radio" name="templateMode" value="common"
+                   <%= (templateMode !== 'separate') ? 'checked' : '' %>
+                   onchange="ctSetTemplateMode('common')" style="accent-color:var(--ct-primary)">
+            &#9893; Common (same for both)
+          </label>
+          <label class="ct-tmpl-mode-btn <%= (templateMode === 'separate') ? 'ct-tmpl-active' : '' %>" id="btnTemplateSeparate">
+            <input type="radio" name="templateMode" value="separate"
+                   <%= (templateMode === 'separate') ? 'checked' : '' %>
+                   onchange="ctSetTemplateMode('separate')" style="accent-color:var(--ct-primary)">
+            &#9794;&#9792; Separate (gender specific)
+          </label>
+        </div>
+
+        <div id="ctUploadCommon" style="<%= (templateMode === 'separate') ? 'display:none' : '' %>">
+          <div class="ct-fg">
+            <label>Common Template (Male &amp; Female)</label>
+            <% if (testDetails.TemplateCommon) { %>
+              <div class="ct-existing-badge">
+                <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#27500A"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+                <div><strong>Existing common template found</strong> &mdash; Upload new .docx to replace (optional)</div>
+              </div>
+            <% } %>
+            <div class="ct-upload-zone" id="zoneCommon" onclick="document.getElementById('fileTemplateCommon').click()">
+              <input type="file" id="fileTemplateCommon" name="fileTemplateCommon"
+                     accept=".docx" onchange="ctHandleTemplateFile('Common')" style="display:none">
+              <svg viewBox="0 0 24 24" style="width:32px;height:32px;margin:0 auto 10px;stroke:var(--ct-primary);fill:none;stroke-width:2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <div style="font-size:13px;font-weight:600;color:var(--ct-primary)" id="lblTemplateCommon">
+                <%= testDetails.TemplateCommon ? 'Click to upload new template' : 'Click to upload .docx template' %>
+              </div>
+            </div>
+            <div id="previewTemplateCommon" style="display:none;margin-top:12px">
+              <button type="button" class="ct-btn ct-btn-ghost" style="padding:7px 16px;font-size:13px" onclick="ctPreviewTemplate('Common')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Preview Template
+              </button>
+            </div>
+            <div id="previewBoxTemplateCommon" style="display:none;margin-top:12px;border:1.5px solid var(--ct-border);border-radius:10px;padding:14px;background:var(--ct-surface);max-height:240px;overflow-y:auto;font-size:12px"></div>
+            <div id="statusTemplateCommon" style="font-size:11px;margin-top:6px;color:var(--ct-text-3)"></div>
+            <textarea name="templateCommon" id="htmlTemplateCommon"
+                      style="display:none !important;position:absolute !important;left:-9999px !important;"><%= testDetails.TemplateCommon || '' %></textarea>
+          </div>
+        </div>
+
+        <div id="ctUploadSeparate" style="<%= (templateMode === 'common' || !templateMode) ? 'display:none' : '' %>">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--ct-primary);margin-bottom:8px">&#9794; Male Template</div>
+              <% if (testDetails.TemplateMale) { %>
+                <div style="padding:8px 12px;background:#EAF3DE;border:1px solid #C0DD97;border-radius:8px;margin-bottom:8px;font-size:11px;color:#27500A">
+                  &#10003; Existing template &mdash; Upload new to replace
+                </div>
+              <% } %>
+              <div class="ct-upload-zone" onclick="document.getElementById('fileTemplateMale').click()">
+                <input type="file" id="fileTemplateMale" name="fileTemplateMale" accept=".docx" onchange="ctHandleTemplateFile('Male')" style="display:none">
+                <svg viewBox="0 0 24 24" style="width:24px;height:24px;margin:0 auto 6px;stroke:var(--ct-primary);fill:none;stroke-width:2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <div style="font-size:12px;font-weight:600;color:var(--ct-primary)" id="lblTemplateMale">
+                  <%= testDetails.TemplateMale ? 'Upload new' : 'Upload male template' %>
+                </div>
+              </div>
+              <div id="previewTemplateMale" style="display:none;margin-top:10px">
+                <button type="button" class="ct-btn ct-btn-ghost" style="padding:6px 14px;font-size:12px" onclick="ctPreviewTemplate('Male')">Preview</button>
+              </div>
+              <div id="previewBoxTemplateMale" style="display:none;margin-top:10px;border:1.5px solid var(--ct-border);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:11px"></div>
+              <div id="statusTemplateMale" style="font-size:10px;margin-top:4px"></div>
+              <textarea name="templateMale" id="htmlTemplateMale"
+                        style="display:none !important;position:absolute !important;left:-9999px !important;"><%= testDetails.TemplateMale || '' %></textarea>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#A32D2D;margin-bottom:8px">&#9792; Female Template</div>
+              <% if (testDetails.TemplateFemale) { %>
+                <div style="padding:8px 12px;background:#EAF3DE;border:1px solid #C0DD97;border-radius:8px;margin-bottom:8px;font-size:11px;color:#27500A">
+                  &#10003; Existing template &mdash; Upload new to replace
+                </div>
+              <% } %>
+              <div class="ct-upload-zone" onclick="document.getElementById('fileTemplateFemale').click()">
+                <input type="file" id="fileTemplateFemale" name="fileTemplateFemale" accept=".docx" onchange="ctHandleTemplateFile('Female')" style="display:none">
+                <svg viewBox="0 0 24 24" style="width:24px;height:24px;margin:0 auto 6px;stroke:#A32D2D;fill:none;stroke-width:2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <div style="font-size:12px;font-weight:600;color:#A32D2D" id="lblTemplateFemale">
+                  <%= testDetails.TemplateFemale ? 'Upload new' : 'Upload female template' %>
+                </div>
+              </div>
+              <div id="previewTemplateFemale" style="display:none;margin-top:10px">
+                <button type="button" class="ct-btn ct-btn-ghost" style="padding:6px 14px;font-size:12px" onclick="ctPreviewTemplate('Female')">Preview</button>
+              </div>
+              <div id="previewBoxTemplateFemale" style="display:none;margin-top:10px;border:1.5px solid var(--ct-border);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:11px"></div>
+              <div id="statusTemplateFemale" style="font-size:10px;margin-top:4px"></div>
+              <textarea name="templateFemale" id="htmlTemplateFemale"
+                        style="display:none !important;position:absolute !important;left:-9999px !important;"><%= testDetails.TemplateFemale || '' %></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px 16px;background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;font-size:11px;color:#633806;line-height:1.8">
+          <strong>Available placeholders:</strong><br>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;border-radius:3px">{{PatientName}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{Age}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{Gender}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{Date}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{TestName}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{DoctorName}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{ReportingDoctor}}</code>
+        </div>
+      </div>
+
+      <div class="ct-footer">
+        <a href="/test/list" class="ct-btn ct-btn-ghost">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Cancel
+        </a>
+        <button type="submit" class="ct-btn ct-btn-primary">
+          <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+          Update Test
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  var CT_PRE_SPECIMEN_ID  = <%- JSON.stringify(String(preSpecimenTypeId || '')) %>;
+  var CT_PRE_CONTAINER_ID = <%- JSON.stringify(String(preContainerTypeId || '')) %>;
+  var CT_LOCKED_CATEGORY  = <%- JSON.stringify(currentBucket) %>;
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOAST SYSTEM
+  ═══════════════════════════════════════════════════════════════════ */
+  var TOAST_ICONS = {
+    danger:  '<svg viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>'
+  };
+  var TOAST_TITLES = { danger:'Error', success:'Success', warning:'Warning', info:'Info' };
+
+  window.ctToast = function (type, title, message, ms) {
+    var stack    = document.getElementById('ctToastStack');
+    var duration = (ms === undefined) ? 5000 : ms;
+    var t        = document.createElement('div');
+    t.className  = 'ct-toast ct-toast-' + type;
+    t.innerHTML  =
+      '<div class="ct-toast-icon">' + (TOAST_ICONS[type] || TOAST_ICONS.info) + '</div>' +
+      '<div class="ct-toast-body">' +
+        '<div class="ct-toast-title">' + ctEsc(title || TOAST_TITLES[type] || 'Notice') + '</div>' +
+        '<div class="ct-toast-msg">'   + ctEsc(message || '').replace(/\n/g, '<br>') + '</div>' +
+      '</div>' +
+      '<button type="button" class="ct-toast-close" aria-label="Dismiss">&times;</button>';
+    stack.appendChild(t);
+    t.querySelector('.ct-toast-close').addEventListener('click', function () { ctDismissToast(t); });
+    if (duration > 0) setTimeout(function () { ctDismissToast(t); }, duration);
+    return t;
+  };
+
+  function ctDismissToast(el) {
+    if (!el || !el.parentNode) return;
+    el.classList.add('ct-toast-out');
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+  }
+
+  function ctEsc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  window.ctShowErrors = function (errors) {
+    ctToast('danger', 'Please fix ' + errors.length + ' error' + (errors.length > 1 ? 's' : '') + ' before submitting', errors.join('\n'), 0);
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CONSTANTS — same buckets as Create Test
+  ═══════════════════════════════════════════════════════════════════ */
+  var PATHOLOGY_CATS = ['pathology'];
+  var IMAGING_CATS   = ['radiology','mri','ct','mammography','opg'];
+  var USG_CATS       = ['usg'];
+  var PILL_CLASS     = { radiology:'sel-rad', mri:'sel-rad', ct:'sel-rad', mammography:'sel-rad', opg:'sel-rad', usg:'sel-usg', pathology:'sel-path', other:'sel-other' };
+
+  /* Category is locked in Edit Test — read once from the server, never changes. */
+  var currentCat = CT_LOCKED_CATEGORY;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOMSELECT HELPERS
+  ═══════════════════════════════════════════════════════════════════ */
+  function getTS(id) {
+    var el = document.getElementById(id);
+    return (el && el.tomselect) ? el.tomselect : null;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOM SELECT INIT
+     Both selects are already fully populated server-side (see EJS above),
+     with the saved specimen/container preselected via `selected` attrs.
+     We just TomSelect-ify them and re-assert the value with setValue()
+     as a safety net (covers any TomSelect version quirks with `selected`
+     attributes on the underlying <option> not being picked up on init).
+  ═══════════════════════════════════════════════════════════════════ */
+  function initTomSelect() {
+    new TomSelect('#ctSpecimenType', {
+      plugins: [],
+      placeholder: 'Select specimen',
+      allowEmptyOption: true,
+      maxItems: 1
+    });
+
+    new TomSelect('#ctContainerType', {
+      plugins: [],
+      placeholder: 'Select container',
+      allowEmptyOption: true,
+      maxItems: 1
+    });
+
+    var tsSpec = getTS('ctSpecimenType');
+    var tsCont = getTS('ctContainerType');
+    if (tsSpec && CT_PRE_SPECIMEN_ID)  tsSpec.setValue(CT_PRE_SPECIMEN_ID, true);
+    if (tsCont && CT_PRE_CONTAINER_ID) tsCont.setValue(CT_PRE_CONTAINER_ID, true);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CATEGORY RULES — mirrors Create Test's applyRules()
+  ═══════════════════════════════════════════════════════════════════ */
+  function applyRules() {
+    var isPath    = PATHOLOGY_CATS.indexOf(currentCat) !== -1;
+    var isImaging = IMAGING_CATS.indexOf(currentCat)   !== -1;
+    var isUSG     = USG_CATS.indexOf(currentCat)       !== -1;
+
+    document.getElementById('ctFilmRow').classList.toggle('ct-d-none', isPath);
+    document.getElementById('ctFilmRow').style.display = isPath ? 'none' : '';
+    document.getElementById('ctFilmPathMsg').classList.toggle('ct-d-none', !isPath);
+
+    var filmSel = document.getElementById('ctFilmType');
+    if (isImaging) { filmSel.setAttribute('required',''); }
+    else { filmSel.removeAttribute('required'); if (isPath || isUSG) filmSel.value = ''; }
+
+    document.getElementById('ctPathologySection').classList.toggle('ct-d-none', !isPath);
+    setPathRequired(isPath);
+
+    var tog = document.getElementById('ctReportToggle');
+    var tpl = document.getElementById('ctTemplateSection');
+    if (isPath) {
+      tpl.classList.add('ct-d-none');
+    } else {
+      tpl.classList.toggle('ct-d-none', !tog.checked);
+    }
+  }
+
+  function setPathRequired(on) {
+    ['ctMinBlood','ctMaxBlood'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (on) el.setAttribute('required',''); else el.removeAttribute('required');
+    });
+    if (on) {
+      document.getElementById('ctSpecimenType').setAttribute('required','');
+      document.getElementById('ctContainerType').setAttribute('required','');
+    } else {
+      document.getElementById('ctSpecimenType').removeAttribute('required');
+      document.getElementById('ctContainerType').removeAttribute('required');
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     STEPPER
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctStep = function (id, delta) {
+    var el = document.getElementById(id);
+    var mn = parseInt(el.min, 10); if (isNaN(mn)) mn = 0;
+    var mx = parseInt(el.max, 10); if (isNaN(mx)) mx = 999;
+    el.value = Math.max(mn, Math.min(mx, (parseInt(el.value,10) || 0) + delta));
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     REPORT TOGGLE
+  ═══════════════════════════════════════════════════════════════════ */
+  function setTogLabel(cb, checked) {
+    var lbl = cb.nextElementSibling && cb.nextElementSibling.querySelector('.ct-toggle-lbl');
+    if (lbl) lbl.textContent = checked ? 'Report Required' : 'No Report Required';
+  }
+
+  var togReport = document.getElementById('ctReportToggle');
+  if (togReport) {
+    togReport.addEventListener('change', function () {
+      setTogLabel(this, this.checked);
+      if (PATHOLOGY_CATS.indexOf(currentCat) === -1) {
+        document.getElementById('ctTemplateSection').classList.toggle('ct-d-none', !this.checked);
+      }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TEMPLATE MODE
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctSetTemplateMode = function (mode) {
+    document.getElementById('ctUploadCommon').style.display   = mode === 'common'   ? '' : 'none';
+    document.getElementById('ctUploadSeparate').style.display = mode === 'separate' ? '' : 'none';
+    document.getElementById('btnTemplateCommon').classList.toggle('ct-tmpl-active',   mode === 'common');
+    document.getElementById('btnTemplateSeparate').classList.toggle('ct-tmpl-active', mode === 'separate');
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FILE UPLOAD
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctHandleTemplateFile = async function (cap) {
+    var inp  = document.getElementById('fileTemplate'       + cap);
+    var lbl  = document.getElementById('lblTemplate'        + cap);
+    var pr   = document.getElementById('previewTemplate'    + cap);
+    var st   = document.getElementById('statusTemplate'     + cap);
+    var box  = document.getElementById('previewBoxTemplate' + cap);
+    var htm  = document.getElementById('htmlTemplate'       + cap);
+    var zone = inp.closest('.ct-upload-zone');
+
+    if (!inp.files.length) {
+      lbl.textContent   = cap === 'Common' ? 'Click to upload .docx template' : 'Upload ' + cap.toLowerCase() + ' template';
+      st.textContent    = ''; pr.style.display = 'none'; box.style.display = 'none';
+      return;
+    }
+
+    lbl.textContent  = inp.files[0].name;
+    zone.classList.remove('ct-upload-err');
+    st.textContent   = 'Converting\u2026'; st.style.color = '#633806';
+    pr.style.display = 'none'; box.style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('docxFile', inp.files[0]);
+    try {
+      var res  = await fetch('/test/previewTemplate', { method:'POST', body:fd });
+      var data = await res.json();
+      if (data.success) {
+        htm.value = data.html; pr.style.display = 'block';
+        st.textContent = '\u2713 New template converted successfully'; st.style.color = '#27500A';
+        ctToast('success', 'Template converted', cap + ' template ready to preview.', 3000);
+      } else {
+        st.textContent = 'Conversion failed: ' + data.message; st.style.color = '#A32D2D'; htm.value = '';
+        ctToast('danger', 'Template conversion failed', data.message, 0);
+      }
+    } catch (e) {
+      st.textContent = 'Error: ' + e.message; st.style.color = '#A32D2D';
+      ctToast('danger', 'Upload error', e.message, 0);
+    }
+  };
+
+  window.ctPreviewTemplate = function (cap) {
+    var htm = document.getElementById('htmlTemplate'       + cap);
+    var box = document.getElementById('previewBoxTemplate' + cap);
+    if (!htm.value) { ctToast('warning','No template','No template available to preview.',3000); return; }
+    var showing = box.style.display === 'block';
+    box.style.display = showing ? 'none' : 'block';
+    if (!showing) box.innerHTML = htm.value;
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FORM VALIDATION & SUBMIT
+  ═══════════════════════════════════════════════════════════════════ */
+  var form = document.getElementById('ctForm');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      document.querySelectorAll('#ctToastStack .ct-toast').forEach(function (t) {
+        t.classList.add('ct-toast-out');
+        setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 220);
+      });
+
+      var ok = true, errs = [];
+
+      var pathOnlyIds = ['ctMinBlood','ctMaxBlood'];
+
+      form.querySelectorAll('[required]').forEach(function (el) {
+        if (pathOnlyIds.indexOf(el.id) !== -1 && PATHOLOGY_CATS.indexOf(currentCat) === -1) return;
+
+        if (el.id === 'ctFilmType') {
+          if (PATHOLOGY_CATS.indexOf(currentCat) !== -1 || USG_CATS.indexOf(currentCat) !== -1 || currentCat === 'other') return;
+        }
+
+        if ((el.id === 'ctSpecimenType' || el.id === 'ctContainerType') && PATHOLOGY_CATS.indexOf(currentCat) === -1) return;
+
+        var tsInst = getTS(el.id);
+        var val    = tsInst ? String(tsInst.getValue() || '').trim() : (el.value || '').trim();
+        var fg     = el.closest('.ct-fg');
+        if (!val) {
+          ok = false;
+          if (fg) fg.classList.add('ct-error');
+          var lbl = fg && fg.querySelector('label');
+          var nm  = lbl ? lbl.textContent.replace('*','').trim() : 'A required field';
+          if (errs.indexOf(nm + ' is required') === -1) errs.push(nm + ' is required');
+        } else { if (fg) fg.classList.remove('ct-error'); }
+      });
+
+      var priceEl = document.getElementById('ctPrice');
+      if (priceEl && priceEl.value !== '') {
+        var p = parseFloat(priceEl.value);
+        if (isNaN(p) || p < 0) { errs.push('Price must be a valid positive number'); ok = false; }
+        else if (p > 1000000)  { errs.push('Price seems unusually high (max \u20b910,00,000)'); ok = false; }
+      }
+
+      if (PATHOLOGY_CATS.indexOf(currentCat) !== -1) {
+        var mn = parseFloat(document.getElementById('ctMinBlood').value);
+        var mx = parseFloat(document.getElementById('ctMaxBlood').value);
+        if (!isNaN(mn) && !isNaN(mx) && mn > mx) { errs.push('Min blood volume cannot exceed max blood volume'); ok = false; }
+      }
+
+      var togRep = document.getElementById('ctReportToggle');
+      if (togRep && togRep.checked && PATHOLOGY_CATS.indexOf(currentCat) === -1) {
+        var mode = document.querySelector('input[name="templateMode"]:checked');
+        var hasExistingCommon = <%- JSON.stringify(!!testDetails.TemplateCommon) %>;
+        var hasExistingMale   = <%- JSON.stringify(!!testDetails.TemplateMale) %>;
+        var hasExistingFemale = <%- JSON.stringify(!!testDetails.TemplateFemale) %>;
+
+        if (mode && mode.value === 'common') {
+          if (!document.getElementById('htmlTemplateCommon').value && !hasExistingCommon) {
+            errs.push('Please upload a common report template (.docx)'); ok = false;
+            var zc = document.getElementById('zoneCommon'); if (zc) zc.classList.add('ct-upload-err');
+          }
+        } else if (mode && mode.value === 'separate') {
+          var hasMale   = document.getElementById('htmlTemplateMale').value   || hasExistingMale;
+          var hasFemale = document.getElementById('htmlTemplateFemale').value || hasExistingFemale;
+          if (!hasMale && !hasFemale) {
+            errs.push('Please upload at least one gender template (male or female)'); ok = false;
+          }
+        }
+      }
+
+      if (!ok) {
+        ctShowErrors(errs);
+        var firstErr = form.querySelector('.ct-fg.ct-error');
+        if (firstErr) firstErr.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        return;
+      }
+
+      form.submit();
+    });
+
+    form.querySelectorAll('input, select, textarea').forEach(function (el) {
+      el.addEventListener('change', function () { var fg = this.closest('.ct-fg'); if (fg) fg.classList.remove('ct-error'); });
+      el.addEventListener('input',  function () {
+        var fg = this.closest('.ct-fg'); if (fg) fg.classList.remove('ct-error');
+        var z  = this.closest('.ct-upload-zone'); if (z) z.classList.remove('ct-upload-err');
+      });
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     INIT ON LOAD — sync UI state to server-rendered values
+  ═══════════════════════════════════════════════════════════════════ */
+  function initEditMode() {
+    initTomSelect();
+    applyRules();
+
+    var checkedRadio = document.querySelector('input[name="templateMode"]:checked');
+    if (checkedRadio) ctSetTemplateMode(checkedRadio.value);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEditMode);
+  } else {
+    initEditMode();
+  }
+
+})();
+</script>

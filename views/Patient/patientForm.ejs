@@ -1,0 +1,772 @@
+<%
+  /* views/Patient/patientForm.ejs — Register + Edit patient (one form)
+     Needs: Bootstrap 5, Bootstrap Icons. Optional: Tom Select, Flatpickr (falls back to native inputs). */
+  var isEdit   = mode === 'edit';
+  var vals     = (typeof values !== 'undefined' && values) ? values : {};
+  var v        = function (k, d) { var x = vals[k]; return (x === undefined || x === null || x === '') ? (d === undefined ? '' : d) : x; };
+  var same     = function (a, b) { return String(a) === String(b); };
+  var errList  = (typeof errors !== 'undefined' && errors) ? errors : [];
+  var warnList = (typeof warnings !== 'undefined' && warnings) ? warnings : [];
+  var isDup    = warnList.indexOf('duplicate') !== -1;
+  var notes    = (typeof notifications !== 'undefined' && notifications) ? notifications : [];
+  var jsonSafe = function (o) { return JSON.stringify(o).replace(/</g, '\\u003c'); };
+  var docName  = function (d) { return 'Dr. ' + [d.FirstName, d.LastName].filter(Boolean).join(' '); };
+  var catalog  = (testDetails || []).map(function (t) { return { id: t.Id, name: t.TestName, price: Number(t.Price) || 0, cat: t.CategoryId, catName: t.Name }; });
+%>
+
+<style>
+  .pf{--p:#1a56e8;--p-soft:#e8effe;--p-dark:#1240b8;--ok:#0c9474;--ok-soft:#e6f8f4;--err:#dc2626;--err-soft:#fef2f2;--warn:#92400e;--warn-soft:#fffbeb;
+      --bg:#f7f9fc;--card:#fff;--line:#e2e8f0;--t1:#0f172a;--t2:#64748b;--t3:#94a3b8;--r:10px;--r-lg:14px;
+      max-width:1280px;margin:0 auto;padding:12px 0 90px}
+  .pf-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .pf-title{font-size:1.3rem;font-weight:700;color:var(--t1);margin:0;display:flex;align-items:center;gap:8px}
+  .pf-sub{font-size:.82rem;color:var(--t2);margin:2px 0 0}
+  .pf-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--p-soft);color:var(--p);font-size:.8rem;font-weight:600}
+  .pf-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+  .pf-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:16px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+  .pf-card-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .pf-card-t{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--p);display:flex;align-items:center;gap:7px;margin:0}
+  .pf-card-b{padding:16px}
+  .pf .form-label{font-size:.75rem;font-weight:600;color:var(--t2);margin-bottom:4px}
+  .pf .form-control,.pf .form-select{font-size:15px;border-radius:var(--r);border-color:var(--line);min-height:42px}
+  .pf .form-control:focus,.pf .form-select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(26,86,232,.12)}
+  .pf .req::after{content:' *';color:var(--err)}
+  .pf .is-invalid{border-color:var(--err)!important}
+  .pf-switch{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1.5px solid var(--line);border-radius:99px;font-size:.8rem;font-weight:600;color:var(--t2);cursor:pointer;margin:0;user-select:none}
+  .pf-switch input{margin:0}
+  .pf-switch.emg:has(input:checked){border-color:var(--err);background:var(--err-soft);color:var(--err)}
+  .pf-switch.adv:has(input:checked){border-color:#7c3aed;background:#f3eeff;color:#7c3aed}
+  .pf-header-img{border:1.5px dashed #c3d4fc;border-radius:var(--r);background:#f7f9ff;min-height:70px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .pf-header-img img{max-width:100%;max-height:140px;object-fit:contain;display:block}
+  .pf-header-img .ph{font-size:.78rem;color:var(--t3);padding:12px;text-align:center}
+
+  .pf-add{display:grid;grid-template-columns:180px minmax(0,1fr) 120px auto;gap:10px;align-items:end}
+  .pf-add .btn{min-height:42px;white-space:nowrap}
+  .pf-preview{font-size:.78rem;color:var(--t2);min-height:18px;margin-top:6px}
+  .ts-wrapper.single .ts-control{min-height:42px;border-radius:var(--r);border-color:var(--line);font-size:15px}
+  .ts-dropdown .option{white-space:normal}
+  .ts-wrapper.is-invalid .ts-control{border-color:var(--err)!important;box-shadow:0 0 0 3px rgba(220,38,38,.1)}
+  .ts-wrapper.disabled .ts-control{background:#f1f5f9;opacity:.7}
+  .opt-name{font-weight:600}
+  .opt-meta{font-size:.75rem;color:var(--t2)}
+
+  .pf-list{margin-top:14px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .pf-row{display:grid;grid-template-columns:minmax(0,1fr) 100px 120px 100px 44px;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:.86rem}
+  .pf-row:last-child{border-bottom:0}
+  .pf-row.hdr{background:#f1f5f9;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t2)}
+  .pf-row.sub{background:#fafbfd;font-size:.8rem;color:var(--t2)}
+  .pf-row.sub .nm{padding-left:18px}
+  .pf-row .nm{font-weight:600;min-width:0;overflow-wrap:anywhere}
+  .pf-row .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pf-row input{height:34px;font-size:14px;text-align:right;padding:4px 8px;min-height:0}
+  .pf-row .del{border:0;background:none;color:var(--err);font-size:1rem;width:36px;height:34px;border-radius:8px}
+  .pf-row .del:hover{background:var(--err-soft)}
+  .pf-row .del:disabled{color:var(--t3);background:none}
+  .pf-lock{font-size:.68rem;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:99px;padding:1px 7px;margin-left:6px;white-space:nowrap}
+  .pf-empty{padding:22px;text-align:center;color:var(--t3);font-size:.85rem}
+
+  .pf-sum{position:sticky;top:12px}
+  .pf-line{display:flex;justify-content:space-between;align-items:center;font-size:.88rem;padding:5px 0;color:var(--t2)}
+  .pf-line strong{color:var(--t1);font-variant-numeric:tabular-nums}
+  .pf-line.big{font-size:1rem;border-top:1px dashed var(--line);margin-top:6px;padding-top:10px}
+  .pf-line.big strong{font-size:1.25rem;color:var(--p)}
+  .pf-pay .input-group-text{background:#f1f5f9;border-color:var(--line);font-size:.85rem}
+  .pf-src{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;margin-top:8px}
+  .pf-src label{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:1.5px solid var(--line);border-radius:8px;font-size:.72rem;font-weight:600;color:var(--t2);cursor:pointer;text-align:center;margin:0}
+  .pf-src input{position:absolute;opacity:0;pointer-events:none}
+  .pf-src input:checked + label{border-color:var(--p);background:var(--p-soft);color:var(--p)}
+  .pf-src input:focus-visible + label{box-shadow:0 0 0 3px rgba(26,86,232,.25)}
+  .pf-src .code{background:var(--p);color:#fff;border-radius:5px;padding:1px 6px;font-size:.66rem}
+  .pf-status{border-radius:var(--r);padding:10px 12px;margin-top:12px}
+  .pf-status .pf-line{padding:3px 0}
+  .pf-status.paid{background:var(--ok-soft)} .pf-status.due{background:var(--err-soft)} .pf-status.change{background:var(--warn-soft)}
+  .pf-quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .pf-quick .btn{font-size:.75rem;padding:3px 10px}
+  .pf-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .pf-actions .btn{min-height:44px;font-weight:600}
+
+  .pf-mbar{display:none}
+  @media (max-width:991.98px){
+    .pf-grid{grid-template-columns:1fr}
+    .pf-sum{position:static}
+    .pf-mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:1030;background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:10px 14px;align-items:center;justify-content:space-between;gap:10px}
+    .pf-mbar .amt{font-size:.75rem;color:var(--t2);line-height:1.2}
+    .pf-mbar .amt strong{display:block;font-size:1.05rem;color:var(--t1)}
+    .pf-actions .btn-primary{display:none}
+  }
+  @media (max-width:767.98px){
+    .pf-add{grid-template-columns:1fr 1fr}
+    .pf-add .tsel{grid-column:1/-1;order:-1}
+    .pf-row{grid-template-columns:minmax(0,1fr) 92px 40px;grid-template-areas:"nm net del" "pr disc del";row-gap:4px}
+    .pf-row .nm{grid-area:nm}.pf-row .c-price{grid-area:pr;text-align:left}.pf-row .c-disc{grid-area:disc}.pf-row .c-net{grid-area:net}.pf-row .c-del{grid-area:del}
+    .pf-row.hdr{display:none}
+    .pf-row .c-price::before{content:'Price ';color:var(--t3);font-size:.72rem}
+  }
+</style>
+
+<div class="pf">
+  <div class="pf-head">
+    <div>
+      <h1 class="pf-title"><i class="bi <%= isEdit ? 'bi-pencil-square' : 'bi-person-plus' %>"></i><%= isEdit ? 'Edit Patient' : 'Register Patient' %></h1>
+      <p class="pf-sub"><%= isEdit ? 'Changes are saved in the patient history.' : 'Prices are always taken from the test master — the bill cannot be changed by editing the page.' %></p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <% if (isEdit) { %>
+        <span class="pf-chip"><i class="bi bi-receipt"></i> Bill No <%= patientId %></span>
+        <% if (patient && patient.RegisteredOnFormatted) { %><span class="pf-chip" style="background:#f1f5f9;color:#475569"><i class="bi bi-calendar3"></i> <%= patient.RegisteredOnFormatted %></span><% } %>
+      <% } else { %>
+        <span class="pf-chip" id="pfToday"><i class="bi bi-calendar3"></i> Today</span>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include("../partials/messages"); %>
+
+  <%- include("../partials/uiNotify") %>
+
+  <% if (errList.length) { %>
+    <div class="alert alert-danger alert-dismissible fade show d-flex gap-3 shadow-sm border-0 border-start border-4 border-danger" role="alert" id="pfServerErrors">
+      <i class="bi bi-x-octagon-fill fs-4 text-danger"></i>
+      <div>
+        <div class="fw-bold"><%= isEdit ? 'Changes were not saved' : 'Patient was not registered' %></div>
+        <ul class="mb-0 ps-3 small mt-1"><% errList.forEach(function (m) { %><li><%= m %></li><% }) %></ul>
+        <div class="small text-body-secondary mt-1">Everything you entered is still in the form.</div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <form id="pfForm" method="post" novalidate autocomplete="off"
+        action="<%= isEdit ? '/patient/updatePatientDetails?id=' + patientId : '/patient/registerPatient' %>">
+
+    <div class="pf-grid">
+      <!-- ═══ LEFT ═══ -->
+      <div>
+        <!-- Patient -->
+        <div class="pf-card">
+          <div class="pf-card-h">
+            <p class="pf-card-t"><i class="bi bi-person-badge"></i>Patient</p>
+            <div class="d-flex gap-2 flex-wrap">
+              <% if (!isEdit) { %>
+                <label class="pf-switch emg"><input type="checkbox" class="form-check-input" name="isEmergency" value="1" <%= v('isEmergency') == '1' ? 'checked' : '' %>> 🚨 Emergency</label>
+                <label class="pf-switch adv"><input type="checkbox" class="form-check-input" id="pfAdvance" name="isAdvanceBooking" value="1" <%= v('isAdvanceBooking') == '1' ? 'checked' : '' %>> Advance booking</label>
+              <% } %>
+            </div>
+          </div>
+          <div class="pf-card-b">
+            <% if (!isEdit) { %>
+              <div class="mb-3 <%= v('isAdvanceBooking') == '1' ? '' : 'd-none' %>" id="pfAdvanceWrap" style="max-width:260px">
+                <label class="form-label req" for="pfAdvanceDate">Appointment date</label>
+                <input type="text" class="form-control" id="pfAdvanceDate" name="advanceBookingDate" placeholder="dd-mm-yyyy" value="<%= v('advanceBookingDate') %>" inputmode="none">
+                <div class="invalid-feedback">Pick a date after today.</div>
+              </div>
+            <% } %>
+            <div class="row g-3">
+              <div class="col-5 col-sm-3 col-lg-2">
+                <label class="form-label req" for="pfTitle">Title</label>
+                <select class="form-select ts-exclude" id="pfTitle" name="title" required>
+                  <option value="">—</option>
+                  <% ['Mr.','Mrs.','Miss','Master','Baby Of','Dr.'].forEach(function (t) { %>
+                    <option value="<%= t %>" <%= same(v('title'), t) ? 'selected' : '' %>><%= t %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-7 col-sm-9 col-lg-6">
+                <label class="form-label req" for="pfName">Patient name</label>
+                <input type="text" class="form-control text-capitalize" id="pfName" name="patientName" maxlength="100" required value="<%= v('patientName') %>" placeholder="Full name">
+                <div class="invalid-feedback">Enter at least 2 letters.</div>
+              </div>
+              <div class="col-12 col-sm-4 col-lg-4">
+                <label class="form-label req" for="pfGender">Gender</label>
+                <select class="form-select ts-exclude" id="pfGender" name="gender" required>
+                  <option value="">Select</option>
+                  <option value="1" <%= same(v('gender'), 1) ? 'selected' : '' %>>Male</option>
+                  <option value="2" <%= same(v('gender'), 2) ? 'selected' : '' %>>Female</option>
+                  <option value="3" <%= same(v('gender'), 3) ? 'selected' : '' %>>Other</option>
+                </select>
+              </div>
+              <div class="col-6 col-sm-4 col-lg-3">
+                <label class="form-label req" for="pfAge">Age</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="pfAge" name="age" min="0" max="400" step="1" inputmode="numeric" required value="<%= v('age') %>">
+                  <select class="form-select ts-exclude" id="pfYmd" name="ymd" style="max-width:110px" aria-label="Age unit">
+                    <% ['Years','Months','Days'].forEach(function (u) { %><option value="<%= u %>" <%= same(v('ymd','Years'), u) ? 'selected' : '' %>><%= u %></option><% }) %>
+                  </select>
+                </div>
+              </div>
+              <div class="col-6 col-sm-4 col-lg-3">
+                <label class="form-label req" for="pfPhone">Mobile</label>
+                <input type="tel" class="form-control" id="pfPhone" name="phoneNumber" inputmode="numeric" maxlength="10" required value="<%= v('phoneNumber') %>" placeholder="10 digits">
+                <div class="invalid-feedback">Enter a valid 10-digit mobile.</div>
+              </div>
+              <div class="col-12 col-lg-6">
+                <label class="form-label" for="pfAddr">Address</label>
+                <input type="text" class="form-control" id="pfAddr" name="patientAddress" maxlength="255" value="<%= v('patientAddress') %>" placeholder="Optional">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinic & doctor -->
+        <div class="pf-card">
+          <div class="pf-card-h"><p class="pf-card-t"><i class="bi bi-hospital"></i>Clinic &amp; referring doctor</p></div>
+          <div class="pf-card-b">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label req" for="pfClinic">Clinic</label>
+                <select class="form-select ts-exclude" id="pfClinic" name="clinic" required>
+                  <option value="">Select clinic</option>
+                  <% (clinics || []).forEach(function (c) { %>
+                    <option value="<%= c.Id %>" <%= same(v('clinic'), c.Id) ? 'selected' : '' %>><%= c.Name %><%= c.KeyArea ? ' — ' + c.KeyArea : '' %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label req" for="pfDoctor">Referring doctor</label>
+                <select class="form-select ts-exclude" id="pfDoctor" name="doctor" required>
+                  <option value="">Select clinic first</option>
+                  <% (doctors || []).forEach(function (d) { %>
+                    <option value="<%= d.Id %>" <%= same(v('doctor'), d.Id) ? 'selected' : '' %>><%= docName(d) %><%= d.SpecialistIn ? ' (' + d.SpecialistIn + ')' : '' %></option>
+                  <% }) %>
+                </select>
+                <div class="form-text" id="pfDoctorHint"></div>
+              </div>
+              <div class="col-12">
+                <div class="pf-header-img" id="pfHeaderBox"><div class="ph"><i class="bi bi-image"></i> Clinic prescription header appears here</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tests -->
+        <div class="pf-card">
+          <div class="pf-card-h">
+            <p class="pf-card-t"><i class="bi bi-clipboard2-pulse"></i>Tests</p>
+            <span class="badge text-bg-light" id="pfCount">0 tests</span>
+          </div>
+          <div class="pf-card-b">
+            <div class="pf-add">
+              <div>
+                <label class="form-label" for="pfCat">Category</label>
+                <select class="form-select ts-exclude" id="pfCat">
+                  <option value="">All categories</option>
+                  <% (categories || []).forEach(function (c) { %><option value="<%= c.Id %>"><%= c.Name %></option><% }) %>
+                </select>
+              </div>
+              <div class="tsel">
+                <label class="form-label" for="pfTest">Test</label>
+                <select id="pfTest" class="form-select ts-exclude"><option value="">Search test…</option></select>
+              </div>
+              <div>
+                <label class="form-label" for="pfDisc">Discount ₹</label>
+                <input type="number" class="form-control" id="pfDisc" min="0" step="1" value="0" inputmode="decimal">
+              </div>
+              <button type="button" class="btn btn-success" id="pfAddBtn"><i class="bi bi-plus-lg"></i> Add</button>
+            </div>
+            <div class="pf-preview" id="pfPreview" aria-live="polite"></div>
+
+            <div class="pf-list" id="pfList">
+              <div class="pf-row hdr"><span>Test</span><span class="num">Price</span><span class="num">Discount</span><span class="num">Net</span><span></span></div>
+              <div id="pfRows"></div>
+              <div class="pf-empty" id="pfEmpty"><i class="bi bi-inbox"></i> No tests added yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ RIGHT: bill & payment ═══ -->
+      <div class="pf-sum">
+        <div class="pf-card">
+          <div class="pf-card-h"><p class="pf-card-t"><i class="bi bi-receipt"></i>Bill</p></div>
+          <div class="pf-card-b">
+            <div class="pf-line"><span>Gross</span><strong id="sGross">₹0</strong></div>
+            <div class="pf-line"><span>Discount</span><strong id="sDisc" class="text-danger">₹0</strong></div>
+            <div class="pf-line big"><span>Payable</span><strong id="sNet">₹0</strong></div>
+
+            <div class="mt-2" id="pfApprovedWrap">
+              <label class="form-label" for="pfApproved">Discount approved by</label>
+              <input type="text" class="form-control" id="pfApproved" name="discountApprovedBy" maxlength="100" value="<%= v('discountApprovedBy') %>" placeholder="Required when discount is given">
+              <div class="invalid-feedback">Enter who approved the discount.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-card pf-pay">
+          <div class="pf-card-h"><p class="pf-card-t"><i class="bi bi-wallet2"></i>Payment</p></div>
+          <div class="pf-card-b">
+            <label class="form-label" for="pfCash">Cash</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text"><i class="bi bi-cash-stack"></i></span>
+              <input type="number" class="form-control" id="pfCash" name="cashPayment" min="0" step="1" inputmode="decimal" value="<%= v('cashPayment', 0) %>">
+            </div>
+            <label class="form-label" for="pfOnline">Online / UPI</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-qr-code-scan"></i></span>
+              <input type="number" class="form-control" id="pfOnline" name="onlinePayment" min="0" step="1" inputmode="decimal" value="<%= v('onlinePayment', 0) %>">
+            </div>
+            <div class="pf-src <%= Number(v('onlinePayment', 0)) > 0 ? '' : 'd-none' %>" id="pfSrc" role="radiogroup" aria-label="Online payment source">
+              <% (onlineSources || []).forEach(function (s) { %>
+                <div style="position:relative">
+                  <input type="radio" name="onlinePaymentMethod" id="src<%= s.Id %>" value="<%= s.Id %>" <%= same(v('onlinePaymentMethod'), s.Id) ? 'checked' : '' %>>
+                  <label for="src<%= s.Id %>"><span class="code"><%= s.ShortCode %></span><%= s.Name %></label>
+                </div>
+              <% }) %>
+            </div>
+            <div class="invalid-feedback d-block d-none" id="pfSrcErr">Select the bank / UPI source.</div>
+            <div class="pf-quick">
+              <button type="button" class="btn btn-outline-secondary" data-fill="cash">Full in cash</button>
+              <button type="button" class="btn btn-outline-secondary" data-fill="online">Full online</button>
+              <button type="button" class="btn btn-outline-secondary" data-fill="zero">Clear</button>
+            </div>
+
+            <div class="pf-status" id="pfStatus">
+              <div class="pf-line"><span>Paid</span><strong id="sPaid">₹0</strong></div>
+              <div class="pf-line"><span id="sBalLbl">Due</span><strong id="sBal">₹0</strong></div>
+            </div>
+
+            <% if (isDup) { %>
+              <div class="form-check mt-3 p-2 rounded" style="background:#fffbeb;border:1px solid #fde68a">
+                <input class="form-check-input ms-0 me-2" type="checkbox" name="confirmDuplicate" value="1" id="pfDup">
+                <label class="form-check-label small fw-semibold" for="pfDup">Register anyway — this is a new visit</label>
+              </div>
+            <% } %>
+
+            <div class="pf-actions">
+              <button type="submit" class="btn btn-primary flex-grow-1" id="pfSubmit">
+                <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+                <i class="bi bi-check2-circle"></i> <span class="lbl"><%= isEdit ? 'Save changes' : 'Register patient' %></span>
+              </button>
+              <a href="<%= isEdit ? '/patient/getPatientDetail?patientId=' + patientId : '/patient/getPatientListView' %>" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> <%= isEdit ? 'Back' : 'Patient list' %></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Security: one-time token (register) / bill version (edit) — the server rejects repeats and stale forms %>
+    <% if (isEdit) { %>
+      <input type="hidden" name="billVersion" value="<%= v('billVersion') %>">
+    <% } else { %>
+      <input type="hidden" name="formToken" value="<%= v('formToken') %>">
+    <% } %>
+    <input type="hidden" name="selectedTestDetails"    id="pfTestsJson" value="[]">
+    <input type="hidden" name="selectedSubTestDetails" id="pfSubsJson"  value="[]">
+    <input type="hidden" name="grossAmount"            id="pfGross"     value="0">
+    <input type="hidden" name="finalDiscount"          id="pfFinalDisc" value="0">
+    <% if (mode === 'edit') { %>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Reason for change <span class="text-danger">*</span></label>
+        <textarea name="editReason" class="form-control" rows="2" maxlength="500"
+          placeholder="Required when you reduce the bill, remove a test, refund, or change doctor"><%= values.editReason || '' %></textarea>
+      </div>
+      <% } %>
+  </form>
+
+  <!-- Mobile sticky bar -->
+  <div class="pf-mbar">
+    <div class="amt">Payable <strong id="mNet">₹0</strong></div>
+    <div class="amt" id="mBalWrap">Due <strong id="mBal">₹0</strong></div>
+    <button type="submit" form="pfForm" class="btn btn-primary fw-semibold" id="pfSubmitM"><i class="bi bi-check2-circle"></i> <%= isEdit ? 'Save' : 'Register' %></button>
+  </div>
+</div>
+
+<script type="application/json" id="pfBoot"><%- jsonSafe({
+  mode: mode,
+  catalog: catalog,
+  subMap: subTestMap || {},
+  clinicDoctors: clinicDoctorMap || {},
+  originalDoctor: isEdit ? String(v('doctor')) : '',
+  originalClinic: isEdit ? String(v('clinic')) : '',
+  tests: initialTests || [],
+  subs: initialSubTests || [],
+  notes: notes.map(function (n) { return { type: n.type, msg: n.messages }; }),
+  hadErrors: errList.length > 0,
+  maxChange: (typeof maxChangeReturn !== 'undefined' && maxChangeReturn) || 2000
+}) %></script>
+
+<script>
+function pfInit() {
+  'use strict';
+  if (window.__pfInit) return; window.__pfInit = true;
+  var B = JSON.parse(document.getElementById('pfBoot').textContent || '{}');
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('pfForm');
+  var rupee = function (n) { return '₹' + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
+  var r2 = function (n) { return Math.round((Number(n) || 0) * 100) / 100; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var dirty = false, submitting = false;
+  var isEdit = B.mode === 'edit', MAX_CHANGE = Number(B.maxChange) || 2000;
+
+  if ($('pfToday')) $('pfToday').innerHTML = '<i class="bi bi-calendar3"></i> ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  /* ── Catalog ─────────────────────────────────────────────────────── */
+  var catById = {};
+  B.catalog.forEach(function (t) { catById[t.id] = t; });
+  /* the referring doctor's own sub-test discounts (Doctor → Sub-test thanks); filled when a doctor is chosen */
+  var docDisc = {};
+  var subDisc = function (s) {
+    var d = docDisc[String(s.SubTestId)];
+    return Math.min(r2(d !== undefined ? d : s.Discount), r2(s.Price));
+  };
+  var subsOf = function (testId) { return (B.subMap[testId] || []).map(function (s) {
+    return { SubTestId: s.SubTestId, mainTestId: Number(testId), Name: s.SubTestName || s.Name, Price: r2(s.Price), Discount: subDisc(s), auto: true };
+  }); };
+  var grand = function (t) { return r2(t.price + subsOf(t.id).reduce(function (a, s) { return a + s.Price; }, 0)); };
+
+  /* ── State ───────────────────────────────────────────────────────── */
+  var tests = [], subs = [];
+  (B.tests || []).forEach(function (t) {
+    var id = Number(t.TestId); if (!id || tests.some(function (x) { return x.TestId === id; })) return;
+    var c = catById[id];
+    tests.push({ TestId: id, TestName: t.TestName || (c && c.name) || ('Test #' + id), Price: r2(t.Price != null ? t.Price : (c ? c.price : 0)),
+                 Discount: r2(t.Discount), locked: !!t.locked, lockReason: t.lockReason || '' });
+  });
+  (B.subs || []).forEach(function (s) {
+    var mid = Number(s.mainTestId || s.MainTestId || s.parentTestId), sid = Number(s.SubTestId);
+    if (!mid || !sid || subs.some(function (x) { return x.SubTestId === sid && x.mainTestId === mid; })) return;
+    var def = subsOf(mid).filter(function (x) { return x.SubTestId === sid; })[0] || {};
+    subs.push({ SubTestId: sid, mainTestId: mid, Name: s.Name || s.SubTestName || def.Name || ('Sub-test #' + sid), Price: r2(s.Price != null ? s.Price : def.Price), Discount: r2(s.Discount) });
+  });
+
+  /* ── Clinic → doctors ────────────────────────────────────────────── */
+  var clinicSel = $('pfClinic'), docSel = $('pfDoctor');
+  var allDocs = Array.prototype.map.call(docSel.options, function (o) { return { v: String(o.value), t: o.textContent.trim() }; }).filter(function (o) { return o.v; });
+  // clinic id → [doctor ids], everything as strings so "5" and 5 match
+  var clinicDoctors = {};
+  Object.keys(B.clinicDoctors || {}).forEach(function (k) { clinicDoctors[String(k)] = (B.clinicDoctors[k] || []).map(String); });
+
+  /* Searchable clinic & doctor. Reuses an instance if the layout already created one. */
+  function enhance(el, placeholder) {
+    if (el.tomselect) return el.tomselect;
+    if (!window.TomSelect) return null;
+    try { return new TomSelect(el, { allowEmptyOption: true, maxOptions: 1000, placeholder: placeholder, create: false }); }
+    catch (e) { console.warn('TomSelect', e); return null; }
+  }
+  /* Rebuild a select's options and keep its Tom Select box (if any) in sync */
+  function setSelectOptions(el, placeholder, list, selected, disabled) {
+    el.innerHTML = '<option value="">' + esc(placeholder) + '</option>' +
+      list.map(function (o) { return '<option value="' + esc(o.v) + '"' + (o.v === selected ? ' selected' : '') + '>' + esc(o.t) + '</option>'; }).join('');
+    el.disabled = !!disabled;
+    var t = el.tomselect;
+    if (t) {
+      t.clear(true); t.clearOptions();
+      if (typeof t.sync === 'function') t.sync();
+      else { list.forEach(function (o) { t.addOption({ value: o.v, text: o.t }); }); t.refreshOptions(false); }
+      t.settings.placeholder = placeholder;
+      if (t.control_input) t.control_input.setAttribute('placeholder', placeholder);
+      if (selected) t.setValue(selected, true); else t.clear(true);
+      if (disabled) t.disable(); else t.enable();
+    }
+  }
+  enhance(clinicSel, 'Search clinic…');
+  enhance(docSel, 'Select clinic first');
+
+  function fillDoctors(keep) {
+    var cid = String(clinicSel.value || ''), cur = keep ? String(docSel.value || '') : '';
+    var ids = clinicDoctors[cid] || [];
+    var list = allDocs.filter(function (d) { return ids.indexOf(d.v) !== -1; });
+    // Edit: keep the patient's current doctor even if no longer attached
+    if (B.mode === 'edit' && cid === B.originalClinic && B.originalDoctor && ids.indexOf(B.originalDoctor) === -1) {
+      var od = allDocs.filter(function (d) { return d.v === B.originalDoctor; })[0];
+      if (od) list.unshift({ v: od.v, t: od.t + ' (not attached now)' });
+    }
+    if (cur && !list.some(function (d) { return d.v === cur; })) cur = '';
+    setSelectOptions(docSel, !cid ? 'Select clinic first' : (list.length ? 'Select doctor (' + list.length + ')' : 'No doctor attached to this clinic'),
+                     list, cur, !cid || !list.length);
+    // only one doctor in the clinic → pick it automatically
+    if (cid && list.length === 1 && !cur) { if (docSel.tomselect) docSel.tomselect.setValue(list[0].v, true); else docSel.value = list[0].v; }
+    $('pfDoctorHint').innerHTML = cid && !list.length
+      ? '<span class="text-danger"><i class="bi bi-exclamation-circle"></i> No doctor is attached to this clinic. <a href="/clinic/attachDoctor/' + encodeURIComponent(cid) + '" target="_blank" rel="noopener">Attach doctors</a>, then reload this page.</span>' : '';
+    showHeader(cid);
+  }
+  function showHeader(cid) {
+    var box = $('pfHeaderBox');
+    if (!cid) { box.innerHTML = '<div class="ph"><i class="bi bi-image"></i> Clinic prescription header appears here</div>'; return; }
+    var img = new Image();
+    img.alt = 'Clinic prescription header';
+    img.onload = function () { box.innerHTML = ''; box.appendChild(img); };
+    img.onerror = function () { box.innerHTML = '<div class="ph">No prescription header uploaded for this clinic.</div>'; };
+    img.src = '/clinic/header/' + encodeURIComponent(cid);
+  }
+  clinicSel.addEventListener('change', function () { fillDoctors(false); });
+  fillDoctors(true);
+
+  /* Doctor chosen → load his own sub-test discounts and apply them to sub-tests whose discount
+     was not typed by hand (needs GET /test/api/doctorSubTestDiscounts/:id; silently skipped if missing). */
+  var discReq = 0;
+  function loadDoctorDiscounts() {
+    var id = String(docSel.value || ''), mine = ++discReq;
+    if (!id) { docDisc = {}; applyDoctorDiscounts(); return; }
+    fetch('/test/api/doctorSubTestDiscounts/' + encodeURIComponent(id), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (mine !== discReq) return; docDisc = (d && d.success && d.discounts) || {}; applyDoctorDiscounts(); })
+      .catch(function () {});
+  }
+  function applyDoctorDiscounts() {
+    var changed = 0;
+    subs.forEach(function (s) {
+      if (!s.auto) return;                                           // typed by hand or saved on the bill → keep
+      var def = (B.subMap[s.mainTestId] || []).filter(function (x) { return Number(x.SubTestId) === Number(s.SubTestId); })[0];
+      if (!def) return;
+      var d = subDisc(def);
+      if (d !== s.Discount) { s.Discount = d; changed++; }
+    });
+    if (changed && typeof render === 'function') { render(); if (window.ui) ui.toast('info', null, "Sub-test discount set as per this doctor (" + changed + ").", { delay: 2500 }); }
+  }
+  docSel.addEventListener('change', loadDoctorDiscounts);
+  clinicSel.addEventListener('change', loadDoctorDiscounts);   // a clinic with one doctor picks him silently
+  if (docSel.value) loadDoctorDiscounts();
+
+  /* ── Test picker ─────────────────────────────────────────────────── */
+  var testSel = $('pfTest'), catSel = $('pfCat'), ts = null;
+  function optionsFor(cat) {
+    return B.catalog.filter(function (t) { return !cat || String(t.cat) === String(cat); }).map(function (t) {
+      var n = subsOf(t.id).length;
+      return { value: String(t.id), text: t.name, price: t.price, total: grand(t), subs: n, cat: t.catName || '' };
+    });
+  }
+  if (testSel.tomselect) { try { testSel.tomselect.destroy(); } catch (_) {} }
+  if (window.TomSelect) {
+    ts = new TomSelect(testSel, {
+      options: optionsFor(''), valueField: 'value', labelField: 'text', searchField: ['text', 'cat'],
+      maxOptions: 300, placeholder: 'Type to search test…', allowEmptyOption: true,
+      render: {
+        option: function (d, e) {
+          return '<div><div class="opt-name">' + e(d.text) + '</div><div class="opt-meta">' + e(d.cat) + ' · ' +
+            (d.subs ? rupee(d.price) + ' + ' + d.subs + ' sub-test' + (d.subs > 1 ? 's' : '') + ' = <b>' + rupee(d.total) + '</b>' : '<b>' + rupee(d.price) + '</b>') + '</div></div>';
+        },
+        item: function (d, e) { return '<div>' + e(d.text) + '</div>'; }
+      },
+      onChange: preview
+    });
+  } else {
+    var fillNative = function (cat) {
+      testSel.innerHTML = '<option value="">Select test…</option>' + optionsFor(cat).map(function (o) {
+        return '<option value="' + o.value + '">' + esc(o.text) + ' — ' + rupee(o.total) + '</option>'; }).join('');
+    };
+    fillNative('');
+    testSel.addEventListener('change', preview);
+  }
+  catSel.addEventListener('change', function () {
+    if (ts) { ts.clear(true); ts.clearOptions(); ts.addOptions(optionsFor(catSel.value)); ts.refreshOptions(false); }
+    else fillNative(catSel.value);
+    preview();
+  });
+  function curTestId() { return Number(ts ? ts.getValue() : testSel.value) || 0; }
+  function preview() {
+    var t = catById[curTestId()], el = $('pfPreview');
+    if (!t) { el.textContent = ''; return; }
+    var s = subsOf(t.id);
+    el.innerHTML = '<b>' + esc(t.name) + '</b> — ' + rupee(t.price) + (s.length ? ' + ' + s.map(function (x) { return esc(x.Name) + ' ' + rupee(x.Price); }).join(', ') + ' = <b>' + rupee(grand(t)) + '</b>' : '');
+  }
+
+  function addMsg(msg) { if (msg) ui.toast('warning', null, msg, { delay: 3500 }); }
+
+  $('pfAddBtn').addEventListener('click', addSelected);
+  $('pfDisc').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addSelected(); } });
+
+  function addSelected() {
+    var id = curTestId(), t = catById[id];
+    if (!t) { addMsg('Select a test first.'); return; }
+    if (tests.some(function (x) { return x.TestId === id; })) { addMsg('"' + t.name + '" is already added.'); return; }
+    var d = r2($('pfDisc').value);
+    if (d < 0) { addMsg('Discount cannot be negative.'); return; }
+    if (d > t.price) { addMsg('Discount cannot be more than the test price (' + rupee(t.price) + ').'); return; }
+    tests.push({ TestId: id, TestName: t.name, Price: t.price, Discount: d, locked: false });
+    subsOf(id).forEach(function (s) { subs.push(s); });
+    addMsg(''); dirty = true;
+    if (ts) ts.clear(true); else testSel.value = '';
+    $('pfDisc').value = 0; preview(); render();
+    if (ts) ts.focus();
+  }
+
+  /* ── Table ───────────────────────────────────────────────────────── */
+  function render() {
+    var rows = $('pfRows'), html = '';
+    tests.forEach(function (t, i) {
+      var ss = subs.filter(function (s) { return s.mainTestId === t.TestId; });
+      html += '<div class="pf-row" data-i="' + i + '">' +
+        '<span class="nm">' + esc(t.TestName) + (t.locked ? '<span class="pf-lock" title="Cannot be removed">' + esc(t.lockReason || 'Locked') + '</span>' : '') + '</span>' +
+        '<span class="num c-price">' + rupee(t.Price) + '</span>' +
+        '<span class="c-disc"><input type="number" class="form-control" min="0" max="' + t.Price + '" step="1" value="' + t.Discount + '" data-kind="t" data-i="' + i + '" aria-label="Discount for ' + esc(t.TestName) + '"></span>' +
+        '<span class="num c-net fw-semibold">' + rupee(t.Price - t.Discount) + '</span>' +
+        '<span class="c-del"><button type="button" class="del" data-del="' + i + '" ' + (t.locked ? 'disabled title="' + esc(t.lockReason) + ' — cannot remove"' : 'title="Remove"') + ' aria-label="Remove ' + esc(t.TestName) + '"><i class="bi bi-trash3"></i></button></span></div>';
+      ss.forEach(function (s) {
+        var si = subs.indexOf(s);
+        html += '<div class="pf-row sub"><span class="nm">↳ ' + esc(s.Name) + '</span><span class="num c-price">' + rupee(s.Price) + '</span>' +
+          '<span class="c-disc"><input type="number" class="form-control" min="0" max="' + s.Price + '" step="1" value="' + s.Discount + '" data-kind="s" data-i="' + si + '" aria-label="Discount for ' + esc(s.Name) + '"></span>' +
+          '<span class="num c-net">' + rupee(s.Price - s.Discount) + '</span><span></span></div>';
+      });
+    });
+    rows.innerHTML = html;
+    $('pfEmpty').style.display = tests.length ? 'none' : '';
+    $('pfCount').textContent = tests.length + ' test' + (tests.length === 1 ? '' : 's');
+    totals();
+  }
+
+  $('pfRows').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-del]'); if (!b || b.disabled) return;
+    var t = tests[Number(b.dataset.del)];
+    var nSubs = subs.filter(function (s) { return s.mainTestId === t.TestId; }).length;
+    ui.confirm({ title: 'Remove test?', type: 'danger', okText: 'Remove', okClass: 'btn-danger',
+                 message: '"' + t.TestName + '"' + (nSubs ? ' and its ' + nSubs + ' sub-test' + (nSubs > 1 ? 's' : '') : '') + ' will be removed from the bill.' })
+      .then(function (yes) {
+        if (!yes) return;
+        subs  = subs.filter(function (s) { return s.mainTestId !== t.TestId; });
+        tests = tests.filter(function (x) { return x !== t; });
+        dirty = true; render();
+        ui.toast('info', null, '"' + t.TestName + '" removed.', { delay: 2500 });
+      });
+  });
+  $('pfRows').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-kind]'); if (!inp) return;
+    var item = inp.dataset.kind === 't' ? tests[Number(inp.dataset.i)] : subs[Number(inp.dataset.i)];
+    var d = r2(inp.value);
+    if (d < 0) d = 0;
+    if (d > item.Price) { d = item.Price; addMsg('Discount was capped at the price.'); }
+    item.Discount = d; item.auto = false; dirty = true; render();
+  });
+
+  /* ── Totals & payment ───────────────────────────────────────────── */
+  var cash = $('pfCash'), online = $('pfOnline');
+  function bill() {
+    var gross = 0, disc = 0;
+    tests.forEach(function (t) { gross += t.Price; disc += t.Discount; });
+    subs.forEach(function (s) { if (tests.some(function (t) { return t.TestId === s.mainTestId; })) { gross += s.Price; disc += s.Discount; } });
+    return { gross: r2(gross), disc: r2(disc), net: r2(gross - disc) };
+  }
+  function totals() {
+    var b = bill(), c = r2(cash.value), o = r2(online.value), paid = r2(c + o), bal = r2(b.net - paid);
+    $('sGross').textContent = rupee(b.gross); $('sDisc').textContent = '− ' + rupee(b.disc); $('sNet').textContent = rupee(b.net);
+    $('mNet').textContent = rupee(b.net);
+    $('sPaid').textContent = rupee(paid);
+    var st = $('pfStatus');
+    st.className = 'pf-status ' + (bal > 0 ? 'due' : (bal < 0 ? 'change' : 'paid'));
+    $('sBalLbl').textContent = bal > 0 ? 'Due' : (bal < 0 ? 'Return change' : 'Fully paid');
+    $('sBal').textContent = rupee(Math.abs(bal));
+    $('mBal').textContent = rupee(Math.abs(bal));
+    $('mBalWrap').firstChild.nodeValue = bal < 0 ? 'Change ' : (bal > 0 ? 'Due ' : 'Paid ');
+    $('pfApproved').required = b.disc > 0;
+    $('pfSrc').classList.toggle('d-none', !(o > 0));
+    $('pfGross').value = b.gross; $('pfFinalDisc').value = b.disc;
+    $('pfTestsJson').value = JSON.stringify(tests.map(function (t) { return { TestId: t.TestId, Discount: t.Discount }; }));
+    $('pfSubsJson').value  = JSON.stringify(subs.filter(function (s) { return tests.some(function (t) { return t.TestId === s.mainTestId; }); })
+                                             .map(function (s) { return { SubTestId: s.SubTestId, mainTestId: s.mainTestId, Discount: s.Discount }; }));
+  }
+  [cash, online].forEach(function (el) { el.addEventListener('input', function () { dirty = true; totals(); }); });
+  document.querySelectorAll('[data-fill]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var net = bill().net;
+      if (b.dataset.fill === 'cash')   { cash.value = net; online.value = 0; }
+      if (b.dataset.fill === 'online') { online.value = net; cash.value = 0; }
+      if (b.dataset.fill === 'zero')   { online.value = 0; cash.value = 0; }
+      dirty = true; totals();
+    });
+  });
+
+  /* ── Advance booking (Flatpickr if available) ───────────────────── */
+  var adv = $('pfAdvance');
+  if (adv) {
+    var advInp = $('pfAdvanceDate');
+    var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    var maxD = new Date(); maxD.setDate(maxD.getDate() + 90);
+    if (window.flatpickr) {
+      flatpickr(advInp, { dateFormat: 'd-m-Y', minDate: tomorrow, maxDate: maxD, disableMobile: true, allowInput: false });
+    } else {
+      advInp.type = 'date';
+      var ymd = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+      advInp.min = ymd(tomorrow); advInp.max = ymd(maxD);   // local date (toISOString is UTC)
+    }
+    adv.addEventListener('change', function () { $('pfAdvanceWrap').classList.toggle('d-none', !adv.checked); if (adv.checked) advInp.focus(); });
+  }
+
+  /* ── Small input helpers ─────────────────────────────────────────── */
+  $('pfPhone').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+  $('pfName').addEventListener('blur', function () { this.value = this.value.replace(/\s+/g, ' ').trim(); });
+  $('pfTitle').addEventListener('change', function () {
+    var g = $('pfGender');
+    if (g.value) return;
+    if (['Mr.', 'Master'].indexOf(this.value) !== -1) g.value = '1';
+    if (['Mrs.', 'Miss'].indexOf(this.value) !== -1) g.value = '2';
+  });
+
+  /* ── Validate & submit ──────────────────────────────────────────── */
+  function bad(el, on) {
+    el.classList.toggle('is-invalid', !!on);
+    if (el.tomselect && el.tomselect.wrapper) el.tomselect.wrapper.classList.toggle('is-invalid', !!on);
+    return on ? 1 : 0;
+  }
+  function validate() {
+    var n = 0, errs = [];
+    var name = $('pfName').value.trim(), phone = $('pfPhone').value, age = $('pfAge').value, ymd = $('pfYmd').value;
+    if (bad($('pfTitle'), !$('pfTitle').value)) errs.push('Select title.');
+    if (bad($('pfName'), name.length < 2)) errs.push('Enter patient name.');
+    if (bad($('pfGender'), !$('pfGender').value)) errs.push('Select gender.');
+    var lim = { Years: 120, Months: 240, Days: 400 }[ymd];
+    if (bad($('pfAge'), age === '' || !/^\d+$/.test(age) || Number(age) > lim || (Number(age) === 0 && ymd === 'Years'))) errs.push('Enter a valid age (babies: use Months/Days).');
+    if (bad($('pfPhone'), !/^[6-9]\d{9}$/.test(phone))) errs.push('Enter a valid 10-digit mobile.');
+    if (bad(clinicSel, !clinicSel.value)) errs.push('Select clinic.');
+    if (bad(docSel, !docSel.value)) errs.push('Select referring doctor.');
+    if (adv && adv.checked && bad($('pfAdvanceDate'), !$('pfAdvanceDate').value)) errs.push('Pick the appointment date.');
+    if (!tests.length) errs.push('Add at least one test.');
+    var b = bill(), c = r2(cash.value), o = r2(online.value);
+    var plain = /^\d{0,9}(\.\d{1,2})?$/;
+    if (!plain.test(cash.value.trim()) || !plain.test(online.value.trim())) errs.push('Enter payments as plain amounts like 500 or 499.50.');
+    if (c < 0 || o < 0) errs.push('Payments cannot be negative.');
+    if (o > b.net) errs.push('Online payment cannot be more than the payable amount.');
+    if (!isEdit && c + o - b.net > MAX_CHANGE) errs.push('Cash received is ' + rupee(c + o - b.net) + ' more than the bill — check the amount (max change ' + rupee(MAX_CHANGE) + ').');
+    if (bad($('pfApproved'), b.disc > 0 && !$('pfApproved').value.trim())) errs.push('Enter who approved the discount.');
+    var srcOk = !(o > 0) || !!form.querySelector('input[name="onlinePaymentMethod"]:checked');
+    $('pfSrcErr').classList.toggle('d-none', srcOk);
+    if (!srcOk) errs.push('Select the online payment source.');
+    return errs;
+  }
+
+  form.addEventListener('input', function (e) { if (e.target.classList) e.target.classList.remove('is-invalid'); });
+  var changeConfirmed = false;
+  function lockAndSubmit() {
+    submitting = true; dirty = false;
+    ['pfSubmit', 'pfSubmitM'].forEach(function (id) { var x = $(id); if (x) x.disabled = true; });
+    var btn = $('pfSubmit'); btn.querySelector('.spinner-border').classList.remove('d-none'); btn.querySelector('.lbl').textContent = 'Saving…';
+    form.submit();   // native submit — does not fire the submit event again
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (submitting) return;
+    totals();
+    var errs = validate();
+    if (errs.length) {
+      ui.toast('danger', 'Please fix ' + errs.length + ' thing' + (errs.length > 1 ? 's' : ''), errs);
+      var first = form.querySelector('select.is-invalid, input.is-invalid');
+      if (first) {
+        var box = first.tomselect ? first.tomselect.wrapper : first;
+        if (box.scrollIntoView) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(function () { try { (first.tomselect ? first.tomselect : first).focus(); } catch (_) {} }, 300);
+      } else if (!tests.length) {
+        $('pfList').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    var b = bill(), paid = r2(r2(cash.value) + r2(online.value));
+    if (paid > b.net && !changeConfirmed) {
+      ui.confirm({ title: 'Return change?', type: 'warning', okText: 'Yes, return ' + rupee(paid - b.net),
+                   message: 'Received ' + rupee(paid) + ' but payable is ' + rupee(b.net) + '.\nGive ' + rupee(paid - b.net) + ' back in cash.' })
+        .then(function (yes) { if (yes) { changeConfirmed = true; lockAndSubmit(); } });
+      return;
+    }
+    lockAndSubmit();
+  });
+  [cash, online].forEach(function (el) { el.addEventListener('input', function () { changeConfirmed = false; }); });
+  window.addEventListener('beforeunload', function (e) { if (dirty && !submitting) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    submitting = false;
+    ['pfSubmit', 'pfSubmitM'].forEach(function (id) { var x = $(id); if (x) x.disabled = false; });
+  });
+
+  render();
+  if (B.hadErrors) { dirty = true; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+// Wait for window load: Tom Select and the layout's own scripts are usually at the end of <body>
+if (document.readyState === 'complete') pfInit(); else window.addEventListener('load', pfInit);
+</script>

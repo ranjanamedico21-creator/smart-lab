@@ -1,0 +1,646 @@
+<!-- Stocks Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+
+    <style>
+      :root {
+        --si-primary: #185FA5;
+        --si-primary-light: #E6F1FB;
+        --si-primary-mid: #378ADD;
+        --si-success: #3B6D11;
+        --si-success-light: #EAF3DE;
+        --si-danger: #A32D2D;
+        --si-danger-light: #FCEBEB;
+        --si-warn: #854F0B;
+        --si-warn-light: #FAEEDA;
+        --si-surface: #ffffff;
+        --si-surface2: #F8FAFC;
+        --si-surface3: #F1F5F9;
+        --si-border: rgba(0,0,0,0.08);
+        --si-text: #1E293B;
+        --si-text2: #64748B;
+        --si-text3: #94A3B8;
+        --si-radius: 12px;
+        --si-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+        --si-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        --si-shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 10px -5px rgba(0,0,0,0.02);
+      }
+
+      .si-page { font-family: 'Sora', sans-serif; color: var(--si-text); }
+
+      /* ── KPI Cards ── */
+      .si-kpi-card {
+        background: var(--si-surface);
+        border: 1px solid var(--si-border);
+        border-radius: var(--si-radius);
+        padding: 24px;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+      }
+      .si-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--si-shadow-md);
+      }
+      .si-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: var(--si-radius) 0 0 var(--si-radius);
+      }
+      .si-kpi-card.total::before { background: var(--si-primary); }
+      .si-kpi-card.qty::before { background: var(--si-primary-mid); }
+      .si-kpi-card.low::before { background: var(--si-danger); }
+
+      .si-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 12px;
+      }
+      .si-kpi-card.total .si-kpi-icon { background: var(--si-primary-light); color: var(--si-primary); }
+      .si-kpi-card.qty .si-kpi-icon { background: #DBEAFE; color: var(--si-primary-mid); }
+      .si-kpi-card.low .si-kpi-icon { background: var(--si-danger-light); color: var(--si-danger); }
+
+      .si-kpi-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--si-text2);
+        margin-bottom: 6px;
+      }
+      .si-kpi-value {
+        font-size: 32px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .si-kpi-value.total { color: var(--si-primary); }
+      .si-kpi-value.qty { color: var(--si-primary-mid); }
+      .si-kpi-value.low { color: var(--si-danger); }
+      .si-kpi-delta {
+        font-size: 12px;
+        color: var(--si-text3);
+        font-weight: 500;
+      }
+
+      /* ── Filter Bar ── */
+      .si-filter-bar {
+        background: var(--si-surface);
+        border: 1px solid var(--si-border);
+        border-radius: var(--si-radius);
+        padding: 20px;
+      }
+      .si-filter-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--si-text2);
+        margin-bottom: 6px;
+      }
+      .si-form-select {
+        height: 42px;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: 'Sora', sans-serif;
+        color: var(--si-text);
+        padding: 0 12px;
+        background: #fff;
+        transition: all 0.15s;
+      }
+      .si-form-select:focus {
+        border-color: var(--si-primary);
+        box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+      }
+      .si-btn {
+        height: 42px;
+        padding: 0 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        font-family: 'Sora', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.15s;
+        border: none;
+        cursor: pointer;
+      }
+      .si-btn-primary {
+        background: var(--si-primary);
+        color: #fff;
+      }
+      .si-btn-primary:hover {
+        background: var(--si-info);
+        transform: translateY(-1px);
+        box-shadow: var(--si-shadow-md);
+      }
+      .si-btn-outline {
+        background: var(--si-surface);
+        color: var(--si-primary);
+        border: 1.5px solid #BFDBFE;
+      }
+      .si-btn-outline:hover {
+        background: var(--si-primary-light);
+        border-color: var(--si-primary);
+      }
+
+      /* ── Table ── */
+      .si-table-wrap {
+        background: var(--si-surface);
+        border: 1px solid var(--si-border);
+        border-radius: var(--si-radius);
+        overflow: hidden;
+      }
+      .si-table {
+        width: 100%;
+        margin: 0;
+        font-size: 13px;
+        font-family: 'Sora', sans-serif;
+      }
+      .si-table thead th {
+        background: var(--si-surface2);
+        color: var(--si-text2);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 14px 16px;
+        border-bottom: 2px solid var(--si-border);
+        white-space: nowrap;
+      }
+      .si-table tbody td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--si-border);
+        color: var(--si-text);
+      }
+      .si-table tbody tr {
+        transition: background 0.15s;
+      }
+      .si-table tbody tr:hover {
+        background: var(--si-surface2);
+      }
+      .si-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Product Total Row */
+      .si-table tbody tr.si-total-row {
+        background: linear-gradient(90deg, var(--si-surface2) 0%, #fff 100%);
+        border-top: 2px solid var(--si-primary-light);
+      }
+      .si-table tbody tr.si-total-row td {
+        font-weight: 700;
+        color: var(--si-primary);
+        padding: 12px 16px;
+      }
+
+      /* Status Badges */
+      .si-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        font-family: 'Sora', sans-serif;
+        white-space: nowrap;
+      }
+      .si-badge.stock-healthy { background: var(--si-success-light); color: var(--si-success); border: 1px solid #C0DD97; }
+      .si-badge.stock-medium { background: var(--si-warn-light); color: var(--si-warn); border: 1px solid #FAC775; }
+      .si-badge.stock-low { background: var(--si-danger-light); color: var(--si-danger); border: 1px solid #F7C1C1; }
+      .si-badge.stock-out { background: #F1F5F9; color: var(--si-text3); border: 1px solid #E2E8F0; }
+
+      .si-badge.expiry-valid { background: var(--si-success-light); color: var(--si-success); border: 1px solid #C0DD97; }
+      .si-badge.expiry-soon { background: var(--si-warn-light); color: var(--si-warn); border: 1px solid #FAC775; }
+      .si-badge.expiry-expired { background: var(--si-danger-light); color: var(--si-danger); border: 1px solid #F7C1C1; }
+
+      .si-cell-product {
+        font-weight: 600;
+        color: var(--si-text);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+      .si-cell-product:hover {
+        color: var(--si-primary);
+      }
+      .si-cell-batch {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--si-text2);
+        background: var(--si-surface3);
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-block;
+        border: 1px solid var(--si-border);
+      }
+      .si-cell-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      /* ── Empty State ── */
+      .si-empty {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      .si-empty-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--si-surface2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 32px;
+        color: var(--si-text3);
+      }
+      .si-empty-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--si-text);
+        margin-bottom: 6px;
+      }
+      .si-empty-text {
+        font-size: 13px;
+        color: var(--si-text2);
+      }
+
+      /* ── Pagination ── */
+      .si-pagination {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+        padding: 20px;
+        border-top: 1px solid var(--si-border);
+        list-style: none;
+        margin: 0;
+      }
+      .si-page-link {
+        min-width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        border: 1px solid var(--si-border);
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--si-text2);
+        text-decoration: none;
+        transition: all 0.15s;
+        font-family: 'Sora', sans-serif;
+        background: #fff;
+      }
+      .si-page-link:hover {
+        background: var(--si-surface2);
+        color: var(--si-primary);
+        border-color: var(--si-primary);
+      }
+      .si-page-link.active {
+        background: var(--si-primary);
+        color: #fff;
+        border-color: var(--si-primary);
+      }
+      .si-page-link.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        background: var(--si-surface2);
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 768px) {
+        .si-kpi-card { margin-bottom: 12px; }
+        .si-table-wrap { overflow-x: auto; }
+        .si-table { min-width: 900px; }
+      }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <div class="card shadow border-0 rounded-4 overflow-hidden si-page">
+
+      <!-- Header -->
+      <div class="card-header text-white py-4" style="background: linear-gradient(135deg, var(--si-primary) 0%, var(--si-primary-mid) 100%); border: none;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+          <div>
+            <h4 class="mb-1 fw-bold d-flex align-items-center gap-2">
+              <i class="bi bi-box-seam"></i> Stock Inventory
+            </h4>
+            <small class="text-white-50">Enterprise stock management overview</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary -->
+      <div class="card-body border-bottom" style="background: var(--si-surface2);">
+        <div class="row g-3">
+
+          <div class="col-md-4">
+            <div class="si-kpi-card total">
+              <div class="si-kpi-icon"><i class="bi bi-boxes"></i></div>
+              <div class="si-kpi-label">Total Products</div>
+              <div class="si-kpi-value total"><%= stocks.length %></div>
+              <div class="si-kpi-delta">Active SKUs in system</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="si-kpi-card qty">
+              <div class="si-kpi-icon"><i class="bi bi-stack"></i></div>
+              <div class="si-kpi-label">Total Quantity</div>
+              <div class="si-kpi-value qty">
+                <%= stocks.reduce((sum, s) => sum + Number(s.TotalQuantity || 0), 0) %>
+              </div>
+              <div class="si-kpi-delta">Units across all batches</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="si-kpi-card low">
+              <div class="si-kpi-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+              <div class="si-kpi-label">Low Stock (≤5)</div>
+              <div class="si-kpi-value low">
+                <%= stocks.filter(s => Number(s.TotalQuantity) <= 5).length %>
+              </div>
+              <div class="si-kpi-delta">Items requiring attention</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card-body border-bottom">
+        <form action="/billing/getStockList" method="post" class="row g-3 align-items-end" id="stockFilterForm">
+
+          <div class="col-lg-6 col-md-6">
+            <div class="si-filter-label">
+              <i class="bi bi-truck me-1"></i>Supplier
+            </div>
+            <select name="Supplier" class="form-select si-form-select">
+              <option value="">All Suppliers</option>
+              <% suppliers.forEach(function(supplier){ %>
+                <option value="<%= supplier.Id %>"
+                  <%= (typeof supplierId !== 'undefined' && supplierId == supplier.Id) ? 'selected' : '' %>>
+                  <%= supplier.Name %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="col-lg-3 col-md-3">
+            <button class="si-btn si-btn-primary w-100" name="action" value="search">
+              <i class="bi bi-search"></i>Search
+            </button>
+          </div>
+
+          <div class="col-lg-3 col-md-3">
+            <button class="si-btn si-btn-outline w-100" name="action" value="download">
+              <i class="bi bi-download"></i>Export
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Table -->
+      <div class="card-body p-0">
+
+        <% if (stocks && stocks.length > 0) { %>
+
+        <div class="table-responsive">
+          <table class="si-table mb-0">
+
+            <thead>
+              <tr>
+                <th class="ps-4">#</th>
+                <th>Supplier</th>
+                <th>Product</th>
+                <th class="text-center">Batch</th>
+                <th class="text-center">Expiry</th>
+                <th class="text-end pe-4">Quantity</th>
+                <th class="text-center">Stock Status</th>
+                <th class="text-center pe-4">Expiry Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <% let i = 0; %>
+              <% const today = new Date(); %>
+
+              <% stocks.forEach(stock => { %>
+
+                <% stock.Batches.forEach(batch => {
+                     i++;
+
+                     const qty = Number(batch.Quantity || 0);
+
+                     // ---------------------------
+                     // STOCK STATUS LOGIC
+                     // ---------------------------
+                     let stockClass = 'si-badge stock-healthy';
+                     let stockText = 'Healthy';
+                     let stockIcon = 'bi-check-circle-fill';
+
+                     if (qty <= 0) {
+                       stockClass = 'si-badge stock-out';
+                       stockText = 'Out';
+                       stockIcon = 'bi-x-circle-fill';
+                     } else if (qty <= 5) {
+                       stockClass = 'si-badge stock-low';
+                       stockText = 'Low';
+                       stockIcon = 'bi-exclamation-triangle-fill';
+                     } else if (qty <= 20) {
+                       stockClass = 'si-badge stock-medium';
+                       stockText = 'Medium';
+                       stockIcon = 'bi-dash-circle-fill';
+                     }
+
+                     // ---------------------------
+                     // EXPIRY STATUS LOGIC
+                     // ---------------------------
+                     let expiryClass = 'si-badge expiry-valid';
+                     let expiryText = 'Valid';
+                     let expiryIcon = 'bi-shield-check';
+                     let expiryDate = null;
+
+                     if (batch.ExpiryDate) {
+                       const parts = batch.ExpiryDate.split('-');
+                       if (parts.length === 3) {
+                         const day = parseInt(parts[0], 10);
+                         const month = parseInt(parts[1], 10) - 1;
+                         const year = parseInt(parts[2], 10);
+                         expiryDate = new Date(year, month, day);
+
+                         const checkToday = new Date();
+                         checkToday.setHours(0, 0, 0, 0);
+
+                         const threeMonthsLater = new Date(checkToday);
+                         threeMonthsLater.setMonth(checkToday.getMonth() + 3);
+
+                         if (expiryDate < checkToday) {
+                           expiryClass = 'si-badge expiry-expired';
+                           expiryText = 'Expired';
+                           expiryIcon = 'bi-exclamation-octagon-fill';
+                         } else if (expiryDate <= threeMonthsLater) {
+                           expiryClass = 'si-badge expiry-soon';
+                           expiryText = 'Expiring Soon';
+                           expiryIcon = 'bi-alarm-fill';
+                         }
+                       }
+                     }
+
+                %>
+
+                <tr>
+
+                  <td class="ps-4 text-muted fw-medium"><%= i %></td>
+
+                  <td class="fw-semibold text-capitalize">
+                    <%= stock.SupplierName %>
+                  </td>
+
+                  <td>
+                    <a href="/billing/stockDetails/<%= stock.ProductId %>"
+                       class="si-cell-product text-capitalize">
+                      <%= stock.ProductName %>
+                    </a>
+                  </td>
+
+                  <td class="text-center">
+                    <span class="si-cell-batch">
+                      <%= batch.BatchNumber %>
+                    </span>
+                  </td>
+
+                  <td class="text-center">
+                    <% if (batch.ExpiryDate) { %>
+                      <span class="nm-cell-date">
+                        <i class="bi bi-calendar-event" style="color: var(--si-text3);"></i>
+                        <%= batch.ExpiryDate %>
+                      </span>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+
+                  <td class="text-end pe-4">
+                    <span class="si-cell-number <%= qty <= 5 ? 'text-danger' : (qty <= 20 ? 'text-warning' : 'text-primary') %>">
+                      <%= qty %>
+                    </span>
+                  </td>
+
+                  <!-- Stock Status -->
+                  <td class="text-center">
+                    <span class="<%= stockClass %>">
+                      <i class="bi <%= stockIcon %>"></i>
+                      <%= stockText %>
+                    </span>
+                  </td>
+
+                  <!-- Expiry Status -->
+                  <td class="text-center pe-4">
+                    <span class="<%= expiryClass %>">
+                      <i class="bi <%= expiryIcon %>"></i>
+                      <%= expiryText %>
+                    </span>
+                  </td>
+
+                </tr>
+
+                <% }); %>
+
+                <!-- Product Total Row -->
+                <tr class="si-total-row">
+                  <td></td>
+                  <td></td>
+                  <td class="text-capitalize d-flex align-items-center gap-2">
+                    <i class="bi bi-calculator" style="color: var(--si-primary);"></i>
+                    <%= stock.ProductName %> Total
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td class="text-end pe-4">
+                    <span class="si-cell-number"><%= stock.TotalQuantity %></span>
+                  </td>
+                  <td></td>
+                  <td></td>
+                </tr>
+
+              <% }); %>
+
+            </tbody>
+
+          </table>
+        </div>
+
+        <% } else { %>
+
+        <div class="si-empty">
+          <div class="si-empty-icon"><i class="bi bi-box-seam"></i></div>
+          <div class="si-empty-title">No stock records available</div>
+          <div class="si-empty-text">Try adjusting your filters or add new stock entries.</div>
+        </div>
+
+        <% } %>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<% if (totalPages > 1) { %>
+  <nav aria-label="Stock Pagination" class="mt-4">
+    <ul class="si-pagination">
+
+      <!-- Previous -->
+      <li>
+        <a class="si-page-link <%= currentPage === 1 ? 'disabled' : '' %>"
+           href="?page=<%= currentPage - 1 %>&Supplier=<%= supplierId || '' %>">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+      </li>
+
+      <!-- Page Numbers -->
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <li>
+          <a class="si-page-link <%= i === currentPage ? 'active' : '' %>"
+             href="?page=<%= i %>&Supplier=<%= supplierId || '' %>">
+            <%= i %>
+          </a>
+        </li>
+      <% } %>
+
+      <!-- Next -->
+      <li>
+        <a class="si-page-link <%= currentPage === totalPages ? 'disabled' : '' %>"
+           href="?page=<%= currentPage + 1 %>&Supplier=<%= supplierId || '' %>">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </li>
+
+    </ul>
+  </nav>
+<% } %>

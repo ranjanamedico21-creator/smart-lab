@@ -1,0 +1,412 @@
+<%
+  const n   = (v) => Number(v) || 0;
+  const fmt = (v) => n(v).toLocaleString('en-IN');
+  const totalDiscount = discountReportDetails.reduce((a,r) => a + n(r.Discount), 0);
+  const totalActual   = discountReportDetails.reduce((a,r) => a + n(r.ActualAmount), 0);
+  const totalGross    = discountReportDetails.reduce((a,r) => a + n(r.GrossAmount), 0);
+%>
+
+<style>
+  :root {
+    --brand:#185FA5; --brand-soft:#E6F1FB; --brand-text:#0C447C;
+    --surface:#ffffff; --surface-alt:#F8F9FB;
+    --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+    --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+    --success-bg:#EAF3DE; --success-text:#3B6D11;
+    --warning-bg:#FAEEDA; --warning-text:#854F0B;
+    --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+    --info-bg:#E6F1FB;    --info-text:#185FA5;
+    --purple-bg:#EEEDFE;  --purple-text:#534AB7;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+    --shadow-card:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px rgba(0,0,0,0.08);
+  }
+
+  .dr-wrapper  { padding:16px 0 40px; }
+  .dr-card     { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); overflow:hidden; margin-bottom:16px; }
+
+  /* Header */
+  .dr-card-header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+  .dr-header-left { display:flex; align-items:center; gap:12px; }
+  .dr-header-icon { width:36px; height:36px; background:var(--brand-soft); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--brand); font-size:16px; flex-shrink:0; }
+  .dr-header-title{ font-size:15px; font-weight:600; color:var(--text-primary); margin:0; line-height:1.2; }
+  .dr-header-sub  { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+  .dr-badge       { font-size:11px; font-weight:500; padding:4px 10px; border-radius:99px; background:var(--info-bg); color:var(--info-text); }
+
+  /* Search */
+  .dr-search      { padding:20px 24px; border-bottom:1px solid var(--border); background:var(--surface-alt); }
+  .dr-search-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:12px; align-items:flex-end; }
+  .dr-field-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:6px; }
+  .dr-input-wrap  { display:flex; align-items:center; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden; transition:border-color .15s; }
+  .dr-input-wrap:focus-within { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+  .dr-input-icon  { padding:0 10px; color:var(--text-hint); font-size:13px; flex-shrink:0; }
+  .dr-input-wrap input,
+  .dr-input-wrap select { border:none; outline:none; background:transparent; font-size:13.5px; color:var(--text-primary); padding:9px 12px 9px 0; width:100%; font-family:inherit; }
+  .dr-input-wrap select { appearance:none; -webkit-appearance:none; cursor:pointer; }
+  .dr-input-wrap input::placeholder { color:var(--text-hint); }
+  .dr-btn-search  { display:flex; align-items:center; gap:6px; padding:9px 20px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius-sm); font-size:13.5px; font-weight:500; cursor:pointer; white-space:nowrap; transition:background .15s; }
+  .dr-btn-search:hover { background:var(--brand-text); }
+
+  /* KPI strip */
+  .dr-kpi-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-bottom:1px solid var(--border); }
+  .dr-kpi-cell  { padding:16px 24px; border-right:1px solid var(--border); }
+  .dr-kpi-cell:last-child { border-right:none; }
+  .dr-kpi-label { font-size:11px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+  .dr-kpi-val   { font-size:20px; font-weight:600; font-family:'DM Mono',monospace; letter-spacing:-.02em; }
+  .dr-kpi-meta  { font-size:11px; color:var(--text-hint); margin-top:2px; }
+
+  /* Table section */
+  .dr-section     { padding:20px 24px; }
+  .dr-section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .dr-section-title{ font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:7px; }
+  .dr-count-pill  { font-size:11px; font-weight:500; padding:2px 10px; border-radius:99px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-secondary); }
+
+  /* Table */
+  .dr-table       { width:100%; border-collapse:collapse; }
+  .dr-table thead th { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary); padding:0 12px 10px; border-bottom:1px solid var(--border-strong); text-align:left; white-space:nowrap; }
+  .dr-table tbody td { padding:11px 12px; font-size:13px; color:var(--text-primary); border-bottom:1px solid var(--border); vertical-align:middle; }
+  .dr-table tbody tr:last-child td { border-bottom:none; }
+  .dr-table tbody tr:hover { background:var(--surface-alt); }
+
+  /* Row states */
+  .dr-table tbody tr.row-dues   { background:#fff8f8; }
+  .dr-table tbody tr.row-dues:hover { background:#fef0f0; }
+  .dr-table tbody tr.row-cancelled td { text-decoration:line-through; color:var(--text-hint); }
+
+  /* Patient cell */
+  .pt-name  { font-weight:600; color:var(--text-primary); text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .pt-name:hover { color:var(--brand); }
+  .pt-meta  { font-size:11.5px; color:var(--text-hint); margin-top:3px; display:flex; flex-wrap:wrap; gap:6px; }
+
+  /* Badges */
+  .badge-danger  { display:inline-block; padding:2px 8px; border-radius:99px; background:var(--danger-bg);  color:var(--danger-text);  font-size:11px; font-weight:600; font-family:'DM Mono',monospace; }
+  .badge-warning { display:inline-block; padding:2px 8px; border-radius:99px; background:var(--warning-bg); color:var(--warning-text); font-size:11px; font-weight:600; font-family:'DM Mono',monospace; }
+  .badge-success { display:inline-block; padding:2px 8px; border-radius:99px; background:var(--success-bg); color:var(--success-text); font-size:11px; font-weight:600; font-family:'DM Mono',monospace; }
+  .badge-info    { display:inline-block; padding:2px 8px; border-radius:99px; background:var(--info-bg);    color:var(--info-text);    font-size:11px; font-weight:500; }
+  .badge-muted   { display:inline-block; padding:2px 8px; border-radius:99px; background:var(--surface-alt); color:var(--text-hint);   font-size:11px; border:1px solid var(--border); }
+
+  /* Total bar */
+  .dr-total-bar { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid; }
+  .dr-total-bar.danger  { background:var(--danger-bg);  border-color:rgba(163,45,45,.1);  color:var(--danger-text); }
+  .dr-total-bar .lbl    { font-size:12px; font-weight:500; }
+  .dr-total-bar .val    { font-size:14px; font-weight:600; font-family:'DM Mono',monospace; }
+
+  /* No data */
+  .dr-no-data { display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--warning-bg); border:1px solid rgba(133,79,11,.15); border-radius:var(--radius-sm); font-size:13px; color:var(--warning-text); }
+
+  /* Pagination */
+  .dr-pagination { display:flex; align-items:center; justify-content:center; gap:6px; padding:16px 24px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .dr-page-btn   { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 10px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--surface); font-size:12.5px; color:var(--text-secondary); cursor:pointer; transition:all .15s; text-decoration:none; }
+  .dr-page-btn:hover          { border-color:var(--brand); color:var(--brand); background:var(--brand-soft); }
+  .dr-page-btn.active         { background:var(--brand); border-color:var(--brand); color:#fff; font-weight:600; }
+  .dr-page-btn.disabled       { opacity:.4; pointer-events:none; }
+
+  @media(max-width:992px) {
+    .dr-search-grid { grid-template-columns:1fr 1fr; }
+    .dr-search-grid > *:last-child { grid-column:1/-1; }
+  }
+  @media(max-width:576px) {
+    .dr-search-grid { grid-template-columns:1fr; }
+    .dr-kpi-strip   { grid-template-columns:1fr; }
+    .dr-kpi-cell    { border-right:none; border-bottom:1px solid var(--border); }
+  }
+</style>
+
+<div class="dr-wrapper">
+
+  <!-- ══ SEARCH CARD ═══════════════════════════════════════════ -->
+  <div class="dr-card">
+
+    <div class="dr-card-header">
+      <div class="dr-header-left">
+        <div class="dr-header-icon"><i class="bi bi-percent"></i></div>
+        <div>
+          <p class="dr-header-title">Discount Report</p>
+          <p class="dr-header-sub">Search by patient, doctor, or date range</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dr-search">
+      <form action="/report/getDiscountReport" method="post">
+        <div class="dr-search-grid">
+
+          <div>
+            <label class="dr-field-label" for="drName">Patient Name</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-person"></i></span>
+              <input type="text" id="drName" name="Name" placeholder="Search by name"
+                value="<%= typeof Name != 'undefined' ? Name : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dr-field-label" for="drDoctor">Doctor</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-person-badge"></i></span>
+              <select name="Doctor" id="drDoctor">
+                <option value="">All Doctors</option>
+                <% doctorDetails.forEach(function(doctor){ %>
+                  <option value="<%= doctor.Id %>"
+                    <% if(typeof doctorId != 'undefined' && doctor.Id == doctorId){ %>selected<% } %>>
+                    Dr. <%= doctor.FirstName %> <%= doctor.LastName %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="dr-field-label" for="drFrom">From Date</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-calendar3"></i></span>
+             <!-- FROM -->
+            <input type="text" id="FromDate" name="FromDate" placeholder="Select date"
+            value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>" autocomplete="off">
+
+            </div>
+          </div>
+
+          <div>
+            <label class="dr-field-label" for="drTo">To Date</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-calendar3"></i></span>
+              <!-- TO -->
+            <input type="text" id="ToDate" name="ToDate" placeholder="Select date"
+            value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>" autocomplete="off">
+            </div>
+          </div>
+
+          <div>
+            <button type="submit" class="dr-btn-search">
+              <i class="bi bi-search"></i> Search
+            </button>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="dr-kpi-strip">
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Total Actual</div>
+        <div class="dr-kpi-val" style="color:var(--brand)">₹<%= fmt(totalActual) %></div>
+        <div class="dr-kpi-meta">Before any discount</div>
+      </div>
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Total Gross Billed</div>
+        <div class="dr-kpi-val" style="color:var(--success-text)">₹<%= fmt(totalGross) %></div>
+        <div class="dr-kpi-meta">After discount applied</div>
+      </div>
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Total Discount Given</div>
+        <div class="dr-kpi-val" style="color:var(--danger-text)">₹<%= fmt(totalDiscount) %></div>
+        <div class="dr-kpi-meta"><%= discountReportDetails.length %> record<%= discountReportDetails.length !== 1 ? 's' : '' %></div>
+      </div>
+    </div>
+
+  </div><!-- /search card -->
+
+
+  <!-- ══ RESULTS CARD ══════════════════════════════════════════ -->
+  <div class="dr-card">
+    <div class="dr-section">
+
+      <div class="dr-section-head">
+        <span class="dr-section-title">
+          <i class="bi bi-table"></i> Discount Details
+        </span>
+        <span class="dr-count-pill"><%= discountReportDetails.length %> records</span>
+      </div>
+
+      <%- include("./partials/messages"); %>
+
+      <% if (!discountReportDetails.length) { %>
+        <div class="dr-no-data">
+          <i class="bi bi-info-circle"></i>
+          No discount records found for the selected criteria.
+        </div>
+      <% } else { %>
+
+        <div style="overflow-x:auto;">
+          <table class="dr-table">
+            <thead>
+              <tr>
+                <th style="width:36px">#</th>
+                <th>Patient</th>
+                <th>Actual Amt</th>
+                <th>Gross Amt</th>
+                <th>Discount</th>
+                <th>Approved By</th>
+                <th>Referred By</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody class="pagination-loop">
+              <% let i = 1; discountReportDetails.forEach(function(r){ %>
+              <tr class="<%= (r.DuesAmount > 0 && r.Status == 1) ? 'row-dues' : '' %>
+                         <%= (r.Status == 2) ? 'row-cancelled' : '' %>">
+
+                <!-- # -->
+                <td style="color:var(--text-hint);font-size:12px"><%= i++ %></td>
+
+                <!-- Patient -->
+                <td>
+                  <a class="pt-name text-capitalize"
+                     href="/patient/getPatientDetail?patientId=<%= r.PatientId %>"
+                     data-bs-toggle="tooltip" data-bs-placement="top" title="<%= r.TestNames %>">
+                    <i class="bi bi-person-circle" style="color:var(--brand);font-size:15px;flex-shrink:0"></i>
+                    <%= r.Title %> <%= r.Name %>
+                  </a>
+                  <div class="pt-meta">
+                    <% if(r.Gender == 1) { %>
+                      <span><i class="bi bi-gender-male" style="color:#185FA5"></i> Male</span>
+                    <% } else { %>
+                      <span><i class="bi bi-gender-female" style="color:#A32D2D"></i> Female</span>
+                    <% } %>
+                    <span style="color:var(--border-strong)">·</span>
+                    <span><%= r.Age %> <%= r.YMD %></span>
+                    <span style="color:var(--border-strong)">·</span>
+                    <span><i class="bi bi-phone" style="color:var(--success-text)"></i> +91 <%= r.PhoneNumber %></span>
+                  </div>
+                  <% if(r.DuesAmount > 0 && r.Status == 1) { %>
+                    <span class="badge-warning" style="margin-top:4px;display:inline-block">
+                      <i class="bi bi-exclamation-circle me-1"></i>Due: ₹<%= fmt(r.DuesAmount) %>
+                    </span>
+                  <% } %>
+                  <% if(r.Status == 2) { %>
+                    <span class="badge-muted" style="margin-top:4px;display:inline-block">Cancelled</span>
+                  <% } %>
+                </td>
+
+                <!-- Actual -->
+                <td>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;">₹<%= fmt(r.ActualAmount) %></span>
+                </td>
+
+                <!-- Gross -->
+                <td>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--success-text);">₹<%= fmt(r.GrossAmount) %></span>
+                </td>
+
+                <!-- Discount -->
+                <td>
+                  <span class="badge-danger">₹<%= fmt(r.Discount) %></span>
+                </td>
+
+                <!-- Approved By -->
+                <td style="font-size:12.5px;" class="text-capitalize">
+                  <% if(r.DiscountApprovedBy) { %>
+                    <span class="badge-info"><i class="bi bi-person-check me-1"></i><%= r.DiscountApprovedBy %></span>
+                  <% } else { %>
+                    <span style="color:var(--text-hint);font-size:12px">—</span>
+                  <% } %>
+                </td>
+
+                <!-- Referred By (Doctor) -->
+                <td>
+                  <span style="font-size:12.5px;font-weight:500" class="text-capitalize">
+                    Dr. <%= r.DoctorFirstName %> <%= r.DoctorLastName %>
+                  </span>
+                  <span style="font-size:11px;color:var(--text-hint);display:block;margin-top:2px">
+                    <i class="bi bi-clipboard-heart"></i> <%= r.DoctorSpecialistIn %>
+                  </span>
+                </td>
+
+                <!-- Date -->
+                <td style="white-space:nowrap;font-size:12.5px;color:var(--text-secondary);">
+                  <i class="bi bi-calendar3 me-1"></i><%= r.RegisteredOn %>
+                </td>
+
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Total bar -->
+        <div class="dr-total-bar danger mt-3">
+          <span class="lbl"><i class="bi bi-percent me-1"></i>Total Discount Across Results</span>
+          <span class="val">₹<%= fmt(totalDiscount) %></span>
+        </div>
+
+      <% } %>
+
+    </div><!-- /section -->
+
+    <!-- Pagination -->
+    <nav class="dr-pagination" aria-label="Discount report pagination">
+      <a class="dr-page-btn disabled" id="drPrevBtn" href="#">
+        <i class="bi bi-chevron-left"></i> Prev
+      </a>
+      <span id="drPageNumbers" style="display:flex;gap:6px;flex-wrap:wrap;"></span>
+      <a class="dr-page-btn" id="drNextBtn" href="#">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    </nav>
+
+  </div><!-- /results card -->
+
+</div><!-- /dr-wrapper -->
+
+<script>
+  // ── Date pickers ─────────────────────────────────────────────
+  flatpickr("#drFrom", { dateFormat:"d M Y", allowInput:true });
+  flatpickr("#drTo",   { dateFormat:"d M Y", allowInput:true });
+
+  // ── Tooltips ─────────────────────────────────────────────────
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    new bootstrap.Tooltip(el);
+  });
+
+  // ── Pagination ───────────────────────────────────────────────
+  (function() {
+    const ROWS_PER_PAGE = 15;
+    const tbody  = document.querySelector('.pagination-loop');
+    if (!tbody) return;
+    const rows   = Array.from(tbody.querySelectorAll('tr'));
+    const total  = rows.length;
+    if (total <= ROWS_PER_PAGE) {
+      document.querySelector('.dr-pagination').style.display = 'none';
+      return;
+    }
+
+    let currentPage = 1;
+    const totalPages = Math.ceil(total / ROWS_PER_PAGE);
+
+    function showPage(p) {
+      currentPage = Math.min(Math.max(1, p), totalPages);
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      rows.forEach((r, i) => r.style.display = (i >= start && i < start + ROWS_PER_PAGE) ? '' : 'none');
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const prev    = document.getElementById('drPrevBtn');
+      const next    = document.getElementById('drNextBtn');
+      const numWrap = document.getElementById('drPageNumbers');
+
+      prev.classList.toggle('disabled', currentPage === 1);
+      next.classList.toggle('disabled', currentPage === totalPages);
+      prev.onclick = (e) => { e.preventDefault(); if(currentPage > 1) showPage(currentPage - 1); };
+      next.onclick = (e) => { e.preventDefault(); if(currentPage < totalPages) showPage(currentPage + 1); };
+
+      // Show at most 5 page numbers centred on current page
+      numWrap.innerHTML = '';
+      let start = Math.max(1, currentPage - 2);
+      let end   = Math.min(totalPages, start + 4);
+      if (end - start < 4) start = Math.max(1, end - 4);
+
+      for (let p = start; p <= end; p++) {
+        const a = document.createElement('a');
+        a.className  = 'dr-page-btn' + (p === currentPage ? ' active' : '');
+        a.textContent = p;
+        a.href = '#';
+        a.onclick = (e) => { e.preventDefault(); showPage(p); };
+        numWrap.appendChild(a);
+      }
+    }
+
+    showPage(1);
+  })();
+</script>

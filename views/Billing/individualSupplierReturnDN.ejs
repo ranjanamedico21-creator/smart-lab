@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supplier Debit Note</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+
+        /* ── BASE ────────────────────────────────────────── */
+        :root {
+            --ink:       #0f1923;
+            --mid:       #4a5568;
+            --muted:     #8896a8;
+            --rule:      #d0d9e4;
+            --accent:    #1a4fa0;
+            --accent-lt: #e8eef8;
+            --bg-strip:  #f4f7fb;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #dde3ec;
+            color: var(--ink);
+            font-size: 12.5px;
+            line-height: 1.55;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ── A4 PAGE SHELL ───────────────────────────────── */
+        .a4 {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 24px auto;
+            background: #fff;
+            box-shadow: 0 4px 40px rgba(0,0,0,.18);
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* push bank+summary to bottom */
+        .a4-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 28px 32px 0;
+        }
+
+        .a4-spacer { flex: 1; }
+
+        .a4-footer {
+            padding: 0 32px 28px;
+        }
+
+        /* ── ACCENT BAR TOP ──────────────────────────────── */
+        .accent-bar {
+            height: 6px;
+            background: linear-gradient(90deg, var(--accent) 0%, #2d82d4 60%, #56aff0 100%);
+        }
+
+        /* ── HEADER ──────────────────────────────────────── */
+        .doc-header {
+            padding: 20px 32px 16px;
+            border-bottom: 1.5px solid var(--rule);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .doc-header img {
+            max-height: 56px;
+            object-fit: contain;
+        }
+
+        .company-info {
+            text-align: right;
+        }
+
+        .company-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            color: var(--accent);
+            margin: 0 0 2px;
+            letter-spacing: .3px;
+        }
+
+        .company-sub {
+            color: var(--mid);
+            font-size: 11.5px;
+            margin: 0;
+        }
+
+        .company-gstin {
+            display: inline-block;
+            margin-top: 4px;
+            background: var(--accent-lt);
+            color: var(--accent);
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: .4px;
+        }
+
+        /* ── TITLE BAND ──────────────────────────────────── */
+        .title-band {
+            background: var(--bg-strip);
+            border-bottom: 1px solid var(--rule);
+            padding: 10px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .title-band .badge-pill {
+            background: var(--accent);
+            color: #fff;
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+        }
+
+        .doc-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            color: var(--ink);
+            letter-spacing: .5px;
+            margin: 0;
+        }
+
+        .title-dl {
+            font-size: 11.5px;
+            color: var(--mid);
+            text-align: right;
+        }
+
+        /* ── PARTY / RETURN INFO ─────────────────────────── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 0;
+            border: 1px solid var(--rule);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 18px;
+        }
+
+        .info-panel {
+            padding: 14px 18px;
+        }
+
+        .info-panel + .info-panel {
+            border-left: 1px solid var(--rule);
+            background: var(--bg-strip);
+        }
+
+        .panel-head {
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 6px;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .info-label {
+            color: var(--muted);
+            font-size: 11px;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            color: var(--ink);
+            font-weight: 500;
+            font-size: 11.5px;
+        }
+
+        /* status badge */
+        .status-badge {
+            display: inline-block;
+            padding: 1px 10px;
+            border-radius: 100px;
+            font-size: 10.5px;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* ── ITEM TABLE ──────────────────────────────────── */
+        .items-section { margin-top: 20px; }
+
+        .items-section table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+        }
+
+        .items-section thead tr {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .items-section thead th {
+            padding: 8px 7px;
+            font-weight: 600;
+            font-size: 10.5px;
+            letter-spacing: .3px;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .items-section tbody tr {
+            border-bottom: 1px solid #edf0f5;
+            transition: background .15s;
+        }
+
+        .items-section tbody tr:nth-child(even) {
+            background: var(--bg-strip);
+        }
+
+        .items-section tbody td {
+            padding: 7px 7px;
+            color: var(--ink);
+            border: none;
+            vertical-align: middle;
+        }
+
+        .items-section tfoot tr {
+            background: var(--accent-lt);
+            font-weight: 600;
+        }
+
+        .items-section tfoot td {
+            padding: 7px 7px;
+            border-top: 2px solid var(--accent);
+            font-size: 11.5px;
+        }
+
+        /* ── DIVIDER ─────────────────────────────────────── */
+        .section-divider {
+            border: none;
+            border-top: 1px dashed var(--rule);
+            margin: 20px 0 0;
+        }
+
+        /* ── BANK + SUMMARY (FOOTER CARDS) ───────────────── */
+        .bottom-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .card-block {
+            border: 1px solid var(--rule);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .card-block-head {
+            background: var(--accent);
+            color: #fff;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 7px 14px;
+        }
+
+        .card-block-body {
+            padding: 12px 14px;
+            background: var(--bg-strip);
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 11.5px;
+            border-bottom: 1px solid #e4eaf3;
+        }
+
+        .card-row:last-child { border-bottom: none; }
+
+        .card-row .lbl { color: var(--muted); }
+        .card-row .val { font-weight: 500; color: var(--ink); }
+
+        .total-row {
+            background: var(--accent);
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            font-weight: 700;
+            font-size: 12.5px;
+        }
+
+        /* ── SIGNATURES ──────────────────────────────────── */
+        .sig-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 22px;
+            padding-top: 14px;
+            border-top: 1px solid var(--rule);
+            gap: 16px;
+        }
+
+        .sig-box {
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .sig-line {
+            border-top: 1px solid var(--ink);
+            margin-top: 32px;
+            padding-top: 4px;
+            font-size: 10.5px;
+            color: var(--mid);
+            font-weight: 500;
+        }
+
+        .terms-text {
+            font-size: 10.5px;
+            color: var(--mid);
+            flex: 1;
+        }
+
+        .terms-text strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--ink);
+        }
+
+        .terms-text ol {
+            padding-left: 14px;
+            margin: 0;
+        }
+
+        /* ── BOTTOM RULE ─────────────────────────────────── */
+        .accent-bar-bottom {
+            height: 4px;
+            background: linear-gradient(90deg, #56aff0 0%, #2d82d4 40%, var(--accent) 100%);
+            margin-top: 20px;
+        }
+
+        /* ── PRINT BUTTON ────────────────────────────────── */
+        .print-btn-wrap {
+            width: 210mm;
+            margin: 0 auto 12px;
+            text-align: right;
+        }
+
+        .btn-print {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-print:hover { background: #153e80; }
+
+        /* ── CONTINUED LABEL (screen only) ──────────────────── */
+        .continued-label {
+            display: none;
+            text-align: right;
+            font-size: 10px;
+            color: var(--muted);
+            font-style: italic;
+            margin-top: 6px;
+            padding-right: 2px;
+        }
+
+        /* ── PRINT REPEAT HEADER (hidden on screen) ──────────
+           This block appears at the top of page 2+ during print.
+           It mirrors the company header + title band + col titles.
+        ────────────────────────────────────────────────────── */
+        .print-repeat-header {
+            display: none; /* hidden on screen */
+        }
+
+        /* ── PRINT RULES ─────────────────────────────────── */
+        @media print {
+
+            @page {
+                size: A4;
+                margin: 8mm 10mm 12mm 10mm;
+            }
+
+            body { background: white; }
+
+            .a4 {
+                margin: 0;
+                box-shadow: none;
+                width: 100%;
+                min-height: auto;
+                overflow: visible;
+            }
+
+            /* Flatten flex so content flows naturally across pages */
+            .a4-body {
+                display: block;
+                padding: 16px 32px 0;
+            }
+
+            .a4-spacer { display: none; }
+
+            .print-btn-wrap,
+            .no-print { display: none !important; }
+
+            /* ── REPEATING HEADER on page 2+
+               Strategy: wrap the entire doc in a table.
+               <thead> = company header + col titles → repeats every page.
+               This is the most reliable cross-browser print repeat method.
+            ────────────────────────────────────────────────── */
+
+            /* The outer print-table wraps everything */
+            .print-table-wrap {
+                display: table;
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .print-thead {
+                display: table-header-group;
+            }
+
+            .print-thead-cell {
+                display: table-cell;
+            }
+
+            .print-tbody {
+                display: table-row-group;
+            }
+
+            .print-tbody-cell {
+                display: table-cell;
+                vertical-align: top;
+                padding: 0;
+            }
+
+            /* Show the repeat header block on print */
+            .print-repeat-header {
+                display: block;
+                border-bottom: 2px solid var(--accent);
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+            }
+
+            /* Compact repeat header — slimmer than page 1 */
+            .print-repeat-header .rh-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 6px 0 4px;
+                border-bottom: 1px solid var(--rule);
+                margin-bottom: 4px;
+            }
+
+            .print-repeat-header .rh-company {
+                font-family: 'Playfair Display', serif;
+                font-size: 13px;
+                color: var(--accent);
+                font-weight: 700;
+            }
+
+            .print-repeat-header .rh-meta {
+                font-size: 10px;
+                color: var(--mid);
+                text-align: right;
+            }
+
+            .print-repeat-header .rh-tag {
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: .8px;
+                text-transform: uppercase;
+                background: var(--accent);
+                color: #fff;
+                padding: 2px 8px;
+                border-radius: 100px;
+            }
+
+            .print-repeat-header .rh-col-row {
+                display: flex;
+                background: var(--accent);
+                color: #fff;
+                font-size: 9.5px;
+                font-weight: 600;
+                padding: 5px 0;
+                border-radius: 4px;
+            }
+
+            /* ── Table col headers ALSO repeat (belt + braces) ── */
+            .items-section thead {
+                display: table-header-group;
+            }
+
+            /* No row splits across pages */
+            .items-section tbody tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* Keep footer together — always on last page */
+            .a4-footer {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .bottom-cards {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .sig-row {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* Color fidelity */
+            .accent-bar, .accent-bar-bottom,
+            .items-section thead tr,
+            .card-block-head, .total-row,
+            .print-repeat-header .rh-col-row,
+            .print-repeat-header .rh-tag {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .continued-label { display: none !important; }
+
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="print-btn-wrap no-print">
+        <button class="btn-print" onclick="window.print()">⬇ Print / Save PDF</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         PRINT TABLE WRAP
+         thead  → repeats on every printed page (company header + col titles)
+         tbody  → the actual document content
+    ═════════════════════════════════════════════════════ -->
+    <div class="print-table-wrap">
+
+        <!-- ── REPEATING PRINT HEADER (page 2+) ── -->
+        <div class="print-thead">
+          <div class="print-thead-cell">
+            <div class="print-repeat-header">
+
+                <!-- accent bar -->
+                <div style="height:4px;background:linear-gradient(90deg,#1a4fa0 0%,#2d82d4 60%,#56aff0 100%);margin-bottom:6px;border-radius:2px;"></div>
+
+                <!-- company row -->
+                <div class="rh-top">
+                    <div>
+                        <div class="rh-company"><%= companyDetails.coreCompany %></div>
+                        <div style="font-size:9.5px;color:var(--mid);"><%= companyDetails.coreCompanyAddress %></div>
+                    </div>
+                    <div class="rh-meta">
+                        <span class="rh-tag">Debit Note — Continued</span><br>
+                        <span style="margin-top:3px;display:inline-block;">
+                            Return No: <strong><%= header.ReturnNumber %></strong>
+                            &nbsp;|&nbsp;
+                            GSTIN: <strong><%= companyDetails.coreCompanyGstNo %></strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- column title row (mirrors the table thead) -->
+                <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                    <thead>
+                        <tr style="background:var(--accent);color:#fff;">
+                            <th style="padding:5px 6px;width:30px;text-align:center;">Sr</th>
+                            <th style="padding:5px 6px;text-align:left;">Product</th>
+                            <th style="padding:5px 6px;text-align:center;">HSN</th>
+                            <th style="padding:5px 6px;text-align:center;">Batch</th>
+                            <th style="padding:5px 6px;text-align:center;">Expiry</th>
+                            <th style="padding:5px 6px;text-align:center;">Qty</th>
+                            <th style="padding:5px 6px;text-align:right;">Rate (₹)</th>
+                            <th style="padding:5px 6px;text-align:center;">GST %</th>
+                            <th style="padding:5px 6px;text-align:right;">GST Amt</th>
+                            <th style="padding:5px 6px;text-align:right;">Total (₹)</th>
+                        </tr>
+                    </thead>
+                </table>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ── MAIN DOCUMENT CONTENT ── -->
+        <div class="print-tbody">
+          <div class="print-tbody-cell">
+
+    <div class="a4">
+
+        <!-- top accent bar -->
+        <div class="accent-bar"></div>
+
+        <!-- COMPANY HEADER -->
+        <div class="doc-header">
+            <img src="<%=imageBase64%>" alt="Logo">
+            <div class="company-info">
+                <p class="company-name"><%= companyDetails.coreCompany %></p>
+                <p class="company-sub"><%= companyDetails.coreCompanyAddress %></p>
+                <p class="company-sub">
+                    <%= companyDetails.coreCompanyEmail %> &nbsp;|&nbsp; <%= companyDetails.coreCompanyPhoneNumber %>
+                </p>
+                <span class="company-gstin">GSTIN : <%= companyDetails.coreCompanyGstNo %></span>
+            </div>
+        </div>
+
+        <!-- TITLE BAND -->
+        <div class="title-band">
+            <span class="badge-pill">Expired Goods Return</span>
+            <h1 class="doc-title">Debit Note</h1>
+            <div class="title-dl">
+                <span style="color:var(--muted)">DL No</span>&nbsp;&nbsp;<strong><%= companyDetails.coreCompanyDLNo %></strong>
+            </div>
+        </div>
+
+        <!-- A4 BODY (stretches to fill page) -->
+        <div class="a4-body">
+
+            <!-- PARTY / RETURN DETAILS -->
+            <div class="info-grid">
+                <div class="info-panel">
+                    <div class="panel-head">Supplier Details</div>
+                    <div class="info-row"><span class="info-label">Name</span><span class="info-value"><%= header.SupplierName %></span></div>
+                    <div class="info-row"><span class="info-label">Address</span><span class="info-value"><%= header.Address %></span></div>
+                    <div class="info-row"><span class="info-label">Mobile</span><span class="info-value"><%= header.MobileNo %></span></div>
+                    <div class="info-row"><span class="info-label">GST No</span><span class="info-value"><%= header.GstIn %></span></div>
+                    <div class="info-row"><span class="info-label">DL No</span><span class="info-value"><%= header.DlNo %></span></div>
+                    <div class="info-row"><span class="info-label">CIN</span><span class="info-value"><%= header.Cin %></span></div>
+                    <div class="info-row"><span class="info-label">Location</span><span class="info-value"><%= header.City %> &nbsp;<%= header.State %></span></div>
+                    <div class="info-row"><span class="info-label">Pincode</span><span class="info-value"><%= header.Pincode %></span></div>
+                </div>
+                <div class="info-panel">
+                    <div class="panel-head">Return Details</div>
+                    <div class="info-row"><span class="info-label">Return No</span><span class="info-value"><%= header.ReturnNumber %></span></div>
+                    <div class="info-row"><span class="info-label">Date</span><span class="info-value"><%= header.ReturnDate %></span></div>
+                    <div class="info-row"><span class="info-label">Reason</span><span class="info-value">Expired Goods Return</span></div>
+                    <div class="info-row">
+                        <span class="info-label">Status</span>
+                        <span class="info-value"><span class="status-badge"><%= header.Status %></span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ITEM TABLE -->
+            <div class="items-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align:center;width:30px">Sr</th>
+                            <th style="text-align:left">Product</th>
+                            <th>HSN</th>
+                            <th>Batch</th>
+                            <th>Expiry</th>
+                            <th>Qty</th>
+                            <th>Rate (₹)</th>
+                            <th>GST %</th>
+                            <th>GST Amt</th>
+                            <th>Total (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% items.forEach((item,i)=>{ %>
+                        <tr>
+                            <td style="text-align:center"><%= i+1 %></td>
+                            <td style="text-align:left;font-weight:500" class="text-capitalize"><%= item.ProductName %></td>
+                            <td style="text-align:center"><%= item.Hsn %></td>
+                            <td style="text-align:center"><%= item.BatchNumber %></td>
+                            <td style="text-align:center"><%= item.ExpiryDate %></td>
+                            <td style="text-align:center"><%= item.Quantity %></td>
+                            <td style="text-align:right"><%= item.PurchasePrice %></td>
+                            <td style="text-align:center"><%= item.GstPercent %>%</td>
+                            <td style="text-align:right"><%= Number(item.GstAmount).toFixed(2) %></td>
+                            <td style="text-align:right;font-weight:600"><%= Number(item.Total).toFixed(2) %></td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+                <!-- shown on screen when table is tall enough to push footer to page 2 -->
+                <div class="continued-label" id="continuedLabel">
+                    ▸ Summary &amp; Bank Details continued on last page
+                </div>
+            </div>
+
+            <!-- spacer pushes footer to bottom -->
+            <div class="a4-spacer"></div>
+
+        </div><!-- /a4-body -->
+
+        <!-- FOOTER: BANK + SUMMARY + SIGNATURES -->
+        <div class="a4-footer">
+
+            <hr class="section-divider">
+
+            <!-- Bank + Summary Cards -->
+            <div class="bottom-cards">
+
+                <!-- Bank Details -->
+                <div class="card-block">
+                    <div class="card-block-head">Bank Details</div>
+                    <div class="card-block-body">
+                        <div class="card-row"><span class="lbl">Account Holder</span><span class="val"><%= companyDetails.coreCompany %></span></div>
+                        <div class="card-row"><span class="lbl">Bank</span><span class="val"><%= companyDetails.coreCompanyBankName %></span></div>
+                        <div class="card-row"><span class="lbl">Branch</span><span class="val"><%= companyDetails.coreCompanyBranchName %></span></div>
+                        <div class="card-row"><span class="lbl">Account No</span><span class="val"><%= companyDetails.coreCompanyAccountNo %></span></div>
+                        <div class="card-row"><span class="lbl">IFSC</span><span class="val"><%= companyDetails.coreCompanyIFSCCode %></span></div>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="card-block">
+                    <div class="card-block-head">Amount Summary</div>
+                    <div class="card-block-body">
+                        <div class="card-row"><span class="lbl">Taxable Amount</span><span class="val">₹ <%= Number(summary.TaxableAmount).toFixed(2) %> </span></div>
+                        <div class="card-row"><span class="lbl">Total GST</span><span class="val">₹ <%= Number(summary.GstAmount).toFixed(2) %></span></div>
+                        <div class="total-row">
+                            <span>Total Debit Amount</span>
+                            <span>₹ <%= Number(summary.GrandTotal).toFixed(2) %></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Signatures + Terms -->
+            <div class="sig-row">
+                <div class="terms-text">
+                    <strong>Terms &amp; Conditions</strong>
+                    <ol>
+                        <li>Expired goods returned for credit / replacement.</li>
+                        <li>Credit note will be issued after verification.</li>
+                        <li>Subject to Patna jurisdiction.</li>
+                    </ol>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-line">Supplier Signature</div>
+                </div>
+                <div class="sig-box">
+                    <div class="sig-line">Authorised Signatory</div>
+                </div>
+            </div>
+
+        </div><!-- /a4-footer -->
+
+        <div class="accent-bar-bottom"></div>
+
+    </div><!-- /a4 -->
+
+          </div><!-- /print-tbody-cell -->
+        </div><!-- /print-tbody -->
+
+    </div><!-- /print-table-wrap -->
+
+    <script>
+        // Show "continued on last page" hint on screen when the footer
+        // has been pushed beyond the first A4 page height (~1122px at 96dpi)
+        (function() {
+            var A4_PX = 1122; // 297mm at 96dpi
+            var footer = document.querySelector('.a4-footer');
+            var label  = document.getElementById('continuedLabel');
+            if (!footer || !label) return;
+            function check() {
+                var rect = footer.getBoundingClientRect();
+                var a4top = document.querySelector('.a4').getBoundingClientRect().top;
+                var footerRelTop = rect.top - a4top;
+                label.style.display = footerRelTop > A4_PX ? 'block' : 'none';
+            }
+            check();
+            window.addEventListener('resize', check);
+        })();
+    </script>
+</body>
+</html>

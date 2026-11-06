@@ -1,0 +1,421 @@
+<%
+/*
+  Invoice-wise Profit & Loss
+  Expects: invoices[], summary{totalInvoices,totalSales,totalProfit,totalMarginPercent}, customers, suppliers,
+           customerId, supplierId, invoiceId, fromDate, toDate
+  Each invoice: InvoiceId, InvoiceDate, CustomerId, CustomerName, InvoiceSaleValue, InvoiceCost, InvoiceProfit,
+                InvoiceMarginPercent, items[]
+*/
+const inr  = v => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const inr0 = v => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const list = invoices || [];
+const totSales  = Number(summary.totalSales) || 0;
+const totProfit = Number(summary.totalProfit) || 0;
+const totCost   = list.reduce((s, i) => s + (Number(i.InvoiceCost) || 0), 0);
+const lossInv   = list.filter(i => i.InvoiceProfit < 0);
+const lossAmt   = lossInv.reduce((s, i) => s + Math.abs(Number(i.InvoiceProfit) || 0), 0);
+const bestInv   = list.length ? list.reduce((a, b) => (b.InvoiceProfit > a.InvoiceProfit ? b : a)) : null;
+const worstInv  = list.length ? list.reduce((a, b) => (b.InvoiceProfit < a.InvoiceProfit ? b : a)) : null;
+const avgInv    = list.length ? totProfit / list.length : 0;
+const maxAbsMargin = Math.max(20, ...list.map(i => Math.abs(Number(i.InvoiceMarginPercent) || 0)));
+const dmy = s => { const m = String(s || '').match(/^(\d{2})-(\d{2})-(\d{4})/); return m ? m[3] + m[2] + m[1] : ''; };
+%>
+
+<style>
+  .iv-page { --iv-ink:#0f172a; --iv-muted:#64748b; --iv-line:#e2e8f0; --iv-soft:#f8fafc;
+             --iv-blue:#2563eb; --iv-amber:#d97706; --iv-green:#059669; --iv-red:#dc2626; --iv-radius:14px; }
+  .iv-page .iv-card { background:#fff; border:1px solid var(--iv-line); border-radius:var(--iv-radius); box-shadow:0 1px 2px rgba(15,23,42,.04); }
+  .iv-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .iv-eyebrow { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--iv-muted); font-weight:600; }
+  .iv-title { font-size:24px; font-weight:700; color:var(--iv-ink); margin:2px 0 6px; letter-spacing:-.01em; }
+  .iv-period { display:inline-flex; align-items:center; gap:6px; background:#eff6ff; color:#1d4ed8; border-radius:999px; padding:3px 12px; font-size:12.5px; font-weight:600; }
+  .iv-tools { display:flex; gap:8px; }
+  .iv-btn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--iv-line); background:#fff; color:var(--iv-ink); border-radius:10px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+  .iv-btn:hover { background:var(--iv-soft); }
+  .iv-btn.on { background:#fef2f2; border-color:#fecaca; color:var(--iv-red); }
+
+  .iv-filter { padding:16px 18px; margin-bottom:18px; }
+  .iv-filter .form-label { font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--iv-muted); font-weight:600; margin-bottom:4px; }
+  .iv-filter .form-control, .iv-filter .form-select { border-radius:10px; font-size:14px; }
+
+  .iv-flow { display:grid; grid-template-columns: 0.8fr 1fr 1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
+  .iv-tile { padding:14px 16px; position:relative; overflow:hidden; }
+  .iv-tile::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent,#94a3b8); }
+  .iv-tile .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--iv-muted); font-weight:600; }
+  .iv-tile .val { font-size:21px; font-weight:700; color:var(--iv-ink); margin-top:4px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .iv-tile .sub { font-size:12px; color:var(--iv-muted); margin-top:2px; }
+  .iv-tile.inv   { --accent:#7c3aed; }
+  .iv-tile.sales { --accent:var(--iv-blue); }
+  .iv-tile.cost  { --accent:var(--iv-amber); }
+  .iv-tile.margin{ --accent:var(--iv-green); }
+  .iv-tile.margin.neg { --accent:var(--iv-red); } .iv-tile.margin.neg .val { color:var(--iv-red); }
+  .iv-tile.profit { color:#fff; border:0; background:linear-gradient(135deg,#059669,#047857); }
+  .iv-tile.profit.neg { background:linear-gradient(135deg,#dc2626,#b91c1c); }
+  .iv-tile.profit::before { display:none; }
+  .iv-tile.profit .lbl, .iv-tile.profit .sub { color:rgba(255,255,255,.85); }
+  .iv-tile.profit .val { color:#fff; font-size:25px; }
+  @media (max-width:1199px){ .iv-flow{ grid-template-columns:1fr 1fr; } .iv-tile.profit{ grid-column:1 / -1; } }
+  @media (max-width:575px){ .iv-flow{ grid-template-columns:1fr; } }
+
+  .iv-chips { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-bottom:18px; }
+  .iv-chip { padding:11px 14px; display:flex; flex-direction:column; gap:2px; }
+  .iv-chip .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--iv-muted); font-weight:600; }
+  .iv-chip .val { font-size:16px; font-weight:700; color:var(--iv-ink); }
+  .iv-chip .sub { font-size:12px; color:var(--iv-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .iv-bar-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--iv-line); }
+  .iv-bar-head h6 { margin:0 auto 0 0; font-size:15px; font-weight:700; color:var(--iv-ink); }
+  .iv-search { width:270px; border-radius:10px; font-size:13.5px; }
+  .iv-sort { width:auto; border-radius:10px; font-size:13px; }
+
+  /* one invoice = one row that opens to show its items */
+  .iv-item { border-bottom:1px solid var(--iv-line); }
+  .iv-item:last-child { border-bottom:0; }
+  .iv-row { width:100%; display:grid; grid-template-columns: 24px minmax(150px,1.2fr) minmax(160px,1.6fr) 1fr 1fr 1.3fr; align-items:center; gap:12px;
+            padding:13px 18px; background:#fff; border:0; text-align:left; cursor:pointer; font-size:13.5px; }
+  .iv-row:hover { background:var(--iv-soft); }
+  .iv-item.is-loss .iv-row { background:#fffafa; }
+  .iv-item.is-loss .iv-row:hover { background:#fef2f2; }
+  .iv-caret { color:var(--iv-muted); transition:transform .2s; }
+  .iv-row[aria-expanded="true"] .iv-caret { transform:rotate(90deg); }
+  .iv-no   { font-weight:700; color:var(--iv-ink); }
+  .iv-date { font-size:12px; color:var(--iv-muted); }
+  .iv-cust a { color:var(--iv-blue); font-weight:600; text-decoration:none; }
+  .iv-cust a:hover { text-decoration:underline; }
+  .iv-cust small { display:block; color:var(--iv-muted); font-size:12px; }
+  .iv-num { text-align:right; font-variant-numeric:tabular-nums; }
+  .iv-num .k { display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--iv-muted); font-weight:600; }
+  .iv-num .v { font-weight:600; color:var(--iv-ink); }
+  .iv-pos { color:var(--iv-green) !important; font-weight:700 !important; } .iv-neg { color:var(--iv-red) !important; font-weight:700 !important; }
+  .iv-margin { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+  .iv-bar { flex:0 0 56px; height:6px; border-radius:99px; background:#eef2f7; overflow:hidden; }
+  .iv-bar > i { display:block; height:100%; border-radius:99px; }
+  .iv-pill { display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:999px; }
+  .iv-pill.pos { background:#dcfce7; color:#166534; } .iv-pill.neg { background:#fee2e2; color:#991b1b; }
+  @media (max-width:991px){
+    .iv-row { grid-template-columns: 20px 1fr 1fr; row-gap:6px; }
+    .iv-row .iv-cust { grid-column:2 / -1; order:3; }
+    .iv-row .iv-hide-sm { display:none; }
+  }
+
+  .iv-detail { background:var(--iv-soft); padding:4px 18px 16px 54px; border-top:1px dashed var(--iv-line); }
+  .iv-t { margin:0; font-size:13px; background:#fff; border:1px solid var(--iv-line); border-radius:10px; overflow:hidden; }
+  .iv-t thead th { background:#f1f5f9; color:var(--iv-muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; white-space:nowrap; border-bottom:1px solid var(--iv-line); }
+  .iv-t td { vertical-align:middle; font-variant-numeric:tabular-nums; border-color:#f1f5f9; }
+  .iv-t tr.loss td { background:#fef2f2; }
+  .iv-t tfoot td { background:#f1f5f9; font-weight:700; border-top:2px solid var(--iv-line); }
+  .iv-prod { font-weight:600; color:var(--iv-ink); }
+  .iv-sub  { font-size:12px; color:var(--iv-muted); }
+  @media (max-width:991px){ .iv-detail { padding-left:14px; } }
+
+  .iv-empty { padding:44px 12px; text-align:center; color:var(--iv-muted); }
+  .iv-nomatch { display:none; }
+
+  .ts-wrapper { border:none; padding:0; background:transparent; }
+  .ts-control { border:1px solid #ced4da; border-radius:10px; min-height:calc(1.5em + .75rem + 2px); padding:.375rem .75rem; }
+
+  @media print {
+    .iv-tools, .iv-filter, .iv-bar-tools { display:none !important; }
+    .iv-page .iv-card { box-shadow:none; }
+    .iv-detail.collapse, .iv-detail.collapsing { display:block !important; height:auto !important; }
+  }
+</style>
+
+<div class="container-fluid py-4 iv-page">
+
+  <!-- header -->
+  <div class="iv-head">
+    <div>
+      <div class="iv-eyebrow">Reports</div>
+      <h4 class="iv-title"><i class="bi bi-receipt-cutoff me-2" style="color:var(--iv-blue)"></i>Invoice-wise Profit &amp; Loss</h4>
+      <span class="iv-period"><i class="bi bi-calendar3"></i><%= fromDate %> &nbsp;to&nbsp; <%= toDate %></span>
+    </div>
+    <div class="iv-tools">
+      <button type="button" class="iv-btn" id="ivExport"><i class="bi bi-download"></i> Export CSV</button>
+      <button type="button" class="iv-btn" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+    </div>
+  </div>
+
+  <!-- filters -->
+  <div class="iv-card iv-filter">
+    <form action="/billing/invoiceWiseProfitLoss" method="POST" id="filterForm">
+      <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-2">
+          <label class="form-label" for="fromDate">From</label>
+          <input type="text" class="form-control flatpickr-date" name="fromDate" id="fromDate" value="<%= fromDate %>" placeholder="DD-MM-YYYY" autocomplete="off">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label" for="toDate">To</label>
+          <input type="text" class="form-control flatpickr-date" name="toDate" id="toDate" value="<%= toDate %>" placeholder="DD-MM-YYYY" autocomplete="off">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="invoiceId">Invoice no</label>
+          <input type="text" class="form-control" name="invoiceId" id="invoiceId" value="<%= invoiceId %>" placeholder="Search invoice no...">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="customerId">Customer</label>
+          <select class="form-select" name="customerId" id="customerId">
+            <option value="">All customers</option>
+            <% customers.forEach(function(c) { %>
+              <option value="<%= c.Id %>" <%= (String(customerId) === String(c.Id)) ? 'selected' : '' %>><%= c.CustomerName %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="supplierId">Supplier</label>
+          <select class="form-select" name="supplierId" id="supplierId">
+            <option value="">All suppliers</option>
+            <% suppliers.forEach(function(s) { %>
+              <option value="<%= s.Id %>" <%= (String(supplierId) === String(s.Id)) ? 'selected' : '' %>><%= s.Name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary px-4" style="border-radius:10px"><i class="bi bi-search me-1"></i> Show report</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- summary -->
+  <div class="iv-flow">
+    <div class="iv-card iv-tile inv">
+      <div class="lbl">Invoices</div>
+      <div class="val"><%= summary.totalInvoices %></div>
+      <div class="sub"><%= lossInv.length ? lossInv.length + ' at a loss' : 'none at a loss' %></div>
+    </div>
+    <div class="iv-card iv-tile sales">
+      <div class="lbl">Total sales</div>
+      <div class="val">₹<%= inr(totSales) %></div>
+      <div class="sub">Avg ₹<%= inr0(list.length ? totSales / list.length : 0) %> per invoice</div>
+    </div>
+    <div class="iv-card iv-tile cost">
+      <div class="lbl">Cost of goods</div>
+      <div class="val">₹<%= inr(totCost) %></div>
+      <div class="sub">At each batch's purchase price</div>
+    </div>
+    <div class="iv-card iv-tile margin <%= summary.totalMarginPercent < 0 ? 'neg' : '' %>">
+      <div class="lbl">Overall margin</div>
+      <div class="val"><%= summary.totalMarginPercent %>%</div>
+      <div class="sub">Profit &divide; sales</div>
+    </div>
+    <div class="iv-card iv-tile profit <%= totProfit < 0 ? 'neg' : '' %>">
+      <div class="lbl"><%= totProfit >= 0 ? 'Total profit' : 'Total loss' %></div>
+      <div class="val">₹<%= inr(Math.abs(totProfit)) %></div>
+      <div class="sub">Avg ₹<%= inr0(avgInv) %> per invoice</div>
+    </div>
+  </div>
+
+  <!-- quick facts -->
+  <% if (list.length) { %>
+  <div class="iv-chips">
+    <div class="iv-card iv-chip">
+      <span class="lbl">Best invoice</span>
+      <span class="val iv-pos">₹<%= inr0(bestInv.InvoiceProfit) %></span>
+      <span class="sub"><%= bestInv.InvoiceId %> &middot; <%= bestInv.CustomerName %></span>
+    </div>
+    <div class="iv-card iv-chip">
+      <span class="lbl">Weakest invoice</span>
+      <span class="val <%= worstInv.InvoiceProfit < 0 ? 'iv-neg' : '' %>"><%= worstInv.InvoiceProfit < 0 ? '-' : '' %>₹<%= inr0(Math.abs(worstInv.InvoiceProfit)) %></span>
+      <span class="sub"><%= worstInv.InvoiceId %> &middot; <%= worstInv.CustomerName %></span>
+    </div>
+    <div class="iv-card iv-chip">
+      <span class="lbl">Loss-making invoices</span>
+      <span class="val <%= lossInv.length ? 'iv-neg' : '' %>"><%= lossInv.length %><%= lossInv.length ? ' (-₹' + inr0(lossAmt) + ')' : '' %></span>
+      <span class="sub"><%= lossInv.length ? 'Check the red rows below' : 'Every invoice made money' %></span>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- invoices -->
+  <div class="iv-card mb-4">
+    <div class="iv-bar-head">
+      <h6><i class="bi bi-list-ul me-2"></i>Invoices <span class="text-muted fw-normal" id="ivCount">(<%= list.length %>)</span></h6>
+      <div class="d-flex flex-wrap gap-2 align-items-center iv-bar-tools">
+        <input type="search" id="ivSearch" class="form-control form-control-sm iv-search" placeholder="Search invoice, customer, product...">
+        <select id="ivSort" class="form-select form-select-sm iv-sort" title="Sort invoices">
+          <option value="date-desc">Newest first</option>
+          <option value="date-asc">Oldest first</option>
+          <option value="profit-desc">Highest profit</option>
+          <option value="profit-asc">Lowest profit</option>
+          <option value="margin-asc">Lowest margin</option>
+          <option value="sale-desc">Highest sale</option>
+        </select>
+        <button type="button" class="iv-btn" id="ivLossOnly"><i class="bi bi-funnel"></i> Loss only</button>
+        <button type="button" class="iv-btn" id="ivToggleAll"><i class="bi bi-arrows-expand"></i> Expand all</button>
+      </div>
+    </div>
+
+    <% if (list.length) { %>
+    <div id="invoiceAccordion">
+      <% list.forEach(function(inv, idx) {
+           const loss = inv.InvoiceProfit < 0;
+           const mg = Number(inv.InvoiceMarginPercent) || 0;
+           const w = Math.min(100, Math.round(Math.abs(mg) / maxAbsMargin * 100));
+           const hay = (inv.InvoiceId + ' ' + inv.CustomerName + ' ' + inv.items.map(i => i.ProductName + ' ' + i.SupplierName + ' ' + i.BatchNumber).join(' ')).toLowerCase();
+      %>
+      <div class="iv-item <%= loss ? 'is-loss' : '' %>"
+           data-search="<%= hay %>" data-loss="<%= loss ? 1 : 0 %>"
+           data-date="<%= dmy(inv.InvoiceDate) %>" data-profit="<%= inv.InvoiceProfit %>"
+           data-margin="<%= mg %>" data-sale="<%= inv.InvoiceSaleValue %>" data-idx="<%= idx %>">
+        <button class="iv-row" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<%= idx %>" aria-expanded="false" aria-controls="collapse-<%= idx %>">
+          <i class="bi bi-chevron-right iv-caret"></i>
+          <span>
+            <span class="iv-no"><%= inv.InvoiceId %></span>
+            <span class="iv-date d-block"><i class="bi bi-calendar3 me-1"></i><%= inv.InvoiceDate %></span>
+          </span>
+          <span class="iv-cust">
+            <a href="/billing/customerLedger/<%= inv.CustomerId %>" onclick="event.stopPropagation();"><%= inv.CustomerName %></a>
+            <small><%= inv.items.length %> item<%= inv.items.length === 1 ? '' : 's' %></small>
+          </span>
+          <span class="iv-num iv-hide-sm"><span class="k">Sale</span><span class="v">₹<%= inr(inv.InvoiceSaleValue) %></span></span>
+          <span class="iv-num iv-hide-sm"><span class="k">Cost</span><span class="v">₹<%= inr(inv.InvoiceCost) %></span></span>
+          <span class="iv-num">
+            <span class="k"><%= loss ? 'Loss' : 'Profit' %></span>
+            <span class="v <%= loss ? 'iv-neg' : 'iv-pos' %>"><%= loss ? '-' : '' %>₹<%= inr(Math.abs(inv.InvoiceProfit)) %></span>
+            <span class="iv-margin">
+              <span class="iv-bar"><i style="width:<%= w %>%;background:<%= loss ? '#ef4444' : '#10b981' %>"></i></span>
+              <span class="iv-pill <%= loss ? 'neg' : 'pos' %>"><%= mg %>%</span>
+            </span>
+          </span>
+        </button>
+
+        <div id="collapse-<%= idx %>" class="collapse iv-detail">
+          <div class="table-responsive mt-3">
+            <table class="table table-sm iv-t">
+              <thead>
+                <tr>
+                  <th>Product</th><th>Batch</th>
+                  <th class="text-end">Sold</th><th class="text-end">Ret.</th><th class="text-end">Net</th>
+                  <th class="text-end">Sale price</th><th class="text-end">Cost price</th>
+                  <th class="text-end">Sale value</th><th class="text-end">Cost value</th>
+                  <th class="text-end">Profit / loss</th><th class="text-end">Margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% inv.items.forEach(function(item) { const il = item.LineProfit < 0; %>
+                <tr class="<%= il ? 'loss' : '' %>">
+                  <td><div class="iv-prod"><%= item.ProductName %></div><div class="iv-sub"><%= item.SupplierName %></div></td>
+                  <td><%= item.BatchNumber %></td>
+                  <td class="text-end"><%= item.QuantitySold %></td>
+                  <td class="text-end"><%= item.ReturnedQty %></td>
+                  <td class="text-end fw-semibold"><%= item.NetQty %></td>
+                  <td class="text-end"><%= inr(item.SalePrice) %></td>
+                  <td class="text-end"><%= inr(item.PurchasePrice) %></td>
+                  <td class="text-end"><%= inr(item.LineSaleValue) %></td>
+                  <td class="text-end"><%= inr(item.LineCost) %></td>
+                  <td class="text-end <%= il ? 'iv-neg' : 'iv-pos' %>"><%= inr(item.LineProfit) %></td>
+                  <td class="text-end"><span class="iv-pill <%= item.LineMarginPercent >= 0 ? 'pos' : 'neg' %>"><%= item.LineMarginPercent %>%</span></td>
+                </tr>
+                <% }); %>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="7" class="text-end">Invoice total</td>
+                  <td class="text-end"><%= inr(inv.InvoiceSaleValue) %></td>
+                  <td class="text-end"><%= inr(inv.InvoiceCost) %></td>
+                  <td class="text-end <%= loss ? 'iv-neg' : 'iv-pos' %>"><%= inr(inv.InvoiceProfit) %></td>
+                  <td class="text-end"><%= mg %>%</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+    <div class="iv-empty iv-nomatch" id="ivNoMatch"><i class="bi bi-search fs-3 d-block mb-2"></i>No invoice matches your search.</div>
+    <% } else { %>
+      <div class="iv-empty"><i class="bi bi-receipt fs-2 d-block mb-2"></i>No invoices found for the selected filters.</div>
+    <% } %>
+  </div>
+
+</div>
+
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+
+<!-- TomSelect -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.2.2/css/tom-select.bootstrap5.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.2.2/js/tom-select.complete.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* filters (same as before) */
+  if (window.flatpickr) flatpickr('.flatpickr-date', { dateFormat: 'd-m-Y', allowInput: true });
+  if (window.TomSelect) {
+    new TomSelect('#customerId', { create: false, placeholder: 'Search customer...' });
+    new TomSelect('#supplierId', { create: false, placeholder: 'Search supplier...' });
+  }
+
+  var wrap = document.getElementById('invoiceAccordion');
+  if (!wrap) return;
+  var items = function () { return Array.prototype.slice.call(wrap.querySelectorAll('.iv-item')); };
+  var search = document.getElementById('ivSearch');
+  var sortSel = document.getElementById('ivSort');
+  var lossBtn = document.getElementById('ivLossOnly');
+  var toggleBtn = document.getElementById('ivToggleAll');
+  var countEl = document.getElementById('ivCount');
+  var noMatch = document.getElementById('ivNoMatch');
+  var lossOnly = false, allOpen = false;
+
+  function applyFilter() {
+    var t = (search.value || '').trim().toLowerCase(), shown = 0;
+    items().forEach(function (el) {
+      var ok = (!t || el.getAttribute('data-search').indexOf(t) !== -1) && (!lossOnly || el.getAttribute('data-loss') === '1');
+      el.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    countEl.textContent = '(' + shown + ' of ' + items().length + ')';
+    if (noMatch) noMatch.style.display = shown ? 'none' : 'block';
+  }
+  search.addEventListener('input', applyFilter);
+  lossBtn.addEventListener('click', function () { lossOnly = !lossOnly; lossBtn.classList.toggle('on', lossOnly); applyFilter(); });
+
+  sortSel.addEventListener('change', function () {
+    var p = sortSel.value.split('-'), key = p[0], dir = p[1] === 'asc' ? 1 : -1;
+    items().sort(function (a, b) {
+      var x = parseFloat(a.getAttribute('data-' + key)) || 0, y = parseFloat(b.getAttribute('data-' + key)) || 0;
+      return (x - y) * dir || (parseInt(a.getAttribute('data-idx'), 10) - parseInt(b.getAttribute('data-idx'), 10));
+    }).forEach(function (el) { wrap.appendChild(el); });
+  });
+
+  toggleBtn.addEventListener('click', function () {
+    allOpen = !allOpen;
+    items().forEach(function (el) {
+      if (el.style.display === 'none') return;
+      var pane = el.querySelector('.collapse'), btn = el.querySelector('.iv-row');
+      if (window.bootstrap && bootstrap.Collapse) {
+        var inst = bootstrap.Collapse.getOrCreateInstance(pane, { toggle: false });
+        allOpen ? inst.show() : inst.hide();
+      } else {
+        pane.classList.toggle('show', allOpen); btn.setAttribute('aria-expanded', allOpen);
+      }
+    });
+    toggleBtn.innerHTML = allOpen ? '<i class="bi bi-arrows-collapse"></i> Collapse all' : '<i class="bi bi-arrows-expand"></i> Expand all';
+  });
+
+  /* export what is on screen: one line per product line, with its invoice */
+  document.getElementById('ivExport').addEventListener('click', function () {
+    var esc = function (v) { v = String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = ['Invoice-wise profit / loss,<%= fromDate %> to <%= toDate %>',
+      'Invoice,Date,Customer,Product,Supplier,Batch,Sold,Returned,Net qty,Sale price,Cost price,Sale value,Cost value,Profit / loss,Margin %'];
+    items().forEach(function (el) {
+      if (el.style.display === 'none') return;
+      var no = el.querySelector('.iv-no').innerText, date = el.querySelector('.iv-date').innerText,
+          cust = el.querySelector('.iv-cust a').innerText;
+      Array.prototype.forEach.call(el.querySelectorAll('tbody tr'), function (tr) {
+        var c = tr.children;
+        lines.push([no, date, cust, c[0].querySelector('.iv-prod').innerText, c[0].querySelector('.iv-sub').innerText,
+          c[1].innerText, c[2].innerText, c[3].innerText, c[4].innerText, c[5].innerText, c[6].innerText,
+          c[7].innerText, c[8].innerText, c[9].innerText, c[10].innerText.replace('%', '')].map(esc).join(','));
+      });
+    });
+    var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'invoice-profit-loss_<%= fromDate %>_to_<%= toDate %>.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+});
+</script>

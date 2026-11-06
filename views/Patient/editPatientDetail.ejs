@@ -1,0 +1,985 @@
+<!–– Bootstrap 5.3 + Bootstrap Icons + Flatpickr required -->
+<style>
+  /* ── Test dropdown rich content ── */
+.dp-test-item     { padding: 2px 0; }
+.dp-test-name     { font-weight: 600; font-size: .875rem; color: var(--text-primary); }
+.dp-test-prices   { display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+.dp-base-price    { font-size: .75rem; color: var(--text-muted);
+                    background: #f1f5f9; padding: 1px 7px; border-radius: 99px; }
+.dp-plus          { font-size: .75rem; color: var(--text-muted); }
+.dp-total-price   { font-size: .78rem; font-weight: 600; color: var(--primary);
+                    background: var(--primary-light); padding: 1px 8px; border-radius: 99px; }
+.dp-subtests      { margin-top: 5px; border-left: 2px solid #c3d4fc; padding-left: 10px; }
+.dp-sub-item      { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.dp-sub-arrow     { font-size: .75rem; color: var(--text-muted); }
+.dp-sub-name      { font-size: .78rem; color: var(--text-secondary); flex: 1; }
+.dp-sub-price     { font-size: .75rem; font-weight: 600; color: var(--accent);
+                    background: var(--accent-light); padding: 1px 7px; border-radius: 99px; }
+
+/* Bootstrap Select overrides */
+.bootstrap-select .dropdown-menu li a .text { white-space: normal !important; }
+.bootstrap-select .dropdown-menu { min-width: 360px !important; }
+.bootstrap-select .dropdown-item { padding: 8px 14px !important; }
+:root {
+  --primary: #1a56e8;
+  --primary-light: #e8effe;
+  --primary-dark: #1240b8;
+  --accent: #0ea882;
+  --accent-light: #e6f8f4;
+  --danger: #e53e3e;
+  --danger-light: #fff5f5;
+  --surface: #f7f9fc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface); margin: 0; }
+
+.page-header {
+  background: linear-gradient(135deg, #1a56e8 0%, #1240b8 100%);
+  color: #fff; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 24px 32px 20px; position: relative; overflow: hidden;
+}
+.page-header::before {
+  content:''; position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;
+}
+.page-header h4 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.55rem; font-weight: 400; letter-spacing: -.01em; margin: 0; position: relative;
+}
+.page-header p { font-size: .82rem; opacity: .75; margin: 4px 0 0; position: relative; }
+
+.bill-badge {
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3);
+  border-radius:8px; padding:7px 16px;
+  font-size:.82rem; font-weight:600; color:#fff;
+}
+
+.register-card {
+  background: var(--card);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border: 1px solid var(--border); border-top: none;
+  box-shadow: 0 12px 40px rgba(26,86,232,.08), 0 2px 8px rgba(0,0,0,.05);
+  padding: 28px 32px 32px;
+}
+
+.form-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px; margin-bottom: 20px;
+}
+.form-section:focus-within { box-shadow: 0 0 0 3px rgba(26,86,232,.07); }
+.section-label {
+  display:flex; align-items:center; gap:8px;
+  font-size:.72rem; font-weight:700; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--primary); margin-bottom:16px;
+}
+.section-divider { height:1px; background:var(--border); margin:24px 0; }
+
+.date-badge {
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--primary-light); color:var(--primary);
+  border-radius:8px; padding:7px 14px;
+  font-size:.82rem; font-weight:600; border:1px solid #c3d4fc;
+}
+
+.form-control, .form-select {
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:9px 13px; font-size:.875rem;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  color:var(--text-primary); background:#fff;
+  transition:border-color .15s,box-shadow .15s; width:100%;
+}
+.form-control:focus, .form-select:focus {
+  border-color:var(--primary); box-shadow:0 0 0 3px rgba(26,86,232,.12); outline:none;
+}
+.form-control::placeholder { color:var(--text-muted); }
+.form-control[readonly] { background:#f1f5f9; color:var(--text-secondary); }
+.field-label { display:block; font-size:.74rem; font-weight:600; color:var(--text-secondary); margin-bottom:5px; }
+
+.input-group .form-control { border-right:none; border-radius:var(--radius) 0 0 var(--radius) !important; }
+.input-group-text {
+  background:#f1f5f9; border:1px solid var(--border);
+  border-left:none; border-radius:0 var(--radius) var(--radius) 0;
+  color:var(--text-secondary); font-size:.82rem; font-weight:500;
+}
+.input-group-icon {
+  background:#f1f5f9; border:1px solid var(--border);
+  border-right:none; border-radius:var(--radius) 0 0 var(--radius);
+  padding:9px 12px; color:var(--text-secondary);
+}
+.input-group-icon + .form-control { border-left:none; border-radius:0 var(--radius) var(--radius) 0 !important; }
+
+.info-strip {
+  background:#f0f9f5; border:1px solid #b2dfcf;
+  border-radius:var(--radius); padding:10px 16px;
+  display:flex; gap:24px; font-size:.82rem; color:var(--text-secondary); flex-wrap:wrap;
+}
+.info-strip .info-item { display:flex; align-items:center; gap:6px; }
+.info-strip .info-item i { color:var(--accent); }
+.info-strip .info-item strong { font-weight:600; color:var(--text-primary); }
+
+.clinic-image-panel {
+  background:linear-gradient(145deg,#f0f4ff,#f7f9ff);
+  border:1.5px dashed #c3d4fc; border-radius:var(--radius);
+  display:flex; align-items:center; justify-content:center;
+  min-height:140px; flex-direction:column; gap:8px;
+  color:var(--text-muted); overflow:hidden;
+}
+.clinic-image-placeholder { text-align:center; }
+.clinic-image-placeholder i { font-size:2rem; color:#c3d4fc; display:block; margin-bottom:6px; }
+.clinic-image-placeholder span { font-size:.76rem; }
+#clinicPrescription { border-radius:8px; max-width:100%; max-height:160px; object-fit:contain; }
+
+.test-table-wrap { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.test-table { margin:0; font-size:.855rem; width:100%; border-collapse:collapse; }
+.test-table thead th {
+  background:#f1f5f9; color:var(--text-secondary);
+  font-size:.72rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.07em; padding:10px 14px; border-bottom:1px solid var(--border);
+}
+.test-table tbody td {
+  padding:10px 14px; vertical-align:middle;
+  color:var(--text-primary); border-bottom:1px solid var(--border);
+}
+.test-table tbody tr:last-child td { border-bottom:none; }
+.test-table tbody tr:nth-child(odd) td { background:#fafbfd; }
+.btn-remove-test {
+  background:none; border:none; color:#e53e3e;
+  font-size:.95rem; padding:2px 7px; border-radius:5px; cursor:pointer;
+}
+.btn-remove-test:hover { background:var(--danger-light); }
+
+.billing-card {
+  background:linear-gradient(135deg,#f0f4ff 0%,#e8effe 100%);
+  border:1px solid #c3d4fc; border-radius:var(--radius-lg); padding:20px 22px; height:100%;
+}
+.bcard-label {
+  font-size:.7rem; font-weight:700; color:var(--primary);
+  text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px;
+  display:flex; align-items:center; gap:7px;
+}
+.payment-card {
+  background:#fff; border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:20px 22px; height:100%;
+}
+.pay-label {
+  font-size:.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--text-secondary); margin-bottom:14px;
+  display:flex; align-items:center; gap:7px;
+}
+
+.amount-summary {
+  margin-top:14px; padding:12px 14px;
+  background:#f0f9f5; border:1px solid #b2dfcf; border-radius:var(--radius);
+}
+.amount-row { display:flex; justify-content:space-between; align-items:center; }
+.amount-row + .amount-row { margin-top:8px; padding-top:8px; border-top:1px solid #d1ece2; }
+.amount-key { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+.amount-val { font-size:1.15rem; font-weight:700; font-family:'Instrument Serif',serif; }
+.color-paid { color:#0c9474; }
+.color-due  { color:#e53e3e; }
+.color-info { color:var(--primary); }
+
+.ep-alert { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:var(--radius); font-size:.85rem; }
+.ep-alert-danger  { background:var(--danger-light); color:var(--danger); border:1px solid rgba(229,62,62,.2); }
+.ep-alert-warning { background:#fffbeb; color:#92400e; border:1px solid rgba(146,64,14,.2); }
+
+.btn-save {
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+  color:#fff; border:none; padding:11px 28px; border-radius:var(--radius);
+  font-size:.9rem; font-weight:600; box-shadow:0 4px 12px rgba(26,86,232,.3);
+  transition:box-shadow .2s,transform .15s; cursor:pointer;
+}
+.btn-save:hover { box-shadow:0 6px 20px rgba(26,86,232,.4); transform:translateY(-1px); color:#fff; }
+.btn-list {
+  background:#fff; border:1.5px solid var(--border); color:var(--text-primary);
+  padding:11px 22px; border-radius:var(--radius); font-size:.9rem; font-weight:600;
+  text-decoration:none; display:inline-flex; align-items:center; gap:7px; transition:all .15s;
+}
+.btn-list:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+.btn-add-test {
+  background:var(--accent); color:#fff; border:none;
+  padding:9px 0; border-radius:var(--radius); font-size:.875rem; font-weight:600;
+  width:100%; transition:background .15s,box-shadow .15s; cursor:pointer;
+}
+.btn-add-test:hover { background:#0c9474; box-shadow:0 4px 12px rgba(14,168,130,.25); }
+
+.payment-methods { display:none; margin-top:12px; background:#f8faff; border:1px solid #c3d4fc; border-radius:var(--radius); padding:12px 14px; }
+.payment-methods.show { display:block; }
+.payment-methods-label { font-size:.72rem; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px; }
+.pay-method-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.pay-method-option { position:relative; }
+.pay-method-option input[type="radio"] { position:absolute; opacity:0; width:0; height:0; }
+.pay-method-option label {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  border:1.5px solid var(--border); border-radius:var(--radius);
+  padding:10px 8px; cursor:pointer; font-size:.76rem; font-weight:600;
+  color:var(--text-secondary); background:#fff; text-align:center;
+  transition:border-color .15s,background .15s,color .15s; user-select:none;
+}
+.pay-method-option label .bank-icon {
+  width:28px; height:28px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; letter-spacing:-.5px;
+}
+.pay-method-option input:checked + label { border-color:var(--primary); background:var(--primary-light); color:var(--primary); }
+.pay-method-option label:hover { border-color:#93b4f8; background:#f0f5ff; }
+
+@media(max-width:991px) { .register-card { padding:20px 18px 24px; } .page-header { padding:20px 20px 18px; } }
+@media(max-width:575px)  { .register-card { padding:16px 14px 20px; } }
+</style>
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h4><i class="bi bi-pencil-square me-2" style="font-size:1.15rem;vertical-align:middle"></i>Edit Patient</h4>
+    <p>Update the patient's registration details below</p>
+  </div>
+  <div class="bill-badge">
+    <i class="bi bi-receipt"></i> Bill No: <strong><%= patientId %></strong>
+    &nbsp;·&nbsp; <span class="text-capitalize"><%= patientDetails?.Name || '' %></span>
+  </div>
+</div>
+
+<div class="register-card">
+  <%- include ("../partials/messages"); %>
+
+  <form action="/patient/updatePatientDetails?id=<%= patientId %>" method="post"
+        id="editPatientForm" novalidate class="needs-validation">
+
+    <!-- Date badge -->
+    <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+      <div class="date-badge">
+        <i class="bi bi-calendar3"></i>
+        <span id="dateDisplay">
+          <%= patientDetails?.RegisteredOn
+              ? new Date(patientDetails.RegisteredOn).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+              : 'N/A' %>
+        </span>
+      </div>
+      <input type="hidden" name="registrationDate" id="registrationDate"
+        value="<%= patientDetails?.RegisteredOn || '' %>">
+    </div>
+
+    <!-- ── Patient Information ── -->
+    <div class="form-section">
+      <div class="section-label"><i class="bi bi-person-badge"></i>Patient Information</div>
+      <div class="row g-3">
+
+        <div class="col-6 col-sm-3">
+          <label class="field-label" for="title">Title</label>
+          <select class="form-select" id="title" name="title" required>
+            <option value="">—</option>
+            <% ['Dr.','Mr.','Mrs.','Miss','Master','Baby Of'].forEach(t => { %>
+              <option value="<%= t %>" <%= patientDetails?.Title === t ? 'selected' : '' %>><%= t %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-6 col-sm-6">
+          <label class="field-label" for="patientName">Patient Name</label>
+          <input type="text" class="form-control text-capitalize" id="patientName" name="patientName"
+            placeholder="Full name" value="<%= patientDetails?.Name || '' %>" required>
+        </div>
+
+        <div class="col-12 col-sm-3">
+          <label class="field-label" for="gender">Gender</label>
+          <select class="form-select" id="gender" name="gender" required>
+            <option value="">Select</option>
+            <option value="1" <%= patientDetails?.Gender == 1 ? 'selected' : '' %>>Male</option>
+            <option value="2" <%= patientDetails?.Gender == 2 ? 'selected' : '' %>>Female</option>
+          </select>
+        </div>
+
+        <div class="col-4 col-sm-2">
+          <label class="field-label" for="age">Age</label>
+          <input type="number" class="form-control" id="age" name="age" placeholder="Age" min="0"
+            value="<%= patientDetails?.Age || '' %>" required>
+        </div>
+
+        <div class="col-4 col-sm-3">
+          <label class="field-label" for="ymd">Unit</label>
+          <select class="form-select" id="ymd" name="ymd" required>
+            <option value="">Unit</option>
+            <% ['Years','Months','Days'].forEach(u => { %>
+              <option value="<%= u %>" <%= patientDetails?.YMD === u ? 'selected' : '' %>><%= u %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-4 col-sm-7">
+          <label class="field-label" for="phoneNumber">Phone Number</label>
+          <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
+            placeholder="10-digit number" maxlength="10" minlength="10"
+            value="<%= patientDetails?.PhoneNumber || '' %>" required>
+        </div>
+
+        <div class="col-12">
+          <label class="field-label" for="patientAddress">Patient Address</label>
+          <input type="text" class="form-control" id="patientAddress" name="patientAddress"
+            placeholder="Patient address (optional)"
+            value="<%= patientDetails?.Address || '' %>">
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Clinic & Doctor ── -->
+    <div class="form-section">
+      <div class="section-label"><i class="bi bi-hospital"></i>Clinic &amp; Doctor</div>
+      <div class="row g-3">
+
+        <div class="col-sm-6">
+          <label class="field-label" for="clinic">Clinic</label>
+          <select class="form-select" id="clinic" name="clinic">
+            <option value="">Select a clinic</option>
+            <% clinics.forEach(function(c){ %>
+              <option value="<%= c.Id %>"
+                data-address="<%= c.Address %>"
+                <%= c.Id == patientDetails?.ClinicId ? 'selected' : '' %>>
+                <%= c.Name %> [<%= c.Address %>]
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-sm-6">
+          <label class="field-label" for="doctor">Referring Doctor</label>
+          <select class="form-select" id="doctor" name="doctor">
+            <option value="">Select a doctor</option>
+            <% doctors.forEach(function(d){ %>
+              <option value="<%= d.Id %>"
+                data-flat-discount="<%= d.FlatDiscount %>"
+                <%= d.Id == patientDetails?.DoctorId ? 'selected' : '' %>>
+                Dr. <%= d.FirstName %> <%= d.LastName %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-12">
+          <div class="info-strip" id="clinicInfoStrip" style="<%= patientDetails?.ClinicId ? '' : 'display:none' %>">
+            <div class="info-item"><i class="bi bi-geo-alt-fill"></i>Address: <strong id="clinicAddress"><%= patientDetails?.Address || '—' %></strong></div>
+            <div class="info-item"><i class="bi bi-person-badge"></i>Doctor: <strong id="doctorName">—</strong></div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="field-label"><i class="bi bi-file-earmark-medical me-1"></i>Clinic Prescription</label>
+          <div class="clinic-image-panel" id="clinicImagePanel">
+            <div class="clinic-image-placeholder" id="clinicPlaceholder">
+              <i class="bi bi-image"></i>
+              <span>Select a clinic to preview prescription</span>
+            </div>
+            <img src="" id="clinicPrescription" class="img-fluid" alt="Clinic prescription" style="display:none">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Test Selection ── -->
+    <div class="section-divider"></div>
+    <div id="liveErrorAlertPlaceholder" class="mb-3"></div>
+
+    <div class="form-section">
+      <div class="section-label"><i class="bi bi-clipboard2-pulse"></i>Test Selection</div>
+
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-3">
+          <label class="field-label" for="category">Category</label>
+          <select class="form-select" id="category" name="category">
+            <option value="0">Select Category</option>
+            <% categories.forEach(function(cat){ %>
+              <option value="<%= cat.Id %>" data-category-id="<%= cat.Id %>"><%= cat.Name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-sm-4">
+          <label class="field-label" for="test">Test</label>
+          <select class="form-select" id="test" name="test"
+            data-live-search="true"
+            data-size="8"
+            data-live-search-placeholder="Type to search tests..."
+            title="Select Test">
+
+            <option value="" data-category-id="0" data-price="0">Select Test</option>
+
+            <% testDetails.forEach(function(t) {
+              const subs       = subTestMap[t.Id] || [];
+              const subTotal   = subs.reduce((a, s) => a + parseFloat(s.Price || 0), 0);
+              const grandTotal = parseFloat(t.Price) + subTotal;
+              const hasSubs    = subs.length > 0;
+
+              let contentHtml = `<div class="dp-test-item"><div class="dp-test-name">${t.TestName}</div><div class="dp-test-prices">`;
+              if (hasSubs) {
+                contentHtml += `<span class="dp-base-price">₹${parseFloat(t.Price).toLocaleString('en-IN')}</span><span class="dp-plus">+</span><span class="dp-total-price">₹${grandTotal.toLocaleString('en-IN')} total</span>`;
+              } else {
+                contentHtml += `<span class="dp-total-price">₹${parseFloat(t.Price).toLocaleString('en-IN')}</span>`;
+              }
+              contentHtml += `</div>`;
+              if (hasSubs) {
+                contentHtml += `<div class="dp-subtests">`;
+                subs.forEach(function(s) {
+                  contentHtml += `<div class="dp-sub-item"><span class="dp-sub-arrow">↳</span><span class="dp-sub-name">${s.SubTestName || s.Name}</span><span class="dp-sub-price">₹${parseFloat(s.Price).toLocaleString('en-IN')}</span></div>`;
+                });
+                contentHtml += `</div>`;
+              }
+              contentHtml += `</div>`;
+              const safeContent = contentHtml.replace(/"/g, '&quot;');
+            %>
+            <option
+              value="<%= t.Id %>"
+              data-category-id="<%= t.CategoryId %>"
+              data-price="<%= t.Price %>"
+              data-grand-total="<%= grandTotal %>"
+              data-has-subtests="<%= hasSubs ? 1 : 0 %>"
+              data-content="<%= safeContent %>"
+              data-tokens="<%= t.TestName %> <%= subs.map(s => s.SubTestName || s.Name).join(' ') %>">
+              <%= t.TestName %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-sm-2">
+          <label class="field-label" for="price">Price (₹)</label>
+          <input type="number" class="form-control" id="price" name="price" value="0" readonly>
+        </div>
+
+        <div class="col-sm-2">
+          <label class="field-label" for="discount">Discount (₹)</label>
+          <input type="number" class="form-control" id="discount" name="discount" value="0" min="0">
+        </div>
+
+        <div class="col-sm-1">
+          <button class="btn-add-test" type="button" id="addTestBtn" title="Add Test">
+            <i class="bi bi-plus-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Test table -->
+      <div class="test-table-wrap mt-4" id="testTableWrap" style="display:none">
+        <table class="test-table" id="displayTest">
+          <thead>
+            <tr>
+              <th>Test Name</th>
+              <th style="width:110px">Price (₹)</th>
+              <th style="width:120px">Discount (₹)</th>
+              <th style="width:110px">Net (₹)</th>
+              <th style="width:60px">Action</th>
+            </tr>
+          </thead>
+          <tbody id="testTbody"></tbody>
+        </table>
+      </div>
+      <div id="noTestsPlaceholder" class="text-center py-3" style="font-size:.83rem;color:var(--text-muted)">
+        <i class="bi bi-inbox me-1"></i>No tests added yet
+      </div>
+    </div>
+
+    <!-- ── Billing & Payment ── -->
+    <div class="row g-4 mt-1">
+
+      <div class="col-md-4">
+        <div class="billing-card">
+          <div class="bcard-label"><i class="bi bi-receipt"></i>Billing Summary</div>
+          <div class="row g-2">
+            <div class="col-12">
+              <label class="field-label">Total Discount</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="finalDiscount" name="finalDiscount"
+                  placeholder="0" readonly value="<%= patientDetails?.Discount || 0 %>">
+                <span class="input-group-text">₹</span>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="field-label">Approved By</label>
+              <input type="text" class="form-control" id="discountApprovedBy" name="discountApprovedBy"
+                placeholder="Who approved discount"
+                value="<%= patientDetails?.DiscountApprovedBy || '' %>">
+            </div>
+            <div class="col-12">
+              <label class="field-label">Gross Amount</label>
+              <div class="input-group">
+                <input type="number" class="form-control fw-bold" id="grossAmount" name="grossAmount"
+                  placeholder="0" readonly value="<%= patientDetails?.GrossAmount || 0 %>">
+                <span class="input-group-text">₹</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <div class="payment-card">
+          <div class="pay-label"><i class="bi bi-wallet2"></i>Payment Details</div>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="field-label">Cash Payment</label>
+              <div class="input-group">
+                <span class="input-group-icon"><i class="bi bi-cash-stack"></i></span>
+                <input type="number" class="form-control" id="cashPayment" name="cashPayment"
+                  value="<%= patientDetails?.CashPayment || 0 %>" min="0">
+                <span class="input-group-text">₹</span>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label class="field-label">Online Payment</label>
+              <div class="input-group">
+                <span class="input-group-icon"><i class="bi bi-qr-code-scan"></i></span>
+                <input type="number" class="form-control" id="onlinePayment" name="onlinePayment"
+                  value="<%= patientDetails?.OnlinePayment || 0 %>" min="0">
+                <span class="input-group-text">₹</span>
+              </div>
+              <div class="payment-methods" id="paymentMethods">
+                <div class="payment-methods-label">
+                  <i class="bi bi-building-check me-1"></i>Select Bank / Gateway
+                </div>
+                <div class="pay-method-grid" id="paymentMethodGrid">
+                  <% (onlineSources||[]).forEach(function(source){ %>
+                  <div class="pay-method-option">
+                    <input type="radio" class="pm-radio"
+                      id="pm_<%= source.ShortCode %>"
+                      data-source-id="<%= source.Id %>"
+                      data-source-name="<%= source.Name %>"
+                      <%= patientDetails?.OnlineSourceId == source.Id ? 'checked' : '' %>>
+                    <label for="pm_<%= source.ShortCode %>">
+                      <span class="bank-icon" style="background:#1a56e8;color:#fff;font-size:9px">
+                        <%= source.ShortCode %>
+                      </span>
+                      <%= source.Name %>
+                    </label>
+                  </div>
+                  <% }) %>
+                </div>
+                <input type="hidden" name="onlinePaymentMethod" id="onlinePaymentMethod"
+                  value="<%= patientDetails?.OnlineSourceId || '' %>">
+              </div>
+            </div>
+          </div>
+
+          <div class="amount-summary mt-3">
+            <div class="amount-row">
+              <span class="amount-key color-info">Gross Billed</span>
+              <span class="amount-val color-info" id="grossDisplay">₹<%= patientDetails?.GrossAmount || 0 %></span>
+            </div>
+            <div class="amount-row">
+              <span class="amount-key color-paid">Amount Paid</span>
+              <span class="amount-val color-paid" id="paidDisplay">₹0</span>
+            </div>
+            <div class="amount-row">
+              <span class="amount-key color-due">Due Balance</span>
+              <span class="amount-val color-due" id="dueDisplay">₹0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-start gap-3 mt-4 pt-3" style="border-top:1px solid var(--border)">
+      <button type="submit" class="btn-save">
+        <i class="bi bi-save2 me-2"></i>Save Changes
+      </button>
+      <a href="/patient/getPatientDetail?patientId=<%= patientId %>" class="btn-list">
+        <i class="bi bi-arrow-left"></i> Back to Patient
+      </a>
+    </div>
+
+    <!-- Hidden fields -->
+    <input type="hidden" name="selectedTestDetails"    id="selectedTestDetails"    value="[]">
+    <input type="hidden" name="selectedSubTestDetails" id="selectedSubTestDetails" value="[]">
+    <input type="hidden" name="patientTestDetails"     id="editPatientTestData"     value="<%= patientTestDetails || '' %>">
+    <input type="hidden" name="patientSubTestDetails"  id="editPatientSubTestData"  value="<%= patientSubTestDetails || '' %>">
+    <input type="hidden" name="testLength"             id="testLength"             value="0">
+    <input type="hidden" name="subTestLength"          id="subTestLength"          value="0">
+
+    <!-- Hidden subtest source list -->
+    <ul style="display:none;">
+      <% subTestDetails.forEach(function(s){ %>
+        <li class="mainTest<%= s.mainTestId %>"
+            data-sub-test-id="<%= s.subTestId %>"
+            data-sub-test-name="<%= s.Name %>"
+            data-sub-test-price="<%= s.Price %>"
+            data-sub-test-discount="<%= s.Discount || 0 %>"></li>
+      <% }) %>
+    </ul>
+
+  </form>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// FIX 1: Wrap everything in window.addEventListener('load') so jQuery ($)
+//         is guaranteed to be available before any code runs.
+//         The old code ran at parse time — before jQuery loaded — causing
+//         "Uncaught ReferenceError: $ is not defined".
+// ══════════════════════════════════════════════════════════════════════════════
+window.addEventListener('load', function () {
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let tests    = [];
+  let subTests = [];
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function fmtRs(v) {
+    const n = parseFloat(v) || 0;
+    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
+  function showAlert(msg, type = 'danger') {
+    const el = document.getElementById('liveErrorAlertPlaceholder');
+    el.innerHTML = `<div class="ep-alert ep-alert-${type}"><i class="bi bi-exclamation-circle"></i> ${msg}</div>`;
+    setTimeout(() => el.innerHTML = '', 3000);
+  }
+
+  function syncHiddenFields() {
+    document.getElementById('selectedTestDetails').value    = JSON.stringify(tests);
+    document.getElementById('selectedSubTestDetails').value = JSON.stringify(subTests);
+    document.getElementById('testLength').value             = tests.length;
+    document.getElementById('subTestLength').value          = subTests.length;
+  }
+
+  function updatePaymentDisplay() {
+    const gross  = parseFloat(document.getElementById('grossAmount').value)   || 0;
+    const cash   = parseFloat(document.getElementById('cashPayment').value)   || 0;
+    const online = parseFloat(document.getElementById('onlinePayment').value) || 0;
+    const paid   = cash + online;
+    const due    = Math.max(0, gross - paid);
+    const fmt    = v => '₹' + v.toLocaleString('en-IN');
+    document.getElementById('grossDisplay').textContent = fmt(gross);
+    document.getElementById('paidDisplay').textContent  = fmt(paid);
+    document.getElementById('dueDisplay').textContent   = fmt(due);
+  }
+
+  function recalcGross() {
+    let gross = 0, discount = 0;
+    tests.forEach(t => {
+      const subs = subTests.filter(s => String(s.mainTestId) === String(t.TestId));
+      const tp   = parseFloat(t.Price)    || 0;
+      const td   = parseFloat(t.Discount) || 0;
+      if (subs.length) {
+        gross    += tp + subs.reduce((a, s) => a + (parseFloat(s.Price)    || 0), 0);
+        discount += td + subs.reduce((a, s) => a + (parseFloat(s.Discount) || 0), 0);
+      } else {
+        gross    += tp;
+        discount += td;
+      }
+    });
+    document.getElementById('grossAmount').value   = gross;
+    document.getElementById('finalDiscount').value = discount;
+    updatePaymentDisplay();
+  }
+
+  // expose for inline onclick
+  function removeTest(i) {
+    const t = tests[i];
+    subTests = subTests.filter(s => String(s.mainTestId) !== String(t.TestId));
+    tests.splice(i, 1);
+    renderTable();
+  }
+  window.removeTest = removeTest;
+
+  // ── Render table ────────────────────────────────────────────────────────────
+  function renderTable() {
+    const tbody = document.getElementById('testTbody');
+    const wrap  = document.getElementById('testTableWrap');
+    const empty = document.getElementById('noTestsPlaceholder');
+
+    if (!tests.length) {
+      wrap.style.display  = 'none';
+      empty.style.display = 'block';
+      syncHiddenFields();
+      return;
+    }
+
+    wrap.style.display  = 'block';
+    empty.style.display = 'none';
+    tbody.innerHTML     = '';
+
+    tests.forEach(function (t, i) {
+      const subs      = subTests.filter(s => String(s.mainTestId) === String(t.TestId));
+      const testPrice = parseFloat(t.Price)    || 0;
+      const testDisc  = parseFloat(t.Discount) || 0;
+      const subTotal  = subs.reduce((a, s) => a + (parseFloat(s.Price) || 0), 0);
+      const netPrice  = subs.length ? (testPrice + subTotal) - testDisc : testPrice - testDisc;
+
+      // Main test row
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:600;font-size:.875rem;">${t.TestName}</div>
+          ${subs.length
+            ? `<div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;">
+                 ₹${testPrice.toLocaleString('en-IN')} base &nbsp;+&nbsp;
+                 <span style="color:var(--primary)">₹${subTotal.toLocaleString('en-IN')} sub-tests</span>
+               </div>`
+            : ''}
+        </td>
+        <td style="font-weight:${subs.length ? 'normal' : '600'}">${fmtRs(testPrice)}</td>
+        <td style="color:${testDisc > 0 ? '#e53e3e' : 'var(--text-muted)'}">
+          ${testDisc > 0 ? fmtRs(testDisc) : '—'}
+        </td>
+        <td style="font-weight:700;color:var(--primary)">${fmtRs(netPrice)}</td>
+        <td>
+          <button type="button" class="btn-remove-test" onclick="removeTest(${i})">
+            <i class="bi bi-trash3-fill"></i>
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+
+      // Sub-test rows
+      subs.forEach(function (s) {
+        const sPrice = parseFloat(s.Price)    || 0;
+        const sDisc  = parseFloat(s.Discount) || 0;
+        const str    = document.createElement('tr');
+        str.style.background = '#fafbfd';
+        str.innerHTML = `
+          <td style="padding-left:28px;font-size:.82rem;color:var(--text-secondary);">
+            <span style="color:var(--text-muted);margin-right:5px;">↳</span>${s.Name}
+          </td>
+          <td style="font-size:.82rem;color:var(--text-secondary)">${fmtRs(sPrice)}</td>
+          <td style="font-size:.82rem;color:${sDisc > 0 ? '#e53e3e' : 'var(--text-muted)'}">
+            ${sDisc > 0 ? fmtRs(sDisc) : '—'}
+          </td>
+          <td style="font-size:.82rem;font-weight:600;color:var(--primary)">${fmtRs(sPrice - sDisc)}</td>
+          <td></td>`;
+        tbody.appendChild(str);
+      });
+
+      // Grand total row when subtests exist
+      if (subs.length) {
+        const gt = document.createElement('tr');
+        gt.style.cssText = 'background:#f0f4ff;border-top:1.5px solid #c3d4fc;';
+        gt.innerHTML = `
+          <td colspan="2" style="padding-left:28px;font-size:.78rem;font-weight:700;color:var(--primary);letter-spacing:.04em;">
+            TOTAL — ${t.TestName}
+          </td>
+          <td style="font-size:.82rem;color:#e53e3e;">${testDisc > 0 ? fmtRs(testDisc) : '—'}</td>
+          <td style="font-weight:700;font-size:.9rem;color:var(--primary)">${fmtRs(netPrice)}</td>
+          <td></td>`;
+        tbody.appendChild(gt);
+      }
+    });
+
+    syncHiddenFields();
+    recalcGross();
+  }
+
+  // ── Clinic / Doctor ─────────────────────────────────────────────────────────
+  document.getElementById('clinic').addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    document.getElementById('clinicAddress').textContent     = opt.dataset.address || '—';
+    document.getElementById('clinicInfoStrip').style.display = this.value ? '' : 'none';
+    const img = document.getElementById('clinicPrescription');
+    const ph  = document.getElementById('clinicPlaceholder');
+    if (this.value) {
+      img.src = '/clinic/getPrescription/' + this.value;
+      img.style.display = 'block'; ph.style.display = 'none';
+    } else {
+      img.style.display = 'none'; ph.style.display = 'block';
+    }
+  });
+
+  document.getElementById('doctor').addEventListener('change', function () {
+    document.getElementById('doctorName').textContent =
+      this.options[this.selectedIndex]?.text || '—';
+  });
+
+  // ── Payment inputs ──────────────────────────────────────────────────────────
+  ['cashPayment', 'onlinePayment', 'grossAmount'].forEach(id =>
+    document.getElementById(id)?.addEventListener('input', updatePaymentDisplay)
+  );
+  document.getElementById('onlinePayment').addEventListener('input', function () {
+    document.getElementById('paymentMethods')
+      .classList.toggle('show', parseFloat(this.value) > 0);
+  });
+  document.querySelectorAll('.pm-radio').forEach(r => {
+    r.addEventListener('change', function () {
+      document.getElementById('onlinePaymentMethod').value = this.dataset.sourceId;
+    });
+  });
+
+  // ── Add test button ─────────────────────────────────────────────────────────
+  document.getElementById('addTestBtn').addEventListener('click', function () {
+    const sel      = document.getElementById('test');
+    const id       = sel.value;
+    const name     = sel.options[sel.selectedIndex]?.text?.trim() || '';
+    const price    = parseFloat(document.getElementById('price').value)    || 0;
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+
+    if (!id || id === '0' || id === '') { showAlert('Please select a test.'); return; }
+    if (tests.find(t => String(t.TestId) === String(id))) {
+      showAlert('This test is already added.', 'warning'); return;
+    }
+
+    tests.push({ TestId: String(id), TestName: name, Price: price, Discount: discount });
+
+    // Add subtests from hidden <ul>
+    document.querySelectorAll('.mainTest' + id).forEach(li => {
+      const subId = li.dataset.subTestId;
+      // FIX 3: was `String(t.TestId)` — t not in scope here. Use `id` directly.
+      if (subTests.find(x =>
+        String(x.SubTestId)  === String(subId) &&
+        String(x.mainTestId) === String(id)
+      )) return;
+      subTests.push({
+        SubTestId:  subId,
+        mainTestId: String(id),
+        Name:       li.dataset.subTestName,
+        Price:      parseFloat(li.dataset.subTestPrice)    || 0,
+        Discount:   parseFloat(li.dataset.subTestDiscount) || 0
+      });
+    });
+
+      renderTable();
+
+      // BEFORE — didn't fully reset the button display
+      $('#test').selectpicker('val', '').selectpicker('render');
+
+      // AFTER — val('') + refresh clears selection AND resets button text
+      if (typeof $ !== 'undefined' && typeof $.fn.selectpicker !== 'undefined') {
+        $('#test').selectpicker('val', '');
+        $('#test').selectpicker('refresh');  // ← refresh instead of render
+      } else {
+        sel.value = '';
+      }
+      document.getElementById('price').value    = 0;
+      document.getElementById('discount').value = 0;
+  });
+
+  // ── Init: load existing patient data on page open ───────────────────────────
+  (function init() {
+    try {
+      const existingTests    = JSON.parse(
+        document.getElementById('editPatientTestData').value    || '[]'
+      );
+      const existingSubTests = JSON.parse(
+        document.getElementById('editPatientSubTestData').value || '[]'
+      );
+
+      // Load subtests first
+      existingSubTests.forEach(s => {
+        // FIX 4: check BOTH SubTestId AND mainTestId.
+        //         Old code only checked SubTestId — blocked CONTRAST under CT
+        //         if CONTRAST was already loaded under MRI (same subTestId, diff parent).
+        if (subTests.find(x =>
+          String(x.SubTestId)  === String(s.SubTestId) &&
+          String(x.mainTestId) === String(s.mainTestId)
+        )) return;
+        subTests.push({
+          SubTestId:  String(s.SubTestId),
+          mainTestId: String(s.mainTestId),
+          Name:       s.Name || s.SubTestName || '',
+          Price:      parseFloat(s.Price)    || 0,
+          Discount:   parseFloat(s.Discount) || 0
+        });
+      });
+
+      // Load tests + fallback subtest discovery from hidden <ul>
+      existingTests.forEach(t => {
+        if (tests.find(x => String(x.TestId) === String(t.TestId))) return;
+        tests.push({
+          TestId:   String(t.TestId),
+          TestName: t.TestName || t.Name || '—',
+          Price:    parseFloat(t.Price)    || 0,
+          Discount: parseFloat(t.Discount) || 0
+        });
+
+        // Fallback: pick up any subtests not already in DB data
+        document.querySelectorAll('.mainTest' + t.TestId).forEach(li => {
+          const subId = li.dataset.subTestId;
+          // FIX 2: was `String(id)` — `id` is undefined in init() scope.
+          //         Must use `t.TestId` which IS in scope.
+          if (subTests.find(x =>
+            String(x.SubTestId)  === String(subId) &&
+            String(x.mainTestId) === String(t.TestId)
+          )) return;
+          subTests.push({
+            SubTestId:  subId,
+            mainTestId: String(t.TestId),
+            Name:       li.dataset.subTestName,
+            Price:      parseFloat(li.dataset.subTestPrice)    || 0,
+            Discount:   parseFloat(li.dataset.subTestDiscount) || 0
+          });
+        });
+      });
+
+    } catch (e) {
+      console.warn('init parse error:', e);
+    }
+
+    if ((parseFloat(document.getElementById('onlinePayment').value) || 0) > 0) {
+      document.getElementById('paymentMethods').classList.add('show');
+    }
+
+    renderTable();
+    updatePaymentDisplay();
+  })();
+
+  // ── Bootstrap Select init ───────────────────────────────────────────────────
+  // FIX 1: Safe to use $ here because we are inside window.addEventListener('load')
+  if (typeof $ !== 'undefined' && typeof $.fn.selectpicker !== 'undefined') {
+    $('#test').selectpicker({
+      liveSearch:            true,
+      liveSearchPlaceholder: 'Type to search tests...',
+     // selectedTextFormat:    'static',   // prevents test names concatenating
+    //  title:                 'Select Test',
+      size:                  8,
+      sanitize:              false
+    });
+
+    $('#category').on('change', function () {
+      const catId = this.value;
+      $('#test option').each(function () {
+        $(this).prop('disabled',
+          catId && catId !== '0' &&
+          $(this).val() !== '' &&
+          $(this).data('categoryId') != catId
+        );
+      });
+      $('#test').selectpicker('refresh').selectpicker('val', '');
+      document.getElementById('price').value = 0;
+    });
+
+    $('#test').on('changed.bs.select', function () {
+      const opt = this.options[this.selectedIndex];
+      document.getElementById('price').value = opt?.dataset?.price || 0;
+    });
+
+  } else {
+    // Plain select fallback
+    document.getElementById('category').addEventListener('change', function () {
+      const catId = this.value;
+      Array.from(document.getElementById('test').options).forEach(o => {
+        o.style.display =
+          o.value === '' || catId === '0' || o.dataset.categoryId === catId ? '' : 'none';
+      });
+      document.getElementById('test').value = '';
+      document.getElementById('price').value = 0;
+    });
+    document.getElementById('test').addEventListener('change', function () {
+      document.getElementById('price').value =
+        this.options[this.selectedIndex]?.dataset?.price || 0;
+    });
+  }
+
+  // ── Form validation ─────────────────────────────────────────────────────────
+  document.getElementById('editPatientForm').addEventListener('submit', function (e) {
+    if (!this.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+    this.classList.add('was-validated');
+  });
+
+}); // end window.addEventListener('load')
+</script>

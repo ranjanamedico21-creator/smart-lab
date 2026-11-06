@@ -1,0 +1,908 @@
+<!-- Breadcrumb -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Custom Styles -->
+<style>
+    :root {
+        --sale-primary: #185FA5;
+        --sale-primary-light: #E6F1FB;
+        --sale-primary-mid: #378ADD;
+        --sale-success: #3B6D11;
+        --sale-success-light: #EAF3DE;
+        --sale-danger: #A32D2D;
+        --sale-danger-light: #FCEBEB;
+        --sale-warn: #854F0B;
+        --sale-warn-light: #FAEEDA;
+        --sale-border: rgba(0,0,0,0.12);
+        --sale-surface: #ffffff;
+        --sale-surface2: #F7F8FA;
+        --sale-text: #1a1a1a;
+        --sale-text2: #6b7280;
+        --sale-radius: 8px;
+        --sale-radius-lg: 12px;
+    }
+
+    .sale-page-wrap { font-family: 'Sora', sans-serif; color: var(--sale-text); }
+
+    /* ── Step bar ── */
+    .sale-step-bar {
+        display: flex;
+        border-radius: var(--sale-radius);
+        overflow: hidden;
+        border: 0.5px solid var(--sale-border);
+        margin-bottom: 1.5rem;
+    }
+    .sale-step {
+        flex: 1;
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--sale-text2);
+        background: var(--sale-surface2);
+        transition: all 0.2s;
+        border-right: 0.5px solid var(--sale-border);
+    }
+    .sale-step:last-child { border-right: none; }
+    .sale-step .step-icon { display: block; font-size: 15px; margin-bottom: 2px; }
+    .sale-step.is-done   { background: var(--sale-primary-light); color: #0C447C; }
+    .sale-step.is-active { background: var(--sale-primary); color: #fff; }
+
+    /* ── Section labels ── */
+    .sale-section-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--sale-text2);
+        margin-bottom: 8px;
+    }
+
+    /* ── Item cards ── */
+    .sale-item-card {
+        background: var(--sale-surface2);
+        border: 0.5px solid var(--sale-border);
+        border-radius: var(--sale-radius-lg);
+        padding: 14px 16px 16px;
+        margin-bottom: 10px;
+        position: relative;
+        transition: border-color 0.2s;
+    }
+    .sale-item-card:hover { border-color: rgba(0,0,0,0.25); }
+
+    .sale-item-num {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--sale-primary);
+        font-family: 'JetBrains Mono', monospace;
+        background: var(--sale-primary-light);
+        padding: 2px 8px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .sale-item-row1 {
+        display: grid;
+        grid-template-columns: 2fr 3fr;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: start;
+    }
+    .sale-item-row2 {
+        display: grid;
+        grid-template-columns: 1fr 110px 100px 100px;
+        gap: 10px;
+        align-items: start;
+    }
+
+    /* Stock info pill */
+    .sale-stock-info {
+        font-size: 11px;
+        color: var(--sale-text2);
+        margin-top: 5px;
+        font-family: 'JetBrains Mono', monospace;
+        padding: 4px 10px;
+        background: var(--sale-surface);
+        border-radius: var(--sale-radius);
+        border: 0.5px solid var(--sale-border);
+        min-height: 25px;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sale-stock-info.is-visible  { visibility: visible; opacity: 1; }
+    .sale-stock-info.is-low      { color: var(--sale-warn);   background: var(--sale-warn-light);   border-color: #FAC775; }
+    .sale-stock-info.is-expired  { color: var(--sale-danger); background: var(--sale-danger-light); border-color: #F7C1C1; }
+
+    /* ── Remove button ── */
+    .sale-btn-remove {
+        position: absolute;
+        top: 12px; right: 14px;
+        background: none;
+        border: 0.5px solid var(--sale-border);
+        border-radius: var(--sale-radius);
+        width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        color: var(--sale-text2);
+        transition: all 0.15s;
+        padding: 0; line-height: 1;
+    }
+    .sale-btn-remove:hover { background: var(--sale-danger-light); border-color: #F7C1C1; color: var(--sale-danger); }
+
+    /* ── Add item button ── */
+    .sale-btn-add {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 14px;
+        background: var(--sale-success-light);
+        border: 0.5px solid #C0DD97;
+        color: var(--sale-success);
+        font-family: 'Sora', sans-serif;
+        font-size: 12px; font-weight: 500;
+        border-radius: var(--sale-radius);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .sale-btn-add:hover { background: #C0DD97; color: #173404; }
+
+    /* ── Summary box ── */
+    .sale-summary-box {
+        background: var(--sale-surface2);
+        border: 0.5px solid var(--sale-border);
+        border-radius: var(--sale-radius-lg);
+        padding: 14px 16px;
+    }
+    .sale-summary-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 4px 0; font-size: 13px;
+    }
+    .sale-summary-row.is-total {
+        font-weight: 600; font-size: 15px;
+        padding-top: 8px; margin-top: 4px;
+        border-top: 0.5px solid var(--sale-border);
+    }
+
+    /* ── Empty state ── */
+    .sale-empty-state {
+        text-align: center; padding: 2.5rem 1rem;
+        color: var(--sale-text2); font-size: 13px;
+    }
+    .sale-empty-state .sale-empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+
+    /* ── Badge count ── */
+    .sale-badge-count {
+        background: var(--sale-primary); color: #fff;
+        font-size: 10px; border-radius: 20px; padding: 1px 6px;
+        margin-left: 4px;
+        font-family: 'JetBrains Mono', monospace; vertical-align: middle;
+    }
+
+    /* ── Alerts ── */
+    .sale-alert {
+        padding: 8px 12px; border-radius: var(--sale-radius);
+        font-size: 12px; margin-bottom: 8px;
+        display: flex; align-items: center; gap: 8px; border: 0.5px solid;
+    }
+    .sale-alert.is-error   { background: var(--sale-danger-light); border-color: #F7C1C1; color: var(--sale-danger); }
+    .sale-alert.is-info    { background: var(--sale-primary-light); border-color: #B5D4F4; color: #0C447C; }
+    .sale-alert.is-success { background: var(--sale-success-light); border-color: #C0DD97; color: var(--sale-success); }
+
+    /* ── Divider ── */
+    .sale-divider { height: 0.5px; background: var(--sale-border); margin: 1.25rem 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+        .sale-item-row1 { grid-template-columns: 1fr; }
+        .sale-item-row2 { grid-template-columns: 1fr 1fr; }
+    }
+</style>
+
+<!-- Main Section -->
+<section class="pb-5">
+    <div class="container-fluid">
+        <div class="sale-page-wrap">
+
+            <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0 fw-bold">
+                        <i class="bi bi-cart-plus me-2"></i>Create New Sale
+                    </h4>
+                </div>
+
+                <div class="card-body p-4">
+
+                    <!-- Step Progress Bar -->
+                    <div class="sale-step-bar">
+                        <div class="sale-step is-active" id="saleStep1">
+                            <span class="step-icon">①</span>Customer &amp; Date
+                        </div>
+                        <div class="sale-step" id="saleStep2">
+                            <span class="step-icon">②</span>Add Items
+                        </div>
+                        <div class="sale-step" id="saleStep3">
+                            <span class="step-icon">③</span>Review &amp; Confirm
+                        </div>
+                    </div>
+
+                    <form action="/billing/addSale" class="needs-validation" novalidate method="POST" id="saleForm">
+                        <%- include ("./partials/messages"); %>
+
+                        <!-- Alert Box -->
+                        <div id="saleAlertBox" class="mb-3"></div>
+
+                        <!-- ── SECTION 1: Customer & Date ── -->
+                        <div class="sale-section-label">Customer &amp; Date</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="customerId" class="form-label fw-semibold text-dark">
+                                    Select Customer <span class="text-danger">*</span>
+                                </label>
+                                <select id="customerId" name="customerId"
+                                    class="form-select shadow-sm"
+                                    required>
+                                    <option value="">Choose a customer</option>
+                                    <% customers.forEach(customer => { %>
+                                        <option value="<%= customer.Id %>"><%= customer.CustomerName %></option>
+                                    <% }); %>
+                                </select>
+                                <div class="invalid-feedback">Please select a customer.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="saleDate" class="form-label fw-semibold text-dark">
+                                    Sale Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" id="saleDate" class="form-control shadow-sm"
+                                    autocomplete="off" name="saleDate"
+                                    placeholder="Select date…" required>
+                                <div class="invalid-feedback">Please select a date.</div>
+                            </div>
+                        </div>
+
+                        <div class="sale-divider"></div>
+
+                        <!-- ── SECTION 2: Sale Items ── -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="sale-section-label" style="display:inline">Sale Items</span>
+                                <span class="sale-badge-count" id="saleItemCount">0</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="sale-btn-add" id="saleAddBtn">
+                                    <i class="bi bi-plus-circle"></i> Add Item
+                                </button>
+                                <a href="/billing/viewSales"
+                                    class="btn btn-outline-primary btn-sm d-inline-flex align-items-center">
+                                    <i class="bi bi-eye me-1"></i> View Sales
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Items container -->
+                        <div id="saleItemsContainer" class="mb-4">
+                            <div class="sale-empty-state" id="saleEmptyState">
+                                <span class="sale-empty-icon">📦</span>
+                                Click "Add Item" to start adding products to this sale
+                            </div>
+                        </div>
+
+                        <!-- ── SECTION 3: Summary ── -->
+                        <div id="saleSummarySection" style="display:none">
+                            <div class="sale-divider"></div>
+                            <div class="sale-section-label">Order Summary</div>
+                            <div class="sale-summary-box">
+                                <div class="sale-summary-row">
+                                    <span class="text-muted">Items</span>
+                                    <span id="saleSumItems">0</span>
+                                </div>
+                                <div class="sale-summary-row">
+                                    <span class="text-muted">Total Quantity</span>
+                                    <span id="saleSumQty">0</span>
+                                </div>
+                                <div class="sale-summary-row">
+                                    <span class="text-muted">Avg CGST</span>
+                                    <span id="saleSumCgst">0.00%</span>
+                                </div>
+                                <div class="sale-summary-row">
+                                    <span class="text-muted">Avg SGST</span>
+                                    <span id="saleSumSgst">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Submit ── -->
+                        <div class="row mt-4 mb-2">
+                            <div class="col text-center">
+                                <button type="submit" class="btn btn-primary px-5" id="saleSubmitBtn">
+                                    <i class="bi bi-check-circle me-2"></i>Complete Sale
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--
+    ═══════════════════════════════════════════════════
+    STOCK DATA – embedded safely via EJS data-attributes.
+    ═══════════════════════════════════════════════════
+-->
+<div id="saleDataStore" style="display:none" aria-hidden="true">
+
+    <% stocks.forEach(function(stock) { %>
+        <span
+            class="sale-data-stock"
+            data-id="<%= stock.Id %>"
+            data-product-name="<%= stock.ProductName %>"
+            data-product-id="<%= stock.ProductId %>"
+            data-batch="<%= stock.BatchNumber %>"
+            data-qty="<%= stock.Quantity %>"
+            data-expiry="<%= stock.ExpiryDate %>"
+            data-igst="<%= stock.IGSTPercentage %>"
+            data-supplier-id="<%= stock.SupplierId %>"
+        ></span>
+    <% }); %>
+
+    <% suppliers.forEach(function(supplier) { %>
+        <span
+            class="sale-data-supplier"
+            data-id="<%= supplier.Id %>"
+            data-name="<%= supplier.Name %>"
+        ></span>
+    <% }); %>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SaleManager  –  per-row supplier filter
+═══════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+class SaleManager {
+
+    constructor(stocks, suppliers) {
+        this.stocks    = stocks    || [];
+        this.suppliers = suppliers || [];
+        this.rowCounter = 0;
+        this.els = {};
+    }
+
+    /* ── PUBLIC ── */
+    init() {
+        this._cacheElements();
+        this._bindEvents();
+        this._initDatepicker();
+        this._updateSteps();
+    }
+
+    /* ── Cache DOM ── */
+    _cacheElements() {
+        const g = id => document.getElementById(id);
+        this.els = {
+            form:           g('saleForm'),
+            alertBox:       g('saleAlertBox'),
+            customerId:     g('customerId'),
+            saleDate:       g('saleDate'),
+            addBtn:         g('saleAddBtn'),
+            itemsContainer: g('saleItemsContainer'),
+            emptyState:     g('saleEmptyState'),
+            itemCount:      g('saleItemCount'),
+            summarySection: g('saleSummarySection'),
+            sumItems:       g('saleSumItems'),
+            sumQty:         g('saleSumQty'),
+            sumCgst:        g('saleSumCgst'),
+            sumSgst:        g('saleSumSgst'),
+            step1:          g('saleStep1'),
+            step2:          g('saleStep2'),
+            step3:          g('saleStep3'),
+        };
+    }
+
+    /* ── Events ── */
+    _bindEvents() {
+        this.els.addBtn.addEventListener('click', () => this.addItem());
+
+        /* Input events (qty, cgst, sgst) and remove clicks */
+        this.els.itemsContainer.addEventListener('input', e => {
+            if (e.target.matches('[data-role="qty-input"]')) {
+                const id = parseInt(e.target.dataset.rowId, 10);
+                this._onQtyInput(id);
+            }
+            if (e.target.matches('[data-role="cgst-input"], [data-role="sgst-input"]')) {
+                this._updateSummary();
+            }
+        });
+
+        this.els.itemsContainer.addEventListener('click', e => {
+            const btn = e.target.closest('[data-role="remove-btn"]');
+            if (btn) this._removeItem(parseInt(btn.dataset.rowId, 10));
+        });
+
+        this.els.form.addEventListener('submit', e => this._onSubmit(e));
+
+        /* Customer select drives step 1 */
+        this.els.customerId.addEventListener('change', () => this._updateSteps());
+    }
+
+    /* ── Flatpickr date picker ── */
+    _initDatepicker() {
+        flatpickr(this.els.saleDate, {
+            dateFormat: 'Y-m-d',
+            defaultDate: 'today',
+            allowInput: true,
+            maxDate: 'today',
+        });
+    }
+
+    /* ── Add a new item row ── */
+    addItem() {
+        /* Remove empty state */
+        if (this.els.emptyState) {
+            this.els.emptyState.remove();
+            this.els.emptyState = null;
+        }
+
+        const id   = this.rowCounter++;
+        const card = this._createItemCard(id);
+        this.els.itemsContainer.appendChild(card);
+
+        /* Initialise Tom Select for the new row with onChange callbacks */
+        TomSelectManager.init(`#saleSupplier_${id}`, {
+            onChange: (value) => this._onRowSupplierChange(id)
+        });
+
+        TomSelectManager.init(`#saleStock_${id}`, {
+            onChange: (value) => this._onStockChange(id)
+        });
+
+        this._updateItemCount();
+        this._updateSummary();
+        this._updateSteps();
+    }
+
+    /* ── Remove a row ── */
+    _removeItem(id) {
+        const card = document.getElementById(`saleItemCard_${id}`);
+        if (card) card.remove();
+
+        if (this._getItemCards().length === 0) {
+            this._renderEmptyState();
+        }
+
+        this._updateItemCount();
+        this._updateSummary();
+        this._updateSteps();
+    }
+
+    /* ── Supplier changed inside a row: repopulate products ── */
+    _onRowSupplierChange(id) {
+        const suppSel  = document.querySelector(`[data-role="supplier-select"][data-row-id="${id}"]`);
+        const stockSel = document.querySelector(`[data-role="stock-select"][data-row-id="${id}"]`);
+        if (!suppSel || !stockSel) return;
+
+        const suppId = suppSel.value;
+
+        /* Reset product row state */
+        this._hideStockInfo(id);
+        const cgstEl = document.querySelector(`[data-role="cgst-input"][data-row-id="${id}"]`);
+        const sgstEl = document.querySelector(`[data-role="sgst-input"][data-row-id="${id}"]`);
+        if (cgstEl) cgstEl.value = '';
+        if (sgstEl) sgstEl.value = '';
+        const qtyEl = document.querySelector(`[data-role="qty-input"][data-row-id="${id}"]`);
+        if (qtyEl) { qtyEl.value = ''; qtyEl.max = ''; delete qtyEl.dataset.availableQty; }
+
+        /* Clear Tom Select value before syncing new options */
+        if (stockSel.tomselect) {
+            stockSel.tomselect.clear(true);
+        }
+
+        if (!suppId) {
+            stockSel.innerHTML = '<option value="">— Select supplier first —</option>';
+            stockSel.disabled  = true;
+            if (stockSel.tomselect) {
+                stockSel.tomselect.sync();
+                stockSel.tomselect.disable();
+            }
+        } else {
+            stockSel.innerHTML  = '<option value="">Select product…</option>' + this._buildStockOptions(suppId);
+            stockSel.disabled   = false;
+            if (stockSel.tomselect) {
+                stockSel.tomselect.sync();
+                stockSel.tomselect.enable();
+            }
+        }
+
+        this._updateSummary();
+    }
+
+    /* ── Product selected in a row ── */
+    _onStockChange(id) {
+        const sel = document.querySelector(`[data-role="stock-select"][data-row-id="${id}"]`);
+        if (!sel) return;
+
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) {
+            const card = document.getElementById(`saleItemCard_${id}`);
+            if (card) {
+                delete card.dataset.stockQty;
+                delete card.dataset.stockExp;
+                delete card.dataset.stockExpired;
+                delete card.dataset.stockLow;
+            }
+            this._hideStockInfo(id);
+            return;
+        }
+
+        /* Auto-fill CGST / SGST from IGST */
+        const igst    = parseFloat(opt.getAttribute('data-igst')) || 0;
+        const halfTax = (igst / 2).toFixed(2);
+        const cgstEl  = document.querySelector(`[data-role="cgst-input"][data-row-id="${id}"]`);
+        const sgstEl  = document.querySelector(`[data-role="sgst-input"][data-row-id="${id}"]`);
+        if (cgstEl) cgstEl.value = halfTax;
+        if (sgstEl) sgstEl.value = halfTax;
+
+        /* Stock metadata */
+        const qty   = parseInt(opt.getAttribute('data-qty'), 10) || 0;
+        const exp   = opt.getAttribute('data-exp') || '';
+        const isExp = opt.getAttribute('data-expired') === 'true';
+        const isLow = opt.getAttribute('data-low') === 'true';
+
+        /* Persist on card for live remaining calculation */
+        const card = document.getElementById(`saleItemCard_${id}`);
+        if (card) {
+            card.dataset.stockQty = qty;
+            card.dataset.stockExp = exp;
+            card.dataset.stockExpired = isExp;
+            card.dataset.stockLow = isLow;
+        }
+
+        /* Cap qty input */
+        const qtyEl = document.querySelector(`[data-role="qty-input"][data-row-id="${id}"]`);
+        if (qtyEl) {
+            qtyEl.max = qty;
+            qtyEl.dataset.availableQty = qty;
+        }
+
+        this._updateStockInfo(id);
+        this._updateSummary();
+    }
+
+    /* ── Qty input ── */
+    _onQtyInput(id) {
+        const qtyEl = document.querySelector(`[data-role="qty-input"][data-row-id="${id}"]`);
+        if (!qtyEl) return;
+
+        const max = parseInt(qtyEl.max, 10) || 99999;
+        const val = parseInt(qtyEl.value, 10) || 0;
+
+        if (val > max) {
+            qtyEl.value = max;
+            this._showAlert(`Max available quantity is ${max}. Value capped automatically.`, 'info');
+        }
+
+        this._updateStockInfo(id);
+        this._updateSummary();
+    }
+
+    /* ── Live stock info pill (shows remaining) ── */
+    _updateStockInfo(id) {
+        const card = document.getElementById(`saleItemCard_${id}`);
+        const el   = document.getElementById(`saleStockInfo_${id}`);
+        if (!card || !el) return;
+
+        const qty   = parseInt(card.dataset.stockQty || 0, 10);
+        const exp   = card.dataset.stockExp || '';
+        const isExp = card.dataset.stockExpired === 'true';
+        const isLow = card.dataset.stockLow === 'true';
+
+        const qtyEl = document.querySelector(`[data-role="qty-input"][data-row-id="${id}"]`);
+        const entered = parseInt(qtyEl?.value || 0, 10);
+        const remaining = Math.max(qty - entered, 0);
+
+        let text = `Stock: ${qty} units`;
+        if (entered > 0) {
+            text += ` | Remaining: ${remaining}`;
+        }
+        text += ` | Expiry: ${exp}`;
+
+        el.className = 'sale-stock-info is-visible' + (isExp ? ' is-expired' : isLow ? ' is-low' : '');
+        el.textContent = text + (isExp ? ' — EXPIRED' : isLow ? ' — LOW STOCK' : '');
+    }
+
+    _hideStockInfo(id) {
+        const el = document.getElementById(`saleStockInfo_${id}`);
+        if (el) el.className = 'sale-stock-info';
+    }
+
+    /* ── Submit validation ── */
+    _onSubmit(e) {
+        let valid = true;
+
+        if (!this.els.customerId.value) {
+            this._showAlert('Please select a customer.', 'error');
+            this.els.customerId.classList.add('is-invalid');
+            valid = false;
+        }
+
+        if (!this.els.saleDate.value) {
+            this._showAlert('Please select a sale date.', 'error');
+            this.els.saleDate.classList.add('is-invalid');
+            valid = false;
+        }
+
+        const cards = this._getItemCards();
+        if (cards.length === 0) {
+            this._showAlert('Please add at least one sale item.', 'error');
+            valid = false;
+        }
+
+        cards.forEach(card => {
+            const rowId    = card.dataset.rowId;
+            const suppSel  = document.querySelector(`[data-role="supplier-select"][data-row-id="${rowId}"]`);
+            const stockSel = document.querySelector(`[data-role="stock-select"][data-row-id="${rowId}"]`);
+            const qtyEl    = document.querySelector(`[data-role="qty-input"][data-row-id="${rowId}"]`);
+            const cgstEl   = document.querySelector(`[data-role="cgst-input"][data-row-id="${rowId}"]`);
+            const sgstEl   = document.querySelector(`[data-role="sgst-input"][data-row-id="${rowId}"]`);
+
+            if (!suppSel?.value)  { suppSel?.classList.add('is-invalid');  valid = false; }
+            if (!stockSel?.value) { stockSel?.classList.add('is-invalid'); valid = false; }
+            if (!qtyEl?.value || parseInt(qtyEl.value) < 1) { qtyEl?.classList.add('is-invalid'); valid = false; }
+            if (cgstEl?.value === '') { cgstEl?.classList.add('is-invalid'); valid = false; }
+            if (sgstEl?.value === '') { sgstEl?.classList.add('is-invalid'); valid = false; }
+        });
+
+        if (!valid) { e.preventDefault(); e.stopPropagation(); }
+        this.els.form.classList.add('was-validated');
+    }
+
+    /* ── Step bar ── */
+    _updateSteps() {
+        const hasItems = this._getItemCards().length > 0;
+        const hasCust  = !!this.els.customerId.value;
+
+        const set = (el, done, active) => {
+            el.classList.toggle('is-done',   done);
+            el.classList.toggle('is-active', active);
+        };
+
+        set(this.els.step1, hasCust,    !hasCust);
+        set(this.els.step2, hasItems,    hasCust && !hasItems);
+        set(this.els.step3, false,       hasItems);
+    }
+
+    /* ── Item count badge ── */
+    _updateItemCount() {
+        this.els.itemCount.textContent = this._getItemCards().length;
+    }
+
+    /* ── Summary ── */
+    _updateSummary() {
+        const cards = this._getItemCards();
+        const n     = cards.length;
+
+        if (n === 0) { this.els.summarySection.style.display = 'none'; return; }
+
+        let totalQty = 0;
+        const cgsts  = [], sgsts = [];
+
+        cards.forEach(card => {
+            const rowId = card.dataset.rowId;
+            const qty   = parseInt(document.querySelector(`[data-role="qty-input"][data-row-id="${rowId}"]`)?.value)   || 0;
+            const cgst  = parseFloat(document.querySelector(`[data-role="cgst-input"][data-row-id="${rowId}"]`)?.value) || 0;
+            const sgst  = parseFloat(document.querySelector(`[data-role="sgst-input"][data-row-id="${rowId}"]`)?.value) || 0;
+            totalQty += qty;
+            if (cgst) cgsts.push(cgst);
+            if (sgst) sgsts.push(sgst);
+        });
+
+        const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+
+        this.els.summarySection.style.display = 'block';
+        this.els.sumItems.textContent = n;
+        this.els.sumQty.textContent   = totalQty;
+        this.els.sumCgst.textContent  = avg(cgsts).toFixed(2) + '%';
+        this.els.sumSgst.textContent  = avg(sgsts).toFixed(2) + '%';
+    }
+
+    /* ── Empty state ── */
+    _renderEmptyState() {
+        if (!this.els.emptyState) {
+            const el = document.createElement('div');
+            el.className = 'sale-empty-state';
+            el.id        = 'saleEmptyState';
+            el.innerHTML = '<span class="sale-empty-icon">📦</span>Click "Add Item" to start adding products to this sale';
+            this.els.itemsContainer.appendChild(el);
+            this.els.emptyState = el;
+        }
+    }
+
+    /* ── Alert (auto-dismiss 4s) ── */
+    _showAlert(msg, type = 'info') {
+        const cls = { error: 'is-error', info: 'is-info', success: 'is-success' }[type] || 'is-info';
+        const el  = document.createElement('div');
+        el.className = `sale-alert ${cls}`;
+        el.innerHTML = `<i class="bi bi-info-circle-fill"></i>${msg}`;
+        this.els.alertBox.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+    }
+
+    /* ── Helpers ── */
+    _getItemCards() {
+        return Array.from(this.els.itemsContainer.querySelectorAll('.sale-item-card'));
+    }
+
+    _buildSupplierOptions() {
+        return this.suppliers.map(s =>
+            `<option value="${s.Id}">${s.Name}</option>`
+        ).join('');
+    }
+
+    _buildStockOptions(supplierId) {
+        const filtered = this.stocks.filter(s => s.SupplierId === supplierId);
+        if (filtered.length === 0) {
+            return '<option value="" disabled>No stock for this supplier</option>';
+        }
+        return filtered.map(s => {
+            const isExpired = new Date(s.ExpiryDate) < new Date();
+            const isLow     = s.Quantity <= 10;
+            const tag       = isExpired ? ' [EXPIRED]' : isLow ? ' [LOW STOCK]' : '';
+
+            return `<option
+                value="${s.Id}"
+                data-igst="${s.IGSTPercentage}"
+                data-qty="${s.Quantity}"
+                data-exp="${s.ExpiryDate}"
+                data-expired="${isExpired}"
+                data-low="${isLow}"
+                data-product-id="${s.ProductId}"
+            >${s.ProductName} — Batch: ${s.BatchNumber} (Qty: ${s.Quantity} | Exp: ${s.ExpiryDate} | IGST: ${s.IGSTPercentage}%)${tag}</option>`;
+        }).join('');
+    }
+
+    /* ── Create one item card ── */
+    _createItemCard(id) {
+        const card         = document.createElement('div');
+        card.className     = 'sale-item-card';
+        card.id            = `saleItemCard_${id}`;
+        card.dataset.rowId = id;
+
+        card.innerHTML = `
+            <div class="sale-item-num">Item #${id + 1}</div>
+
+            <button type="button" class="sale-btn-remove"
+                data-role="remove-btn" data-row-id="${id}" title="Remove item">
+                <i class="bi bi-trash"></i>
+            </button>
+
+            <!-- Row 1: Supplier | Product -->
+            <div class="sale-item-row1">
+
+                <!-- Supplier -->
+                <div>
+                    <label for="saleSupplier_${id}" class="form-label fw-semibold text-dark small">
+                        Supplier <span class="text-danger">*</span>
+                    </label>
+                    <select
+                        id="saleSupplier_${id}"
+                        name="suppliers[]"
+                        class="form-select shadow-sm"
+                        data-role="supplier-select"
+                        data-row-id="${id}"
+                        required>
+                        <option value="">Choose supplier…</option>
+                        ${this._buildSupplierOptions()}
+                    </select>
+                    <div class="invalid-feedback">Please select a supplier.</div>
+                </div>
+
+                <!-- Product (disabled until supplier chosen) -->
+                <div>
+                    <label for="saleStock_${id}" class="form-label fw-semibold text-dark small">
+                        Product <span class="text-danger">*</span>
+                    </label>
+                    <select
+                        id="saleStock_${id}"
+                        name="stockId[]"
+                        class="form-select shadow-sm sale-product-select"
+                        data-role="stock-select"
+                        data-row-id="${id}"
+                        disabled
+                        required>
+                        <option value="">— Select supplier first —</option>
+                    </select>
+                    <div class="invalid-feedback">Please select a product.</div>
+                    <div class="sale-stock-info" id="saleStockInfo_${id}"></div>
+                </div>
+
+            </div>
+
+            <!-- Row 2: Qty | CGST | SGST -->
+            <div class="sale-item-row2">
+
+                <div>
+                    <label for="saleQty_${id}" class="form-label fw-semibold text-dark small">
+                        Qty Sold <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" id="saleQty_${id}" name="quantitySold[]"
+                        class="form-control shadow-sm"
+                        data-role="qty-input" data-row-id="${id}"
+                        placeholder="0" min="1" autocomplete="off" required>
+                    <div class="invalid-feedback">Min qty is 1.</div>
+                </div>
+
+                <div>
+                    <label for="saleCgst_${id}" class="form-label fw-semibold text-dark small">CGST %</label>
+                    <input type="number" id="saleCgst_${id}" name="cgst[]"
+                        class="form-control shadow-sm"
+                        data-role="cgst-input" data-row-id="${id}"
+                        placeholder="0.00" step="0.01" required>
+                    <div class="invalid-feedback">Enter CGST.</div>
+                </div>
+
+                <div>
+                    <label for="saleSgst_${id}" class="form-label fw-semibold text-dark small">SGST %</label>
+                    <input type="number" id="saleSgst_${id}" name="sgst[]"
+                        class="form-control shadow-sm"
+                        data-role="sgst-input" data-row-id="${id}"
+                        placeholder="0.00" step="0.01" required>
+                    <div class="invalid-feedback">Enter SGST.</div>
+                </div>
+
+            </div>
+        `;
+
+        return card;
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   Read data from hidden DOM store
+═══════════════════════════════════════════════ */
+function readSaleDataFromDOM() {
+    const stocks = Array.from(
+        document.querySelectorAll('#saleDataStore .sale-data-stock')
+    ).map(el => ({
+        Id:             el.dataset.id,
+        ProductName:    el.dataset.productName,
+        ProductId:      el.dataset.productId,
+        BatchNumber:    el.dataset.batch,
+        Quantity:       parseInt(el.dataset.qty, 10) || 0,
+        ExpiryDate:     el.dataset.expiry,
+        IGSTPercentage: parseFloat(el.dataset.igst) || 0,
+        SupplierId:     el.dataset.supplierId,
+    }));
+
+    const suppliers = Array.from(
+        document.querySelectorAll('#saleDataStore .sale-data-supplier')
+    ).map(el => ({
+        Id:   el.dataset.id,
+        Name: el.dataset.name,
+    }));
+
+    return { stocks, suppliers };
+}
+
+/* ═══════════════════════════════════════════════
+   Boot
+═══════════════════════════════════════════════ */
+(function () {
+    function boot() {
+        const { stocks, suppliers } = readSaleDataFromDOM();
+        window.saleManager = new SaleManager(stocks, suppliers);
+        window.saleManager.init();
+    }
+
+    if (typeof jQuery !== 'undefined') {
+        jQuery(document).ready(boot);
+    } else {
+        document.addEventListener('DOMContentLoaded', boot);
+    }
+})();
+</script>

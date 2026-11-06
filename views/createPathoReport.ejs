@@ -1,0 +1,220 @@
+<section>
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Create Document</li>
+      </ol>
+    </nav>
+  </section>
+  <section>
+    <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+        <div class="row fs-5 font-monospace">
+            <div class="col text-capitalize"><a href="/patient/getPatientDetail?patientId=<%=patientDetail[0].Id%>" class="link-body-emphasis text-decoration-none"><%= patientDetail[0].Title %> <%=  patientDetail[0].Name %> </a>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-phone" viewBox="0 0 16 16">
+                    <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                    <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
+            </svg>+91<%= patientDetail[0].PhoneNumber%></div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <hr>
+                <table class="table table-striped">
+                <thead>
+                    <tr>
+                    <th class="font-monospace">Reffered By</th>
+                    <th class="font-monospace">Gross Amount</th>
+                    <th class="font-monospace">Date</th>
+                    <th class="font-monospace">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr <% if(patientDetail[0].DuesAmount>0){%>class="table-danger" <%}%>><td class="text-capitalize"> Dr. <%=patientDetail[0].FirstName%> <%=patientDetail[0].LastName %></td><td><%= patientDetail[0].GrossAmount %></td><td><%= patientDetail[0].RegisteredOn %></td>
+                    <td <% if(patientDetail[0].Status==2){%>class="text-danger" <%}%> ><% if(patientDetail[0].Status==1){ %>Active <% }else {%>Cancelled <%}%></td></tr>
+                </tbody>
+                </table> 
+            </div>
+        </div>
+        <h5 class="text-center mb-4 text-primary">Enter Patient Test Data </h5>
+        <div class="form-container">
+            <form id="patientDataForm" action="/report/submitPatientData/<%=patientDetail[0].Id %>/<%=testId %>" method="post">
+                <table class="table  mb-0">
+                    <thead>
+                        <tr class="table-primary">
+                            <th></th>
+                            <th>Unit</th>
+                            <th>Value Range</th>
+                            <th>Patient Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% for (let header in groupedResults) { %>
+                            <tr class="header-section">
+                                <td colspan="5" class="text-uppercase fw-bold"><%= header %></td>
+                            </tr>
+                            <% groupedResults[header].forEach(param => { %>
+                                <% const existingData = savedData[param.SubParameterId] || {}; %>
+                                <tr>
+                                    <td><%= param.SubParameterName %></td>
+                                    <td><%= param.Unit %></td>
+                                    <td><%= parseFloat(param.MinVal).toFixed(2) %> - <%= parseFloat(param.MaxVal).toFixed(2) %></td>
+                                    
+                                    <!-- Patient Value Input, Prefilled if Saved -->
+                                    <td>
+                                        <input type="number" step="any" id="<%=param.SubParameterName %>" class="form-control patient-value-input <%= header %>" 
+                                            name="patientData[<%= param.SubParameterId %>]<%= param.SubParameterName %>" 
+                                            data-min="<%= param.MinVal %>" 
+                                            data-max="<%= param.MaxVal %>" 
+                                            data-name="<%= param.SubParameterName %>" 
+                                            value="<%= existingData.value || '' %>" />
+                                    </td>
+                                    
+                                    <!-- Status Symbol Display, Prefilled if Saved -->
+                                    <td class="status-symbol <%= existingData.status ? '' : 'd-none' %>" 
+                                        id="status-<%= param.SubParameterId %>">
+                                        <%= existingData.status || '' %>
+                                    </td>
+                                    
+                                    <!-- Hidden input for status, Prefilled if Saved -->
+                                    <input type="hidden" 
+                                        name="patientData[<%= param.SubParameterId %>].status" 
+                                        id="hidden-status-<%= param.SubParameterId %>" 
+                                        value="<%= existingData.status || '↔' %>">
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+
+                <!-- Hidden input to store the serialized JSON data -->
+                <input type="hidden" name="serializedData" id="serializedData" value="">
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary mt-3">Submit Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+        // Function to calculate EAG from HbA1c
+function calculateEAG(hba1cValue) {
+    const hba1c = parseFloat(hba1cValue);
+    if (isNaN(hba1c)) return ''; // Return empty if the value is not a number
+
+    // EAG formula: EAG = (28.7 * HbA1c) - 46.7
+    const eag = (28.7 * hba1c) - 46.7;
+    return eag.toFixed(2); // Round to 2 decimal places
+}
+
+// Function to update status symbol based on the value
+function updateStatusSymbol(input) {
+    const value = parseFloat(input.value);
+    const min = parseFloat(input.dataset.min);
+    const max = parseFloat(input.dataset.max);
+    const subParameterId = input.name.match(/\d+/)[0];
+
+    let symbol = '↔';
+    let symbolClass = 'symbol-normal';
+
+    if (value < min) {
+        symbol = '↓';
+        symbolClass = 'symbol-down';
+    } else if (value > max) {
+        symbol = '↑';
+        symbolClass = 'symbol-up';
+    }
+
+    // Update the status cell
+    const statusCell = document.getElementById(`status-${subParameterId}`);
+    if (statusCell) {
+        statusCell.textContent = symbol;
+        statusCell.className = `status-symbol ${symbolClass}`;
+        statusCell.classList.remove('d-none'); // Ensure the symbol is visible
+    }
+
+    // Update the hidden input for form submission
+    const hiddenInput = document.getElementById(`hidden-status-${subParameterId}`);
+    if (hiddenInput) hiddenInput.value = symbol;
+}
+
+// Function to handle HbA1c and calculate EAG
+function handleHba1c(input) {
+    const eagField = $(input).closest('tr').next('tr').find('input');
+
+    if (eagField.length > 0) {
+        const eagValue = calculateEAG(input.value);
+        eagField.val(eagValue); // Update EAG field with the calculated value
+        updateStatusSymbol(eagField[0]); // Update the status symbol for EAG
+    }
+}
+
+// Function to handle Bilirubin calculations
+function handleBilirubin() {
+    const bilDirect = parseFloat($('#Bilirubin\\ Direct').val());
+    const bilTotal = parseFloat($('#Bilirubin\\ Total').val());
+
+    if (!isNaN(bilDirect) && !isNaN(bilTotal)) {
+        const bilIndirect = bilTotal - bilDirect;
+        $('#Bilirubin\\ Indirect').val(bilIndirect);
+    } else {
+        console.error('Invalid input for Bilirubin Direct or Total');
+    }
+}
+
+// Main input change handler
+function handleInputChange(input) {
+    updateStatusSymbol(input); // Update status symbol
+
+    if (input.name.includes('HbA1c')) {
+        handleHba1c(input);
+    } else if (input.name.includes('Bilirubin Direct')) {
+        handleBilirubin();
+    }
+}
+
+// Form submission handler
+function handleFormSubmission(event) {
+    event.preventDefault();
+
+    const patientData = {};
+    let differentialSum = 0;
+    let hasDifferential = false;
+
+    // Collect all input values and statuses
+    document.querySelectorAll('.patient-value-input').forEach(input => {
+        const subParameterId = input.name.match(/\d+/)[0];
+        const value = input.value || null;
+        const hiddenStatus = document.getElementById(`hidden-status-${subParameterId}`);
+        const status = hiddenStatus ? hiddenStatus.value : null;
+
+        patientData[subParameterId] = { value, status };
+
+        // Check for differential fields
+        if (input.classList.contains('Differential')) {
+            hasDifferential = true;
+            differentialSum += parseFloat(value) || 0; // Ensure numeric addition
+        }
+    });
+
+    // Validate differential sum if required
+    if (hasDifferential && differentialSum !== 100) {
+        alert('Error: The sum of Differential Count must be exactly 100.');
+        return; // Prevent form submission
+    }
+
+    // Serialize patient data and submit
+    document.getElementById('serializedData').value = JSON.stringify(patientData);
+    event.target.submit();
+}
+
+// Attach event listeners
+document.querySelectorAll('.patient-value-input').forEach(input => {
+    input.addEventListener('input', () => handleInputChange(input));
+});
+
+// Handle form submission
+document.getElementById('patientDataForm').addEventListener('submit', handleFormSubmission);
+
+</script>

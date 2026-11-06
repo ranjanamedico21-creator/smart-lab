@@ -1,0 +1,534 @@
+<%
+/*
+  Sales Return Register
+  Expects:
+    data        – array of return objects with .CreatedAt, .CustomerName, .items[], .TotalAmount, .CreditNoteNumber, .creditNoteId
+    customers   – array of { Id, CustomerName }
+    startDate   – string (DD-MM-YYYY) or undefined
+    endDate     – string (DD-MM-YYYY) or undefined
+    customer    – selected customer id or undefined
+*/
+%>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* ── Reset & Base ─────────────────────────────────────────── */
+  .sr-page *,
+  .sr-page *::before,
+  .sr-page *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .sr-page {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: #f4f5f7;
+    padding: 28px 24px;
+    min-height: 100vh;
+  }
+
+  /* ── Page Header ──────────────────────────────────────────── */
+  .sr-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .sr-title-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 3px;
+  }
+
+  .sr-title {
+    font-size: 21px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.3px;
+  }
+
+  /* ── Button: Export ───────────────────────────────────────── */
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #1a9e6a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .btn-export:hover { background: #158a5a; color: #fff; text-decoration: none; }
+
+  /* ── Stat Cards ───────────────────────────────────────────── */
+  .sr-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 240px));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .stat-card.accent-teal::before  { background: #1a9e6a; }
+  .stat-card.accent-blue::before  { background: #2c7be5; }
+  .stat-card.accent-amber::before { background: #d97706; }
+  .stat-card.accent-red::before   { background: #dc2626; }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 7px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.5px;
+  }
+
+  /* ── Filter Card ──────────────────────────────────────────── */
+  .filter-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+
+  @media (max-width: 768px) {
+    .filter-grid { grid-template-columns: 1fr 1fr; }
+    .filter-grid .filter-col-customer,
+    .filter-grid .filter-col-submit { grid-column: 1 / -1; }
+  }
+
+  .filter-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 0.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #111827;
+    background: #f9fafb;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .filter-input:focus,
+  .filter-select:focus {
+    outline: none;
+    border-color: #2c7be5;
+    box-shadow: 0 0 0 3px rgba(44,123,229,0.12);
+    background: #fff;
+  }
+
+  .filter-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+
+  .btn-search {
+    width: 100%;
+    padding: 9px 22px;
+    background: #2c7be5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-search:hover { background: #1a6dcf; }
+
+  /* ── Table Card ───────────────────────────────────────────── */
+  .table-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-responsive { overflow-x: auto; }
+
+  .sr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  /* Head */
+  .sr-table thead th {
+    background: #f9fafb;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #6b7280;
+    text-align: left;
+    border-bottom: 0.5px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  .sr-table thead th.col-right  { text-align: right; }
+  .sr-table thead th.col-center { text-align: center; }
+
+  /* Parent row (per credit note) */
+  .sr-table tr.row-parent td {
+    padding: 13px 14px;
+    background: #f9fafb;
+    border-top: 1.5px solid #e5e7eb;
+    border-bottom: 0.5px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .sr-table tr.row-parent:first-of-type td { border-top: none; }
+
+  /* Child rows (line items) */
+  .sr-table tr.row-child td {
+    padding: 8px 14px;
+    border-bottom: 0.5px solid #f3f4f6;
+    background: #fff;
+    vertical-align: middle;
+    color: #374151;
+  }
+
+  .sr-table tr.row-child:last-child td { border-bottom: none; }
+
+  /* Empty state */
+  .sr-table tr.row-empty td {
+    padding: 40px 14px;
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+  }
+
+  /* ── Cell Content Styles ─────────────────────────────────── */
+  .cell-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .cell-customer {
+    font-weight: 500;
+    color: #111827;
+  }
+
+  .cell-items {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .cell-items strong { color: #374151; }
+
+  .cell-value-main {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a9e6a;
+    text-align: right;
+    display: block;
+  }
+
+  .badge-cn {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 5px;
+    background: #dcfce7;
+    color: #166534;
+    letter-spacing: 0.2px;
+  }
+
+  .badge-batch {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 0.5px solid #e5e7eb;
+  }
+
+  .btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border: 0.5px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+    color: #2c7be5;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+  }
+  .btn-view:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1a6dcf;
+    text-decoration: none;
+  }
+
+  /* ── Print ───────────────────────────────────────────────── */
+  @media print {
+    .no-print { display: none !important; }
+    .sr-page  { background: #fff; padding: 0; }
+    .filter-card { display: none; }
+    .table-card { border: 1px solid #ccc; border-radius: 0; }
+  }
+</style>
+
+
+<div class="sr-page">
+
+  <!-- ── Page Header ── -->
+  <div class="sr-header">
+    <div>
+      <div class="sr-title-eyebrow">Billing</div>
+      <h4 class="sr-title">Sales Return Register</h4>
+    </div>
+
+    <div class="no-print">
+      <button id="exportExcel" class="btn-export">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="white"/>
+          <path d="M8 2v7M5 6.5l3 3 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ── Summary Cards ── -->
+  <div class="sr-stats">
+
+    <div class="stat-card accent-teal">
+      <div class="stat-label">Total Returns</div>
+      <div class="stat-value"><%= data.length %></div>
+    </div>
+
+    <div class="stat-card accent-blue">
+      <div class="stat-label">Total Return Value</div>
+      <div class="stat-value">
+        ₹ <%= data.reduce((sum, r) => sum + r.TotalAmount, 0).toLocaleString('en-IN') %>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ── Filters ── -->
+  <div class="filter-card no-print">
+    <form method="post" action="/billing/viewSalesReturn">
+      <div class="filter-grid">
+
+        <div>
+          <label class="filter-label" for="FromDate">From Date</label>
+          <input
+            type="text"
+            name="startDate"
+            id="FromDate"
+            class="filter-input"
+            value="<%= startDate || '' %>"
+            placeholder="DD-MM-YYYY"
+          >
+        </div>
+
+        <div>
+          <label class="filter-label" for="ToDate">To Date</label>
+          <input
+            type="text"
+            name="endDate"
+            id="ToDate"
+            class="filter-input"
+            value="<%= endDate || '' %>"
+            placeholder="DD-MM-YYYY"
+          >
+        </div>
+
+        <div class="filter-col-customer">
+          <label class="filter-label" for="customer">Customer</label>
+          <select name="customer" id="customer" class="filter-select">
+            <option value="">All Customers</option>
+            <% customers.forEach(c => { %>
+              <option value="<%= c.Id %>" <%= (typeof customer !== 'undefined' && customer == c.Id) ? 'selected' : '' %>>
+                <%= c.CustomerName %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="filter-col-submit">
+          <button type="submit" class="btn-search">Search</button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+
+  <!-- ── Register Table ── -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="sr-table" id="returnTable">
+
+        <thead>
+          <tr>
+            <th style="width:110px">Date</th>
+            <th style="width:210px">Customer</th>
+            <th>Product</th>
+            <th style="width:110px">Batch</th>
+            <th class="col-center" style="width:70px">Qty</th>
+            <th class="col-right"  style="width:110px">Value</th>
+            <th style="width:140px">Credit Note</th>
+            <th style="width:90px">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <% if (data.length === 0) { %>
+            <tr class="row-empty">
+              <td colspan="8">No returns found for the selected criteria.</td>
+            </tr>
+          <% } %>
+
+          <% data.forEach(returnRow => { %>
+
+            <!-- Parent row: one per credit note -->
+            <tr class="row-parent">
+
+              <td>
+                <span class="cell-date">
+                  <%= new Date(returnRow.CreatedAt).toISOString().slice(0, 10) %>
+                </span>
+              </td>
+
+              <td>
+                <span class="cell-customer"><%= returnRow.CustomerName %></span>
+              </td>
+
+              <td colspan="3">
+                <span class="cell-items">
+                  Total Items: <strong><%= returnRow.items.length %></strong>
+                </span>
+              </td>
+
+              <td>
+                <span class="cell-value-main">
+                  ₹ ₹ <%= data.reduce((sum, r) => sum + r.TotalAmount, 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </span>
+              </td>
+
+              <td>
+                <span class="badge-cn"><%= returnRow.CreditNoteNumber %></span>
+              </td>
+
+              <td>
+                <a
+                  href="/billing/viewIndividualSalesReturnCN/<%= returnRow.creditNoteId %>"
+                  class="btn-view"
+                >
+                  View
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+              </td>
+
+            </tr>
+
+            <!-- Child rows: one per line item -->
+            <% returnRow.items.forEach(item => { %>
+              <tr class="row-child">
+                <td></td>
+                <td></td>
+                <td><%= item.ProductName %></td>
+                <td><span class="badge-batch"><%= item.BatchNumber %></span></td>
+                <td style="text-align:center"><%= item.Quantity %></td>
+                <td colspan="3"></td>
+              </tr>
+            <% }) %>
+
+          <% }) %>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+  /* EXCEL EXPORT */
+  document.getElementById("exportExcel").addEventListener("click", function () {
+    const table    = document.getElementById("returnTable");
+    const workbook = XLSX.utils.table_to_book(table, { sheet: "Returns" });
+    XLSX.writeFile(workbook, "sales_return_register.xlsx");
+  });
+</script>

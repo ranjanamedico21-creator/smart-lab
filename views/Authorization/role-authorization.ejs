@@ -1,0 +1,81 @@
+<section style="padding:0 0 2rem">
+
+  <nav style="display:flex;align-items:center;gap:6px;padding:0 0 1.25rem;font-size:13px;color:#888">
+    <a href="/user/home" style="color:#888;text-decoration:none">Home</a>
+    <span style="font-size:11px">›</span>
+    <a href="/authorize" style="color:#888;text-decoration:none">Access control</a>
+    <span style="font-size:11px">›</span>
+    <span style="color:#111;font-weight:500">Role: <%= role.Name %></span>
+  </nav>
+
+  <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:8px;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">
+        <%= role.Name.charAt(0) %>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:500"><%= role.Name %></div>
+        <div style="font-size:12px;color:#888;margin-top:1px">Baseline functions every user with this role inherits.</div>
+      </div>
+      <select onchange="if(this.value)location.href='/authorization/role/'+this.value"
+        style="padding:7px 12px;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;font-size:13px;background:#fff">
+        <% allRoles.forEach(function(r){ %>
+          <option value="<%= r.Id %>" <%= r.Id === role.Id ? 'selected' : '' %>><%= r.Name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <form action="/authorize/role/<%= role.Id %>" method="POST">
+      <div style="padding:16px 20px">
+        <div id="toastWrap" style="position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:8px"></div>
+
+        <% Object.keys(groups).forEach(function(groupName){ %>
+          <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;overflow:hidden;margin-bottom:12px">
+            <div style="padding:10px 14px;background:#f7f7f7;font-size:12px;font-weight:600;color:#444;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:22px;height:22px;border-radius:6px;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600"><%= groupName.charAt(0) %></div>
+                <%= groupName %>
+              </div>
+              <label style="font-size:11px;color:#888;cursor:pointer;font-weight:500">
+                <input type="checkbox" onclick="toggleGroup(this, '<%= groupName.replace(/'/g, "") %>')" style="vertical-align:middle;accent-color:#185FA5"> Select all
+              </label>
+            </div>
+            <% groups[groupName].forEach(function(f){ var on = roleFnIds.indexOf(f.Id) !== -1; %>
+              <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:0.5px solid rgba(0,0,0,0.06);font-size:13px;cursor:pointer"
+                     onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+                <input type="checkbox" name="functionIds" value="<%= f.Id %>" <%= on ? 'checked' : '' %>
+                  data-group="<%= groupName.replace(/'/g, '') %>"
+                  style="width:15px;height:15px;accent-color:#185FA5;cursor:pointer">
+                <span style="flex:1"><%= f.FunctionName %></span>
+                <code style="font-size:11px;color:#aaa"><%= f.FunctionSlug %></code>
+              </label>
+            <% }) %>
+          </div>
+        <% }) %>
+      </div>
+
+      <div style="padding:14px 20px;border-top:0.5px solid rgba(0,0,0,0.08);display:flex;justify-content:flex-end;gap:10px">
+        <a href="/authorize" style="padding:8px 18px;border-radius:8px;font-size:13px;color:#555;text-decoration:none;border:0.5px solid rgba(0,0,0,0.12)">Cancel</a>
+        <button type="submit" style="padding:8px 20px;border-radius:8px;border:none;background:#185FA5;color:#fff;font-size:13px;font-weight:500;cursor:pointer">Save role functions</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+function toggleGroup(master, group) {
+  document.querySelectorAll('input[data-group="' + group + '"]').forEach(function(cb){ cb.checked = master.checked; });
+}
+function toast(msg, type) {
+  var wrap = document.getElementById('toastWrap');
+  var bg = type === 'error' ? '#FCEBEB' : '#E8F5E9', fg = type === 'error' ? '#791F1F' : '#1E5E2A';
+  var t = document.createElement('div'); t.textContent = msg;
+  t.style.cssText = 'padding:11px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.12);background:'+bg+';color:'+fg;
+  wrap.appendChild(t);
+  setTimeout(function(){ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(function(){t.remove();},300); }, 3500);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var p = new URLSearchParams(window.location.search);
+  if (p.get('toast')) toast(p.get('toast'), p.get('type') || 'success');
+});
+</script>

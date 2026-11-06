@@ -1,0 +1,357 @@
+<%
+  var remaining = Number(issue.RemainingQty), pending = Number(issue.PendingBillQty), issued = Number(issue.IssuedQty) || 1;
+  var linkMax = remaining + pending;
+  var ROWS = [
+    ['RemainingQty', 'With ' + issue.CurrentHolderName, 'mrs-with', 'Not settled yet'],
+    ['PendingBillQty', 'Awaiting invoice', 'mrs-pending', 'On the books for billing, invoice not linked'],
+    ['BilledQty', 'Billed to customer', 'mrs-billed', 'Linked to an invoice'],
+    ['ReturnedQty', 'Returned to store', 'mrs-returned', 'Same batch came back'],
+    ['ReplacedQty', 'Replaced by other batch', 'mrs-replaced', 'Settled with different stock'],
+    ['SampleQty', 'Used as sample', 'mrs-sample', 'Free, no stock change'],
+    ['LostQty', 'Lost or damaged', 'mrs-lost', 'Written off'],
+    ['TransferredOutQty', 'Given to another MR', 'mrs-moved', 'Tracked on its own issue']
+  ];
+  var ACTION = {
+    ISSUE: ['Issued', 'bi-box-arrow-right'], TRANSFER: ['Transferred', 'bi-arrow-left-right'], RETURN: ['Returned to store', 'bi-arrow-return-left'],
+    REPLACE: ['Replaced by other batch', 'bi-arrow-repeat'], RELEASE: ['Released for billing', 'bi-box-arrow-in-down'], BILL: ['Billed', 'bi-receipt'],
+    SAMPLE: ['Used as sample', 'bi-gift'], LOST: ['Lost or damaged', 'bi-exclamation-octagon'], REVERSAL: ['Undo', 'bi-arrow-counterclockwise']
+  };
+  var STATUS_LABEL = { WITH_MR: 'With MR', PARTIAL: 'Part settled', AWAITING_INVOICE: 'Awaiting invoice', SETTLED: 'Settled' };
+  var STATUS_CLASS = { WITH_MR: 'bg-warning-subtle text-warning-emphasis', PARTIAL: 'bg-info-subtle text-info-emphasis', AWAITING_INVOICE: 'bg-danger-subtle text-danger-emphasis', SETTLED: 'bg-success-subtle text-success-emphasis' };
+  var token = function (name) { return formToken + '-' + name; };
+%>
+<%
+  function dateField(id) { return '<div class="mb-3"><label class="form-label small fw-semibold" for="' + id + '">Date</label><input type="text" id="' + id + '" name="actionDate" class="form-control js-date" autocomplete="off" required><div class="invalid-feedback">Select the date.</div></div>'; }
+  function qtyField(id, max) { return '<div class="mb-3"><label class="form-label small fw-semibold" for="' + id + '">Quantity <span class="text-secondary fw-normal">(max ' + max + ')</span></label><input type="number" id="' + id + '" name="quantity" class="form-control js-qty" min="1" max="' + max + '" step="1" value="' + max + '" inputmode="numeric" required><div class="invalid-feedback"></div></div>'; }
+  function remarksField(id, required) { return '<div class="mb-1"><label class="form-label small fw-semibold" for="' + id + '">' + (required ? 'What happened?' : 'Remarks <span class="text-secondary fw-normal">(optional)</span>') + '</label><input type="text" id="' + id + '" name="remarks" class="form-control" maxlength="200"' + (required ? ' required' : '') + '><div class="invalid-feedback">Write what happened.</div></div>'; }
+%>
+<style>
+  .mrs-page { max-width: 1120px; }
+  .mrs-icon { width: 46px; height: 46px; border-radius: 13px; background: #185FA5; color: #fff; flex-shrink: 0; }
+  .mrs-num { font-variant-numeric: tabular-nums; }
+  .mrs-bar { display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: var(--bs-tertiary-bg); }
+  .mrs-with { background: #e0a100; } .mrs-pending { background: #d9480f; } .mrs-billed { background: #2f9e44; }
+  .mrs-returned { background: #1c7ed6; } .mrs-replaced { background: #0ca678; } .mrs-sample { background: #9c36b5; }
+  .mrs-lost { background: #c92a2a; } .mrs-moved { background: #868e96; }
+  .mrs-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .mrs-row { display: flex; align-items: center; gap: .6rem; padding: .55rem 0; border-bottom: 1px solid var(--bs-border-color-translucent); }
+  .mrs-row:last-child { border-bottom: 0; }
+  .mrs-detail { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px solid var(--bs-border-color-translucent); font-size: .9rem; }
+  .mrs-detail:last-child { border-bottom: 0; }
+  .mrs-action { display: flex; align-items: flex-start; gap: .75rem; text-align: left; width: 100%; padding: .7rem .85rem; background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 11px; }
+  .mrs-action:hover { border-color: #185FA5; background: var(--bs-tertiary-bg); }
+  .mrs-tl { position: relative; padding-left: 1.7rem; }
+  .mrs-tl::before { content: ''; position: absolute; left: .55rem; top: .4rem; bottom: .4rem; width: 2px; background: var(--bs-border-color); }
+  .mrs-tl-item { position: relative; padding-bottom: 1.1rem; }
+  .mrs-tl-item:last-child { padding-bottom: 0; }
+  .mrs-tl-dot { position: absolute; left: -1.7rem; top: 0; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--bs-body-bg); border: 2px solid var(--bs-border-color); display: flex; align-items: center; justify-content: center; font-size: .62rem; }
+  .mrs-undone { opacity: .55; }
+  .mrs-undone .mrs-tl-title { text-decoration: line-through; }
+</style>
+
+<div class="container-fluid mrs-page py-4 px-3 px-lg-4 mb-5">
+  <%- include('../partials/messages') %>
+
+  <a href="/mrStockIssue" class="small text-decoration-none text-secondary d-inline-block mt-2 mb-2"><i class="bi bi-arrow-left me-1"></i>MR stock</a>
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <span class="mrs-icon d-inline-flex align-items-center justify-content-center"><i class="bi bi-clipboard2-check fs-5"></i></span>
+      <div>
+        <h4 class="mb-0 fw-bold"><%= issue.ProductName %></h4>
+        <div class="text-secondary small">Batch <span class="font-monospace"><%= issue.BatchNumber %></span>, expiry <%= issue.ExpiryText %><% if (Number(issue.IsExpired)) { %> <span class="text-danger fw-semibold">(expired)</span><% } %>, issue #<%= issue.Id %></div>
+      </div>
+    </div>
+    <span class="badge rounded-pill fs-6 fw-medium <%= STATUS_CLASS[issue.Status] %>"><%= STATUS_LABEL[issue.Status] || issue.Status %></span>
+  </div>
+
+  <% if (pending > 0) { %>
+    <div class="alert alert-warning rounded-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="bi bi-receipt me-1"></i><strong><%= pending %> unit<%= pending === 1 ? " is" : "s are" %></strong> waiting for an invoice. After billing them, link the invoice here.</span>
+      <button class="btn btn-sm btn-dark rounded-pill" data-bs-toggle="modal" data-bs-target="#linkModal">Link invoice</button>
+    </div>
+  <% } %>
+
+  <div class="row g-4">
+    <div class="col-lg-7 order-2 order-lg-1">
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body px-4 py-3">
+          <div class="d-flex justify-content-between mb-2"><strong>Where the <%= Number(issue.IssuedQty) %> units went</strong></div>
+          <div class="mrs-bar mb-2">
+            <% ROWS.forEach(function (r) { var n = Number(issue[r[0]]); if (n > 0) { %><span class="<%= r[2] %>" style="width:<%= (n / issued) * 100 %>%" title="<%= r[1] %>: <%= n %>"></span><% } }) %>
+          </div>
+          <% ROWS.forEach(function (r) { var n = Number(issue[r[0]]); if (n > 0) { %>
+            <div class="mrs-row">
+              <span class="mrs-dot <%= r[2] %>"></span>
+              <div class="flex-grow-1"><div class="text-capitalize"><%= r[1] %></div><div class="small text-secondary"><%= r[3] %></div></div>
+              <span class="fw-semibold mrs-num"><%= n %></span>
+            </div>
+          <% } }) %>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body px-4 py-3">
+          <strong class="d-block mb-3">History</strong>
+          <div class="mrs-tl">
+            <% ledger.forEach(function (l) { var a = ACTION[l.ActionType] || [l.ActionType, 'bi-dot']; %>
+              <div class="mrs-tl-item <%= l.ReversedAt ? 'mrs-undone' : '' %>">
+                <span class="mrs-tl-dot"><i class="bi <%= a[1] %>"></i></span>
+                <div class="d-flex flex-wrap justify-content-between gap-2">
+                  <span class="fw-semibold mrs-tl-title"><%= a[0] %>: <span class="mrs-num"><%= Number(l.Quantity) %></span></span>
+                  <span class="small text-secondary"><%= l.ActionDisplay %></span>
+                </div>
+                <div class="small text-secondary">
+                  <% if (l.ActionType === 'TRANSFER') { %><span class="text-capitalize"><%= l.FromUserName %></span> to <span class="text-capitalize"><%= l.ToUserName %></span>
+                  <% } else if (l.ActionType === 'ISSUE') { %>To <span class="text-capitalize"><%= l.ToUserName %></span>
+                  <% } else if (l.FromUserName) { %>From <span class="text-capitalize"><%= l.FromUserName %></span><% } %>
+                  <% if (l.CustomerName) { %><div>Customer <span class="text-capitalize"><%= l.CustomerName %></span></div><% } %>
+                  <% if (l.InvoiceId) { %><div>Invoice <%= l.InvoiceId %></div><% } %>
+                </div>
+                <% if (l.Remarks) { %><div class="small text-secondary"><%= l.Remarks %></div><% } %>
+                <div class="small text-secondary">Entered by <span class="text-capitalize"><%= l.CreatedByName %></span>
+                  <% if (l.ReversedAt) { %>(undone)<% } %>
+                  <% if (l.CanUndo) { %>
+                    <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline js-undo" data-ledger="<%= l.Id %>" data-label="<%= a[0] %>: <%= Number(l.Quantity) %>">Undo</button>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5 order-1 order-lg-2">
+      <% if (linkMax > 0) { %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body px-4 py-3">
+            <strong class="d-block mb-1">What happened to the stock?</strong>
+            <div class="small text-secondary mb-3"><%= remaining %> with the MR<%= pending ? ', ' + pending + ' awaiting invoice' : '' %></div>
+            <div class="d-grid gap-2">
+              <button type="button" class="mrs-action" data-bs-toggle="modal" data-bs-target="#billModal">
+                <i class="bi bi-receipt text-success fs-5"></i><span><span class="fw-semibold d-block">Sold to a customer</span><span class="small text-secondary">Same batch or settled through new stock</span></span>
+              </button>
+              <% if (remaining > 0) { %>
+                <button type="button" class="mrs-action" data-bs-toggle="modal" data-bs-target="#returnModal">
+                  <i class="bi bi-arrow-return-left text-primary fs-5"></i><span><span class="fw-semibold d-block">Came back to store</span><span class="small text-secondary">Same batch, goes back on the shelf</span></span>
+                </button>
+                <button type="button" class="mrs-action" data-bs-toggle="modal" data-bs-target="#replaceModal">
+                  <i class="bi bi-arrow-repeat fs-5" style="color:#0ca678"></i><span><span class="fw-semibold d-block">A different batch came back</span><span class="small text-secondary">Same product, newer stock received</span></span>
+                </button>
+                <button type="button" class="mrs-action" data-bs-toggle="modal" data-bs-target="#sampleModal">
+                  <i class="bi bi-gift fs-5" style="color:#9c36b5"></i><span><span class="fw-semibold d-block">Used as sample</span><span class="small text-secondary">Given free, will not come back</span></span>
+                </button>
+                <button type="button" class="mrs-action" data-bs-toggle="modal" data-bs-target="#transferModal">
+                  <i class="bi bi-arrow-left-right text-secondary fs-5"></i><span><span class="fw-semibold d-block">Given to another MR</span><span class="small text-secondary">All or part of the quantity</span></span>
+                </button>
+                <button type="button" class="mrs-action" data-bs-toggle="modal" data-bs-target="#lostModal">
+                  <i class="bi bi-exclamation-octagon text-danger fs-5"></i><span><span class="fw-semibold d-block">Lost or damaged</span><span class="small text-secondary">Written off with a reason</span></span>
+                </button>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="alert alert-success rounded-4 mb-4"><i class="bi bi-check2-circle me-2"></i>Every unit is accounted for.</div>
+      <% } %>
+
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body px-4 py-3">
+          <strong class="d-block mb-2">Details</strong>
+          <div class="mrs-detail"><span class="text-secondary">Currently with</span><span class="fw-medium text-capitalize text-end"><%= issue.CurrentHolderName %></span></div>
+          <div class="mrs-detail"><span class="text-secondary">First issued to</span><span class="text-capitalize text-end"><%= issue.IssuedToName %></span></div>
+          <div class="mrs-detail"><span class="text-secondary">Issued by</span><span class="text-capitalize text-end"><%= issue.IssuedByName %></span></div>
+          <div class="mrs-detail"><span class="text-secondary">Customer</span><span class="text-capitalize text-end"><%= issue.CustomerName || '-' %></span></div>
+          <div class="mrs-detail"><span class="text-secondary">Issued on</span><span class="text-end"><%= issue.IssuedOnDisplay %><% if (remaining > 0) { %> (<%= Number(issue.DaysOutstanding) %> days)<% } %></span></div>
+          <div class="mrs-detail"><span class="text-secondary">Purpose</span><span class="text-end"><%= issue.Purpose %></span></div>
+          <div class="mrs-detail"><span class="text-secondary">Remarks</span><span class="text-end"><%= issue.Remarks || '-' %></span></div>
+        </div>
+      </div>
+
+      <% if (related.length) { %>
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body px-4 py-3">
+            <strong class="d-block mb-2">Linked issues</strong>
+            <% related.forEach(function (r) { %>
+              <div class="mrs-detail"><a class="text-decoration-none" href="/mrStockIssue/<%= r.Id %>">Issue #<%= r.Id %></a><span class="text-end"><span class="text-capitalize"><%= r.HolderName %></span>, <%= Number(r.RemainingQty) %> of <%= Number(r.IssuedQty) %> left</span></div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%
+  function modalOpen(id, title, action, name, btnClass) {
+    return '<div class="modal fade" id="' + id + '" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><form class="modal-content border-0 shadow-lg rounded-4 js-form" method="post" action="/mrStockIssue/' + issue.Id + '/' + action + '" novalidate><input type="hidden" name="formToken" value="' + token(name) + '"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">' + title + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body">';
+  }
+  function modalClose(label, btnClass) {
+    return '</div><div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn ' + (btnClass || 'btn-primary') + ' rounded-pill px-4">' + label + '</button></div></form></div></div>';
+  }
+%>
+
+<%- modalOpen('returnModal', 'Came back to store', 'return', 'return') %>
+  <p class="small text-secondary">Adds the units back to batch <%= issue.BatchNumber %> in store.</p>
+  <%- qtyField('returnQty', remaining) %><%- dateField('returnDate') %><%- remarksField('returnRemarks') %>
+<%- modalClose('Save return') %>
+
+<%- modalOpen('sampleModal', 'Used as sample', 'sample', 'sample') %>
+  <p class="small text-secondary">Closes these units as free samples. Store stock does not change.</p>
+  <%- qtyField('sampleQty', remaining) %>
+  <div class="mb-3">
+    <label class="form-label small fw-semibold" for="sampleCustomer">Given to <span class="text-secondary fw-normal">(optional)</span></label>
+    <select name="customerId" id="sampleCustomer" class="form-select text-capitalize">
+      <option value="">Not recorded</option>
+      <% customers.forEach(function (c) { %><option value="<%= c.Id %>" <%= Number(issue.CustomerId) === Number(c.Id) ? 'selected' : '' %>><%= c.CustomerName %></option><% }) %>
+    </select>
+  </div>
+  <%- dateField('sampleDate') %><%- remarksField('sampleRemarks') %>
+<%- modalClose('Save sample') %>
+
+<%- modalOpen('lostModal', 'Lost or damaged', 'lost', 'lost') %>
+  <p class="small text-secondary">Closes these units as a loss. Store stock does not change.</p>
+  <%- qtyField('lostQty', remaining) %><%- dateField('lostDate') %><%- remarksField('lostRemarks', true) %>
+<%- modalClose('Save loss', 'btn-danger') %>
+
+<%- modalOpen('transferModal', 'Given to another MR', 'transfer', 'transfer') %>
+  <p class="small text-secondary">Store stock does not change. The original issue date stays, so the days out keep counting.</p>
+  <div class="mb-3">
+    <label class="form-label small fw-semibold" for="transferTo">New MR</label>
+    <select name="toUserId" id="transferTo" class="form-select text-capitalize" required>
+      <option value="">Select MR</option>
+      <% mrOptions.forEach(function (u) { if (Number(u.Id) !== Number(issue.CurrentHolderId)) { %><option value="<%= u.Id %>"><%= u.Name %></option><% } }) %>
+    </select>
+    <div class="invalid-feedback">Select the MR taking over.</div>
+  </div>
+  <%- qtyField('transferQty', remaining) %><%- dateField('transferDate') %><%- remarksField('transferRemarks') %>
+<%- modalClose('Save transfer') %>
+
+<%- modalOpen('replaceModal', 'A different batch came back', 'replace', 'replace') %>
+  <p class="small text-secondary">The MR kept batch <%= issue.BatchNumber %> and gave the store this other batch of the same product. That batch's stock goes up.</p>
+  <% if (lots.length) { %>
+    <div class="mb-3">
+      <label class="form-label small fw-semibold" for="replaceStock">Batch received</label>
+      <select name="newStockId" id="replaceStock" class="form-select" required>
+        <option value="">Select batch</option>
+        <% lots.forEach(function (l) { %><option value="<%= l.Id %>"><%= l.BatchNumber %>, expiry <%= l.ExpiryText %>, <%= Number(l.Quantity) %> in stock</option><% }) %>
+      </select>
+      <div class="invalid-feedback">Select the batch received.</div>
+    </div>
+    <%- qtyField('replaceQty', remaining) %><%- dateField('replaceDate') %><%- remarksField('replaceRemarks') %>
+  <% } else { %>
+    <div class="alert alert-light border small mb-0">This product has no other unexpired batch. Receive the new batch through a purchase first, then come back here.</div>
+  <% } %>
+<%- modalClose('Save replacement') %>
+
+<div class="modal fade" id="billModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Sold to a customer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body d-grid gap-2">
+        <button type="button" class="mrs-action" data-bs-target="#linkModal" data-bs-toggle="modal">
+          <i class="bi bi-link-45deg fs-5 text-success"></i><span><span class="fw-semibold d-block">The invoice is already made</span><span class="small text-secondary">From this batch or from new stock. Pick the invoice and stock is corrected.</span></span>
+        </button>
+        <% if (remaining > 0) { %>
+          <button type="button" class="mrs-action" data-bs-target="#releaseModal" data-bs-toggle="modal">
+            <i class="bi bi-box-arrow-in-down fs-5 text-primary"></i><span><span class="fw-semibold d-block">I need to make the invoice now</span><span class="small text-secondary">Puts these units on the books, then opens billing. Link the invoice afterwards.</span></span>
+          </button>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- modalOpen('linkModal', 'Link an invoice', 'link-invoice', 'link') %>
+  <% if (invoiceLines.length) { %>
+    <div class="mb-3">
+      <label class="form-label small fw-semibold" for="linkLine">Invoice line</label>
+      <select name="salesItemId" id="linkLine" class="form-select" required>
+        <option value="">Select invoice</option>
+        <% invoiceLines.forEach(function (l) { %>
+          <option value="<%= l.SalesItemId %>" data-free="<%= Number(l.FreeQty) %>"><%= l.InvoiceId %>, <%= l.CustomerName %>, batch <%= l.BatchNumber %><%= Number(l.SameBatch) ? '' : ' (new stock)' %>, <%= Number(l.FreeQty) %> free, <%= l.CreatedText %></option>
+        <% }) %>
+      </select>
+      <div class="invalid-feedback">Select the invoice line.</div>
+      <div class="form-text">Shows invoices of this product made on or after the issue date.</div>
+    </div>
+    <%- qtyField('linkQty', linkMax) %><%- dateField('linkDate') %><%- remarksField('linkRemarks') %>
+  <% } else { %>
+    <div class="alert alert-light border small mb-0">No invoice for this product was made on or after the issue date. Make the invoice on the billing page first.</div>
+  <% } %>
+<%- modalClose('Link invoice', 'btn-success') %>
+
+<%- modalOpen('releaseModal', 'Make the invoice now', 'release', 'release') %>
+  <div class="alert alert-light border small">The units go on the books so billing can sell them. They show as awaiting invoice until you link the invoice. Billing opens next.</div>
+  <%- qtyField('releaseQty', remaining) %>
+  <input type="hidden" name="customerId" value="<%= issue.CustomerId || '' %>">
+  <%- dateField('releaseDate') %><%- remarksField('releaseRemarks') %>
+<%- modalClose('Continue to billing') %>
+
+<%- modalOpen('undoModal', 'Undo this entry?', 'reverse', 'undo') %>
+  <p class="mb-2" id="undoLabel"></p>
+  <p class="small text-secondary mb-3">Stock and quantities go back to how they were. The history keeps both entries.</p>
+  <input type="hidden" name="ledgerId" id="undoLedger">
+  <%- remarksField('undoRemarks') %>
+<%- modalClose('Undo entry', 'btn-danger') %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.flatpickr) {
+    flatpickr('.js-date', { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd-m-Y', defaultDate: '<%= today %>', minDate: '<%= issue.IssuedOnText %>', maxDate: '<%= today %>' });
+  }
+
+  document.querySelectorAll('.js-undo').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('undoLedger').value = b.getAttribute('data-ledger');
+      document.getElementById('undoLabel').textContent = b.getAttribute('data-label');
+      new bootstrap.Modal(document.getElementById('undoModal')).show();
+    });
+  });
+
+  var linkLine = document.getElementById('linkLine');
+  var linkQty = document.getElementById('linkQty');
+  if (linkLine && linkQty) {
+    var linkMax = Number(linkQty.getAttribute('max'));
+    linkLine.addEventListener('change', function () {
+      var opt = linkLine.options[linkLine.selectedIndex];
+      var free = Number(opt.getAttribute('data-free')) || linkMax;
+      var max = Math.min(free, linkMax);
+      linkQty.setAttribute('max', max);
+      linkQty.value = max;
+      linkQty.classList.remove('is-invalid');
+    });
+  }
+
+  document.querySelectorAll('.js-qty').forEach(function (el) {
+    el.addEventListener('keydown', function (e) { if (['-', '+', '.', ',', 'e', 'E'].indexOf(e.key) !== -1) e.preventDefault(); });
+    el.addEventListener('input', function () { el.classList.remove('is-invalid'); });
+  });
+
+  document.querySelectorAll('.js-form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      var ok = true;
+      form.querySelectorAll('[required]').forEach(function (f) {
+        var empty = !String(f.value || '').trim();
+        f.classList.toggle('is-invalid', empty);
+        if (empty) ok = false;
+      });
+      var q = form.querySelector('.js-qty');
+      if (q) {
+        var raw = String(q.value).trim(), max = Number(q.getAttribute('max')), msg = '';
+        if (!/^\d+$/.test(raw)) msg = 'Enter a whole number.';
+        else if (Number(raw) < 1) msg = 'Must be at least 1.';
+        else if (Number(raw) > max) msg = 'Only ' + max + ' available.';
+        if (msg) { q.classList.add('is-invalid'); q.parentElement.querySelector('.invalid-feedback').textContent = msg; ok = false; }
+      }
+      if (!ok || form.dataset.sent) { e.preventDefault(); return; }
+      form.dataset.sent = '1';
+      var btn = form.querySelector('[type=submit]');
+      if (btn) btn.disabled = true;
+    });
+  });
+});
+</script>

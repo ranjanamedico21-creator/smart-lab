@@ -1,0 +1,177 @@
+<%
+  var rows   = (typeof testDetails !== 'undefined' && testDetails) ? testDetails : [];
+  var cats   = (typeof categories  !== 'undefined' && categories)  ? categories  : [];
+  var fCat   = (typeof categoryId  !== 'undefined' && categoryId)  ? categoryId  : '';
+  var fName  = (typeof testName    !== 'undefined' && testName)    ? testName    : '';
+  var fStat  = (typeof status      !== 'undefined' && status)      ? status      : '';
+  var pendingCount = rows.filter(function (t) { return t.IsReportRequired == 1 && !Number(t.HasTemplate) && !/patho/i.test(t.Name || ''); }).length;
+  var qs = function (o) { return Object.keys(o).filter(function (k) { return o[k] !== '' && o[k] != null && o[k] != 0; })
+                          .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(o[k]); }).join('&'); };
+  var excelQs = qs({ category: fCat, testName: fName, status: fStat });
+%>
+<style>
+  .tl-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius-lg,14px);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .tl-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--border,#e2e8f0)}
+  .tl-header-left{display:flex;align-items:center;gap:10px}
+  .tl-header-icon{width:32px;height:32px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;color:#185FA5}
+  .tl-header-title{font-size:14px;font-weight:600;margin:0}
+  .tl-header-sub{font-size:12px;color:var(--text-secondary,#666);margin:2px 0 0}
+  .tl-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;background:#E6F1FB;color:#185FA5}
+  .tl-badge.warn{background:#FAEEDA;color:#854F0B}
+  .tl-search{padding:14px 20px;border-bottom:1px solid var(--border,#e2e8f0);background:var(--surface,#f8f9fb)}
+  .tl-search form{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+  .tl-field{display:flex;flex-direction:column;gap:5px;min-width:140px;flex:1}
+  .tl-label{font-size:11px;font-weight:600;color:var(--text-secondary,#666);text-transform:uppercase;letter-spacing:.06em;margin:0}
+  .tl-table{width:100%;border-collapse:collapse}
+  .tl-table thead th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666);padding:10px 16px;border-bottom:1px solid var(--border,#e2e8f0);background:var(--surface,#f8f9fb);white-space:nowrap}
+  .tl-table tbody tr{border-bottom:1px solid var(--border,#e2e8f0)}
+  .tl-table tbody tr:hover td{background:#f8fbff}
+  .tl-table tbody td{padding:11px 16px;font-size:13px;vertical-align:middle}
+  .tl-num{font-size:12px;color:#aaa;font-weight:500}
+  .tl-test-name{font-weight:600}
+  .cat-badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+  .cat-rad{background:#EEEDFE;color:#534AB7}.cat-path{background:#EAF3DE;color:#3B6D11}.cat-usg{background:#E0F5F8;color:#0E7490}.cat-other{background:#E6F1FB;color:#185FA5}
+  .status-active{background:#EAF3DE;color:#3B6D11}.status-inactive{background:#FCEBEB;color:#A32D2D}
+  .tpl-ok{background:#EAF3DE;color:#3B6D11}.tpl-pending{background:#FAEEDA;color:#854F0B}.tpl-none{background:#f1f5f9;color:#64748b}
+  .price-val{font-family:'DM Mono',monospace;font-weight:500;white-space:nowrap}
+  .tl-actions{display:flex;gap:5px;flex-wrap:wrap}
+  .tl-action{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;text-decoration:none;border:1px solid;white-space:nowrap}
+  .tl-action:hover{opacity:.85}
+  .a-edit{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4}
+  .a-on{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97}
+  .a-off{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+  .a-attach{background:#EEEDFE;color:#534AB7;border-color:#CECBF6}
+  .a-subparam{background:#FAEEDA;color:#854F0B;border-color:#FAC775}
+  .tl-empty{text-align:center;padding:40px 16px;color:#64748b}
+  .tl-footer{padding:12px 20px;border-top:1px solid var(--border,#e2e8f0);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface,#f8f9fb)}
+  .tl-footer-info{font-size:12px;color:var(--text-secondary,#666)}
+</style>
+
+<div class="tl-card">
+
+  <div class="tl-header">
+    <div class="tl-header-left">
+      <div class="tl-header-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+      <div>
+        <p class="tl-header-title">Test Directory</p>
+        <p class="tl-header-sub">Manage diagnostic tests and sub-parameters</p>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <% if (pendingCount) { %>
+        <span class="tl-badge warn" title="Report required but no template uploaded"><i class="bi bi-hourglass-split"></i> <%= pendingCount %> template<%= pendingCount !== 1 ? 's' : '' %> pending</span>
+      <% } %>
+      <span class="tl-badge"><%= rows.length %> test<%= rows.length !== 1 ? 's' : '' %></span>
+      <a href="/test/createTest" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> New Test</a>
+    </div>
+  </div>
+
+  <div class="tl-search">
+    <form action="/test/getTestListView" method="post">
+      <div class="tl-field">
+        <label class="tl-label" for="tlCategory">Category</label>
+        <select class="form-select form-select-sm" id="tlCategory" name="category">
+          <option value="0">All categories</option>
+          <% cats.forEach(function (c) { %>
+            <option value="<%= c.Id %>" <%= String(c.Id) === String(fCat) ? 'selected' : '' %>><%= c.Name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="tl-field">
+        <label class="tl-label" for="tlName">Test Name</label>
+        <input class="form-control form-control-sm" id="tlName" type="search" name="testName" placeholder="Search by name" value="<%= fName %>">
+      </div>
+      <div class="tl-field" style="min-width:120px;max-width:160px">
+        <label class="tl-label" for="tlStatus">Status</label>
+        <select class="form-select form-select-sm" id="tlStatus" name="status">
+          <option value="0">All status</option>
+          <option value="1" <%= String(fStat) === '1' ? 'selected' : '' %>>Active</option>
+          <option value="2" <%= String(fStat) === '2' ? 'selected' : '' %>>Inactive</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search"></i> Search</button>
+      <% if (excelQs) { %><a href="/test/getTestListView" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i> Clear</a><% } %>
+      <a href="/test/downloadTestInExcel<%= excelQs ? '?' + excelQs : '' %>" class="btn btn-sm btn-outline-success"
+         title="Download the tests shown below"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </form>
+  </div>
+
+  <%- include("../partials/messages") %>
+
+  <div class="table-responsive">
+    <table class="tl-table">
+      <thead>
+        <tr><th>#</th><th>Test Name</th><th>Category</th><th>Price</th><th>Status</th><th>Report</th><th>Actions</th></tr>
+      </thead>
+      <tbody class="pagination-loop">
+        <% if (!rows.length) { %>
+          <tr><td colspan="7" class="tl-empty">
+            <i class="bi bi-search" style="font-size:24px"></i>
+            <div class="mt-2 fw-semibold">No tests found</div>
+            <div class="small"><%= excelQs ? 'Try clearing the filters.' : 'Create your first test to get started.' %></div>
+          </td></tr>
+        <% } %>
+        <% rows.forEach(function (test, idx) {
+             var cn = (test.Name || '').toLowerCase();
+             var isPathRow = /patho/.test(cn);
+             var catClass = isPathRow ? 'cat-path'
+                          : (/usg|ultra|sono|doppler/.test(cn) ? 'cat-usg'
+                          : (/radiol|x[\s-]?ray|\bct\b|mri|mammo|opg/.test(cn) ? 'cat-rad' : 'cat-other'));
+             var active = String(test.Status) === '1';
+        %>
+          <tr>
+            <td class="tl-num"><%= String(idx + 1).padStart(2, '0') %></td>
+            <td class="tl-test-name text-capitalize"><%= (test.TestName || '').toLowerCase() %></td>
+            <td><span class="cat-badge <%= catClass %>"><%= test.Name %></span></td>
+            <td class="price-val">₹ <%= Number(test.Price || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }) %></td>
+            <td><span class="cat-badge <%= active ? 'status-active' : 'status-inactive' %>"><%= active ? 'Active' : 'Inactive' %></span></td>
+            <td>
+              <% if (test.IsReportRequired != 1 || isPathRow) { %>
+                <span class="cat-badge tpl-none"><%= isPathRow && test.IsReportRequired == 1 ? 'Parameters' : 'Not required' %></span>
+              <% } else if (Number(test.HasTemplate)) { %>
+                <span class="cat-badge tpl-ok"><i class="bi bi-check2"></i> Template ready</span>
+              <% } else { %>
+                <a href="/test/edit/<%= test.Id %>" class="cat-badge tpl-pending text-decoration-none" title="Upload the report template">
+                  <i class="bi bi-hourglass-split"></i> Template pending
+                </a>
+              <% } %>
+            </td>
+            <td>
+              <div class="tl-actions">
+                <a href="/test/edit/<%= test.Id %>" class="tl-action a-edit"><i class="bi bi-pencil"></i> Edit</a>
+                <% if (active) { %>
+                  <a href="/test/makeTestInActive?testId=<%= test.Id %>" class="tl-action a-off js-confirm"
+                     data-confirm="Deactivate “<%= test.TestName %>”? It will no longer appear during patient registration.">
+                    <i class="bi bi-pause-circle"></i> Deactivate</a>
+                <% } else { %>
+                  <a href="/test/makeTestActive?testId=<%= test.Id %>" class="tl-action a-on"><i class="bi bi-play-circle"></i> Activate</a>
+                <% } %>
+                <a href="/test/attachTest?testId=<%= test.Id %>" class="tl-action a-attach"><i class="bi bi-plus-circle"></i> Attach test</a>
+                <% if (isPathRow) { %>
+                  <a href="/test/attachSubParameter/<%= test.Id %>/<%= test.CategoryId %>" class="tl-action a-subparam"><i class="bi bi-diagram-3"></i> Sub param</a>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tl-footer">
+    <span class="tl-footer-info">Showing <%= rows.length %> test<%= rows.length !== 1 ? 's' : '' %></span>
+    <nav aria-label="Test pagination">
+      <ul class="pagination pagination-sm mb-0 gap-1" id="pagination_Number">
+        <li class="page-item"><a class="page-link rounded prev_link" href="#">←</a></li>
+        <li class="page-item"><a class="page-link rounded next_link" href="#">→</a></li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('.js-confirm');
+    if (a && !confirm(a.getAttribute('data-confirm'))) e.preventDefault();
+  });
+</script>

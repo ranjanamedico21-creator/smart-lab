@@ -1,0 +1,180 @@
+<section style="padding:0 0 2rem">
+
+  <!-- Breadcrumb -->
+  <nav style="display:flex;align-items:center;gap:6px;padding:0 0 1.25rem;font-size:13px;color:#888">
+    <a href="/user/home" style="color:#888;text-decoration:none">Home</a>
+    <span style="font-size:11px">›</span>
+    <a href="/authorize" style="color:#888;text-decoration:none">Access control</a>
+    <span style="font-size:11px">›</span>
+    <span style="color:#111;font-weight:500"><%= user.FullName || ('User #' + user.Id) %></span>
+  </nav>
+
+  <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;overflow:hidden">
+
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:8px;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:600">
+        <%= (user.FullName || 'U').trim().charAt(0).toUpperCase() %>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:500"><%= user.FullName || ('User #' + user.Id) %></div>
+        <div style="font-size:12px;color:#888;margin-top:1px">
+          Primary role: <%= user.PrimaryRole || '—' %>
+        </div>
+      </div>
+      <% if (isAdmin) { %>
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;background:#FFF6E5;color:#9A6700;border:0.5px solid rgba(212,167,44,0.3)">
+          ADMINISTRATOR — bypasses all checks
+        </span>
+      <% } %>
+    </div>
+
+    <div style="padding:20px">
+
+      <!-- Toast (server + js) -->
+      <div id="toastWrap" style="position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:8px"></div>
+
+      <% if (isAdmin) { %>
+        <div style="display:flex;gap:10px;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:18px;background:#FFF6E5;color:#7A5200;border:0.5px solid rgba(212,167,44,0.25)">
+          <span>This user is an administrator (<code>IsItAdmin = 1</code>) and can access every function regardless of the settings below. Remove the admin flag to enforce role/override-based access.</span>
+        </div>
+      <% } %>
+
+      <!-- ============ ROLES ============ -->
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+        Roles (a user may hold several)
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+      </div>
+
+      <form action="/authorize/user/<%= user.Id %>/roles" method="POST" style="margin-bottom:24px">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          <% allRoles.forEach(function(r){ var on = userRoleIds.indexOf(r.Id) !== -1; %>
+            <label style="display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:8px;font-size:13px;cursor:pointer;border:0.5px solid <%= on ? 'rgba(24,95,165,0.4)' : 'rgba(0,0,0,0.12)' %>;background:<%= on ? '#EAF3FB' : '#fff' %>">
+              <input type="checkbox" name="roleIds" value="<%= r.Id %>" <%= on ? 'checked' : '' %>
+                style="width:15px;height:15px;accent-color:#185FA5;cursor:pointer">
+              <%= r.Name %>
+            </label>
+          <% }) %>
+        </div>
+        <button type="submit"
+          style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:none;background:#185FA5;color:#fff;font-size:13px;font-weight:500;cursor:pointer">
+          Save roles
+        </button>
+        <a href="#" onclick="event.preventDefault()" style="font-size:12px;color:#aaa;margin-left:10px">Function grants from these roles apply automatically.</a>
+      </form>
+
+      <div style="height:0.5px;background:rgba(0,0,0,0.08);margin:4px 0 20px"></div>
+
+      <!-- ============ FUNCTIONS ============ -->
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+        Functions — effective access &amp; per-user overrides
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+      </div>
+      <div style="font-size:12px;color:#999;margin-bottom:14px">
+        <strong>Inherit</strong> follows the user's roles. <strong>Allow</strong> grants this function even if no role does.
+        <strong>Deny</strong> blocks it even if a role grants it — deny always wins.
+      </div>
+
+      <% Object.keys(groups).forEach(function(groupName){ %>
+        <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;overflow:hidden;margin-bottom:12px">
+          <div style="padding:10px 14px;background:#f7f7f7;font-size:12px;font-weight:600;color:#444;display:flex;align-items:center;gap:8px">
+            <div style="width:22px;height:22px;border-radius:6px;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">
+              <%= groupName.charAt(0) %>
+            </div>
+            <%= groupName %>
+          </div>
+
+          <% groups[groupName].forEach(function(f){ %>
+            <div id="row-<%= f.FunctionId %>" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:0.5px solid rgba(0,0,0,0.06)">
+
+              <!-- state dot + name -->
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="state-dot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:<%= f.state === 'allowed' ? '#3FA64A' : '#D24B4A' %>"></span>
+                  <span style="font-size:13px;color:#111"><%= f.FunctionName %></span>
+                </div>
+                <div class="src" style="font-size:11px;color:#999;margin-top:2px;margin-left:16px"><%= f.source %></div>
+              </div>
+
+              <!-- segmented control: allow / inherit / deny -->
+              <div data-fn="<%= f.FunctionId %>" style="display:inline-flex;border:0.5px solid rgba(0,0,0,0.12);border-radius:8px;overflow:hidden;flex-shrink:0">
+                <% ['allow','inherit','deny'].forEach(function(opt){
+                     var active = f.override === opt;
+                     var bg = active ? (opt==='allow' ? '#E8F5E9' : opt==='deny' ? '#FCEBEB' : '#EDEDED') : '#fff';
+                     var fg = active ? (opt==='allow' ? '#1E7A2B' : opt==='deny' ? '#9A2322' : '#444') : '#999';
+                %>
+                  <button type="button"
+                    class="seg seg-<%= opt %>"
+                    data-opt="<%= opt %>"
+                    onclick="setOverride(<%= f.FunctionId %>, '<%= opt %>', this)"
+                    style="padding:6px 12px;font-size:12px;font-weight:500;border:none;cursor:pointer;background:<%= bg %>;color:<%= fg %>;border-left:<%= opt==='allow' ? 'none' : '0.5px solid rgba(0,0,0,0.08)' %>;text-transform:capitalize">
+                    <%= opt %>
+                  </button>
+                <% }) %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% }) %>
+
+    </div>
+  </div>
+</section>
+
+<script>
+function toast(msg, type) {
+  var wrap = document.getElementById('toastWrap');
+  var bg = type === 'error' ? '#FCEBEB' : type === 'info' ? '#EAF3FB' : '#E8F5E9';
+  var fg = type === 'error' ? '#791F1F' : type === 'info' ? '#0C447C' : '#1E5E2A';
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'padding:11px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.12);background:'+bg+';color:'+fg+';border:0.5px solid rgba(0,0,0,0.06)';
+  wrap.appendChild(t);
+  setTimeout(function(){ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(function(){t.remove();},300); }, 3500);
+}
+
+function paintRow(fn) {
+  var row = document.getElementById('row-' + fn.FunctionId);
+  if (!row) return;
+  row.querySelector('.state-dot').style.background = fn.state === 'allowed' ? '#3FA64A' : '#D24B4A';
+  row.querySelector('.src').textContent = fn.source;
+  var seg = row.querySelector('[data-fn="' + fn.FunctionId + '"]');
+  seg.querySelectorAll('.seg').forEach(function(btn){
+    var opt = btn.getAttribute('data-opt');
+    var active = fn.override === opt;
+    var bg = active ? (opt==='allow' ? '#E8F5E9' : opt==='deny' ? '#FCEBEB' : '#EDEDED') : '#fff';
+    var fg = active ? (opt==='allow' ? '#1E7A2B' : opt==='deny' ? '#9A2322' : '#444') : '#999';
+    btn.style.background = bg; btn.style.color = fg;
+  });
+}
+
+function setOverride(functionId, effect, btn) {
+  var seg = btn.closest('[data-fn]');
+  seg.style.pointerEvents = 'none';
+  fetch('/authorize/user/<%= user.Id %>/override', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ functionId: functionId, effect: effect })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    seg.style.pointerEvents = '';
+    if (data.success && data.function) {
+      paintRow(data.function);
+      toast(data.function.FunctionName + ' → ' + (data.function.state === 'allowed' ? 'allowed' : 'denied'),
+            data.function.state === 'allowed' ? 'success' : 'error');
+    } else {
+      toast(data.message || 'Update failed', 'error');
+    }
+  })
+  .catch(function(e){ seg.style.pointerEvents=''; toast('Update failed: ' + e.message, 'error'); });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var p = new URLSearchParams(window.location.search);
+  if (p.get('toast')) toast(p.get('toast'), p.get('type') || 'success');
+});
+</script>

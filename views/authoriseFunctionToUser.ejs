@@ -1,0 +1,185 @@
+<section style="padding:0 0 2rem">
+
+  <!-- Breadcrumb -->
+  <nav style="display:flex;align-items:center;gap:6px;padding:0 0 1.25rem;font-size:13px;color:#888">
+    <a href="/user/home" style="color:#888;text-decoration:none">Home</a>
+    <span style="font-size:11px">›</span>
+    <span style="color:#111;font-weight:500">Function authorization</span>
+  </nav>
+
+  <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;overflow:hidden">
+
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:8px;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 1l5 2v4c0 3-2.5 5.5-5 7C5.5 12.5 3 10 3 7V3l5-2z"/>
+        </svg>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:500">Function authorization</div>
+        <div style="font-size:12px;color:#888;margin-top:1px">Manage access permissions for this user</div>
+      </div>
+    </div>
+
+    <div style="padding:20px">
+      <%- include("./partials/messages") %>
+
+      <!-- Alert (JS-injected) -->
+      <div id="alertBox" style="display:none;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;background:#FCEBEB;color:#791F1F;border:0.5px solid rgba(226,75,74,0.2)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0">
+          <circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5"/>
+        </svg>
+        <span id="alertMsg"></span>
+      </div>
+
+      <!-- Section: Already Authorized -->
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+        Already authorized
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+      </div>
+
+      <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;overflow:hidden;margin-bottom:20px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#f7f7f7">
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">Function name</th>
+              <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:9px 14px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08);width:130px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (authorisedFunctions.length === 0) { %>
+              <tr><td colspan="2" style="padding:28px;text-align:center;font-size:13px;color:#aaa">No functions authorized yet</td></tr>
+            <% } %>
+            <% authorisedFunctions.forEach(function(fn) { %>
+              <tr onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+                <td style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#639922;flex-shrink:0"></div>
+                    <%= fn.FunctionName %>
+                  </div>
+                </td>
+                <td style="padding:11px 14px;border-bottom:0.5px solid rgba(0,0,0,0.07)">
+                  <a href="/user/removeAuthorisation/<%= userId %>/<%= fn.FunctionId %>"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;background:#FCEBEB;color:#791F1F;border:0.5px solid rgba(226,75,74,0.25);text-decoration:none">
+                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <circle cx="8" cy="8" r="6"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/>
+                    </svg>
+                    Remove
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="height:0.5px;background:rgba(0,0,0,0.08);margin:20px 0"></div>
+
+      <!-- Section: Select New Functions -->
+      <div style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+        Select new functions
+        <span style="width:20px;height:1px;background:rgba(0,0,0,0.1);display:inline-block"></span>
+      </div>
+
+      <form action="/user/authoriseAccess/<%= userId %>" method="POST" id="authForm" onsubmit="return validateForm()">
+        <div id="accordionWrap">
+          <% let currentGroup = ''; let groupIndex = -1; %>
+          <% unAuthorisedFunctionLists.forEach(function(row, i) { %>
+            <% if (row.FunctionGroup !== currentGroup) { %>
+              <% if (currentGroup !== '') { %>
+                    </div>
+                  </div>
+                </div>
+              <% } %>
+              <% groupIndex++ %>
+              <% currentGroup = row.FunctionGroup %>
+              <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;overflow:hidden;margin-bottom:8px">
+                <button type="button"
+                  onclick="toggleAcc(<%= groupIndex %>, this)"
+                  style="width:100%;padding:11px 14px;background:#fff;border:none;text-align:left;font-size:13px;font-weight:500;color:#111;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:24px;height:24px;border-radius:6px;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">
+                      <%= row.FunctionGroup[0] %>
+                    </div>
+                    <%= row.FunctionGroup %>
+                  </div>
+                  <svg style="width:14px;height:14px;color:#aaa;transition:transform 0.18s;flex-shrink:0" id="chev-<%= groupIndex %>" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 6l4 4 4-4"/>
+                  </svg>
+                </button>
+                <div id="acc-<%= groupIndex %>" style="display:none;border-top:0.5px solid rgba(0,0,0,0.08)">
+            <% } %>
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background 0.1s"
+                    onclick="document.getElementById('fn<%= row.FunctionId %>').click()"
+                    onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+                    <input type="checkbox"
+                      name="selectedFunctions[]"
+                      value="<%= row.FunctionId %>"
+                      id="fn<%= row.FunctionId %>"
+                      onclick="event.stopPropagation()"
+                      onchange="updateCount()"
+                      style="width:15px;height:15px;border-radius:3px;accent-color:#185FA5;cursor:pointer;flex-shrink:0">
+                    <label for="fn<%= row.FunctionId %>" style="font-size:13px;cursor:pointer"><%= row.FunctionName %></label>
+                  </div>
+          <% }) %>
+          <% if (currentGroup !== '') { %>
+                </div>
+              </div>
+          <% } %>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:16px 20px;border-top:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <span style="font-size:13px;color:#888">
+        Selected: <strong id="selNum" style="color:#185FA5;font-weight:500">0</strong> function(s)
+      </span>
+      <button type="submit" form="authForm" id="submitBtn"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:8px;border:none;background:#185FA5;color:#fff;font-size:13px;font-weight:500;cursor:pointer">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8 1l5 2v4c0 3-2.5 5.5-5 7C5.5 12.5 3 10 3 7V3l5-2z"/>
+        </svg>
+        Authorize selected
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<script>
+function toggleAcc(i, btn) {
+  const body = document.getElementById('acc-' + i);
+  const chev = document.getElementById('chev-' + i);
+  const isOpen = body.style.display !== 'none';
+  document.querySelectorAll('[id^="acc-"]').forEach(b => b.style.display = 'none');
+  document.querySelectorAll('[id^="chev-"]').forEach(c => c.style.transform = '');
+  document.querySelectorAll('[id^="acc-"] ~ button, button[onclick*="toggleAcc"]').forEach(b => b.style.background = '');
+  if (!isOpen) {
+    body.style.display = 'block';
+    chev.style.transform = 'rotate(180deg)';
+    btn.style.background = '#f7f7f7';
+  }
+}
+
+function updateCount() {
+  const n = document.querySelectorAll('input[name="selectedFunctions[]"]:checked').length;
+  document.getElementById('selNum').textContent = n;
+}
+
+function validateForm() {
+  const checked = document.querySelectorAll('input[name="selectedFunctions[]"]:checked').length;
+  if (!checked) {
+    const box = document.getElementById('alertBox');
+    document.getElementById('alertMsg').textContent = 'Please select at least one function before submitting.';
+    box.style.display = 'flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => box.style.display = 'none', 4000);
+    return false;
+  }
+  return true;
+}
+</script>

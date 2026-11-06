@@ -1,0 +1,371 @@
+<style>
+  :root {
+    --brand:#185FA5; --brand-soft:#E6F1FB; --brand-text:#0C447C;
+    --surface:#ffffff; --surface-alt:#F8F9FB;
+    --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+    --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+    --success-bg:#EAF3DE; --success-text:#3B6D11;
+    --warning-bg:#FAEEDA; --warning-text:#854F0B;
+    --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+    --info-bg:#E6F1FB;    --info-text:#185FA5;
+    --purple-bg:#EEEDFE;  --purple-text:#534AB7;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+    --shadow-card:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px rgba(0,0,0,0.08);
+  }
+
+  .dl-wrapper { padding:16px 0 40px; }
+  .dl-card    { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); overflow:hidden; margin-bottom:16px; }
+
+  /* Header */
+  .dl-card-header  { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+  .dl-header-left  { display:flex; align-items:center; gap:12px; }
+  .dl-header-icon  { width:36px; height:36px; background:var(--brand-soft); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--brand); font-size:16px; flex-shrink:0; }
+  .dl-header-title { font-size:15px; font-weight:600; color:var(--text-primary); margin:0; line-height:1.2; }
+  .dl-header-sub   { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+  .dl-count-pill   { font-size:11px; font-weight:500; padding:2px 10px; border-radius:99px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-secondary); }
+
+  /* Add button */
+  .dl-btn-add { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; transition:background .15s; white-space:nowrap; }
+  .dl-btn-add:hover { background:var(--brand-text); color:#fff; }
+
+  /* Search bar */
+  .dl-search      { padding:16px 24px; border-bottom:1px solid var(--border); background:var(--surface-alt); }
+  .dl-input-wrap  { display:flex; align-items:center; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:var(--surface); overflow:hidden; max-width:320px; transition:border-color .15s; }
+  .dl-input-wrap:focus-within { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+  .dl-input-icon  { padding:0 10px; color:var(--text-hint); font-size:13px; flex-shrink:0; }
+  .dl-input-wrap input { border:none; outline:none; background:transparent; font-size:13px; color:var(--text-primary); padding:8px 12px 8px 0; width:100%; font-family:inherit; }
+  .dl-input-wrap input::placeholder { color:var(--text-hint); }
+
+  /* Section */
+  .dl-section { padding:20px 24px; }
+
+  /* Doctor card grid */
+  .dl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+
+  /* Doctor card */
+  .dl-doc-card {
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    background:var(--surface-alt);
+    overflow:hidden;
+    transition:box-shadow .15s, border-color .15s;
+  }
+  .dl-doc-card:hover { border-color:var(--brand); box-shadow:0 4px 14px rgba(24,95,165,.1); }
+
+  /* Card top strip */
+  .dl-doc-top {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  .dl-avatar {
+    width:42px; height:42px; border-radius:50%;
+    background:var(--brand-soft); color:var(--brand);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; flex-shrink:0; letter-spacing:.02em;
+  }
+  .dl-doc-name {
+    font-size:14px; font-weight:600; color:var(--text-primary);
+    text-decoration:none; display:block; line-height:1.3;
+  }
+  .dl-doc-name:hover { color:var(--brand); }
+  .dl-doc-spec { font-size:11.5px; color:var(--text-hint); margin-top:2px; }
+
+  /* Card body rows */
+  .dl-doc-body { padding:12px 16px; display:flex; flex-direction:column; gap:7px; }
+  .dl-doc-row  { display:flex; align-items:flex-start; gap:8px; font-size:12.5px; }
+  .dl-doc-row .dl-lbl { color:var(--text-hint); flex-shrink:0; width:90px; font-size:11.5px; }
+  .dl-doc-row .dl-val { color:var(--text-primary); font-weight:500; word-break:break-word; }
+  .dl-doc-row .dl-val.muted { color:var(--text-secondary); font-weight:400; font-style:italic; }
+
+  /* Card footer */
+  .dl-doc-footer {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px;
+    border-top:1px solid var(--border);
+    background:var(--surface);
+  }
+  .dl-exp-pill {
+    font-size:11px; font-weight:500; padding:3px 10px;
+    border-radius:99px; background:var(--info-bg); color:var(--info-text);
+    display:flex; align-items:center; gap:4px;
+  }
+  .dl-btn-edit {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 12px; border-radius:var(--radius-sm);
+    border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--brand); font-size:12px; font-weight:500;
+    text-decoration:none; transition:all .15s;
+  }
+  .dl-btn-edit:hover { background:var(--brand-soft); border-color:var(--brand); color:var(--brand); }
+
+  /* Degree badge */
+  .dl-degree-wrap { display:flex; flex-wrap:wrap; gap:4px; }
+  .dl-degree-tag  {
+    font-size:11px; padding:2px 7px; border-radius:99px;
+    background:var(--purple-bg); color:var(--purple-text);
+    font-weight:500;
+  }
+
+  /* No data */
+  .dl-no-data { display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--warning-bg); border:1px solid rgba(133,79,11,.15); border-radius:var(--radius-sm); font-size:13px; color:var(--warning-text); }
+
+  /* Pagination */
+  .dl-pagination { display:flex; align-items:center; justify-content:center; gap:6px; padding:16px 24px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .dl-page-btn   { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 10px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--surface); font-size:12.5px; color:var(--text-secondary); cursor:pointer; transition:all .15s; text-decoration:none; }
+  .dl-page-btn:hover    { border-color:var(--brand); color:var(--brand); background:var(--brand-soft); }
+  .dl-page-btn.active   { background:var(--brand); border-color:var(--brand); color:#fff; font-weight:600; }
+  .dl-page-btn.disabled { opacity:.4; pointer-events:none; }
+
+  @media(max-width:576px) {
+    .dl-grid { grid-template-columns:1fr; }
+    .dl-card-header { flex-wrap:wrap; gap:10px; }
+  }
+</style>
+
+<%
+  const avatarColors = [
+    { bg:'#E6F1FB', color:'#185FA5' },
+    { bg:'#EAF3DE', color:'#3B6D11' },
+    { bg:'#FAEEDA', color:'#854F0B' },
+    { bg:'#FCEBEB', color:'#A32D2D' },
+    { bg:'#EEEDFE', color:'#534AB7' },
+    { bg:'#E1F5EE', color:'#0F6E56' }
+  ];
+  const degrees = (d) => [d.Degree1, d.Degree2, d.Degree3, d.Degree4].filter(Boolean);
+%>
+
+<div class="dl-wrapper">
+  <div class="dl-card">
+
+    <!-- Header -->
+    <div class="dl-card-header">
+      <div class="dl-header-left">
+        <div class="dl-header-icon"><i class="bi bi-person-badge"></i></div>
+        <div>
+          <p class="dl-header-title">Doctor List</p>
+          <p class="dl-header-sub">All registered doctors and their details</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="dl-count-pill"><%= doctorDetails.length %> doctor<%= doctorDetails.length !== 1 ? 's' : '' %></span>
+        <a href="/doctor/registerDoctor" class="dl-btn-add">
+          <i class="bi bi-plus-lg"></i> Add Doctor
+        </a>
+      </div>
+    </div>
+
+    <!-- Live search -->
+    <div class="dl-search">
+      <div class="dl-input-wrap">
+        <span class="dl-input-icon"><i class="bi bi-search"></i></span>
+        <input type="text" id="dlSearchInput" placeholder="Search by name or specialist…">
+      </div>
+    </div>
+
+    <%- include("../partials/messages"); %>
+
+    <!-- Grid -->
+    <div class="dl-section">
+      <% if (!doctorDetails.length) { %>
+        <div class="dl-no-data">
+          <i class="bi bi-info-circle"></i>
+          No doctors registered yet. Click <strong>Add Doctor</strong> to get started.
+        </div>
+      <% } else { %>
+        <div class="dl-grid" id="dlGrid">
+          <% doctorDetails.forEach(function(doctor, idx) {
+            const ac  = avatarColors[idx % avatarColors.length];
+            const ini = (doctor.FirstName.charAt(0) + (doctor.LastName || '').charAt(0)).toUpperCase();
+            const dgs = degrees(doctor);
+          %>
+          <div class="dl-doc-card dl-grid-item"
+               data-name="<%= (doctor.FirstName + ' ' + doctor.LastName).toLowerCase() %>"
+               data-spec="<%= (doctor.SpecialistIn || '').toLowerCase() %>">
+
+            <!-- Top: avatar + name -->
+            <div class="dl-doc-top">
+              <div class="dl-avatar" style="background:<%= ac.bg %>;color:<%= ac.color %>">
+                <%= ini %>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <a class="dl-doc-name text-capitalize"
+                   href="/doctor/getDoctorDetail?doctorId=<%= doctor.Id %>">
+                  Dr. <%= doctor.FirstName %> <%= doctor.LastName %>
+                </a>
+                <div class="dl-doc-spec text-capitalize">
+                  <i class="bi bi-clipboard2-pulse" style="margin-right:3px;"></i><%= doctor.SpecialistIn || '—' %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Body: info rows -->
+            <div class="dl-doc-body">
+
+              <!-- Degrees as pills -->
+              <div class="dl-doc-row">
+                <span class="dl-lbl"><i class="bi bi-mortarboard me-1"></i>Degrees</span>
+                <div class="dl-val">
+                  <% if (dgs.length) { %>
+                    <div class="dl-degree-wrap">
+                      <% dgs.forEach(d => { %>
+                        <span class="dl-degree-tag text-capitalize"><%= d %></span>
+                      <% }) %>
+                    </div>
+                  <% } else { %>
+                    <span class="muted">—</span>
+                  <% } %>
+                </div>
+              </div>
+
+              <div class="dl-doc-row">
+                <span class="dl-lbl"><i class="bi bi-building-cross me-1"></i>Worked At</span>
+                <span class="dl-val text-capitalize <%= !doctor.WorkedAt ? 'muted' : '' %>">
+                  <%= doctor.WorkedAt || 'Not specified' %>
+                </span>
+              </div>
+
+              <div class="dl-doc-row">
+                <span class="dl-lbl"><i class="bi bi-card-text me-1"></i>Reg. No.</span>
+                <span class="dl-val text-capitalize <%= !doctor.Registration ? 'muted' : '' %>">
+                  <%= doctor.Registration || '—' %>
+                </span>
+              </div>
+
+              <% if (doctor.Award) { %>
+              <div class="dl-doc-row">
+                <span class="dl-lbl"><i class="bi bi-trophy me-1"></i>Award</span>
+                <span class="dl-val text-capitalize"><%= doctor.Award %></span>
+              </div>
+              <% } %>
+
+              <div class="dl-doc-row">
+                <span class="dl-lbl"><i class="bi bi-info-circle me-1"></i>Instruction</span>
+                <span class="dl-val text-capitalize <%= !doctor.Instruction ? 'muted' : '' %>">
+                  <%= doctor.Instruction || '—' %>
+                </span>
+              </div>
+
+            </div>
+
+            <!-- Footer: experience + edit -->
+            <div class="dl-doc-footer">
+              <span class="dl-exp-pill">
+                <i class="bi bi-clock-history"></i>
+                <%= doctor.YearOfExperience %> yr<%= doctor.YearOfExperience != 1 ? 's' : '' %> exp.
+              </span>
+              <a href="/doctor/editDoctor/<%= doctor.Id %>" class="dl-btn-edit">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+            </div>
+
+          </div>
+          <% }) %>
+        </div>
+
+        <!-- No search results state -->
+        <div id="dlNoResults" style="display:none;" class="dl-no-data mt-3">
+          <i class="bi bi-search"></i> No doctors match your search.
+        </div>
+
+      <% } %>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="dl-pagination" aria-label="Doctor list pagination">
+      <a class="dl-page-btn disabled" id="dlPrevBtn" href="#">
+        <i class="bi bi-chevron-left"></i> Prev
+      </a>
+      <span id="dlPageNumbers" style="display:flex;gap:6px;flex-wrap:wrap;"></span>
+      <a class="dl-page-btn" id="dlNextBtn" href="#">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    </nav>
+
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ── Live search ──────────────────────────────────────────── */
+  const searchInput  = document.getElementById('dlSearchInput');
+  const noResults    = document.getElementById('dlNoResults');
+
+  searchInput && searchInput.addEventListener('input', function () {
+    const q     = this.value.toLowerCase().trim();
+    const items = document.querySelectorAll('.dl-grid-item');
+    let   shown = 0;
+    items.forEach(card => {
+      const match = !q ||
+        card.dataset.name.includes(q) ||
+        card.dataset.spec.includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) shown++;
+    });
+    if (noResults) noResults.style.display = (!shown && q) ? 'flex' : 'none';
+    // Reset pagination when searching
+    if (q) hidePagination(); else initPagination();
+  });
+
+  /* ── Pagination ───────────────────────────────────────────── */
+  const CARDS_PER_PAGE = 12;
+  let   currentPage    = 1;
+  let   allCards       = [];
+  let   totalPages     = 1;
+
+  function hidePagination() {
+    document.querySelector('.dl-pagination').style.display = 'none';
+  }
+
+  function initPagination() {
+    allCards   = Array.from(document.querySelectorAll('.dl-grid-item'));
+    totalPages = Math.ceil(allCards.length / CARDS_PER_PAGE);
+
+    if (allCards.length <= CARDS_PER_PAGE) {
+      hidePagination();
+      allCards.forEach(c => c.style.display = '');
+      return;
+    }
+
+    document.querySelector('.dl-pagination').style.display = 'flex';
+    showPage(1);
+  }
+
+  function showPage(p) {
+    currentPage = Math.min(Math.max(1, p), totalPages);
+    const start = (currentPage - 1) * CARDS_PER_PAGE;
+    allCards.forEach((c, i) => {
+      c.style.display = (i >= start && i < start + CARDS_PER_PAGE) ? '' : 'none';
+    });
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const prev    = document.getElementById('dlPrevBtn');
+    const next    = document.getElementById('dlNextBtn');
+    const numWrap = document.getElementById('dlPageNumbers');
+
+    prev.classList.toggle('disabled', currentPage === 1);
+    next.classList.toggle('disabled', currentPage === totalPages);
+    prev.onclick = e => { e.preventDefault(); if (currentPage > 1) showPage(currentPage - 1); };
+    next.onclick = e => { e.preventDefault(); if (currentPage < totalPages) showPage(currentPage + 1); };
+
+    numWrap.innerHTML = '';
+    let s = Math.max(1, currentPage - 2);
+    let e = Math.min(totalPages, s + 4);
+    if (e - s < 4) s = Math.max(1, e - 4);
+    for (let pg = s; pg <= e; pg++) {
+      const a = document.createElement('a');
+      a.className   = 'dl-page-btn' + (pg === currentPage ? ' active' : '');
+      a.textContent = pg;
+      a.href = '#';
+      a.onclick = ev => { ev.preventDefault(); showPage(pg); };
+      numWrap.appendChild(a);
+    }
+  }
+
+  initPagination();
+});
+</script>

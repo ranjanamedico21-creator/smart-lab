@@ -1,0 +1,122 @@
+<!-- Breadcrumb Section -->
+<section class="py-4">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded-3 shadow-sm border">
+      <ol class="breadcrumb mb-0 fw-medium">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Products</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Product Registration Section -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <!-- REMOVED overflow-hidden from card to prevent dropdown clipping -->
+    <div class="card shadow border-0 rounded-4 bg-white">
+      <div class="card-header bg-gradient bg-primary text-white text-center py-3">
+        <h4 class="mb-0 fw-bold">Product Registration</h4>
+      </div>
+      <div class="card-body p-4">
+        <h1 class="text-center mb-4 fw-bold text-dark"></h1>
+        <%- include ("./partials/messages"); %>
+        <form action="/billing/createProduct" method="post" class="needs-validation" novalidate>
+          <div class="row g-3">
+            <!-- Supplier Name -->
+            <div class="col-md-4">
+              <label for="supplier" class="form-label fw-semibold">Select Supplier</label>
+              <select name="supplier" id="supplier" required>
+                <option value="">Select a Supplier</option>
+                <% let i = 1; supplierLists.forEach(function(supplierList) { %>
+                  <option value="<%= supplierList.Id %>" <% if(typeof productDetails.SupplierId != 'undefined' && supplierList.Id == productDetails.SupplierId){%>selected<%}%>>
+                    <%= supplierList.Name %>
+                  </option>
+                <% }); %>
+              </select>
+              <div class="invalid-feedback">Please select a supplier.</div>
+            </div>
+            <!-- Product Name -->
+            <div class="col-md-3">
+              <label for="name" class="form-label fw-semibold">Product Name</label>
+              <input 
+                type="text" 
+                class="form-control text-capitalize" 
+                value="<%= typeof productDetails.ProductName != 'undefined' ? productDetails.ProductName : '' %>" 
+                name="name" 
+                id="name" 
+                placeholder="Product Name" 
+                required>
+              <div class="invalid-feedback">Please enter a product name.</div>
+            </div>
+            <div class="col-md-3">
+              <label for="KnownAs" class="form-label fw-semibold">Known As</label>
+              <input 
+                type="text" 
+                class="form-control text-capitalize" 
+                value="<%= typeof productDetails.KnownAs != 'undefined' ? productDetails.KnownAs : '' %>" 
+                name="knownAs" 
+                id="KnownAs" 
+                placeholder="Known As" 
+                required>
+              <div class="invalid-feedback">Please enter a specific name.</div>
+            </div>
+            <!-- HSN Code -->
+            <div class="col-md-2">
+              <label for="hsn" class="form-label fw-semibold">HSN Code</label>
+              <input 
+                type="text" 
+                class="form-control text-capitalize" 
+                value="<%= typeof productDetails.Hsn != 'undefined' ? productDetails.Hsn : '' %>" 
+                name="hsn" 
+                id="hsn" 
+                placeholder="HSN Code" 
+                required>
+              <div class="invalid-feedback">Please enter an HSN code.</div>
+            </div>
+          </div>
+          <div class="row mt-4">
+            <div class="col text-center">
+              <button type="submit" class="btn btn-primary px-5 rounded-pill fw-medium">Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize Tom Select for Supplier dropdown using TomSelectManager
+  // dropdownParent: 'body' ensures dropdown renders outside card to avoid overflow clipping
+  TomSelectManager.init('#supplier', {
+      placeholder: 'Select a Supplier',
+      sortField: {
+          field: 'text',
+          direction: 'asc'
+      },
+      dropdownParent: 'body'  // CRITICAL: renders dropdown in body, outside overflow containers
+  });
+
+  // If editing, restore pre-selected value
+  const preSelectedSupplier = '<%= typeof productDetails.SupplierId != "undefined" ? productDetails.SupplierId : "" %>';
+  if (preSelectedSupplier) {
+      TomSelectManager.setValue('#supplier', preSelectedSupplier);
+  }
+
+  // Bootstrap form validation
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.from(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+          if (!form.checkValidity()) {
+              event.preventDefault();
+              event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+      }, false);
+  });
+});
+</script>

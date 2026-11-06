@@ -1,0 +1,472 @@
+<%
+  const csrf = locals.csrfToken || '';
+  const ini  = String(user.name || '?').split(' ').map(function(w){ return w[0] || ''; }).join('').toUpperCase().slice(0, 2);
+  const sensitiveOn = [];
+  groups.forEach(function(g){ g.functions.forEach(function(f){ if (f.sensitive && f.granted) sensitiveOn.push(f.name); }); });
+  const pct = total ? Math.round((grantedCount / total) * 100) : 0;
+%>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+.acx, .acx-bar, .acx-dlg, .acx-toast{ --ink:#1d2433; --slate:#5b6475; --mute:#8a93a3; --line:#e3e6ec; --paper:#f5f6f8; --white:#fff;
+      --teal:#0e7490; --teal-soft:#e6f4f7; --rose:#be123c; --rose-soft:#fff1f3; --green:#15803d; --green-soft:#ecfdf3; }
+.acx{ font-family:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; color:var(--ink);
+      max-width:1180px; margin:0 auto; padding-bottom:110px; }
+.acx *, .acx-bar *, .acx-dlg *{ box-sizing:border-box; }
+.acx a{ color:var(--teal); }
+.acx :focus-visible{ outline:2px solid var(--teal); outline-offset:2px; border-radius:6px; }
+
+.acx-crumb{ font-size:13px; color:var(--mute); margin:0 0 14px; display:flex; gap:8px; align-items:center; }
+.acx-crumb a{ color:var(--slate); text-decoration:none; } .acx-crumb a:hover{ color:var(--teal); }
+
+.acx-grid{ display:grid; grid-template-columns:290px minmax(0,1fr); gap:22px; align-items:start; }
+
+/* ── Staff ID card (the one bold element) ── */
+.acx-id{ position:sticky; top:16px; background:var(--white); border:1px solid var(--line); border-radius:18px; overflow:hidden; }
+.acx-id-top{ background:var(--ink); color:#fff; padding:22px 20px 18px; position:relative; }
+.acx-id-top::after{ content:''; position:absolute; left:20px; right:20px; bottom:0; height:4px; border-radius:4px 4px 0 0;
+  background:repeating-linear-gradient(90deg, var(--teal) 0 18px, transparent 18px 24px); opacity:.9; }
+.acx-av{ width:58px; height:58px; border-radius:14px; background:var(--teal); color:#fff; display:grid; place-items:center;
+  font-size:22px; font-weight:700; letter-spacing:.02em; margin-bottom:12px; }
+.acx-name{ font-size:20px; font-weight:600; line-height:1.2; margin:0; }
+.acx-role{ font-size:13px; color:#c8cfdb; margin-top:3px; }
+.acx-flags{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.acx-flag{ font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:99px; background:rgba(255,255,255,.12); color:#fff; }
+.acx-flag.admin{ background:#fbbf24; color:#3b2a00; } .acx-flag.off{ background:#64748b; }
+
+.acx-id-body{ padding:18px 20px 20px; }
+.acx-meter-row{ display:flex; justify-content:space-between; align-items:baseline; }
+.acx-meter-num{ font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1; }
+.acx-meter-of{ font-size:13px; color:var(--slate); }
+.acx-meter{ height:8px; background:var(--paper); border-radius:99px; margin:10px 0 4px; overflow:hidden; }
+.acx-meter span{ display:block; height:100%; background:var(--teal); border-radius:99px; transition:width .25s; }
+.acx-note{ font-size:12.5px; color:var(--mute); }
+
+.acx-keys{ margin-top:18px; padding-top:16px; border-top:1px dashed var(--line); }
+.acx-keys h3{ font-size:13.5px; font-weight:600; margin:0 0 8px; display:flex; gap:6px; align-items:center; color:var(--rose); }
+.acx-keys ul{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px; }
+.acx-keys li{ font-size:13px; padding:6px 10px; border-radius:8px; background:var(--rose-soft); color:#7f1d2d; }
+.acx-keys .none{ background:var(--paper); color:var(--mute); }
+
+.acx-id-actions{ display:flex; flex-direction:column; gap:8px; margin-top:18px; }
+.acx-select{ width:100%; font:inherit; font-size:13.5px; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); }
+.acx-btn{ font:inherit; font-size:13.5px; font-weight:500; padding:9px 14px; border-radius:10px; border:1px solid var(--line);
+  background:#fff; color:var(--ink); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+.acx-btn:hover{ border-color:#c9ced8; background:#fafbfc; }
+.acx-btn.primary{ background:var(--teal); border-color:var(--teal); color:#fff; } .acx-btn.primary:hover{ background:#0b5f74; }
+.acx-btn.ghost{ border-color:transparent; background:transparent; color:var(--slate); padding:6px 8px; }
+.acx-btn.ghost:hover{ color:var(--ink); background:var(--paper); }
+.acx-btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+/* ── Switchboard ── */
+.acx-tools{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+.acx-search{ flex:1; min-width:220px; position:relative; }
+.acx-search input{ width:100%; font:inherit; font-size:14px; padding:10px 40px 10px 38px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); }
+.acx-search .bi-search{ position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--mute); }
+.acx-search kbd{ position:absolute; right:10px; top:50%; transform:translateY(-50%); font:500 11px 'IBM Plex Mono', monospace; color:var(--mute);
+  border:1px solid var(--line); border-radius:5px; padding:1px 6px; background:var(--paper); }
+.acx-seg{ display:inline-flex; background:#e9ecf1; border-radius:12px; padding:3px; gap:2px; }
+.acx-seg button{ font:inherit; font-size:13px; border:0; background:transparent; color:var(--slate); padding:7px 12px; border-radius:9px; cursor:pointer; white-space:nowrap; }
+.acx-seg button[aria-pressed="true"]{ background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(29,36,51,.12); }
+.acx-seg .n{ font-variant-numeric:tabular-nums; color:var(--mute); margin-left:3px; }
+
+.acx-alert{ font-size:13.5px; padding:10px 14px; border-radius:12px; margin-bottom:12px; display:flex; gap:8px; align-items:flex-start; }
+.acx-alert.admin{ background:#fffbeb; color:#78350f; border:1px solid #fde68a; }
+.acx-alert.warn{ background:#fff7ed; color:#7c2d12; border:1px solid #fed7aa; }
+
+.acx-group{ margin-bottom:18px; }
+.acx-ghead{ display:flex; align-items:center; gap:10px; padding:4px 2px 8px; border-bottom:2px solid var(--ink); }
+.acx-gname{ font-size:16px; font-weight:600; margin:0; }
+.acx-gcount{ font-size:13px; color:var(--slate); font-variant-numeric:tabular-nums; }
+.acx-gactions{ margin-left:auto; display:flex; gap:2px; }
+
+.acx-row{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:14px; align-items:center; padding:11px 12px 11px 14px;
+  border-bottom:1px solid var(--line); background:#fff; position:relative; transition:background .15s; }
+.acx-row:hover{ background:#fafbfc; }
+.acx-row::before{ content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:3px; background:transparent; }
+.acx-row.add{ background:var(--green-soft); } .acx-row.add::before{ background:var(--green); }
+.acx-row.del{ background:var(--rose-soft); } .acx-row.del::before{ background:var(--rose); }
+.acx-row.locked{ opacity:.55; }
+.acx-fn{ font-size:14.5px; font-weight:500; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.acx-slug{ font:400 12px 'IBM Plex Mono', ui-monospace, monospace; color:var(--mute); margin-top:2px; word-break:break-all; }
+.acx-meta{ font-size:12px; color:var(--mute); margin-top:2px; }
+.acx-tag{ font-size:11.5px; font-weight:600; padding:1px 8px; border-radius:99px; }
+.acx-tag.sens{ background:var(--rose-soft); color:var(--rose); }
+.acx-tag.add{ background:var(--green); color:#fff; } .acx-tag.del{ background:var(--rose); color:#fff; }
+
+/* switch */
+.acx-sw{ position:relative; width:46px; height:26px; flex-shrink:0; }
+.acx-sw input{ position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1; }
+.acx-sw span{ position:absolute; inset:0; background:#cfd5de; border-radius:99px; transition:background .18s; }
+.acx-sw span::after{ content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff;
+  box-shadow:0 1px 3px rgba(29,36,51,.25); transition:transform .18s; }
+.acx-sw input:checked + span{ background:var(--teal); }
+.acx-sw input:checked + span::after{ transform:translateX(20px); }
+.acx-sw input:focus-visible + span{ outline:2px solid var(--teal); outline-offset:2px; }
+.acx-sw input:disabled{ cursor:not-allowed; }
+.acx-empty{ padding:40px 16px; text-align:center; color:var(--mute); font-size:14px; background:#fff; border:1px dashed var(--line); border-radius:14px; }
+
+/* ── Save bar ── */
+.acx-bar{ position:fixed; left:50%; bottom:18px; transform:translate(-50%, 140%); z-index:1040; background:var(--ink); color:#fff;
+  border-radius:16px; padding:10px 10px 10px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 12px 32px rgba(29,36,51,.28);
+  transition:transform .22s ease, opacity .22s, visibility .22s; max-width:calc(100vw - 24px); flex-wrap:wrap;
+  font-family:'IBM Plex Sans', system-ui, sans-serif; opacity:0; visibility:hidden; pointer-events:none; }
+.acx-bar.show{ transform:translate(-50%, 0); opacity:1; visibility:visible; pointer-events:auto; }
+.acx-bar .acx-btn, .acx-dlg .acx-btn{ font-family:inherit; }
+.acx-bar .sum{ font-size:14px; } .acx-bar .sum b{ font-variant-numeric:tabular-nums; }
+.acx-bar .plus{ color:#86efac; } .acx-bar .minus{ color:#fda4af; }
+.acx-bar .acx-btn{ border-color:rgba(255,255,255,.2); background:transparent; color:#fff; }
+.acx-bar .acx-btn:hover{ background:rgba(255,255,255,.08); }
+.acx-bar .acx-btn.primary{ background:#fff; color:var(--ink); border-color:#fff; font-weight:600; }
+
+/* ── Dialogs (native <dialog>, no Bootstrap JS needed) ── */
+.acx-dlg{ border:0; border-radius:18px; padding:0; width:min(520px, calc(100vw - 24px)); color:var(--ink);
+  font-family:'IBM Plex Sans', system-ui, sans-serif; box-shadow:0 24px 60px rgba(29,36,51,.3); }
+.acx-dlg::backdrop{ background:rgba(29,36,51,.45); }
+.acx-dlg header{ padding:18px 20px 6px; } .acx-dlg header h2{ font-size:18px; font-weight:600; margin:0; }
+.acx-dlg header p{ font-size:13.5px; color:var(--slate); margin:4px 0 0; }
+.acx-dlg .body{ padding:10px 20px 4px; max-height:60vh; overflow:auto; }
+.acx-dlg footer{ padding:14px 20px 18px; display:flex; justify-content:flex-end; gap:8px; }
+.acx-list{ list-style:none; padding:0; margin:0 0 12px; }
+.acx-list li{ font-size:14px; padding:7px 10px; border-radius:8px; margin-bottom:4px; display:flex; gap:8px; align-items:center; }
+.acx-list.add li{ background:var(--green-soft); } .acx-list.del li{ background:var(--rose-soft); }
+.acx-dlg h3{ font-size:13.5px; font-weight:600; margin:6px 0 6px; }
+.acx-dlg textarea{ width:100%; font:inherit; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; resize:vertical; min-height:70px; }
+.acx-dlg .help{ font-size:12.5px; color:var(--mute); margin-top:4px; } .acx-dlg .err{ font-size:13px; color:var(--rose); margin-top:4px; }
+
+.acx-drawer{ margin:0 0 0 auto; height:100vh; max-height:100vh; width:min(460px, 100vw); border-radius:18px 0 0 18px; }
+.acx-drawer .body{ max-height:calc(100vh - 120px); }
+.acx-hist{ list-style:none; padding:0; margin:0; }
+.acx-hist li{ padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.acx-hist .when{ font-size:12px; color:var(--mute); }
+.acx-hist .why{ font-size:12.5px; color:var(--slate); margin-top:2px; }
+
+.acx-toast{ position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:1060; background:var(--ink); color:#fff; font-size:13.5px;
+  padding:10px 16px; border-radius:12px; box-shadow:0 10px 26px rgba(29,36,51,.25); max-width:92vw; }
+
+@media (max-width: 900px){
+  .acx-grid{ grid-template-columns:1fr; }
+  .acx-id{ position:static; }
+  .acx-id-body{ display:grid; grid-template-columns:1fr; }
+}
+@media (prefers-reduced-motion: reduce){ .acx *{ transition:none !important; } .acx-bar{ transition:none; } }
+</style>
+
+<div class="acx">
+  <nav class="acx-crumb" aria-label="Breadcrumb">
+    <a href="/user/home">Home</a><i class="bi bi-chevron-right" style="font-size:10px"></i>
+    <a href="<%= userListUrl %>">Staff</a><i class="bi bi-chevron-right" style="font-size:10px"></i>
+    <span>Access</span>
+  </nav>
+
+  <%- include("./partials/messages") %>
+
+  <div class="acx-grid">
+    <!-- Staff ID card -->
+    <aside class="acx-id" aria-label="Staff member">
+      <div class="acx-id-top">
+        <div class="acx-av" aria-hidden="true"><%= ini %></div>
+        <h1 class="acx-name"><%= user.name %></h1>
+        <div class="acx-role"><%= user.role || 'No role assigned' %><% if (user.email) { %><br><%= user.email %><% } %></div>
+        <div class="acx-flags">
+          <% if (user.isAdmin) { %><span class="acx-flag admin"><i class="bi bi-star-fill"></i> Admin</span><% } %>
+          <% if (!user.active) { %><span class="acx-flag off">Inactive</span><% } %>
+          <span class="acx-flag">Staff #<%= user.Id %></span>
+        </div>
+      </div>
+      <div class="acx-id-body">
+        <div>
+          <div class="acx-meter-row">
+            <span class="acx-meter-num" id="mNum"><%= grantedCount %></span>
+            <span class="acx-meter-of">of <%= total %> functions allowed</span>
+          </div>
+          <div class="acx-meter" aria-hidden="true"><span id="mBar" style="width:<%= pct %>%"></span></div>
+          <div class="acx-note" id="mNote">Saved access shown. Changes appear here before you save.</div>
+        </div>
+
+        <div class="acx-keys">
+          <h3><i class="bi bi-key-fill"></i> Money and cancellation keys</h3>
+          <ul id="keys">
+            <% if (!sensitiveOn.length) { %><li class="none">None — this person cannot change money or cancel bills.</li><% } %>
+            <% sensitiveOn.forEach(function(n){ %><li><%= n %></li><% }) %>
+          </ul>
+        </div>
+
+        <div class="acx-id-actions">
+          <label for="copyFrom" class="acx-note">Start from another person's access</label>
+          <select id="copyFrom" class="acx-select">
+            <option value="">Copy access from…</option>
+            <% users.forEach(function(u){ %><option value="<%= u.Id %>"><%= u.name %><%= u.role ? ' (' + u.role + ')' : '' %></option><% }) %>
+          </select>
+          <button type="button" class="acx-btn" id="openHistory"><i class="bi bi-clock-history"></i> Change history (<%= history.length %>)</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Switchboard -->
+    <main>
+      <% if (user.isAdmin) { %>
+        <div class="acx-alert admin"><i class="bi bi-info-circle"></i><span><b><%= user.name %></b> is an Admin and can already use everything. These switches only matter if Admin is removed later.</span></div>
+      <% } %>
+      <% if (orphans.length) { %>
+        <div class="acx-alert warn"><i class="bi bi-exclamation-triangle"></i><span><%= orphans.length %> old permission(s) point to functions that were deleted. They have no effect.</span></div>
+      <% } %>
+
+      <div class="acx-tools">
+        <div class="acx-search">
+          <i class="bi bi-search"></i>
+          <input type="search" id="q" placeholder="Find a function" autocomplete="off" aria-label="Find a function">
+          <kbd aria-hidden="true">/</kbd>
+        </div>
+        <div class="acx-seg" role="group" aria-label="Show">
+          <button type="button" data-show="all" aria-pressed="true">All</button>
+          <button type="button" data-show="on" aria-pressed="false">Allowed<span class="n" id="nOn"></span></button>
+          <button type="button" data-show="off" aria-pressed="false">Not allowed</button>
+          <button type="button" data-show="changed" aria-pressed="false">Changed<span class="n" id="nChg"></span></button>
+        </div>
+      </div>
+
+      <div id="board">
+        <% if (!groups.length) { %><div class="acx-empty">No functions exist yet. Add them to the Functions table first.</div><% } %>
+        <% groups.forEach(function(g, gi){ %>
+          <section class="acx-group" data-g="<%= gi %>" aria-labelledby="g<%= gi %>">
+            <div class="acx-ghead">
+              <h2 class="acx-gname" id="g<%= gi %>"><%= g.name %></h2>
+              <span class="acx-gcount"><span class="js-gon"><%= g.granted %></span> of <%= g.functions.length %></span>
+              <div class="acx-gactions">
+                <button type="button" class="acx-btn ghost js-all" data-v="1">Allow all</button>
+                <button type="button" class="acx-btn ghost js-all" data-v="0">Clear</button>
+              </div>
+            </div>
+            <% g.functions.forEach(function(f){ %>
+              <div class="acx-row<%= f.lockedForActor ? ' locked' : '' %>" data-find="<%= (f.name + ' ' + f.slug + ' ' + g.name).toLowerCase() %>">
+                <div>
+                  <div class="acx-fn">
+                    <label for="fn<%= f.Id %>" style="cursor:pointer"><%= f.name %></label>
+                    <% if (f.sensitive) { %><span class="acx-tag sens" title="Moves money, cancels bills or controls the audit">Sensitive</span><% } %>
+                    <span class="acx-tag js-chg" hidden></span>
+                  </div>
+                  <% if (f.slug) { %><div class="acx-slug"><%= f.slug %></div><% } %>
+                  <% if (f.lockedForActor) { %><div class="acx-meta"><i class="bi bi-lock"></i> Only an Admin can change this</div>
+                  <% } else if (f.granted && f.grantedBy) { %><div class="acx-meta">Given by <%= f.grantedBy.name || 'unknown' %> on <%= f.grantedBy.on %></div><% } %>
+                </div>
+                <label class="acx-sw">
+                  <input type="checkbox" class="js-fn" id="fn<%= f.Id %>" value="<%= f.Id %>"
+                    data-orig="<%= f.granted ? 1 : 0 %>" data-sens="<%= f.sensitive ? 1 : 0 %>" data-label="<%= f.name %>"
+                    <%= f.granted ? 'checked' : '' %> <%= f.lockedForActor ? 'disabled' : '' %>
+                    aria-label="<%= f.name %>">
+                  <span aria-hidden="true"></span>
+                </label>
+              </div>
+            <% }) %>
+          </section>
+        <% }) %>
+        <div class="acx-empty" id="noMatch" hidden>Nothing matches. Try a shorter word, or switch the filter back to All.</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Save bar -->
+<div class="acx-bar" id="bar" role="region" aria-label="Unsaved changes" aria-live="polite">
+  <span class="sum"><b id="cN">0</b> unsaved — <span class="plus">+<b id="aN">0</b> give</span>, <span class="minus">−<b id="dN">0</b> remove</span></span>
+  <button type="button" class="acx-btn" id="undo">Undo</button>
+  <button type="button" class="acx-btn primary" id="review">Review and save</button>
+</div>
+
+<!-- Review dialog -->
+<dialog class="acx-dlg" id="dlgSave" aria-labelledby="dlgSaveT">
+  <form method="post" action="/user/access/<%= user.Id %>" id="saveForm">
+    <% if (csrf) { %><input type="hidden" name="_csrf" value="<%= csrf %>"><% } %>
+    <input type="hidden" name="version" value="<%= version %>">
+    <div id="ids"></div>
+    <header>
+      <h2 id="dlgSaveT">Save access for <%= user.name %>?</h2>
+      <p>This takes effect immediately and is recorded with your name.</p>
+    </header>
+    <div class="body">
+      <div id="sumAdd"></div>
+      <div id="sumDel"></div>
+      <h3><label for="reason">Reason <span id="reqStar" style="color:var(--rose)">(required)</span></label></h3>
+      <textarea name="reason" id="reason" maxlength="500" placeholder="For example: moved to the billing counter"></textarea>
+      <div class="help" id="reasonHelp"></div>
+      <div class="err" id="reasonErr" hidden>Write at least 5 characters so others know why this changed.</div>
+    </div>
+    <footer>
+      <button type="button" class="acx-btn" data-close>Keep editing</button>
+      <button type="submit" class="acx-btn primary" id="confirm"><i class="bi bi-check2"></i> Save access</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- History drawer -->
+<dialog class="acx-dlg acx-drawer" id="dlgHist" aria-labelledby="dlgHistT">
+  <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+    <div><h2 id="dlgHistT">Change history</h2><p>Who gave or removed what for <%= user.name %>.</p></div>
+    <button type="button" class="acx-btn ghost" data-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+  </header>
+  <div class="body">
+    <% if (!history.length) { %><p class="acx-note">No changes recorded yet. Every save from now on is listed here.</p><% } %>
+    <ul class="acx-hist">
+      <% history.forEach(function(h){ %>
+        <li>
+          <div><span class="acx-tag <%= h.Action === 'grant' ? 'add' : 'del' %>"><%= h.Action === 'grant' ? 'Given' : 'Removed' %></span>
+            <b style="font-weight:600"><%= h.FunctionName || h.FunctionSlug %></b></div>
+          <div class="when"><%= h.DisplayAt %> by <%= h.ChangedByName || ('user #' + h.ChangedBy) %></div>
+          <% if (h.Reason) { %><div class="why">“<%= h.Reason %>”</div><% } %>
+        </li>
+      <% }) %>
+    </ul>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  function start() {
+    var boxes  = Array.prototype.slice.call(document.querySelectorAll('.acx .js-fn'));
+    var groups = Array.prototype.slice.call(document.querySelectorAll('.acx-group'));
+    var bar = document.getElementById('bar'), total = <%= Number(total) || 0 %>;
+    var show = 'all', submitting = false;
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function isOrig(cb) { return cb.getAttribute('data-orig') === '1'; }
+    function diff() {
+      var add = [], del = [];
+      boxes.forEach(function (cb) { if (cb.disabled) return; if (cb.checked && !isOrig(cb)) add.push(cb); else if (!cb.checked && isOrig(cb)) del.push(cb); });
+      return { add: add, del: del };
+    }
+
+    // ---- dialogs: native <dialog>, with a fallback for very old browsers
+    function openDlg(d) { if (typeof d.showModal === 'function') d.showModal(); else { d.setAttribute('open', ''); d.style.position = 'fixed'; d.style.top = '10%'; d.style.zIndex = 2000; } }
+    function closeDlg(d) { if (typeof d.close === 'function') d.close(); else d.removeAttribute('open'); }
+    document.querySelectorAll('.acx-dlg [data-close]').forEach(function (b) { b.addEventListener('click', function () { closeDlg(b.closest('dialog')); }); });
+    document.querySelectorAll('.acx-dlg').forEach(function (d) {
+      d.addEventListener('click', function (e) { if (e.target === d) closeDlg(d); });   // click on backdrop closes
+    });
+
+    function paint() {
+      var on = 0, keys = [];
+      boxes.forEach(function (cb) {
+        var row = cb.closest('.acx-row'), tag = row.querySelector('.js-chg'), was = isOrig(cb);
+        if (cb.checked) { on++; if (cb.getAttribute('data-sens') === '1') keys.push(cb.getAttribute('data-label')); }
+        row.classList.toggle('add', cb.checked && !was);
+        row.classList.toggle('del', !cb.checked && was);
+        if (cb.checked !== was) { tag.hidden = false; tag.textContent = cb.checked ? 'Will give' : 'Will remove'; tag.className = 'acx-tag js-chg ' + (cb.checked ? 'add' : 'del'); }
+        else tag.hidden = true;
+      });
+      groups.forEach(function (g) {
+        g.querySelector('.js-gon').textContent = Array.prototype.filter.call(g.querySelectorAll('.js-fn'), function (b) { return b.checked; }).length;
+      });
+      var d = diff(), n = d.add.length + d.del.length;
+      document.getElementById('mNum').textContent = on;
+      document.getElementById('mBar').style.width = (total ? Math.round(on / total * 100) : 0) + '%';
+      document.getElementById('mNote').textContent = n ? n + ' change(s) not saved yet.' : 'Saved access shown. Changes appear here before you save.';
+      document.getElementById('keys').innerHTML = keys.length ? keys.map(function (k) { return '<li>' + esc(k) + '</li>'; }).join('')
+        : '<li class="none">None — this person cannot change money or cancel bills.</li>';
+      document.getElementById('nOn').textContent = on;
+      document.getElementById('nChg').textContent = n || '';
+      document.getElementById('aN').textContent = d.add.length;
+      document.getElementById('dN').textContent = d.del.length;
+      document.getElementById('cN').textContent = n;
+      bar.classList.toggle('show', n > 0);
+      if (show === 'changed') filter();
+    }
+
+    function filter() {
+      var q = document.getElementById('q').value.trim().toLowerCase(), any = false;
+      groups.forEach(function (g) {
+        var vis = 0;
+        g.querySelectorAll('.acx-row').forEach(function (row) {
+          var cb = row.querySelector('.js-fn');
+          var ok = (!q || row.getAttribute('data-find').indexOf(q) >= 0) &&
+                   (show === 'all' || (show === 'on' && cb.checked) || (show === 'off' && !cb.checked) || (show === 'changed' && cb.checked !== isOrig(cb)));
+          row.hidden = !ok; if (ok) vis++;
+        });
+        g.hidden = vis === 0; if (vis) any = true;
+      });
+      document.getElementById('noMatch').hidden = any || !groups.length;
+    }
+
+    boxes.forEach(function (cb) { cb.addEventListener('change', paint); });
+    document.querySelectorAll('.js-all').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var v = btn.getAttribute('data-v') === '1';
+        btn.closest('.acx-group').querySelectorAll('.acx-row').forEach(function (row) {
+          var cb = row.querySelector('.js-fn'); if (!cb.disabled && !row.hidden) cb.checked = v;
+        });
+        paint();
+      });
+    });
+    document.getElementById('q').addEventListener('input', filter);
+    document.querySelectorAll('.acx-seg button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        show = b.getAttribute('data-show');
+        document.querySelectorAll('.acx-seg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        filter();
+      });
+    });
+    document.addEventListener('keydown', function (e) {
+      var t = e.target.tagName;
+      if (e.key === '/' && t !== 'INPUT' && t !== 'TEXTAREA' && t !== 'SELECT') { e.preventDefault(); document.getElementById('q').focus(); }
+    });
+
+    document.getElementById('undo').addEventListener('click', function () { boxes.forEach(function (cb) { cb.checked = isOrig(cb); }); paint(); filter(); });
+    document.getElementById('openHistory').addEventListener('click', function () { openDlg(document.getElementById('dlgHist')); });
+
+    document.getElementById('copyFrom').addEventListener('change', function () {
+      var sel = this, id = sel.value; if (!id) return;
+      var name = sel.options[sel.selectedIndex].text;
+      fetch('/user/access/' + encodeURIComponent(id) + '/grants.json', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.success) throw new Error(d.message || 'not allowed');
+          var set = {}; d.ids.forEach(function (x) { set[x] = 1; });
+          boxes.forEach(function (cb) { if (!cb.disabled) cb.checked = !!set[cb.value]; });
+          paint(); filter();
+          toast('Copied access from ' + name + '. Review the switches, then save.');
+        })
+        .catch(function (e) { toast('Could not copy: ' + e.message); })
+        .then(function () { sel.value = ''; });
+    });
+
+    function needsReason(d) { return d.del.length > 0 || d.add.some(function (cb) { return cb.getAttribute('data-sens') === '1'; }); }
+    document.getElementById('review').addEventListener('click', function () {
+      var d = diff();
+      function list(arr, cls, title) {
+        if (!arr.length) return '';
+        return '<h3>' + title + '</h3><ul class="acx-list ' + cls + '">' + arr.map(function (cb) {
+          return '<li><i class="bi ' + (cls === 'add' ? 'bi-plus-circle-fill" style="color:var(--green)' : 'bi-dash-circle-fill" style="color:var(--rose)') + '"></i>' +
+            esc(cb.getAttribute('data-label')) + (cb.getAttribute('data-sens') === '1' ? ' <span class="acx-tag sens">Sensitive</span>' : '') + '</li>';
+        }).join('') + '</ul>';
+      }
+      document.getElementById('sumAdd').innerHTML = list(d.add, 'add', 'Give ' + d.add.length);
+      document.getElementById('sumDel').innerHTML = list(d.del, 'del', 'Remove ' + d.del.length);
+      var req = needsReason(d);
+      document.getElementById('reqStar').textContent = req ? '(required)' : '(optional)';
+      document.getElementById('reasonHelp').textContent = req ? 'Needed because you are removing access or giving a sensitive permission.' : '';
+      document.getElementById('reasonErr').hidden = true;
+      var box = document.getElementById('ids'); box.innerHTML = '';
+      d.add.forEach(function (cb) { box.insertAdjacentHTML('beforeend', '<input type="hidden" name="grant" value="' + cb.value + '">'); });
+      d.del.forEach(function (cb) { box.insertAdjacentHTML('beforeend', '<input type="hidden" name="revoke" value="' + cb.value + '">'); });
+      openDlg(document.getElementById('dlgSave'));
+      setTimeout(function () { document.getElementById('reason').focus(); }, 50);
+    });
+    document.getElementById('saveForm').addEventListener('submit', function (e) {
+      var d = diff(), r = document.getElementById('reason').value.trim();
+      if (!d.add.length && !d.del.length) { e.preventDefault(); return; }
+      if (needsReason(d) && r.length < 5) { e.preventDefault(); document.getElementById('reasonErr').hidden = false; document.getElementById('reason').focus(); return; }
+      submitting = true;
+      var b = document.getElementById('confirm'); b.disabled = true; b.textContent = 'Saving…';
+    });
+    window.addEventListener('beforeunload', function (e) { var d = diff(); if (!submitting && (d.add.length || d.del.length)) { e.preventDefault(); e.returnValue = ''; } });
+
+    function toast(msg) {
+      var t = document.createElement('div'); t.className = 'acx-toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+      document.body.appendChild(t); setTimeout(function () { t.remove(); }, 4200);
+    }
+    paint();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>

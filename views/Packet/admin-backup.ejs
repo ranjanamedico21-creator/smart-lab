@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Packet Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0c0c0c;--ink2:#1a1a1a;--ink3:#2c2c2c;
+  --muted:#6a6a6a;--dim:#9a9a9a;
+  --line:#e8e4de;--line2:#d4cec6;
+  --bg:#f5f1eb;--surface:#fffefb;--surface2:#f9f6f1;
+  --amber:#c8760a;--amber-light:#fff3e0;--amber-mid:#f5a623;
+  --green:#1a6b3c;--green-bg:#e8f5ee;
+  --red:#c0392b;--red-bg:#fdf0ee;
+  --blue:#1a4fa0;--blue-bg:#e8f0fd;
+  --syne:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --body:'Instrument Sans',sans-serif;
+  --r:6px;--r-lg:10px;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;min-height:100vh}
+
+/* TOPBAR */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding:0 24px;height:56px;display:flex;align-items:center;gap:12px
+}
+.topbar-brand{font-family:var(--syne);font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
+.topbar-brand span{color:var(--amber)}
+.topbar-sep{width:1px;height:20px;background:var(--line2);flex-shrink:0}
+.topbar-title{font-family:var(--syne);font-size:14px;font-weight:600;color:var(--muted)}
+.month-pick{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:5px 12px
+}
+.month-pick-label{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+.month-pick input[type=month]{border:none;background:transparent;font-family:var(--mono);font-size:12px;color:var(--ink);outline:none;cursor:pointer}
+.search-bar{flex:1;max-width:260px;position:relative}
+.search-bar input{
+  width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);
+  padding:7px 10px 7px 30px;font-family:var(--body);font-size:13px;color:var(--ink);outline:none;transition:border-color 0.2s
+}
+.search-bar input:focus{border-color:var(--amber);background:#fff}
+.search-bar input::placeholder{color:var(--dim)}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px;pointer-events:none}
+.status-select{
+  background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);
+  padding:7px 10px;font-family:var(--body);font-size:13px;color:var(--ink);outline:none;cursor:pointer
+}
+.status-select:focus{border-color:var(--amber)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.admin-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:4px 12px 4px 4px
+}
+.admin-av{
+  width:26px;height:26px;border-radius:50%;background:var(--amber);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--syne);font-size:10px;font-weight:700;color:#fff
+}
+.admin-name-chip{font-size:12px;font-weight:600;color:var(--ink)}
+
+/* CONTENT */
+.content{padding:20px 24px}
+
+/* STAT STRIP */
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--line)}
+.stat-card.amber::before{background:var(--amber)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.stat-num{font-family:var(--syne);font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* TABS */
+.tab-bar{display:flex;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.tab{
+  padding:10px 18px;font-family:var(--body);font-size:13px;font-weight:500;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all 0.15s;display:flex;align-items:center;gap:6px;margin-bottom:-1px;white-space:nowrap
+}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.tab-badge{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:10px;background:var(--amber-light);color:var(--amber)}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.section-title{font-family:var(--syne);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+.section-count{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+.section-actions{margin-left:auto;display:flex;gap:8px}
+.btn-ghost-sm{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:var(--r);padding:5px 12px;font-size:12px;font-family:var(--body);cursor:pointer;transition:all 0.12s}
+.btn-ghost-sm:hover{border-color:var(--line2);color:var(--ink)}
+
+/* TABLE */
+.table-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:2px solid var(--line);background:var(--surface2)}
+th{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:11px 14px;text-align:left;white-space:nowrap;font-weight:400}
+tbody tr{border-bottom:1px solid var(--line);transition:background 0.12s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:12px 14px;vertical-align:middle}
+input[type=checkbox]{appearance:none;width:15px;height:15px;border:1.5px solid var(--line2);border-radius:3px;background:#fff;cursor:pointer;position:relative;transition:all 0.12s}
+input[type=checkbox]:checked{background:var(--amber);border-color:var(--amber)}
+input[type=checkbox]:checked::after{content:'';position:absolute;left:3px;top:1px;width:5px;height:8px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg)}
+.pkt-code{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--amber);background:var(--amber-light);padding:3px 7px;border-radius:4px;border:1px solid rgba(200,118,10,0.15);white-space:nowrap}
+.pkt-name{font-size:13px;font-weight:600;color:var(--ink)}
+.pkt-addr{font-size:11px;color:var(--muted);margin-top:2px}
+.user-chip{display:flex;align-items:center;gap:7px}
+.user-av{width:26px;height:26px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--syne);font-size:10px;font-weight:700;flex-shrink:0}
+.user-av.unassigned{background:var(--surface2);color:var(--dim);border:1.5px dashed var(--line2)}
+.user-name{font-size:13px;font-weight:500;color:var(--ink)}
+.unassigned-txt{font-size:12px;color:var(--dim);font-style:italic}
+.pill{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.5px;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.pill-delivered{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.2)}
+.pill-assigned{background:var(--amber-light);color:var(--amber);border:1px solid rgba(200,118,10,0.2)}
+.pill-uploaded{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(26,79,160,0.2)}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.recv-name{font-size:12px;font-weight:600;color:var(--ink)}
+.recv-phone{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:1px}
+.recv-empty{color:var(--dim);font-size:12px}
+.action-cell{display:flex;align-items:center;gap:6px}
+.assign-form-inline{display:flex;gap:6px;align-items:center}
+.assign-inp{width:80px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:5px 8px;font-family:var(--mono);font-size:12px;color:var(--ink);outline:none}
+.assign-inp:focus{border-color:var(--amber)}
+.btn-assign{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.25);border-radius:var(--r);padding:5px 10px;font-size:11px;font-weight:600;font-family:var(--body);cursor:pointer;white-space:nowrap;transition:all 0.12s}
+.btn-assign:hover{background:#d0ead9}
+.btn-reassign-sm{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:var(--r);padding:5px 10px;font-size:11px;font-weight:500;font-family:var(--body);cursor:pointer;transition:all 0.12s}
+.btn-reassign-sm:hover{border-color:var(--amber);color:var(--amber)}
+
+/* STATS */
+.stats-section{display:none}
+.user-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.user-stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px}
+.usc-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.usc-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--syne);font-size:13px;font-weight:700;flex-shrink:0}
+.usc-name{font-family:var(--syne);font-size:14px;font-weight:700;color:var(--ink)}
+.usc-id{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.usc-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.usc-n{font-family:var(--syne);font-size:20px;font-weight:800;color:var(--ink);line-height:1}
+.usc-nl{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.progress-bar{height:3px;background:var(--line);border-radius:2px;margin-top:12px;overflow:hidden}
+.progress-fill{height:100%;background:var(--amber);border-radius:2px}
+.progress-fill.high{background:var(--green)}
+.usc-rate{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px}
+
+/* MAP */
+.map-section{display:none}
+.map-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.map-head{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+#leaflet-map{height:460px;width:100%}
+
+/* AUDIT */
+.audit-section{display:none}
+.audit-log{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.audit-row{display:grid;grid-template-columns:160px 140px 1fr auto;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);transition:background 0.12s}
+.audit-row:last-child{border-bottom:none}
+.audit-row:hover{background:var(--surface2)}
+.audit-ts{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.audit-pkt{font-family:var(--mono);font-size:11px;color:var(--amber);font-weight:600}
+.audit-type{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;text-transform:uppercase;margin-top:3px}
+.audit-type.reassign{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(26,79,160,0.2)}
+.audit-type.delivery{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.2)}
+.audit-detail{font-size:13px;color:var(--ink)}
+.audit-detail .dim{color:var(--muted)}
+.audit-by{font-size:11px;color:var(--dim);text-align:right;white-space:nowrap}
+.audit-pages{padding:10px 18px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.page-btn{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:5px 12px;font-family:var(--mono);font-size:11px;color:var(--ink);cursor:pointer;transition:all 0.12s;text-decoration:none;display:inline-block}
+.page-btn:hover{border-color:var(--amber);color:var(--amber)}
+.page-info{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-state .eico{font-size:32px;margin-bottom:10px;opacity:0.4}
+
+/* BULK BAR */
+.bulk-bar{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(100px);
+  background:var(--ink);border:1px solid var(--ink3);border-radius:12px;
+  padding:12px 18px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.25);z-index:200;
+  opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap
+}
+.bulk-bar.show{transform:translateX(-50%) translateY(0);opacity:1}
+.bulk-count-badge{font-family:var(--mono);font-size:11px;background:rgba(200,118,10,0.15);color:var(--amber-mid);border:1px solid rgba(200,118,10,0.25);border-radius:20px;padding:3px 10px}
+.bulk-div{width:1px;height:20px;background:var(--ink3)}
+.bulk-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#666}
+.bulk-inp{background:rgba(255,255,255,0.06);border:1px solid var(--ink3);border-radius:6px;padding:7px 10px;color:#eee;font-family:var(--mono);font-size:12px;width:100px;outline:none;transition:border-color 0.15s}
+.bulk-inp:focus{border-color:var(--amber-mid)}
+.bulk-assign-btn{background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-family:var(--syne);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s}
+.bulk-assign-btn:hover{background:#b5690a}
+.bulk-clear{background:transparent;color:#666;border:1px solid var(--ink3);border-radius:6px;padding:7px 10px;font-family:var(--body);font-size:12px;cursor:pointer;transition:all 0.15s}
+.bulk-clear:hover{color:#ccc;border-color:#555}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;padding:16px
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  width:440px;max-width:100%;
+  box-shadow:0 20px 80px rgba(0,0,0,0.2);
+  transform:translateY(16px) scale(0.98);
+  transition:transform 0.2s cubic-bezier(0.34,1.2,0.64,1)
+}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--syne);font-size:16px;font-weight:700;color:var(--ink)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.12s;line-height:1}
+.modal-close:hover{background:var(--surface2);color:var(--ink)}
+.modal-body{padding:18px 22px}
+.modal-info{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:16px}
+.modal-info-row{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.modal-info-row:last-child{margin-bottom:0}
+.modal-info-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);min-width:72px;flex-shrink:0}
+.modal-info-val{font-size:13px;font-weight:500;color:var(--ink)}
+.modal-info-val.code{font-family:var(--mono);font-size:11px;color:var(--amber);background:var(--amber-light);padding:2px 7px;border-radius:4px;border:1px solid rgba(200,118,10,0.15)}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:5px}
+.field-inp{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:9px 12px;font-family:var(--body);font-size:13px;color:var(--ink);outline:none;transition:border-color 0.15s}
+.field-inp:focus{border-color:var(--amber);background:#fff}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.btn-cancel{background:transparent;border:1px solid var(--line);border-radius:var(--r);padding:8px 16px;font-family:var(--body);font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.12s}
+.btn-cancel:hover{border-color:var(--line2);color:var(--ink)}
+.btn-confirm{background:var(--amber);color:#fff;border:none;border-radius:var(--r);padding:8px 20px;font-family:var(--syne);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:7px}
+.btn-confirm:hover{background:#b5690a}
+.btn-confirm:disabled{background:var(--dim);cursor:not-allowed}
+
+/* TOAST */
+#toasts{position:fixed;top:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{display:flex;align-items:center;gap:10px;background:var(--ink);border:1px solid var(--ink3);border-radius:var(--r);padding:10px 14px;font-size:13px;color:#eee;min-width:230px;box-shadow:0 4px 24px rgba(0,0,0,0.15);animation:slideIn 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--amber)}
+.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;flex-shrink:0}
+
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
+  .stat-strip{grid-template-columns:repeat(2,1fr)}
+  .user-stat-grid{grid-template-columns:1fr 1fr}
+  .audit-row{grid-template-columns:1fr 1fr}
+  .topbar{padding:0 14px;gap:8px}
+  .content{padding:14px}
+  .search-bar{max-width:160px}
+}
+</style>
+</head>
+<body>
+<!-- ══ TOPBAR ══ -->
+<div class="topbar">
+  <div class="topbar-brand">Packet<span>Ops</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-title" id="topbarTitle">Packet Management</div>
+
+  <form method="GET" action="/packet/adminPacket" style="display:flex">
+    <div class="month-pick">
+      <div class="month-pick-label">Month</div>
+      <input type="month" name="month" value="<%= curMonth %>" onchange="this.form.submit()">
+    </div>
+  </form>
+
+  <div class="search-bar">
+    <span class="search-ico">⌕</span>
+    <input type="text" id="searchInput" placeholder="Search packets…" oninput="filterTable()">
+  </div>
+
+  <select class="status-select" id="statusFilter" onchange="filterTable()">
+    <option value="all">All status</option>
+    <option value="DELIVERED">Delivered</option>
+    <option value="ASSIGNED">Assigned</option>
+    <option value="UPLOADED">Uploaded</option>
+  </select>
+
+  <div class="topbar-right">
+    <div class="admin-chip">
+      <div class="admin-av"><%= initials(userName) %></div>
+      <div class="admin-name-chip"><%= userName %></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <div class="tab active" id="tab-packets" onclick="switchTab('packets',this)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 8h6M5 5h6"/></svg>
+      Packets <span class="tab-badge"><%= total %></span>
+    </div>
+    <div class="tab" id="tab-map" onclick="switchTab('map',this)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="3"/><path d="M8 2C5.24 2 3 4.24 3 7c0 3.25 5 9 5 9s5-5.75 5-9c0-2.76-2.24-5-5-5z"/></svg>
+      Map View
+    </div>
+    <div class="tab" id="tab-stats" onclick="switchTab('stats',this)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-6"/></svg>
+      Analytics
+    </div>
+    <div class="tab" id="tab-audit" onclick="switchTab('audit',this)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h8M4 9h5"/><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
+      Audit Log
+    </div>
+  </div>
+
+  <!-- ══ PACKETS TAB ══ -->
+  <div id="sec-packets">
+    <div class="stat-strip">
+      <div class="stat-card amber">
+        <div class="stat-label">Total</div>
+        <div class="stat-num"><%= total %></div>
+        <div class="stat-sub"><%= curMonth %></div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Delivered</div>
+        <div class="stat-num"><%= delivered %></div>
+        <div class="stat-sub"><%= rate %>% completion</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Assigned / Pending</div>
+        <div class="stat-num"><%= assigned %></div>
+        <div class="stat-sub">Awaiting delivery</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Unassigned</div>
+        <div class="stat-num"><%= uploaded %></div>
+        <div class="stat-sub">Needs agent</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">All Packets</div>
+      <div class="section-count"><span id="visCount"><%= total %></span> of <%= total %></div>
+      <div class="section-actions">
+        <button class="btn-ghost-sm" onclick="exportCSV()">↓ CSV</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="selAll" onchange="toggleAll(this)"></th>
+              <th>#</th>
+              <th>Code</th>
+              <th>Name / Address</th>
+              <th>Assigned To</th>
+              <th>Receiver</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAP TAB ══ -->
+  <div id="sec-map" class="map-section">
+    <div class="stat-strip" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+      <div class="stat-card green">
+        <div class="stat-label">With GPS</div>
+        <div class="stat-num"><%= withGPS %></div>
+        <div class="stat-sub">Pinned on map</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">No GPS</div>
+        <div class="stat-num"><%= withoutGPS %></div>
+        <div class="stat-sub">Offline delivery</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Delivered</div>
+        <div class="stat-num"><%= delivered %></div>
+        <div class="stat-sub"><%= rate %>% of month</div>
+      </div>
+    </div>
+    <div class="map-card">
+      <div class="map-head">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">GPS Map — <%= curMonth %></span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--dim)"><%= withGPS %> pins</span>
+      </div>
+      <div id="leaflet-map"></div>
+    </div>
+  </div>
+
+  <!-- ══ STATS TAB ══ -->
+  <div id="sec-stats" class="stats-section">
+    <div class="section-header" style="margin-bottom:16px">
+      <div class="section-title">Agent Performance — <%= curMonth %></div>
+      <div class="section-count"><%= agents.length %> agents</div>
+    </div>
+
+    <% if (agents.length === 0) { %>
+      <div class="empty-state"><div class="eico">👥</div><p>No agents assigned packets this month</p></div>
+    <% } else { %>
+      <div class="user-stat-grid">
+        <% agents.forEach(function(a) {
+          var r = a.assigned ? Math.round(a.delivered * 100 / a.assigned) : 0;
+        %>
+        <div class="user-stat-card">
+          <div class="usc-header">
+            <div class="usc-avatar"><%= initials(a.name) %></div>
+            <div>
+              <div class="usc-name"><%= a.name %></div>
+              <div class="usc-id">ID #<%= a.id %></div>
+            </div>
+          </div>
+          <div class="usc-nums">
+            <div><div class="usc-n"><%= a.assigned %></div><div class="usc-nl">Assigned</div></div>
+            <div><div class="usc-n" style="color:var(--green)"><%= a.delivered %></div><div class="usc-nl">Delivered</div></div>
+            <div><div class="usc-n" style="color:var(--amber)"><%= a.assigned - a.delivered %></div><div class="usc-nl">Pending</div></div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill <%= r >= 75 ? 'high' : '' %>" style="width:<%= r %>%"></div></div>
+          <div class="usc-rate"><%= r %>% rate</div>
+        </div>
+        <% }) %>
+      </div>
+
+      <div class="section-header" style="margin-top:4px"><div class="section-title">Breakdown</div></div>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Agent</th><th>Assigned</th><th>Delivered</th><th>Pending</th><th>Rate</th></tr></thead>
+            <tbody>
+              <% agents.forEach(function(a) {
+                var r = a.assigned ? Math.round(a.delivered * 100 / a.assigned) : 0;
+              %>
+              <tr>
+                <td><div class="user-chip"><div class="user-av"><%= initials(a.name) %></div><div class="user-name"><%= a.name %></div></div></td>
+                <td><span style="font-family:var(--mono);font-size:12px"><%= a.assigned %></span></td>
+                <td><span style="font-family:var(--mono);font-size:12px;color:var(--green)"><%= a.delivered %></span></td>
+                <td><span style="font-family:var(--mono);font-size:12px;color:var(--amber)"><%= a.assigned - a.delivered %></span></td>
+                <td><span class="pill <%= r >= 75 ? 'pill-delivered' : 'pill-assigned' %>"><span class="pill-dot"></span><%= r %>%</span></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- ══ AUDIT TAB ══ -->
+  <div id="sec-audit" class="audit-section">
+    <div class="section-header">
+      <div class="section-title">Audit Log</div>
+      <div class="section-count" id="auditCount">—</div>
+    </div>
+    <div class="audit-log" id="auditLog">
+      <div class="empty-state"><div class="eico">📋</div><p>Click the tab to load events</p></div>
+    </div>
+    <div class="audit-pages" id="auditPages"></div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ══ BULK BAR ══ -->
+<div class="bulk-bar" id="bulkBar">
+  <span class="bulk-count-badge" id="bulkCount">0 selected</span>
+  <div class="bulk-div"></div>
+  <span class="bulk-label">Assign to</span>
+  <input type="number" class="bulk-inp" id="bulkUserId" placeholder="User ID" min="1">
+  <button class="bulk-assign-btn" id="bulkAssignBtn" onclick="bulkAssign()">⚡ Assign All</button>
+  <button class="bulk-clear" onclick="clearSel()">Deselect</button>
+</div>
+
+<!-- ══ REASSIGN MODAL ══ -->
+<div class="modal-overlay" id="reassignModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Reassign Packet</div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info">
+        <div class="modal-info-row">
+          <div class="modal-info-label">Code</div>
+          <div class="modal-info-val code" id="m_code">—</div>
+        </div>
+        <div class="modal-info-row">
+          <div class="modal-info-label">Name</div>
+          <div class="modal-info-val" id="m_name">—</div>
+        </div>
+        <div class="modal-info-row">
+          <div class="modal-info-label">Current</div>
+          <div class="modal-info-val" id="m_current" style="color:var(--muted)">—</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>New Agent User ID *</label>
+        <input type="number" class="field-inp" id="m_newUserId" placeholder="Enter user ID" min="1">
+      </div>
+      <div class="field">
+        <label>Reason (optional)</label>
+        <input type="text" class="field-inp" id="m_reason" placeholder="e.g. Agent on leave">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" id="m_confirmBtn" onclick="confirmReassign()">Confirm Reassign</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<script>
+/*
+  ──────────────────────────────────────────────────────────────────
+  KEY FIX: use  <%- JSON.stringify(packets) %>  NOT  packets
+  The EJS variable "data" was computed above in the <% %> block.
+  "packets" is also available but going through "data" is safer
+  because we already guaranteed it's an Array up there.
+  ──────────────────────────────────────────────────────────────────
+*/
+const packets      = <%- JSON.stringify(packets) %>;
+const currentMonth = '<%- curMonth %>';
+
+let selected   = new Set();
+let modalPktId = null;
+let leafletMap = null;
+
+/* ── helpers ── */
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function ini(n) {
+  if (!n) return '?';
+  return n.trim().split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase();
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  catch { return String(d); }
+}
+
+/* ── table ── */
+function renderTable() {
+  const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  const status = document.getElementById('statusFilter').value;
+
+  const rows = packets.filter(p => {
+    const mf = status === 'all' || p.Status === status;
+    const ms = !search || [p.PacketCode, p.Name, p.Address, p.assignedUser, p.ReceiverName, p.ReceiverPhone]
+      .filter(Boolean).join(' ').toLowerCase().includes(search);
+    return mf && ms;
+  });
+
+  document.getElementById('visCount').textContent = rows.length;
+
+  if (!rows.length) {
+    document.getElementById('tableBody').innerHTML =
+      `<tr><td colspan="8"><div class="empty-state"><div class="eico">📭</div><p>No packets match</p></div></td></tr>`;
+    return;
+  }
+
+  const pillMap = { DELIVERED:'pill-delivered', ASSIGNED:'pill-assigned', UPLOADED:'pill-uploaded' };
+
+  document.getElementById('tableBody').innerHTML = rows.map((p, i) => {
+    const isDone = p.Status === 'DELIVERED';
+    const isSel  = selected.has(p.Id);
+
+    const userCell = p.assignedUser
+      ? `<div class="user-chip"><div class="user-av">${ini(p.assignedUser)}</div><div class="user-name">${esc(p.assignedUser)}</div></div>`
+      : `<div class="user-chip"><div class="user-av unassigned">?</div><div class="unassigned-txt">Unassigned</div></div>`;
+
+    const recvCell = p.ReceiverName
+      ? `<div class="recv-name">${esc(p.ReceiverName)}</div><div class="recv-phone">${esc(p.ReceiverPhone||'—')}</div>`
+      : `<div class="recv-empty">—</div>`;
+
+    let actionCell;
+    if (isDone) {
+      actionCell = `<span style="font-family:var(--mono);font-size:11px;color:var(--dim)">${fmtDate(p.DeliveredAt)}</span>`;
+    } else if (p.assignedUser) {
+      /* ── REASSIGN button — calls openReassign() which opens the modal ── */
+      actionCell = `<div class="action-cell">
+        <button class="btn-reassign-sm" onclick="openReassign(${p.Id})">⇄ Reassign</button>
+      </div>`;
+    } else {
+      actionCell = `<div class="action-cell">
+        <form class="assign-form-inline" onsubmit="assignSingle(event,${p.Id})">
+          <input type="number" class="assign-inp" name="userId" placeholder="User ID" required min="1">
+          <button type="submit" class="btn-assign">Assign</button>
+        </form>
+      </div>`;
+    }
+
+    return `<tr id="row-${p.Id}">
+      <td>${!isDone ? `<input type="checkbox" class="row-cb" data-id="${p.Id}" ${isSel?'checked':''} onchange="toggleRow(this)">` : ''}</td>
+      <td><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">#${p.Id}</span></td>
+      <td><span class="pkt-code">${esc(p.PacketCode)}</span></td>
+      <td><div class="pkt-name">${esc(p.Name||'—')}</div>${p.Address?`<div class="pkt-addr">${esc(p.Address)}</div>`:''}</td>
+      <td>${userCell}</td>
+      <td>${recvCell}</td>
+      <td><span class="pill ${pillMap[p.Status]||'pill-uploaded'}"><span class="pill-dot"></span>${esc(p.Status)}</span></td>
+      <td>${actionCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() { renderTable(); }
+
+/* ── checkboxes ── */
+function toggleRow(cb) {
+  const id = parseInt(cb.dataset.id);
+  cb.checked ? selected.add(id) : selected.delete(id);
+  updateBulkBar();
+}
+function toggleAll(cb) {
+  packets.filter(p => p.Status !== 'DELIVERED').forEach(p => cb.checked ? selected.add(p.Id) : selected.delete(p.Id));
+  renderTable(); updateBulkBar();
+}
+function clearSel() { selected.clear(); renderTable(); updateBulkBar(); }
+function updateBulkBar() {
+  const n = selected.size;
+  document.getElementById('bulkCount').textContent = `${n} selected`;
+  document.getElementById('bulkBar').classList.toggle('show', n > 0);
+}
+
+/* ── assign single ── */
+async function assignSingle(e, packetId) {
+  e.preventDefault();
+  const userId = parseInt(e.target.querySelector('input[name="userId"]').value);
+  if (!userId) return;
+  const btn  = e.target.querySelector('button[type="submit"]');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled  = true;
+  try {
+    const res  = await fetch('/admin/assignPackets', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({packetId,userId}) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed');
+    const p = packets.find(x => x.Id === packetId);
+    if (p) { p.Status='ASSIGNED'; p.assignedUserId=userId; p.assignedUser=`User #${userId}`; }
+    toast(`Packet #${packetId} assigned to User ${userId}`, 'success');
+    renderTable();
+  } catch(err) {
+    toast(err.message, 'error');
+    btn.innerHTML = orig; btn.disabled = false;
+  }
+}
+
+/* ── bulk assign ── */
+async function bulkAssign() {
+  const userId = parseInt(document.getElementById('bulkUserId').value);
+  if (!userId) { toast('Enter a user ID','error'); return; }
+  const ids = [...selected];
+  const btn = document.getElementById('bulkAssignBtn');
+  btn.innerHTML = '<span class="spinner"></span> Assigning…'; btn.disabled = true;
+  try {
+    const res  = await fetch('/admin/assignBulk', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({packetIds:ids,userId}) });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed');
+    ids.forEach(id => { const p=packets.find(x=>x.Id===id); if(p){p.Status='ASSIGNED';p.assignedUserId=userId;p.assignedUser=`User #${userId}`;} });
+    toast(`${json.assigned} packets assigned to User ${userId}`, 'success');
+    selected.clear(); renderTable(); updateBulkBar();
+  } catch(err) { toast(err.message,'error'); }
+  finally { btn.innerHTML='⚡ Assign All'; btn.disabled=false; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   REASSIGN MODAL — three functions:
+   1. openReassign(id)   — populate + open
+   2. closeModal()       — close
+   3. confirmReassign()  — POST to /admin/reassign
+════════════════════════════════════════════════════════════ */
+function openReassign(id) {
+  const p = packets.find(x => x.Id === id);
+  if (!p) { toast('Packet not found', 'error'); return; }
+
+  /* Fill the info panel */
+  document.getElementById('m_code').textContent    = p.PacketCode || '—';
+  document.getElementById('m_name').textContent    = p.Name       || '—';
+  document.getElementById('m_current').textContent = p.assignedUser || 'Unassigned';
+
+  /* Clear form inputs */
+  document.getElementById('m_newUserId').value = '';
+  document.getElementById('m_reason').value    = '';
+
+  /* Remember which packet */
+  modalPktId = id;
+
+  /* Open overlay */
+  document.getElementById('reassignModal').classList.add('open');
+
+  /* Focus the input after the CSS transition */
+  setTimeout(() => document.getElementById('m_newUserId').focus(), 180);
+}
+
+function closeModal() {
+  document.getElementById('reassignModal').classList.remove('open');
+  modalPktId = null;
+}
+
+async function confirmReassign() {
+  const newUserId = parseInt(document.getElementById('m_newUserId').value);
+  const reason    = document.getElementById('m_reason').value.trim();
+
+  if (!newUserId || isNaN(newUserId)) {
+    document.getElementById('m_newUserId').focus();
+    toast('Enter a valid user ID', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('m_confirmBtn');
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+  btn.disabled  = true;
+
+  try {
+    const res  = await fetch('/packet/reassign', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ packetId: modalPktId, newUserId, reason }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Reassign failed');
+
+    /* Optimistic update in the local packets array */
+    const p = packets.find(x => x.Id === modalPktId);
+    if (p) { p.assignedUserId = newUserId; p.assignedUser = `User #${newUserId}`; }
+
+    closeModal();
+    toast('Packet reassigned successfully', 'success');
+    renderTable();
+  } catch(err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.innerHTML = 'Confirm Reassign';
+    btn.disabled  = false;
+  }
+}
+
+/* Backdrop click closes modal */
+document.getElementById('reassignModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+/* Escape key closes modal */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── Leaflet map ── */
+function initMap() {
+  if (leafletMap) { leafletMap.invalidateSize(); return; }
+  leafletMap = L.map('leaflet-map').setView([25.5941, 85.1376], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap contributors', maxZoom:18 }).addTo(leafletMap);
+  const greenIcon = L.divIcon({
+    className:'',
+    html:`<div style="width:12px;height:12px;border-radius:50%;background:#1a6b3c;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
+    iconSize:[12,12], iconAnchor:[6,6],
+  });
+  const pins = packets.filter(p => p.Status==='DELIVERED' && p.Latitude && p.Longitude);
+  if (pins.length) {
+    const bounds = [];
+    pins.forEach(p => {
+      const lat=parseFloat(p.Latitude), lng=parseFloat(p.Longitude);
+      if (isNaN(lat)||isNaN(lng)) return;
+      bounds.push([lat,lng]);
+      L.marker([lat,lng],{icon:greenIcon})
+        .bindPopup(`<b style="font-family:monospace;color:#c8760a">${esc(p.PacketCode)}</b><br>
+          <b>${esc(p.Name||'')}</b><br><br>
+          Receiver: ${esc(p.ReceiverName||'—')}<br>
+          Phone: ${esc(p.ReceiverPhone||'—')}<br>
+          At: ${fmtDate(p.DeliveredAt)}`, {maxWidth:220})
+        .addTo(leafletMap);
+    });
+    if (bounds.length) leafletMap.fitBounds(bounds, {padding:[50,50]});
+  }
+}
+
+/* ── Audit (AJAX) ── */
+async function loadAudit(page=1) {
+  document.getElementById('auditLog').innerHTML = `<div class="empty-state"><div class="eico">⏳</div><p>Loading…</p></div>`;
+  document.getElementById('auditCount').textContent = '…';
+  try {
+    const res  = await fetch(`/admin/audit?page=${page}&json=1`);
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const json = await res.json();
+    renderAudit(json, page);
+  } catch(err) {
+    document.getElementById('auditLog').innerHTML = `<div class="empty-state"><div class="eico">⚠️</div><p>${err.message}</p></div>`;
+  }
+}
+
+function renderAudit({ events, page, totalPages }) {
+  document.getElementById('auditCount').textContent = `Page ${page} / ${totalPages}`;
+  if (!events || !events.length) {
+    document.getElementById('auditLog').innerHTML = `<div class="empty-state"><div class="eico">📋</div><p>No audit events yet</p></div>`;
+    document.getElementById('auditPages').innerHTML = '';
+    return;
+  }
+  document.getElementById('auditLog').innerHTML = events.map(ev => {
+    const typeClass = ev.eventType==='REASSIGN' ? 'reassign' : 'delivery';
+    const detail    = ev.eventType==='REASSIGN'
+      ? `<span class="dim">${esc(ev.oldUser||'—')}</span> → <strong>${esc(ev.newUser||'—')}</strong>`
+      : `To <strong>${esc(ev.receiverName||'—')}</strong> · <span style="font-family:var(--mono);font-size:12px">${esc(ev.receiverPhone||'')}</span>`;
+    const pktCode = ev.PacketCode || ev.packetCode || '—';
+    return `<div class="audit-row">
+      <div class="audit-ts">${fmtDate(ev.eventAt)}</div>
+      <div><div class="audit-pkt">${esc(pktCode)}</div><span class="audit-type ${typeClass}">${ev.eventType}</span></div>
+      <div class="audit-detail">${detail}<br><span style="font-size:11px;color:var(--muted)">${esc(ev.packetName||'')}</span></div>
+      <div class="audit-by">by ${esc(ev.doneBy||'—')}</div>
+    </div>`;
+  }).join('');
+  let pg = `<span class="page-info">Page ${page} / ${totalPages}</span>`;
+  if (page > 1)           pg += `<a class="page-btn" onclick="loadAudit(${page-1})">← Prev</a>`;
+  if (page < totalPages)  pg += `<a class="page-btn" onclick="loadAudit(${page+1})">Next →</a>`;
+  document.getElementById('auditPages').innerHTML = pg;
+}
+
+/* ── CSV export ── */
+function exportCSV() {
+  const cols = ['Id','PacketCode','Name','Address','Status','Month','assignedUser','ReceiverName','ReceiverPhone','DeliveredAt'];
+  const rows = [cols.join(',')];
+  packets.forEach(p => rows.push(cols.map(c => `"${String(p[c]??'').replace(/"/g,'""')}"`).join(',')));
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'})),
+    download: `packets-${currentMonth}.csv`,
+  });
+  a.click();
+}
+
+/* ── tabs ── */
+const SECTIONS = ['packets','map','stats','audit'];
+const TITLES   = { packets:'Packet Management', map:'Map View', stats:'Analytics', audit:'Audit Log' };
+
+function switchTab(tab, el) {
+  SECTIONS.forEach(s => { const sec=document.getElementById('sec-'+s); if(sec) sec.style.display='none'; });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const sec = document.getElementById('sec-'+tab);
+  if (sec) sec.style.display = 'block';
+  document.getElementById('tab-'+tab)?.classList.add('active');
+  document.getElementById('topbarTitle').textContent = TITLES[tab] || '';
+  if (tab==='map')   setTimeout(initMap, 60);
+  if (tab==='audit') loadAudit(1);
+}
+
+/* ── toast ── */
+function toast(msg, type='info') {
+  const t = Object.assign(document.createElement('div'), { className:`toast ${type}`, textContent:msg });
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3800);
+}
+
+/* ── boot ── */
+SECTIONS.forEach(s => { const sec=document.getElementById('sec-'+s); if(sec) sec.style.display='none'; });
+document.getElementById('sec-packets').style.display = 'block';
+renderTable();
+</script>
+</body>
+</html>

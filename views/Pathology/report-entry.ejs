@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %> - SmartLab</title>
+<style>
+:root{
+  --bg:#eef2f7; --surface:#ffffff; --surface-2:#f8fafc;
+  --ink:#0f172a; --ink-2:#334155; --muted:#64748b; --faint:#94a3b8;
+  --line:#e6eaf1; --line-2:#d7dee8;
+  --brand:#0d9488; --brand-ink:#0f766e; --brand-soft:#e9fbf7; --brand-ring:rgba(13,148,136,.18);
+  --blue:#2563eb; --blue-soft:#eff5ff;
+  --violet:#7c3aed; --violet-soft:#f5f0ff;
+  --ok:#16a34a; --ok-ink:#15803d; --ok-soft:#eafaf0;
+  --warn:#d97706; --warn-ink:#b45309; --warn-soft:#fff6ea;
+  --crit:#dc2626; --crit-ink:#b91c1c; --crit-soft:#fdecec;
+  --r:14px; --r-sm:9px;
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.12);
+  --sh-sm:0 1px 2px rgba(16,24,40,.06);
+  --font:'Segoe UI', system-ui, -apple-system, 'Inter', Roboto, sans-serif;
+  --mono:'SFMono-Regular', ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 18px 120px}
+.appbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.3) blur(8px);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-sm);padding:14px 18px;margin-bottom:16px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.appbar .lead{display:flex;align-items:center;gap:12px;min-width:0}
+.back{width:34px;height:34px;border-radius:10px;border:1px solid var(--line-2);background:#fff;color:var(--ink-2);
+  display:inline-flex;align-items:center;justify-content:center;font-size:17px;text-decoration:none;flex:0 0 auto}
+.back:hover{background:var(--surface-2)}
+.appbar h1{font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--ink);white-space:nowrap}
+.appbar .sub{font-size:12px;color:var(--muted)}
+.rn{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--brand-ink);background:var(--brand-soft);
+  border:1px solid #cdeee7;border-radius:8px;padding:3px 9px}
+.spacer{flex:1 1 auto}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:11.5px;
+  font-weight:700;text-transform:uppercase;letter-spacing:.03em;border:1px solid transparent}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9}
+.status-draft{background:#eef2f7;color:#475569;border-color:#dfe5ee}
+.status-rejected{background:var(--crit-soft);color:var(--crit-ink);border-color:#f6cfcf}
+.patient{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-sm);
+  padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 22px}
+.pf .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;margin-bottom:2px}
+.pf .v{font-size:14px;color:var(--ink);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:16px}
+.card-head{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fcfdfe,#f6f9fc)}
+.card-head .bar{width:4px;height:18px;border-radius:3px;background:var(--brand)}
+.card-head h2{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+.card-head .count{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600;background:var(--surface-2);border:1px solid var(--line);padding:2px 9px;border-radius:999px}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface-2);padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line)}
+tbody td{padding:9px 16px;border-bottom:1px solid #f0f3f8;font-size:14px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fbfdff}
+.calculated-row{background:var(--brand-soft)}
+.calculated-row:hover{background:#e0f7f1}
+.param-name strong{color:var(--ink);font-weight:600}
+.param-name small{color:var(--faint);font-size:11px;font-family:var(--mono)}
+.calc-badge{font-size:9.5px;font-weight:800;letter-spacing:.04em;background:#cdeee7;color:var(--brand-ink);padding:2px 6px;border-radius:5px;margin-left:7px;vertical-align:middle}
+.result-input{width:118px;padding:8px 11px;border:1.5px solid var(--line-2);border-radius:var(--r-sm);font-size:14px;font-weight:600;text-align:center;color:var(--ink);background:#fff;transition:border-color .12s,box-shadow .12s,background .12s}
+.result-input::placeholder{color:var(--faint);font-weight:500}
+.result-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
+.result-input:disabled{background:var(--surface-2);color:var(--muted)}
+select.result-input{width:150px;text-align:left}
+.calc-input{background:var(--brand-soft);border-style:dashed;border-color:#9fded3}
+.calc-input.overridden{background:var(--warn-soft);border-style:solid;border-color:#f0b765}
+.calc-reset{margin-left:6px;border:1px solid var(--line-2);background:#fff;color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:15px;vertical-align:middle;line-height:1}
+.calc-reset:hover{background:var(--surface-2);color:var(--ink)}
+.comment-input{width:100%;min-width:120px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;font-size:13px;color:var(--ink-2)}
+.comment-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
+.range-display{font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.result-input.flag-normal{border-color:#9ad6ad;background:#f3fbf5}
+.result-input.flag-low,.result-input.flag-high{border-color:#f0b765;background:#fff8ee}
+.result-input.flag-critical,.result-input.flag-critical_low,.result-input.flag-critical_high{border-color:#eaa0a0;background:#fdf1f1}
+.flag-cell{text-align:center}
+.flag-pill{display:inline-block;min-width:64px;padding:3px 10px;border-radius:999px;text-transform:uppercase;font-size:10.5px;font-weight:800;letter-spacing:.03em}
+.chip-normal{background:var(--ok-soft);color:var(--ok-ink)}
+.chip-low,.chip-high{background:var(--warn-soft);color:var(--warn-ink)}
+.chip-critical,.chip-critical_low,.chip-critical_high{background:var(--crit-soft);color:var(--crit-ink)}
+.chip-pending{background:#eef2f7;color:var(--faint)}
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:45;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line-2);box-shadow:0 -6px 20px -12px rgba(16,24,40,.25)}
+.actionbar .inner{max-width:1180px;margin:0 auto;padding:12px 18px;display:flex;align-items:center;gap:14px}
+.actionbar .hint{font-size:12.5px;color:var(--muted)}
+.actionbar .grow{flex:1 1 auto}
+.btn{padding:10px 20px;border:1px solid transparent;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .05s,box-shadow .12s,background .12s;font-family:inherit}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-secondary{background:#fff;color:var(--ink-2);border-color:var(--line-2)}
+.btn-secondary:hover{background:var(--surface-2)}
+.btn-success{background:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(13,148,136,.4)}
+.btn-success:hover{background:var(--brand-ink)}
+#slToastContainer{position:fixed;top:18px;right:18px;z-index:99999;display:flex;flex-direction:column;gap:10px;max-width:380px;pointer-events:none}
+.sl-toast{padding:13px 16px;border-radius:11px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -8px rgba(16,24,40,.3);animation:slIn .28s cubic-bezier(.2,.8,.2,1);display:flex;align-items:center;gap:10px;pointer-events:auto;border:1px solid}
+.sl-toast.sl-toast-exit{animation:slOut .28s ease-in forwards}
+.sl-toast-success{background:#fff;border-color:#bfe9cd;color:var(--ok-ink)}
+.sl-toast-error,.sl-toast-critical{background:#fff;border-color:#f3c3c3;color:var(--crit-ink)}
+.sl-toast-info{background:#fff;border-color:#cfe0ff;color:#1d4ed8}
+@keyframes slIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slOut{from{transform:translateX(0);opacity:1}to{transform:translateX(120%);opacity:0}}
+.sl-confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:100000;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease-out}
+.sl-confirm-box{background:#fff;border-radius:16px;padding:24px 26px;max-width:420px;width:90%;box-shadow:0 24px 60px -12px rgba(16,24,40,.4);animation:popIn .18s ease-out}
+.sl-confirm-box p{font-size:15px;color:var(--ink-2);margin-bottom:20px;line-height:1.5}
+.sl-confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+.sl-confirm-actions .btn{padding:9px 18px;font-size:13px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+@media (max-width:760px){
+  .wrap{padding:12px 12px 120px}
+  .appbar{padding:12px}
+  .result-input{width:92px}
+  thead th:nth-child(6),tbody td:nth-child(6){display:none}
+  .actionbar .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="appbar">
+    <div class="lead">
+      <a class="back" href="/pathology/specimens" title="Back to specimens">&#8592;</a>
+      <div>
+        <h1>Result Entry</h1>
+        <div class="sub"><%= report.DepartmentName || 'Pathology' %><%= (typeof BRAND_NAME !== 'undefined' && BRAND_NAME) ? (' · ' + BRAND_NAME) : '' %></div>
+      </div>
+      <span class="rn"><%= report.ReportNumber %></span>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill status-<%= report.Status || 'draft' %>"><%= report.Status || 'draft' %></span>
+  </div>
+
+  <div class="patient">
+    <div class="pf"><div class="k">Patient</div><div class="v"><%= report.PatientName || 'N/A' %></div></div>
+    <div class="pf"><div class="k">Age / Sex</div><div class="v"><%= report.PatientAge || 'N/A' %> <%= report.PatientAgeUnit || '' %> / <%= report.PatientGender || 'N/A' %></div></div>
+    <div class="pf"><div class="k">Referred by</div><div class="v"><%= report.ReferringDoctor || 'N/A' %></div></div>
+    <div class="pf"><div class="k">Specimen</div><div class="v"><%= report.SpecimenDetails || 'N/A' %></div></div>
+    <div class="pf"><div class="k">Department</div><div class="v"><%= report.DepartmentName || 'N/A' %></div></div>
+  </div>
+
+  <form id="reportForm" onsubmit="return false;">
+    <% Object.keys(groupedResults).forEach(function(section) { %>
+      <div class="card">
+        <div class="card-head">
+          <span class="bar"></span>
+          <h2><%= section %></h2>
+          <span class="count"><%= groupedResults[section].length %> parameter<%= groupedResults[section].length === 1 ? '' : 's' %></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 26%;">Parameter</th>
+              <th style="width: 15%; text-align: center;">Result</th>
+              <th style="width: 9%; text-align: center;">Unit</th>
+              <th style="width: 20%;">Reference</th>
+              <th style="width: 15%; text-align: center;">Flag</th>
+              <th style="width: 15%;">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% groupedResults[section].forEach(function(r) {
+                 var isCalc = r.IsCalculated == 1;
+                 var rangeObj = r.referenceRange || {};
+                 var minVal = (rangeObj.MinValue !== null && rangeObj.MinValue !== undefined) ? rangeObj.MinValue : '';
+                 var maxVal = (rangeObj.MaxValue !== null && rangeObj.MaxValue !== undefined) ? rangeObj.MaxValue : '';
+                 var critLow = (rangeObj.CriticalLow !== null && rangeObj.CriticalLow !== undefined) ? rangeObj.CriticalLow : '';
+                 var critHigh = (rangeObj.CriticalHigh !== null && rangeObj.CriticalHigh !== undefined) ? rangeObj.CriticalHigh : '';
+                 var flagClass = r.Flag ? 'flag-' + r.Flag : '';
+                 var chipClass = r.Flag ? ('chip-' + (r.Flag.indexOf('critical') !== -1 ? 'critical' : r.Flag)) : 'chip-pending';
+                 var formula = r.CalculationFormula || '';
+                 var deps = r.FormulaDependencies ? (typeof r.FormulaDependencies === 'string' ? r.FormulaDependencies : JSON.stringify(r.FormulaDependencies)) : '[]';
+                 var prec = (r.DecimalPrecision !== null && r.DecimalPrecision !== undefined) ? r.DecimalPrecision : 2;
+            %>
+              <tr id="row-<%= r.ParameterId %>" class="<%= isCalc ? 'calculated-row' : '' %>">
+                <td class="param-name">
+                  <strong><%= r.ParameterName %></strong>
+                  <% if (isCalc) { %><span class="calc-badge">AUTO</span><% } %><br>
+                  <small><%= r.ShortName %></small>
+                </td>
+                <td style="text-align: center;">
+                  <% if (r.ResultType === 'select') { %>
+                    <select class="result-input <%= flagClass %>"
+                            id="val-<%= r.ParameterId %>"
+                            data-param="<%= r.ParameterId %>"
+                            data-shortname="<%= r.ShortName %>"
+                            data-min="<%= minVal %>"
+                            data-max="<%= maxVal %>"
+                            data-crit-low="<%= critLow %>"
+                            data-crit-high="<%= critHigh %>"
+                            onchange="onValueChange(this)">
+                      <option value="">Select...</option>
+                      <% var opts = []; try { opts = typeof r.SelectOptions === 'string' ? JSON.parse(r.SelectOptions) : (r.SelectOptions || []); } catch(e) {} %>
+                      <% opts.forEach(function(opt) { %>
+                        <option value="<%= opt.value %>" <%= r.ResultValue === opt.value ? 'selected' : '' %>><%= opt.label %></option>
+                      <% }); %>
+                    </select>
+                  <% } else { %>
+                    <input type="text"
+                           class="result-input <%= flagClass %> <%= isCalc ? 'calc-input' : '' %>"
+                           id="val-<%= r.ParameterId %>"
+                           value="<%= r.ResultValue || '' %>"
+                           data-param="<%= r.ParameterId %>"
+                           data-shortname="<%= r.ShortName %>"
+                           data-calc="<%= isCalc ? '1' : '0' %>"
+                           data-formula="<%= encodeURIComponent(formula) %>"
+                           data-deps="<%= encodeURIComponent(deps) %>"
+                           data-precision="<%= prec %>"
+                           data-overridden="0"
+                           data-min="<%= minVal %>"
+                           data-max="<%= maxVal %>"
+                           data-crit-low="<%= critLow %>"
+                           data-crit-high="<%= critHigh %>"
+                           oninput="onCalcSourceInput(this)"
+                           onchange="onValueChange(this)"
+                           placeholder="<%= isCalc ? 'auto' : '' %>">
+                    <% if (isCalc) { %>
+                      <button type="button" class="calc-reset" id="reset-<%= r.ParameterId %>" title="Recompute from formula" onclick="resetCalc('<%= r.ParameterId %>')" style="display:none;">&#8634;</button>
+                    <% } %>
+                  <% } %>
+                </td>
+                <td style="text-align: center;"><%= r.Unit || r.ParamUnit || '' %></td>
+                <td class="range-display"><%= r.referenceRangeDisplay || r.ReferenceRangeUsed || 'N/A' %></td>
+                <td class="flag-cell <%= flagClass %>" id="flag-<%= r.ParameterId %>">
+                  <span class="flag-pill <%= chipClass %>"><%= r.Flag ? r.Flag.toUpperCase().replace('_', ' ') : 'PENDING' %></span>
+                </td>
+                <td>
+                  <input type="text" class="comment-input" id="comment-<%= r.ParameterId %>" value="<%= r.Comment || '' %>" placeholder="Add note...">
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% }); %>
+  </form>
+</div>
+
+<div class="actionbar">
+  <div class="inner">
+    <span class="hint">Calculated fields update live &middot; results lock after you complete the report.</span>
+    <span class="grow"></span>
+    <button class="btn btn-secondary" id="btnSaveDraft" onclick="saveDraft()">Save Draft</button>
+    <button class="btn btn-success" id="btnComplete" onclick="completeReport()">&#10003; Complete Report</button>
+  </div>
+</div>
+
+<script>
+var reportId = '<%= report.Id %>';
+
+/*
+ * FIX 1: Patient demographics are normalized SERVER-SIDE in the controller
+ * (normalizePatient) and passed to this view as `patient`.
+ */
+var patientPayload = {
+  age: <%= (typeof patient !== 'undefined' && patient) ? (parseFloat(patient.age) || 0) : (parseFloat(report.PatientAge) || 0) %>,
+  ageUnit: '<%= (typeof patient !== 'undefined' && patient) ? patient.ageUnit : 'years' %>',
+  gender: '<%= (typeof patient !== 'undefined' && patient) ? patient.gender : 'other' %>'
+};
+
+function getToastContainer() {
+  var c = document.getElementById('slToastContainer');
+  if (!c) {
+    c = document.createElement('div');
+    c.id = 'slToastContainer';
+    document.body.appendChild(c);
+  } else if (c.parentNode !== document.body) {
+    document.body.appendChild(c);
+  }
+  return c;
+}
+
+window.showToast = function(message, type) {
+  type = type || 'info';
+  var container = getToastContainer();
+  var toast = document.createElement('div');
+  toast.className = 'sl-toast sl-toast-' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.classList.add('sl-toast-exit');
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, 4000);
+};
+
+function showConfirmToast(message, confirmLabel, onConfirm) {
+  var overlay = document.createElement('div');
+  overlay.className = 'sl-confirm-overlay';
+  overlay.innerHTML = '<div class="sl-confirm-box">' +
+    '<p></p>' +
+    '<div class="sl-confirm-actions">' +
+      '<button class="btn btn-secondary" data-act="cancel">Cancel</button>' +
+      '<button class="btn btn-success" data-act="ok"></button>' +
+    '</div>' +
+  '</div>';
+  overlay.querySelector('p').textContent = message;
+  overlay.querySelector('[data-act="ok"]').textContent = confirmLabel || 'Confirm';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('[data-act="cancel"]').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('[data-act="ok"]').onclick = function() {
+    document.body.removeChild(overlay);
+    if (typeof onConfirm === 'function') onConfirm();
+  };
+  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+}
+
+/*
+ * FIX 3: Safe response parsing (session expiry returns HTML, not JSON).
+ */
+function parseJsonSafe(response) {
+  return response.text().then(function(text) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, message: 'Session expired or not authorized. Please log in again.' };
+      }
+      return { success: false, message: 'Server returned an unexpected response (HTTP ' + response.status + ')' };
+    }
+  });
+}
+
+// Flag chip map (keeps the server-rendered pill look when we re-flag on edit).
+var CHIP_MAP = { 'flag-normal': 'chip-normal', 'flag-low': 'chip-low', 'flag-high': 'chip-high', 'flag-critical': 'chip-critical' };
+function renderFlagCell(flagCell, flagClass, flagText) {
+  var chip = CHIP_MAP[flagClass] || 'chip-pending';
+  flagCell.innerHTML = '<span class="flag-pill ' + chip + '">' + flagText + '</span>';
+}
+
+function autoFlag(input) {
+  var val = parseFloat(input.value);
+  var flagCell = document.getElementById('flag-' + input.getAttribute('data-param'));
+  var min = input.getAttribute('data-min');
+  var max = input.getAttribute('data-max');
+  var cLow = input.getAttribute('data-crit-low');
+  var cHigh = input.getAttribute('data-crit-high');
+
+  // Preserve the calc-input / overridden base classes when re-flagging.
+  var base = 'result-input';
+  if (input.getAttribute('data-calc') === '1') base += ' calc-input';
+  if (input.getAttribute('data-overridden') === '1') base += ' overridden';
+
+  if (input.value === '' || isNaN(val)) {
+    input.className = base;
+    if (flagCell) { flagCell.className = 'flag-cell'; renderFlagCell(flagCell, '', 'PENDING'); }
+    return;
+  }
+
+  var flagClass = 'flag-normal';
+  var flagText = 'NORMAL';
+
+  if (cLow !== '' && val < parseFloat(cLow)) { flagClass = 'flag-critical'; flagText = 'CRITICAL LOW'; }
+  else if (cHigh !== '' && val > parseFloat(cHigh)) { flagClass = 'flag-critical'; flagText = 'CRITICAL HIGH'; }
+  else if (min !== '' && val < parseFloat(min)) { flagClass = 'flag-low'; flagText = 'LOW'; }
+  else if (max !== '' && val > parseFloat(max)) { flagClass = 'flag-high'; flagText = 'HIGH'; }
+
+  input.className = base + ' ' + flagClass;
+  if (flagCell) {
+    flagCell.className = 'flag-cell ' + flagClass;
+    renderFlagCell(flagCell, flagClass, flagText);
+  }
+
+  if (flagClass === 'flag-critical') {
+    showToast('⚠️ ' + flagText + ' result entered. Immediate clinical correlation required.', 'critical');
+  }
+}
+
+/* ============ LIVE CALCULATION ENGINE ============ */
+function buildShortNameMap() {
+  var map = {};
+  document.querySelectorAll('.result-input[data-shortname]').forEach(function(el) {
+    if (el.getAttribute('data-calc') === '1' && el.getAttribute('data-overridden') !== '1' && el.getAttribute('data-fresh') !== '1') return;
+    var sn = el.getAttribute('data-shortname');
+    var v = parseFloat(el.value);
+    if (sn && !isNaN(v)) map[sn] = v;
+  });
+  return map;
+}
+
+function evalFormulaJS(formula, valueMap) {
+  var f = formula;
+  if (f.indexOf('{') !== -1) {
+    // {SHORTNAME} syntax (same as server FormulaService) - unambiguous tokens
+    var missing = false;
+    f = f.replace(/\{\s*([^{}]+?)\s*\}/g, function(_, sn) {
+      var v = valueMap[sn];
+      if (v === undefined || v === null || isNaN(v)) { missing = true; return '0'; }
+      return '(' + v + ')';
+    });
+    if (missing) return null;
+  } else {
+    // legacy: longest ShortName first; escape regex metachars (handles BIL-T, A/G, T-CHOL, CHOL/HDL)
+    var tokens = Object.keys(valueMap).sort(function(a, b) { return b.length - a.length; });
+    for (var i = 0; i < tokens.length; i++) {
+      var t = tokens[i];
+      var escaped = t.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
+      f = f.replace(new RegExp(escaped, 'g'), '(' + valueMap[t] + ')');
+    }
+  }
+  if (/[A-Za-z]/.test(f)) return null;          // unresolved dependency
+  if (!/^[0-9+\-*/().\s]+$/.test(f)) return null;
+  try {
+    // eslint-disable-next-line no-new-func
+    var out = Function('"use strict";return (' + f + ')')();
+    return (typeof out === 'number' && isFinite(out)) ? out : null;
+  } catch (e) { return null; }
+}
+
+function recalcAll() {
+  var calcInputs = Array.prototype.slice.call(document.querySelectorAll('.result-input[data-calc="1"]'));
+  // multiple passes so chained calcs (MCV<-HCT) settle
+  for (var pass = 0; pass < calcInputs.length + 1; pass++) {
+    var changedThisPass = false;
+    var valueMap = buildShortNameMap();
+    for (var i = 0; i < calcInputs.length; i++) {
+      var el = calcInputs[i];
+      if (el.getAttribute('data-overridden') === '1') continue;  // respect manual override
+      var formula = decodeURIComponent(el.getAttribute('data-formula') || '');
+      if (!formula) continue;
+      var result = evalFormulaJS(formula, valueMap);
+      if (result === null) {
+        if (el.value !== '') { el.value = ''; el.removeAttribute('data-fresh'); autoFlag(el); changedThisPass = true; }
+        continue;
+      }
+      el.setAttribute('data-fresh', '1');
+      var prec = parseInt(el.getAttribute('data-precision') || '2', 10);
+      var rounded = Number(result.toFixed(prec));
+      // Calculated concentrations/ratios (LDL, VLDL, globulin, UIBC, indirect
+      // bilirubin, eAG, ratios...) are never negative; a formula that goes below
+      // zero means the source values don't reconcile. Clamp to 0 instead of
+      // showing "-20 LOW".
+      if (rounded < 0) rounded = 0;
+      var newStr = String(rounded);
+      if (el.value !== newStr) {
+        el.value = newStr;
+        changedThisPass = true;
+      }
+      autoFlag(el);
+    }
+    if (!changedThisPass) break;
+  }
+}
+
+// Fired when a NON-calculated source value is typed: recompute dependents live.
+function onCalcSourceInput(input) {
+  // if this field itself is calculated and user is typing into it -> it's an override
+  if (input.getAttribute('data-calc') === '1') {
+    markOverridden(input);
+  }
+}
+
+function onValueChange(input) {
+  autoFlag(input);
+  recalcAll();
+  checkDlcTotal();
+}
+
+/* Differential count must add up to 100 % (only when all five are entered). */
+var DLC = ['NEUT', 'LYMPH', 'MONO', 'EOS', 'BASO'];
+function checkDlcTotal() {
+  var els = DLC.map(function(sn) { return document.querySelector('.result-input[data-shortname="' + sn + '"]'); });
+  if (els.some(function(e) { return !e; })) return true;
+  if (els.some(function(e) { return e.value === '' || isNaN(parseFloat(e.value)); })) return true;
+  var sum = els.reduce(function(a, e) { return a + parseFloat(e.value); }, 0);
+  if (Math.abs(sum - 100) > 0.5) {
+    showToast('Differential count adds up to ' + sum + '% (should be 100%).', 'error');
+    return false;
+  }
+  return true;
+}
+
+function markOverridden(input) {
+  input.setAttribute('data-overridden', '1');
+  if (!input.classList.contains('overridden')) input.classList.add('overridden');
+  var btn = document.getElementById('reset-' + input.getAttribute('data-param'));
+  if (btn) btn.style.display = 'inline-block';
+  autoFlag(input);
+}
+
+function resetCalc(paramId) {
+  var input = document.getElementById('val-' + paramId);
+  if (!input) return;
+  input.setAttribute('data-overridden', '0');
+  input.classList.remove('overridden');
+  var btn = document.getElementById('reset-' + paramId);
+  if (btn) btn.style.display = 'none';
+  recalcAll();
+  showToast('Recomputed from formula', 'info');
+}
+
+function collectResults() {
+  var results = [];
+  // All NON-calculated inputs are normal results.
+  var inputs = document.querySelectorAll('.result-input[data-param]');
+  for (var i = 0; i < inputs.length; i++) {
+    var el = inputs[i];
+    if (el.getAttribute('data-calc') === '1') continue; // calc params handled server-side
+    var pid = el.getAttribute('data-param');
+    var commentEl = document.getElementById('comment-' + pid);
+    results.push({
+      ParameterId: parseInt(pid, 10),
+      ResultValue: el.value,
+      Comment: commentEl ? commentEl.value : ''
+    });
+  }
+  return results;
+}
+
+// Calculated fields the tech manually overrode -> { ParameterId: value }
+function collectOverrides() {
+  var overrides = {};
+  document.querySelectorAll('.result-input[data-calc="1"][data-overridden="1"]').forEach(function(el) {
+    if (el.value !== '') overrides[el.getAttribute('data-param')] = el.value;
+  });
+  return overrides;
+}
+
+// DOUBLE-SUBMIT GUARD: one in-flight write at a time. A latch (not just the
+// button's disabled state) blocks a second call that fires from a rapid double
+// click, the Enter key, or completeReport() -- before the browser repaints.
+var __slBusy = false;
+function slSetBusy(on) {
+  __slBusy = on;
+  var s = document.getElementById('btnSaveDraft');
+  var c = document.getElementById('btnComplete');
+  if (s) s.disabled = on;
+  if (c) c.disabled = on;
+}
+
+// The actual POST, no latch -- callers own the latch so Save and Complete
+// (which saves first) share one in-flight window.
+function _postResults() {
+  return fetch('/pathology/reports/' + reportId + '/results', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ results: collectResults(), calculatedOverrides: collectOverrides(), patient: patientPayload })
+  })
+  .then(parseJsonSafe)
+  .then(function(data) {
+    if (data.success) return data;
+    var msg = data.message || 'Save failed';
+    if (data.errors && data.errors.length) {
+      msg += ': ' + data.errors.map(function(e) { return e.msg || e.message; }).join(', ');
+    }
+    showToast('Error: ' + msg, 'error');
+    var err = new Error(msg); err.__toasted = true; throw err;
+  });
+}
+
+function saveDraft() {
+  if (__slBusy) return Promise.reject(Object.assign(new Error('A save is already in progress.'), { __toasted: true }));
+  slSetBusy(true);
+  return _postResults()
+    .then(function(data) {
+      slSetBusy(false);
+      showToast('✓ Draft saved successfully', 'success');
+      return data;
+    })
+    .catch(function(e) {
+      slSetBusy(false);
+      if (!e.__toasted) showToast('Save failed: ' + e.message, 'error');
+      throw e;
+    });
+}
+
+/*
+ * Complete chains the workflow forward. On success the user is taken straight
+ * to the Verify/Approve screen for this report.
+ */
+function completeReport() {
+  if (__slBusy) return;                 // a save/complete is already running
+  showConfirmToast(
+    'Mark this report as COMPLETED? You will not be able to edit results after this.',
+    'Complete Report',
+    function() {
+      if (__slBusy) return;             // re-check after the confirm dialog
+      if (!checkDlcTotal()) return;
+      slSetBusy(true);                  // one latch spans save + complete
+
+      _postResults()
+        .then(function() {
+          return fetch('/pathology/reports/' + reportId + '/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({})
+          });
+        })
+        .then(parseJsonSafe)
+        .then(function(data) {
+          if (data.success) {
+            showToast('✓ Report completed. Redirecting to verification…', 'success');
+            // stay latched -- we are navigating away
+            setTimeout(function() {
+              window.location.href = (data.redirect || '/pathology/view/verify/' + reportId);
+            }, 900);
+          } else {
+            slSetBusy(false);
+            showToast(data.message || 'Complete failed', 'error');
+          }
+        })
+        .catch(function(e) {
+          slSetBusy(false);
+          if (!e.__toasted) showToast('Complete failed: ' + e.message, 'error');
+        });
+    }
+  );
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  getToastContainer();
+  // Flag everything already present, then compute calculated fields.
+  var inputs = document.querySelectorAll('.result-input[data-param]');
+  for (var i = 0; i < inputs.length; i++) {
+    if (inputs[i].value !== '') autoFlag(inputs[i]);
+  }
+  recalcAll(); // initial pass so existing dependency values populate calc fields
+
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('toast')) showToast(params.get('toast'), params.get('type') || 'info');
+});
+</script>
+</body>
+</html>

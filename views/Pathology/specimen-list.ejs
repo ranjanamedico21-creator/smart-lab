@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title><%= title %> - SmartLab</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+  :root {
+    --primary: #1e3a5f;
+    --primary-light: #e8f0fe;
+    --accent: #2563eb;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-50); color: var(--gray-800); line-height: 1.5; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  .page-header { background: white; padding: 24px 28px; border-radius: var(--radius); margin-bottom: 24px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .page-header h1 { font-size: 26px; color: var(--primary); font-weight: 700; letter-spacing: -0.3px; }
+  .page-header p { color: var(--gray-500); font-size: 14px; margin-top: 4px; }
+
+  .filter-card { background: white; padding: 24px 28px; border-radius: var(--radius); margin-bottom: 24px; box-shadow: var(--shadow); }
+  .filter-grid { display: grid; grid-template-columns: 1.2fr 1.2fr 1fr 1fr auto; gap: 16px; align-items: end; }
+  @media (max-width: 1200px) { .filter-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  @media (max-width: 768px) { .filter-grid { grid-template-columns: 1fr; } }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-control { padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 14px; color: var(--gray-800); background: white; transition: all 0.2s; width: 100%; outline: none; }
+  .form-control:hover { border-color: var(--gray-300); }
+  .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+
+  .date-wrapper { position: relative; }
+  .date-wrapper input { padding-left: 38px; cursor: pointer; }
+  .date-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 16px; pointer-events: none; }
+
+  .search-wrapper { position: relative; }
+  .search-wrapper input { padding-left: 38px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 16px; pointer-events: none; }
+
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; white-space: nowrap; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #152d4d; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1.5px solid var(--gray-200); }
+  .btn-secondary:hover { background: var(--gray-200); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+  @media (max-width: 768px) { .stats { grid-template-columns: 1fr; } }
+  .stat-card { background: white; padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; transition: transform 0.2s; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .stat-pending .stat-icon { background: #fff7ed; color: var(--warning); }
+  .stat-accepted .stat-icon { background: #f0fdf4; color: var(--success); }
+  .stat-rejected .stat-icon { background: #fef2f2; color: var(--danger); }
+  .stat-info h3 { font-size: 28px; font-weight: 700; color: var(--gray-800); line-height: 1; }
+  .stat-info label { font-size: 13px; color: var(--gray-500); font-weight: 500; margin-top: 4px; display: block; }
+
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .card-header { background: linear-gradient(135deg, var(--primary) 0%, #2c5282 100%); color: white; padding: 18px 28px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .card-header .date-range { font-size: 13px; font-weight: 500; opacity: 0.85; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  th { background: var(--gray-50); padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--gray-200); white-space: nowrap; }
+  td { padding: 14px 20px; border-bottom: 1px solid var(--gray-100); font-size: 14px; vertical-align: middle; color: var(--gray-700); }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: var(--gray-50); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .patient-name { font-weight: 600; color: var(--gray-800); font-size: 14px; }
+  .patient-meta { color: var(--gray-500); font-size: 12px; margin-top: 2px; }
+
+  .badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .badge-pending { background: #fff7ed; color: #92400e; }
+  .badge-accepted { background: #f0fdf4; color: #166534; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; }
+  .badge-collected { background: #e0f2fe; color: #075985; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+  .btn-action { padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+  .btn-process { background: var(--primary-light); color: var(--primary); }
+  .btn-process:hover { background: #d1e0f9; }
+  .btn-view { background: var(--gray-100); color: var(--gray-600); }
+  .btn-view:hover { background: var(--gray-200); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+  @keyframes toastSlideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastFadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
+
+  /* ─── Flatpickr Robust Overrides ─── */
+.flatpickr-calendar {
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  border: 1px solid #e2e8f0;
+  border: 1px solid var(--gray-200);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  z-index: 9999;                 /* FIX #4: stay above everything */
+  overflow: hidden;              /* FIX #2: clip month header corners */
+}
+
+/* Month header bar */
+.flatpickr-months {
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+}
+
+.flatpickr-months .flatpickr-month {
+  background: #1e3a5f;
+  background: var(--primary);
+  color: #fff;
+  fill: #fff;
+  /* border-radius removed here – parent .flatpickr-months handles it */
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  color: #fff;
+  font-weight: 600;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.flatpickr-current-month input.cur-year {
+  color: #fff;
+  font-weight: 600;
+}
+.flatpickr-current-month input.cur-year:focus {
+  background: rgba(255,255,255,0.15);
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  fill: #fff;
+  color: #fff;
+}
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+  fill: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.8);
+}
+
+/* Weekday bar */
+.flatpickr-weekdays {
+  background: #f8fafc;
+  background: var(--gray-50);
+}
+
+.flatpickr-weekdays .flatpickr-weekday {
+  color: #475569;
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* ─── Days ─── */
+.flatpickr-day {
+  border-radius: 8px;
+  font-size: 14px;
+  color: #334155;
+  color: var(--gray-700);
+  border: 1px solid transparent;
+}
+
+.flatpickr-day:hover {
+  background: #f1f5f9;
+  background: var(--gray-100);
+  color: #1e293b;
+  color: var(--gray-800);
+  border-color: transparent;
+}
+
+/* Today (not selected) */
+.flatpickr-day.today {
+  border-color: #2563eb;
+  border-color: var(--accent);
+  color: #2563eb;
+  color: var(--accent);
+  font-weight: 700;
+}
+.flatpickr-day.today:hover {
+  background: #2563eb;
+  background: var(--accent);
+  color: #fff;
+  border-color: #2563eb;
+  border-color: var(--accent);
+}
+
+/* FIX #3: Today + selected combined state */
+.flatpickr-day.today.selected,
+.flatpickr-day.today.startRange,
+.flatpickr-day.today.endRange {
+  background: #2563eb;
+  background: var(--accent);
+  color: #fff;
+  border-color: #2563eb;
+  border-color: var(--accent);
+}
+.flatpickr-day.today.selected:hover,
+.flatpickr-day.today.startRange:hover,
+.flatpickr-day.today.endRange:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+/* Selected / Range ends */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.startRange.inRange,
+.flatpickr-day.endRange.inRange {
+  background: #2563eb;
+  background: var(--accent);
+  border-color: #2563eb;
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover,
+.flatpickr-day.selected.inRange:hover,
+.flatpickr-day.startRange.inRange:hover,
+.flatpickr-day.endRange.inRange:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+/* FIX #1: Middle of a range – flat corners so days touch */
+.flatpickr-day.inRange {
+  background: #e8f0fe;
+  background: var(--primary-light);
+  border-color: #e8f0fe;
+  border-color: var(--primary-light);
+  color: #1e3a5f;
+  color: var(--primary);
+  box-shadow: none;
+  border-radius: 0;          /* remove gap between range days */
+}
+
+/* Restore rounded corners ONLY on the actual start and end cells */
+.flatpickr-day.startRange {
+  border-radius: 8px 0 0 8px;
+}
+.flatpickr-day.endRange {
+  border-radius: 0 8px 8px 0;
+}
+/* Single-day range (start and end are same cell) */
+.flatpickr-day.startRange.endRange {
+  border-radius: 8px;
+}
+
+/* Adjacent months / disabled */
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay,
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.notAllowed {
+  color: #94a3b8;
+  color: var(--gray-400);
+}
+
+.flatpickr-day.flatpickr-disabled:hover {
+  background: transparent;
+  color: #cbd5e1;
+  color: var(--gray-300);
+  cursor: not-allowed;
+}
+
+/* ─── Time picker ─── */
+.flatpickr-time {
+  border-top: 1px solid #e2e8f0;   /* FIX #5: visual separator */
+  border-top: 1px solid var(--gray-200);
+}
+
+.flatpickr-time input,
+.flatpickr-time .flatpickr-time-separator,
+.flatpickr-time .flatpickr-am-pm {
+  color: #1e293b;
+  color: var(--gray-800);
+  font-weight: 600;
+}
+
+.flatpickr-time input:focus {
+  background: #f1f5f9;
+  background: var(--gray-100);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1>🧪 Specimen Dashboard</h1>
+      <p>Track, filter, and manage all laboratory specimens</p>
+    </div>
+  </div>
+
+  <div class="filter-card">
+    <form class="filter-grid" method="GET" action="/pathology/specimens">
+      <div class="form-group">
+        <label>Search Patient / Test</label>
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" name="search" class="form-control" value="<%= typeof search !== 'undefined' ? search : '' %>" placeholder="Type patient or test name...">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>From Date</label>
+        <div class="date-wrapper">
+          <span class="date-icon">📅</span>
+          <input type="text" name="date_from" id="date_from" class="form-control" value="<%= dateFrom %>" placeholder="Select start date..." readonly>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>To Date</label>
+        <div class="date-wrapper">
+          <span class="date-icon">📅</span>
+          <input type="text" name="date_to" id="date_to" class="form-control" value="<%= dateTo %>" placeholder="Select end date..." readonly>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status" class="form-control">
+          <option value="all" <%= filterStatus === 'all' ? 'selected' : '' %>>All Statuses</option>
+          <option value="not_collected" <%= filterStatus === 'not_collected' ? 'selected' : '' %>>Not Collected</option>
+          <option value="collected" <%= filterStatus === 'collected' ? 'selected' : '' %>>Collected</option>
+          <option value="accepted" <%= filterStatus === 'accepted' ? 'selected' : '' %>>Accepted</option>
+          <option value="rejected" <%= filterStatus === 'rejected' ? 'selected' : '' %>>Rejected</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+        <a href="/pathology/specimens" class="btn btn-secondary">Today</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card stat-pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-info">
+        <h3><%= stats.pending %></h3>
+        <label>Pending Acceptance</label>
+      </div>
+    </div>
+    <div class="stat-card stat-accepted">
+      <div class="stat-icon">✓</div>
+      <div class="stat-info">
+        <h3><%= stats.accepted %></h3>
+        <label>Accepted</label>
+      </div>
+    </div>
+    <div class="stat-card stat-rejected">
+      <div class="stat-icon">✕</div>
+      <div class="stat-info">
+        <h3><%= stats.rejected %></h3>
+        <label>Rejected</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span>Specimen Records</span>
+      <span class="date-range"><%= dateFrom %> → <%= dateTo %></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient Details</th>
+            <th>Test</th>
+            <th>Specimen Type</th>
+            <th>Status</th>
+            <th>Registered</th>
+            <th style="text-align:center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (specimens.length === 0) { %>
+            <tr>
+              <td colspan="6" class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No specimens found for selected filters.</p>
+                <p style="font-size:13px; margin-top:8px;">Try adjusting the date range or search criteria.</p>
+              </td>
+            </tr>
+          <% } else { %>
+            <% specimens.forEach(function(s) { 
+                 var statusClass = 'badge-pending';
+                 var statusDot = '#d97706';
+                 if (s.Status === 'accepted') { statusClass = 'badge-accepted'; statusDot = '#16a34a'; }
+                 else if (s.Status === 'rejected') { statusClass = 'badge-rejected'; statusDot = '#dc2626'; }
+                 else if (s.Status === 'collected') { statusClass = 'badge-collected'; statusDot = '#075985'; }
+            %>
+              <tr>
+                <td>
+                  <div class="patient-name"><a href="/patient/getPatientDetail?patientId=<%= s.PatientId %>" aria-label="View details for patient <%= s.PatientName %>"><%= s.PatientName %></a></div>
+                  <div class="patient-meta"><%= s.PatientAge %> <%= s.PatientAgeUnit %> • <%= s.PatientGender %></div>
+                </td>
+                <td><strong><%= s.TestName %></strong></td>
+                <td>
+                  <%= s.SpecimenType || s.SpecimenTypeName || '-' %><% if (s.ContainerName || s.ContainerType) { %> <small style="color:#64748b;">(<%= s.ContainerName || s.ContainerType %>)</small><% } %>
+                  <% if (s.Barcode) { %><div style="font-family:monospace;font-size:12px;color:#475569;"><%= s.Barcode %></div><% } %>
+                </td>
+                <td>
+                  <span class="badge <%= statusClass %>">
+                    <span class="badge-dot" style="background:<%= statusDot %>;"></span>
+                    <%= s.Status || 'Not Collected' %>
+                  </span>
+                </td>
+                <td><%= s.RegisteredOn ? moment(s.RegisteredOn).format('DD-MMM-YYYY') : (s.CreatedAt ? moment(s.CreatedAt).format('DD-MMM-YYYY') : '-') %>
+                  <% if (s.ReportStatus) { %><div style="font-size:11px;color:#64748b;text-transform:uppercase;">Report: <%= s.ReportStatus %></div><% } %></td>
+                <!-- Inside the specimens loop -->
+                <td>
+                  <% if (s.Status === 'accepted' || s.Status === 'rejected') { %>
+                    <a href="/pathology/specimens/action?ptr=<%= s.PatientTestRefferenceId %>" class="btn-action btn-view">View →</a>
+                  <% } else { %>
+                    <a href="/pathology/specimens/action?ptr=<%= s.PatientTestRefferenceId %>" class="btn-action btn-process">Process →</a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+(function(){
+  var fromPicker, toPicker;
+
+  fromPicker = flatpickr("#date_from", {
+    dateFormat: "Y-m-d",
+    allowInput: false,
+    clickOpens: true,
+    maxDate: "today",
+    defaultDate: "<%= dateFrom %>",
+    onChange: function(selectedDates, dateStr) {
+      if (toPicker) toPicker.set("minDate", dateStr);
+    }
+  });
+
+  toPicker = flatpickr("#date_to", {
+    dateFormat: "Y-m-d",
+    allowInput: false,
+    clickOpens: true,
+    maxDate: "today",
+    defaultDate: "<%= dateTo %>",
+    onChange: function(selectedDates, dateStr) {
+      if (fromPicker) fromPicker.set("maxDate", dateStr);
+    }
+  });
+
+  var params = new URLSearchParams(window.location.search);
+  var msg = params.get('toast'), type = params.get('type');
+  if (msg) {
+    var c = document.createElement('div');
+    c.style.cssText = 'position:fixed;top:20px;right:20px;z-index:999999;';
+    var t = document.createElement('div');
+    var colors = { success: '#f0fdf4', error: '#fef2f2', warning: '#fff7ed' };
+    var textColors = { success: '#166534', error: '#991b1b', warning: '#9a3412' };
+    t.style.cssText = 'padding:14px 18px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,0.15);border-left:4px solid;animation:toastSlideIn 0.3s ease;min-width:300px;background:' + (colors[type] || colors.success) + ';color:' + (textColors[type] || textColors.success) + ';';
+    t.textContent = decodeURIComponent(msg);
+    c.appendChild(t); document.body.appendChild(c);
+    setTimeout(function(){ t.style.animation='toastFadeOut 0.3s ease forwards'; setTimeout(function(){c.remove()},300); },4000);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+})();
+</script>
+
+</body>
+</html>

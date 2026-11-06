@@ -1,0 +1,515 @@
+
+<div class="container-fluid py-4">
+
+  <!-- Filter Card -->
+  <div class="card shadow-sm mb-4 border-0 filter-card" style="border-radius: 16px;">
+    <div class="card-header text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
+         style="background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); padding: 1.25rem 1.5rem; border-radius: 16px 16px 0 0;">
+      <h5 class="mb-0 fw-semibold d-flex align-items-center gap-2">
+        <i class="bi bi-cash-coin"></i> Payment Receivable
+      </h5>
+      <span class="badge bg-white text-primary fw-semibold" style="border-radius: 20px; padding: 0.4rem 0.9rem; font-size: 0.8rem;">
+        <i class="bi bi-calendar3 me-1"></i> <%= fromDate %> to <%= toDate %>
+      </span>
+    </div>
+    <div class="card-body" style="padding: 1.5rem; background: #fafbfc;">
+
+      <form action="/billing/paymentReceivable" method="POST" id="filterForm">
+
+        <div class="row g-3 align-items-end">
+
+          <div class="col-md-2 col-sm-6">
+            <label class="form-label fw-semibold small text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">From Date</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar text-muted"></i></span>
+              <input type="text" class="form-control border-start-0 flatpickr-date" name="fromDate" id="FromDate"
+                     value="<%= fromDate %>" placeholder="DD-MM-YYYY" autocomplete="off" style="padding-left: 0; background: #fff;">
+            </div>
+          </div>
+
+          <div class="col-md-2 col-sm-6">
+            <label class="form-label fw-semibold small text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">To Date</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar text-muted"></i></span>
+              <input type="text" class="form-control border-start-0 flatpickr-date" name="toDate" id="ToDate"
+                     value="<%= toDate %>" placeholder="DD-MM-YYYY" autocomplete="off" style="padding-left: 0; background: #fff;">
+            </div>
+          </div>
+
+          <div class="col-md-3 col-sm-6">
+            <label class="form-label fw-semibold small text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Customer</label>
+            <select class="form-select" name="customerId" id="customerId">
+              <option value="">All Customers</option>
+              <% customers.forEach(function(cust) { %>
+                <option value="<%= cust.Id %>" <%= (String(customerId) === String(cust.Id)) ? 'selected' : '' %>>
+                  <%= cust.CustomerName %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="col-md-3 col-sm-6">
+            <label class="form-label fw-semibold small text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">Payment Type</label>
+            <select class="form-select" name="paymentType" id="paymentType">
+              <option value="">All Types</option>
+              <% paymentTypes.forEach(function(type) { %>
+                <option value="<%= type %>" <%= (paymentType === type) ? 'selected' : '' %>>
+                  <%= type %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="col-md-2 col-sm-12 d-grid">
+            <button type="submit" class="btn btn-primary fw-semibold" id="searchBtn" style="border-radius: 10px; padding: 0.6rem;">
+              <i class="bi bi-search me-1"></i> Search
+            </button>
+          </div>
+
+        </div>
+      </form>
+
+      <!-- Active Filter Chips -->
+      <div id="activeFilters" class="mt-3 d-flex flex-wrap gap-2" style="display: none !important;"></div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <% if (typeWiseBreakup && Object.keys(typeWiseBreakup).length > 0) { %>
+  <div class="row g-3 mb-4">
+    <% Object.keys(typeWiseBreakup).forEach(function(type) { %>
+      <div class="col-xl-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 border-0 summary-card" style="border-radius: 16px; border-left: 4px solid #3b82f6 !important; transition: all 0.25s ease;">
+          <div class="card-body d-flex align-items-center gap-3">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb;">
+              <i class="bi bi-wallet2 fs-4"></i>
+            </div>
+            <div>
+              <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.05em;"><%= type %></div>
+              <div class="fs-4 fw-bold text-dark" style="letter-spacing: -0.02em;">
+                ₹<%= Number(typeWiseBreakup[type]).toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+    <div class="col-xl-3 col-md-4 col-sm-6">
+      <div class="card shadow-sm h-100 border-0 text-white grand-total-card" style="border-radius: 16px; background: linear-gradient(135deg, #059669 0%, #047857 100%); transition: all 0.25s ease;">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; background: rgba(255,255,255,0.15);">
+            <i class="bi bi-currency-rupee fs-4"></i>
+          </div>
+          <div>
+            <div class="small text-uppercase fw-bold opacity-75" style="font-size: 0.7rem; letter-spacing: 0.05em;">Grand Total</div>
+            <div class="fs-4 fw-bold" style="letter-spacing: -0.02em;">
+              ₹<%= Number(totalAmount).toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Results Card -->
+  <div class="card shadow-sm border-0 results-card" style="border-radius: 16px;">
+    <div class="card-header text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
+         style="background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); padding: 1rem 1.5rem; border-radius: 16px 16px 0 0;">
+      <h6 class="mb-0 fw-semibold d-flex align-items-center gap-2">
+        <i class="bi bi-list-ul"></i>
+        Payments
+        <span class="badge bg-white text-primary ms-1" style="border-radius: 12px;"><%= payments ? payments.length : 0 %> records</span>
+      </h6>
+      <button type="button" class="btn btn-light btn-sm text-primary fw-semibold" onclick="window.print()" title="Print" style="border-radius: 8px;">
+        <i class="bi bi-printer me-1"></i> Print
+      </button>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="paymentsTable">
+          <thead class="table-light" style="position: sticky; top: 0; z-index: 10;">
+            <tr style="border-bottom: 2px solid #e2e8f0;">
+              <th class="text-center text-muted text-uppercase" width="50" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">#</th>
+              <th class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Payment Date</th>
+              <th class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Payment No</th>
+              <th class="text-end text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Payment Notes</th>
+              <th class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Customer</th>
+              <th class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Mobile</th>
+              <th class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Type</th>
+              <th class="text-end text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em; padding: 1rem 1.25rem;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (payments && payments.length > 0) { %>
+              <% payments.forEach(function(p, index) { %>
+                <tr class="payment-row" style="transition: all 0.15s ease;">
+                  <td class="text-center text-muted fw-medium" style="padding: 1rem 1.25rem; font-size: 0.8rem;"><%= index + 1 %></td>
+                  <td class="fw-semibold text-secondary" style="padding: 1rem 1.25rem;"><%= p.PaymentDate %></td>
+                  <td style="padding: 1rem 1.25rem;">
+                    <span class="badge font-monospace" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 0.35rem 0.6rem; border-radius: 6px; font-weight: 600;"><%= p.PaymentNo %></span>
+                  </td>
+                  <td class="fw-semibold text-secondary text-capitalize" style="padding: 1rem 1.25rem;"><%= p.PaymentNote %></td>
+                  <td style="padding: 1rem 1.25rem;">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="d-none d-md-flex align-items-center justify-content-center rounded-circle text-white fw-bold flex-shrink-0 avatar-circle" style="width: 36px; height: 36px; background: linear-gradient(135deg, #2563eb, #3b82f6); font-size: 0.85rem;">
+                        <%= p.CustomerName ? p.CustomerName.charAt(0).toUpperCase() : '?' %>
+                      </div>
+                      <a href="/billing/customerLedger/<%= p.CustomerId %>" class="text-decoration-none fw-semibold text-dark customer-link" style="transition: color 0.2s;">
+                        <%= p.CustomerName %>
+                      </a>
+                    </div>
+                  </td>
+                  <td style="padding: 1rem 1.25rem;">
+                    <% if (p.MobileNo) { %>
+                      <a href="tel:<%= p.MobileNo %>" class="text-decoration-none text-muted" style="font-size: 0.875rem;">
+                        <i class="bi bi-telephone-fill text-success me-1 small"></i><%= p.MobileNo %>
+                      </a>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td style="padding: 1rem 1.25rem;">
+                    <span class="badge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 0.35rem 0.75rem; border-radius: 20px; font-weight: 600; font-size: 0.75rem;"><%= p.PaymentType %></span>
+                  </td>
+                  <td class="text-end fw-bold" style="color: #059669; padding: 1rem 1.25rem; font-variant-numeric: tabular-nums;">
+                    ₹<%= Number(p.Amount).toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="7" class="text-center py-5">
+                  <div style="padding: 2.5rem;">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3.5rem;"></i>
+                    <p class="text-muted mt-3 mb-1 fw-semibold">No payments found</p>
+                    <small class="text-muted">Try adjusting your date range or filters.</small>
+                  </div>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+          <% if (payments && payments.length > 0) { %>
+          <tfoot>
+            <tr style="background: linear-gradient(90deg, #f0fdf4 0%, #ecfdf5 100%); border-top: 2px solid #86efac;">
+              <th colspan="7" class="text-end text-uppercase small fw-bold text-dark" style="padding: 1rem 1.25rem; font-size: 0.8rem; letter-spacing: 0.05em;">Grand Total</th>
+              <th class="text-end fs-5 fw-bold" style="color: #059669; padding: 1rem 1.25rem; font-variant-numeric: tabular-nums;">
+                ₹<%= Number(totalAmount).toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+              </th>
+            </tr>
+          </tfoot>
+          <% } %>
+        </table>
+      </div>
+    </div>
+
+    <% if (payments && payments.length > 0) { %>
+    <div class="card-footer bg-white border-top-0 text-muted small d-flex justify-content-between align-items-center" style="padding: 0.75rem 1.5rem; border-top: 1px solid #f1f5f9; border-radius: 0 0 16px 16px;">
+      <span><i class="bi bi-info-circle me-1"></i>Showing <%= payments.length %> payment(s)</span>
+      <span>Period: <%= fromDate %> to <%= toDate %></span>
+    </div>
+    <% } %>
+  </div>
+
+</div>
+
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+
+<!-- TomSelect -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.3.1/css/tom-select.bootstrap5.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.3.1/js/tom-select.complete.min.js"></script>
+
+<style>
+  /* ===== MODERN BASE STYLES ===== */
+  body {
+    background: #f0f4f8;
+  }
+
+  /* Cards with subtle lift */
+  .filter-card,
+  .results-card,
+  .summary-card,
+  .grand-total-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04) !important;
+    border: 1px solid rgba(226, 232, 240, 0.6) !important;
+  }
+
+  .filter-card:hover,
+  .results-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+  }
+
+  .summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12) !important;
+  }
+
+  .grand-total-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(5, 150, 105, 0.2) !important;
+  }
+
+  /* Table styling */
+  #paymentsTable {
+    font-size: 0.9rem;
+  }
+
+  #paymentsTable thead th {
+    background: #f8fafc !important;
+    font-weight: 700;
+    color: #64748b !important;
+  }
+
+  .payment-row:hover {
+    background-color: #f8fafc !important;
+  }
+
+  .payment-row:hover .customer-link {
+    color: #2563eb !important;
+  }
+
+  .payment-row:hover .avatar-circle {
+    transform: scale(1.05);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  }
+
+  /* ===== TOM SELECT FIXES ===== */
+  .ts-wrapper {
+    position: relative;
+  }
+
+  .ts-control {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    min-height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    transition: all 0.15s ease;
+  }
+
+  .ts-control:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+
+  /* CRITICAL: Dropdown must escape overflow:hidden ancestors */
+  .ts-dropdown {
+    z-index: 99999 !important;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important;
+    margin-top: 4px;
+    background: #fff;
+  }
+
+  .ts-dropdown .active {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .ts-dropdown-content {
+    padding: 0.25rem 0;
+  }
+
+  .ts-dropdown .option {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .ts-wrapper.single .ts-control {
+    padding-right: 2rem;
+  }
+
+  /* ===== LOADING SPINNER ===== */
+  .btn-loading {
+    position: relative;
+    pointer-events: none;
+  }
+
+  .btn-loading::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.7s linear infinite;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    #activeFilters,
+    .card-footer {
+      display: none !important;
+    }
+    .card {
+      box-shadow: none !important;
+      border: 1px solid #dee2e6 !important;
+    }
+    .table-responsive {
+      overflow: visible !important;
+    }
+    a {
+      text-decoration: none !important;
+      color: #000 !important;
+    }
+    .badge {
+      border: 1px solid #dee2e6 !important;
+      background: transparent !important;
+      color: #000 !important;
+    }
+    .card-header {
+      background: #0f172a !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    // --- Flatpickr ---
+    flatpickr('#FromDate', {
+      dateFormat: 'd-m-Y',
+      allowInput: true,
+      maxDate: 'today'
+    });
+
+    flatpickr('#ToDate', {
+      dateFormat: 'd-m-Y',
+      allowInput: true,
+      maxDate: 'today'
+    });
+
+    // --- TomSelect (FIXED: dropdown escapes overflow containers) ---
+    let customerSelect, typeSelect;
+
+    const customerEl = document.getElementById('customerId');
+    if (customerEl) {
+      customerSelect = new TomSelect(customerEl, {
+        create: false,
+        sortField: { field: 'text', direction: 'asc' },
+        placeholder: 'Search customer...',
+        allowEmptyOption: true,
+        onInitialize: function() {
+          fixDropdownPosition(this);
+        }
+      });
+    }
+
+    const typeEl = document.getElementById('paymentType');
+    if (typeEl) {
+      typeSelect = new TomSelect(typeEl, {
+        create: false,
+        placeholder: 'Select type...',
+        allowEmptyOption: true,
+        onInitialize: function() {
+          fixDropdownPosition(this);
+        }
+      });
+    }
+
+    function fixDropdownPosition(tsInstance) {
+      const wrapper = tsInstance.wrapper;
+      const dropdown = tsInstance.dropdown;
+
+      if (!wrapper || !dropdown) return;
+
+      document.body.appendChild(dropdown);
+      dropdown.style.position = 'absolute';
+      dropdown.style.zIndex = '99999';
+
+      tsInstance.on('dropdown_open', function() {
+        const rect = wrapper.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        dropdown.style.top = (rect.bottom + scrollTop) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+        dropdown.style.display = 'block';
+      });
+
+      tsInstance.on('dropdown_close', function() {
+        dropdown.style.display = 'none';
+      });
+    }
+
+    // --- Loading state on form submit ---
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+      filterForm.addEventListener('submit', function() {
+        const btn = document.getElementById('searchBtn');
+        if (btn) {
+          btn.classList.add('btn-loading');
+          btn.innerHTML = 'Searching...';
+        }
+      });
+    }
+
+    // --- Active filter chips ---
+    function renderFilters() {
+      const box = document.getElementById('activeFilters');
+      if (!box) return;
+      box.innerHTML = '';
+      box.style.display = 'flex';
+      let hasAny = false;
+
+      const fromVal = document.getElementById('FromDate')?.value;
+      const toVal = document.getElementById('ToDate')?.value;
+      if (fromVal && toVal) {
+        box.innerHTML += '<span class="badge bg-light text-dark border" style="border-radius: 20px; padding: 0.4rem 0.8rem; font-weight: 500;"><i class="bi bi-calendar me-1 text-primary"></i>' + fromVal + ' – ' + toVal + '</span>';
+        hasAny = true;
+      }
+
+      const custVal = customerSelect ? customerSelect.getValue() : '';
+      if (custVal) {
+        const custName = customerEl?.querySelector('option[value="' + custVal + '"]')?.textContent || custVal;
+        box.innerHTML += '<span class="badge bg-light text-dark border" style="border-radius: 20px; padding: 0.4rem 0.8rem; font-weight: 500;"><i class="bi bi-person me-1 text-primary"></i>' + custName + '<span class="ms-2 remove-filter" data-target="customer" style="cursor:pointer;color:#dc3545;font-weight:bold;">×</span></span>';
+        hasAny = true;
+      }
+
+      const typeVal = typeSelect ? typeSelect.getValue() : '';
+      if (typeVal) {
+        box.innerHTML += '<span class="badge bg-light text-dark border" style="border-radius: 20px; padding: 0.4rem 0.8rem; font-weight: 500;"><i class="bi bi-tag me-1 text-primary"></i>' + typeVal + '<span class="ms-2 remove-filter" data-target="type" style="cursor:pointer;color:#dc3545;font-weight:bold;">×</span></span>';
+        hasAny = true;
+      }
+
+      if (!hasAny) box.style.display = 'none';
+    }
+
+    renderFilters();
+
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('remove-filter')) {
+        const target = e.target.getAttribute('data-target');
+        if (target === 'customer' && customerSelect) customerSelect.clear(true);
+        if (target === 'type' && typeSelect) typeSelect.clear(true);
+        if (filterForm) filterForm.submit();
+      }
+    });
+
+  });
+</script>

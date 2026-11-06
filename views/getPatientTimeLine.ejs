@@ -1,0 +1,61 @@
+<section>
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-light rounded shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">Patient TimeLine</li>
+    </ol>
+  </nav>
+</section>
+
+<section>
+  <div class="container-fluid rounded border bg-white shadow-sm mt-3">
+    <div class="row mt-3 text-center">
+      <div class="col">
+        <h4>Patient Audit TimeLine</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col timeline-container mt-4">
+
+        <% if (groupedEntries.length === 0) { %>
+          <p class="text-danger text-center">No audit logs found.</p>
+        <% } else { %>
+          <% groupedEntries.forEach(([timeKey, logs], index) => { %>
+            <div class="card mb-4 shadow-sm border-start border-4 border-primary timeline-card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-1 text-primary"></i>
+                    Changes made by <span class="text-dark fw-bold"><%= logs[0].ChangedBy %></span>
+                  </h5>
+                  <span class="badge bg-light text-dark border">
+                    <i class="bi bi-calendar-event me-1"></i>
+                    <%= moment(timeKey).format('DD MMM YYYY, hh:mm A') %>
+                  </span>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                  <% logs.forEach(log => { 
+                    let icon = "bi-arrow-left-right text-secondary";
+                    if (log.ChangedField === "Doctor") icon = "bi-person-circle text-info";
+                    else if (log.ChangedField === "Clinic") icon = "bi-hospital text-warning";
+                    else if (log.ChangedField.includes("Test Added")) icon = "bi-plus-circle text-success";
+                    else if (log.ChangedField.includes("Test Removed")) icon = "bi-x-circle text-danger";
+                  %>
+                    <li class="list-group-item px-0">
+                      <i class="bi <%= icon %> me-2"></i>
+                      <strong><%= log.ChangedField %></strong> changed from 
+                      <span class="text-danger"><del><%= log.OldValue %></del></span> 
+                      to <span class="text-success"><%= log.NewValue %></span>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </div>
+          <% }); %>
+        <% } %>
+
+      </div>
+    </div>
+  </div>
+</section>

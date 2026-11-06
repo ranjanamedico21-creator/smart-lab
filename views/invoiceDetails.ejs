@@ -1,0 +1,508 @@
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-light: #eff6ff;
+    --success: #059669;
+    --success-light: #ecfdf5;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --danger: #dc2626;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --bg-soft: #f8fafc;
+    --text-main: #0f172a;
+    --text-secondary: #475569;
+  }
+
+  .po-container { background: #f1f5f9; min-height: 100vh; padding: 1.5rem; }
+  
+  /* Cards */
+  .po-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  }
+  .po-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .po-card-body { padding: 1.5rem; }
+
+  /* Stats */
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+    transition: box-shadow 0.2s;
+  }
+  .stat-card:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+  .stat-icon {
+    width: 2.5rem; height: 2.5rem;
+    border-radius: 0.625rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.125rem;
+  }
+  .stat-icon.blue { background: var(--primary-light); color: var(--primary); }
+  .stat-icon.green { background: var(--success-light); color: var(--success); }
+  .stat-icon.amber { background: var(--warning-light); color: var(--warning); }
+  .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+  .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-top: 0.125rem; }
+  .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+
+  /* Buttons */
+  .btn-po {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-po-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-po-primary:hover { background: #1d4ed8; }
+  .btn-po-outline { background: #fff; color: var(--primary); border-color: var(--border); }
+  .btn-po-outline:hover { background: var(--primary-light); border-color: var(--primary); }
+  .btn-po-ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn-po-ghost:hover { background: var(--bg-soft); }
+
+  /* Table */
+  .po-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
+  .po-table thead th {
+    background: var(--bg-soft);
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    text-align: left;
+  }
+  .po-table thead th.text-end { text-align: right; }
+  .po-table tbody td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+    vertical-align: top;
+  }
+  .po-table tbody tr:last-child td { border-bottom: none; }
+  
+  /* Product grouping */
+  .product-group-start td { border-top: 2px solid var(--border); }
+  .product-group-start:first-child td { border-top: none; }
+  .product-group-start .product-cell {
+    background: #fff;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+  .product-group-continuation td { border-top: 1px dashed #cbd5e1; }
+  .product-group-continuation .product-cell { background: #fff; }
+  
+  /* Row backgrounds for grouping */
+  .po-table tbody tr:nth-child(even of .product-group-start) td,
+  .po-table tbody tr:nth-child(even of .product-group-start) ~ tr.product-group-continuation td {
+    background: #fafafa;
+  }
+  .po-table tbody tr:nth-child(odd of .product-group-start) td,
+  .po-table tbody tr:nth-child(odd of .product-group-start) ~ tr.product-group-continuation td {
+    background: #fff;
+  }
+
+  /* Badges */
+  .badge-po {
+    display: inline-flex; align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-po-success { background: var(--success-light); color: var(--success); }
+  .badge-po-warning { background: var(--warning-light); color: var(--warning); }
+  .badge-po-muted { background: #f1f5f9; color: var(--muted); }
+  .badge-po-info { background: #eff6ff; color: var(--primary); }
+
+  /* Utilities */
+  .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8125rem; }
+  .text-main { color: var(--text-main); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted-po { color: var(--muted); }
+  .fw-600 { font-weight: 600; }
+  .border-left-primary { border-left: 3px solid var(--primary); }
+  .border-left-success { border-left: 3px solid var(--success); }
+  .border-left-warning { border-left: 3px solid var(--warning); }
+  .empty-state { text-align: center; padding: 2.5rem; color: var(--muted); }
+  
+  /* Progress */
+  .progress-po { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 0.5rem; }
+  .progress-po-bar { height: 100%; background: var(--success); border-radius: 999px; transition: width 0.3s; }
+
+  /* Search */
+  .search-po {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.875rem 0.5rem 2.25rem;
+    font-size: 0.875rem;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 0.75rem center;
+    min-width: 260px;
+  }
+  .search-po:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgb(37 99 235 / 0.08); }
+
+  /* Print */
+  @media print {
+    .no-print { display: none !important; }
+    .po-container { background: #fff; padding: 0; }
+    .po-card { box-shadow: none; border: 1px solid #ddd; }
+    .product-group-start td, .product-group-continuation td { background: #fff !important; }
+  }
+</style>
+
+<div class="po-container">
+  <div class="container-fluid">
+
+    <!-- Header -->
+    <div class="po-card mb-4">
+      <div class="po-card-header">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge-po badge-po-info">PO</span>
+            <h4 class="fw-bold text-main mb-0" style="font-size:1.25rem;">
+              <%= purchaseOrder[0].PurchaseInvoiceNo %>
+            </h4>
+          </div>
+          <div class="text-secondary" style="font-size:0.875rem;">
+            <i class="bi bi-building me-1"></i><%= purchaseOrder[0].SupplierName %>
+            <span class="mx-2 text-muted">|</span>
+            <span class="text-muted-po">Order Date:</span> 
+            <%= new Date(purchaseOrder[0].OrderDate).toLocaleDateString('en-GB').replace(/\//g,'-') %>
+          </div>
+        </div>
+        <div class="d-flex gap-2 no-print">
+          <a href="/billing/viewPurchasePo" class="btn-po btn-po-ghost">
+            <i class="bi bi-arrow-left"></i> Back
+          </a>
+          <button onclick="window.print()" class="btn-po btn-po-ghost">
+            <i class="bi bi-printer"></i> Print
+          </button>
+          <a href="/billing/downloadPo/<%= purchaseOrder[0].PurchaseInvoiceNo %>" class="btn-po btn-po-outline">
+            <i class="bi bi-download"></i> Export
+          </a>
+          <a href="/billing/addInvoice/<%= purchaseOrder[0].Id %>" class="btn-po btn-po-primary">
+            <i class="bi bi-plus-lg"></i> Add Invoice
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <%- include("./partials/messages"); %>
+
+    <% if (purchaseOrder && purchaseOrder.length > 0) { %>
+
+    <%
+      // ==========================================
+      // DATA NORMALIZATION (Option 1)
+      // ==========================================
+      const productsMap = new Map();
+      const invoicesMap = new Map();
+      let totalQty = 0;
+      let totalRemaining = 0;
+
+      purchaseOrder.forEach(row => {
+        if (!productsMap.has(row.ProductId)) {
+          productsMap.set(row.ProductId, {
+            ProductId: row.ProductId,
+            ProductName: row.ProductName,
+            Quantity: row.Quantity,
+            RemainingQuantity: row.RemainingQuantity,
+            PurchasePrice: row.PurchasePrice,
+            TotalAmount: row.TotalAmount,
+            invoices: []
+          });
+          totalQty += Number(row.Quantity);
+          totalRemaining += Number(row.RemainingQuantity);
+        }
+
+        if (row.InvoiceId) {
+          productsMap.get(row.ProductId).invoices.push({
+            InvoiceId: row.InvoiceId,
+            InvoiceNo: row.InvoiceNo,
+            InvoiceDate: row.InvoiceDate,
+            ReceivedQuantity: row.ReceivedQuantity,
+            BatchNumber: row.BatchNumber,
+            MfgDate: row.MfgDate,
+            ExpiryDate: row.ExpiryDate,
+            ReceivedStockQuantity: row.ReceivedStockQuantity
+          });
+
+          if (!invoicesMap.has(row.InvoiceId)) {
+            invoicesMap.set(row.InvoiceId, {
+              Id: row.InvoiceId,
+              InvoiceNo: row.InvoiceNo,
+              SupplierInvoiceNo: row.InvoiceNo,
+              InvoiceDate: row.InvoiceDate,
+              TotalAmount: row.InvoiceTotalAmount || row.TotalAmount
+            });
+          }
+        }
+      });
+
+      const uniqueProducts = Array.from(productsMap.values());
+      const invoices = Array.from(invoicesMap.values());
+      const completedPercent = totalQty > 0 
+        ? Math.round(((totalQty - totalRemaining) / totalQty) * 100) 
+        : 0;
+    %>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card border-left-primary">
+          <div class="stat-icon blue"><i class="bi bi-calendar3"></i></div>
+          <div>
+            <div class="stat-label">Order Date</div>
+            <div class="stat-value">
+              <%= new Date(purchaseOrder[0].OrderDate).toLocaleDateString('en-GB').replace(/\//g,'-') %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card border-left-success">
+          <div class="stat-icon green"><i class="bi bi-currency-rupee"></i></div>
+          <div>
+            <div class="stat-label">Total Amount</div>
+            <div class="stat-value">₹<%= Number(purchaseOrder[0].TotalAmountWithTax).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+            <div class="stat-sub">Inclusive of taxes</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card border-left-primary">
+          <div class="stat-icon blue"><i class="bi bi-box-seam"></i></div>
+          <div>
+            <div class="stat-label">Products</div>
+            <div class="stat-value"><%= uniqueProducts.length %></div>
+            <div class="stat-sub"><%= invoices.length %> invoice<%= invoices.length !== 1 ? 's' : '' %> generated</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="stat-card border-left-warning">
+          <div class="stat-icon amber"><i class="bi bi-check-circle"></i></div>
+          <div style="flex:1">
+            <div class="stat-label">Completion</div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="stat-value"><%= completedPercent %>%</div>
+              <% if (completedPercent !== 100) { %>
+                <a href="/billing/receivePurchaseOrder/<%= purchaseOrderId %>" class="btn-po btn-po-primary btn-sm no-print" style="padding:0.375rem 0.75rem;font-size:0.75rem;">
+                  Receive
+                </a>
+              <% } %>
+            </div>
+            <div class="progress-po">
+              <div class="progress-po-bar" style="width:<%= completedPercent %>%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="po-card mb-4">
+      <div class="po-card-header" style="padding-bottom:0.75rem;">
+        <h5 class="fw-bold text-main mb-0" style="font-size:1rem;">
+          <i class="bi bi-box-seam text-secondary me-2"></i>Product Details
+        </h5>
+        <input type="text" class="search-po no-print" id="productSearch" placeholder="Search products...">
+      </div>
+      <div class="po-card-body" style="padding:0;">
+        <div class="table-responsive">
+          <table class="po-table" id="productTable">
+            <thead>
+              <tr>
+                <th style="width:22%;">Product</th>
+                <th class="text-end">Ordered</th>
+                <th class="text-end">Remaining</th>
+                <th class="text-end">Unit Price</th>
+                <th class="text-end">Line Total</th>
+                <th>Invoice #</th>
+                <th>Inv. Date</th>
+                <th class="text-end">Rec. Qty</th>
+                <th>Batch</th>
+                <th>Mfg Date</th>
+                <th>Expiry Date</th>
+                <th class="text-end">Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% uniqueProducts.forEach(product => { 
+                 const invCount = product.invoices.length;
+              %>
+                <% if (invCount === 0) { %>
+                  <!-- Pending Product -->
+                  <tr class="product-group-start" data-product="<%= product.ProductName.toLowerCase() %>">
+                    <td class="product-cell">
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-capsule text-muted"></i>
+                        <span class="text-capitalize"><%= product.ProductName %></span>
+                      </div>
+                    </td>
+                    <td class="text-end text-mono"><%= product.Quantity %></td>
+                    <td class="text-end">
+                      <span class="badge-po badge-po-warning"><%= product.RemainingQuantity %></span>
+                    </td>
+                    <td class="text-end text-mono">₹<%= Number(product.PurchasePrice).toFixed(2) %></td>
+                    <td class="text-end text-mono fw-600">₹<%= Number(product.TotalAmount).toFixed(2) %></td>
+                    <td colspan="7" class="text-center">
+                      <span class="badge-po badge-po-muted">
+                        <i class="bi bi-hourglass-split me-1"></i>Pending Delivery
+                      </span>
+                    </td>
+                  </tr>
+                <% } else { %>
+                  <% product.invoices.forEach((inv, idx) => { 
+                     const isFirst = idx === 0;
+                     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB').replace(/\//g,'-') : '-';
+                  %>
+                    <tr class="<%= isFirst ? 'product-group-start' : 'product-group-continuation' %>" 
+                        data-product="<%= product.ProductName.toLowerCase() %>">
+                      
+                      <% if (isFirst) { %>
+                        <td class="product-cell" rowspan="<%= invCount %>">
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-capsule text-secondary"></i>
+                            <span class="text-capitalize"><%= product.ProductName %></span>
+                          </div>
+                        </td>
+                        <td class="text-end text-mono" rowspan="<%= invCount %>"><%= product.Quantity %></td>
+                        <td class="text-end" rowspan="<%= invCount %>">
+                          <% if (product.RemainingQuantity === 0) { %>
+                            <span class="badge-po badge-po-success">Fulfilled</span>
+                          <% } else { %>
+                            <span class="badge-po badge-po-warning"><%= product.RemainingQuantity %></span>
+                          <% } %>
+                        </td>
+                        <td class="text-end text-mono" rowspan="<%= invCount %>">₹<%= Number(product.PurchasePrice).toFixed(2) %></td>
+                        <td class="text-end text-mono fw-600" rowspan="<%= invCount %>">₹<%= Number(product.TotalAmount).toFixed(2) %></td>
+                      <% } %>
+
+                      <td class="fw-600 text-primary text-mono"><%= inv.InvoiceNo %></td>
+                      <td class="text-mono text-secondary"><%= fmtDate(inv.InvoiceDate) %></td>
+                      <td class="text-end text-mono"><%= inv.ReceivedQuantity %></td>
+                      <td class="text-mono"><%= inv.BatchNumber || '-' %></td>
+                      <td class="text-mono text-secondary"><%= fmtDate(inv.MfgDate) %></td>
+                      <td class="text-mono text-secondary"><%= fmtDate(inv.ExpiryDate) %></td>
+                      <td class="text-end text-mono"><%= inv.ReceivedStockQuantity || 0 %></td>
+                    </tr>
+                  <% }) %>
+                <% } %>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoices Summary -->
+    <div class="po-card">
+      <div class="po-card-header">
+        <h5 class="fw-bold text-main mb-0" style="font-size:1rem;">
+          <i class="bi bi-receipt text-secondary me-2"></i>Invoice Summary
+        </h5>
+      </div>
+      <div class="po-card-body" style="padding:0;">
+        <div class="table-responsive">
+          <table class="po-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Date</th>
+                <th class="text-end">Amount</th>
+                <th class="text-center no-print">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (invoices.length > 0) { 
+                 invoices.forEach(inv => { 
+                   const invDate = new Date(inv.InvoiceDate);
+                   const today = new Date();
+                   const isNew = invDate.toDateString() === today.toDateString();
+              %>
+                <tr>
+                  <td class="fw-600 text-mono text-primary"><%= inv.InvoiceNo %></td>
+                  <td class="text-mono text-secondary">
+                    <%= invDate.toLocaleDateString('en-GB').replace(/\//g,'-') %>
+                    <% if (isNew) { %>
+                      <span class="badge-po badge-po-info ms-2" style="font-size:0.625rem;">NEW</span>
+                    <% } %>
+                  </td>
+                  <td class="text-end text-mono fw-600">₹<%= Number(inv.TotalAmount || 0).toFixed(2) %></td>
+                  <td class="text-center no-print">
+                    <a href="/billing/downloadInvoices/<%= inv.SupplierInvoiceNo %>" class="btn-po btn-po-outline" style="padding:0.375rem 0.75rem;font-size:0.75rem;">
+                      <i class="bi bi-download"></i>
+                    </a>
+                  </td>
+                </tr>
+              <% }) } else { %>
+                <tr>
+                  <td colspan="4">
+                    <div class="empty-state">
+                      <i class="bi bi-receipt fs-2 d-block mb-2 text-muted"></i>
+                      No invoices generated yet
+                    </div>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <% } else { %>
+      <div class="po-card">
+        <div class="empty-state">
+          <i class="bi bi-inbox fs-1 d-block mb-3 text-muted"></i>
+          <h5 class="text-muted">No data available</h5>
+        </div>
+      </div>
+    <% } %>
+
+  </div>
+</div>
+
+<script>
+  document.getElementById('productSearch')?.addEventListener('keyup', function() {
+    const val = this.value.toLowerCase().trim();
+    const starts = document.querySelectorAll('.product-group-start');
+    
+    starts.forEach(startRow => {
+      const name = startRow.getAttribute('data-product');
+      const match = name.includes(val);
+      
+      // Show/hide the start row
+      startRow.style.display = match ? '' : 'none';
+      
+      // Show/hide all continuation rows until next start row
+      let next = startRow.nextElementSibling;
+      while (next && next.classList.contains('product-group-continuation')) {
+        next.style.display = match ? '' : 'none';
+        next = next.nextElementSibling;
+      }
+    });
+  });
+</script>

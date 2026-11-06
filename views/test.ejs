@@ -1,0 +1,752 @@
+<div class="container bg-light border rounded shadow p-4">
+    <!-- Invoice Header -->
+    <div class="row mb-4">
+        <div class="col text-center">
+            <h4 class="fw-bold">Ranjana Imaging And Medical Solutions</h4>
+            <p class="text-muted">Pillar no 71, Rajabazar, Bailey Road</p>
+            <p class="text-muted">Email: ranjanaimagingandmedicalsolutions@gmail.com | Phone: [Seller Phone Number]</p>
+        </div>
+        <div class="col text-end">
+            <img src="logo-placeholder.png" alt="Company Logo" class="img-fluid" style="max-height: 80px;">
+        </div>
+    </div>
+    <hr class="border-dark">
+
+    <!-- Invoice Information -->
+    <div class="row text-center py-3 bg-secondary text-white">
+        <div class="col">
+            <h6>GSTIN: [Seller GSTIN]</h6>
+        </div>
+        <div class="col">
+            <h6 class="fw-bold">TAX INVOICE</h6>
+        </div>
+        <div class="col">
+            <h6>Original for Recipient</h6>
+        </div>
+    </div>
+
+    <!-- Customer and Invoice Details -->
+    <div class="row my-4">
+        <div class="col-md-6 border-end">
+            <h6 class="text-center text-uppercase text-decoration-underline">Customer Details</h6>
+            <p>
+                <strong>Name:</strong> M/S Kevin Motors<br>
+                <strong>Address:</strong> Chandani Chok, New Delhi, Opposite Statue, Delhi - 110014<br>
+                <strong>Phone:</strong> 9372346666<br>
+                <strong>GSTIN:</strong> 07AOLCC1206D1ZG<br>
+                <strong>Place of Supply:</strong> Delhi (07)
+            </p>
+        </div>
+        <div class="col-md-6">
+            <h6 class="text-center text-uppercase text-decoration-underline">Invoice Details</h6>
+            <p>
+                <strong>Invoice No.:</strong> GST112020<br>
+                <strong>Invoice Date:</strong> 04-Mar-2020<br>
+                <strong>Challan No.:</strong> 865<br>
+                <strong>Delivery Date:</strong> 04-Mar-2020<br>
+            </p>
+        </div>
+    </div>
+
+    <!-- Invoice Items Table -->
+    <div class="row mt-4">
+        <div class="col">
+            <table class="table table-bordered table-hover">
+                <thead class="table-secondary">
+                    <tr><!--{
+                        CustomerName: 'nicco Surgical',
+                        CustomerId: 4,
+                        ProductName: 'JODASCAN 35OMG/1 ML INJ',
+                        BatchNumber: 'A32018',
+                        ExpiryDate: 2026-12-17T18:30:00.000Z,
+                        QuantitySold: 50,
+                        SalePrice: '1200.00',
+                        sgst: '8.00',
+                        cgst: '8.00',
+                        SgstAmount: 0,
+                        CgstAmount: 0,
+                        TotalValue: '69600.00',
+                        TotalValueWithTax: '0.00',
+                        CreatedAt: 2024-12-24T18:16:34.000Z
+                      }
+                    ]-->
+                        <th>Sr. No.</th>
+                        <th>Name of Product / Service</th>
+                        <th>HSN / SAC</th>
+                        <th>Batch No.</th>
+                        <th>Qty</th>
+                        <th>Rate</th>
+                        <th>Taxable Value</th>
+                        <th>SGST (%)</th>
+                        <th>SGST Amount</th>
+                        <th>IGST (%)</th>
+                        <th>IGST Amount</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  <% i=0;salesData.forEach(function(sales){ %>
+                    <tr>
+                        <td><%=i++%></td>
+                        <td><%= sales.productName%></td>
+                        <td><%= sales.Hsn%></td>
+                        <td><%= sales.BatchNumber%></td>
+                        <td><%= sales.QuantitySold %></td>
+                        <td><%=sales.SalePrice %></td>
+                        <td><%= salesTotalvalue%></td>
+                        <td><%= sales.sgst%></td>
+                        <td><%= sales.SgstAmount%></td>
+                        <td><%= sales.cgst%></td>
+                        <td><%= sales.CgstAmount%></td>
+                        <td><%= sales.TotalValueWithTax%></td>
+                    </tr>
+                    <%})%>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bank and Summary Details -->
+    <div class="row mt-4">
+        <div class="col-md-6 border-end">
+            <h6 class="text-center text-uppercase text-decoration-underline">Bank Details</h6>
+            <p>
+                <strong>Bank Name:</strong> State Bank of India<br>
+                <strong>Branch Name:</strong> RAF CAMP<br>
+                <strong>Bank Account Number:</strong> 2000000004512<br>
+                <strong>IFSC Code:</strong> SBIN0000488<br>
+            </p>
+        </div>
+        <div class="col-md-6">
+            <h6 class="text-center text-uppercase text-decoration-underline">Summary</h6>
+            <p>
+                <strong>Taxable Amount:</strong> ₹ 1,154.00<br>
+                <strong>Add IGST:</strong> ₹ 103.86<br>
+                <strong>Total Tax:</strong> ₹ 103.86<br>
+                <strong>Total Amount After Tax:</strong> ₹ 1,258.00<br>
+            </p>
+        </div>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="row mt-4">
+        <div class="col-md-6 border-end">
+            <h6 class="text-uppercase text-decoration-underline">Terms and Conditions</h6>
+            <ul class="list-unstyled">
+                <li>1. Subject to Ahmedabad Jurisdiction.</li>
+                <li>2. Our responsibility ceases as soon as the goods leave our premises.</li>
+                <li>3. Goods once sold will not be taken back.</li>
+                <li>4. Delivery ex-premises.</li>
+            </ul>
+        </div>
+        <div class="col-md-6 text-center">
+            <h6 class="text-uppercase">Authorized Signatory</h6>
+            <p>(Place for signature)</p>
+        </div>
+    </div>
+</div>
+
+
+
+
+this is not fitting proper in A4 sheet while printing. top of the part is getting cut. kindly readjust this pdf generation code and make it better . i am using bootstrap 5.3 <!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+        <title>Sales Invoice</title>
+    </head>
+    <body>
+        <div class="container bg-light border ">
+            <!-- Invoice Header -->
+            <div class="row mb-2 align-items-center">
+                <div class="col">
+                    <h4 class="fw-bold mb-0"><%= companyDetails.coreCompany || "Company Name" %></h4>
+                    <p class="text-muted mb-0"><%= companyDetails.coreCompanyAddress || "Company Address" %></p>
+                    <p class="text-muted mb-0">
+                        Email: <%= companyDetails.coreCompanyEmail || "N/A" %> | 
+                        Phone: <%= companyDetails.coreCompanyPhoneNumber || "N/A" %>
+                    </p>
+                </div>
+                <div class="col text-end">
+                    <img src="<%= companyDetails.logoUrl || 'logo-placeholder.png' %>" alt="Company Logo" class="img-fluid" style="max-height: 80px;">
+                </div>
+            </div>
+            <hr class="border-dark">
+
+            <!-- Invoice Information -->
+            <div class="row text-center py-2 bg-secondary text-white">
+                <div class="col">
+                    <h6>GSTIN: <%= companyDetails.coreCompanyGstNo || "N/A" %></h6>
+                </div>
+                <div class="col">
+                    <h6 class="fw-bold">TAX INVOICE</h6>
+                </div>
+                <div class="col">
+                    <h6>Original for Recipient</h6>
+                </div>
+            </div>
+
+            <!-- Customer and Invoice Details -->
+            <div class="row my-2">
+                <div class="col-md-7 border-end">
+                    <h6 class="text-center text-uppercase text-decoration-underline">Customer Details</h6>
+                    <p>
+                        <strong>Name:</strong> <%= customerDetails?.CustomerName || "N/A" %><br>
+                        <strong>Address:</strong> <%= customerDetails?.BillingAddress || "N/A" %><br>
+                        <strong>Contact:</strong> <%= customerDetails?.MobileNo || "N/A" %><br>
+                        <strong>District:</strong> <%= customerDetails?.BillingDistrict || "N/A" %>,
+                        <strong>State:</strong> <%= customerDetails?.BillingState || "N/A" %>,
+                        <strong>Pincode:</strong> <%= customerDetails?.BillingPincode || "N/A" %><br>
+                        <strong>Gst:</strong> <%= customerDetails?.GstNo|| "N/A" %>,
+                        <strong>DL:</strong> <%= customerDetails?.DlNo|| "N/A" %><br>
+                    </p>
+                </div>
+                <div class="col-md-5">
+                    <h6 class="text-center text-uppercase text-decoration-underline">Invoice Details</h6>
+                    <p>
+                        <strong>Invoice No.:</strong> <%= invoiceId || "N/A" %><br>
+                        <strong>Invoice Date:</strong> <%= totalSaleDetails[0]?.CreatedAt || "N/A" %><br>
+                        <strong>Challan No.:</strong> <%= totalSaleDetails[0]?.ChallanNo || "N/A" %><br>
+                        <strong>Delivery Date:</strong> <%= totalSaleDetails[0]?.DeliveryDate || "N/A" %>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Invoice Items Table -->
+            <div class="row border 1px solid mt-1" style="font-size:14px; min-height:350px">
+                <div class="col">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th style="width: 5%;">Sr.</th>
+                                    <th style="width: 20%;">Product</th>
+                                    <th style="width: 10%;">HSN / SAC</th>
+                                    <th style="width: 10%;">Batch</th>
+                                    <th style="width: 7%;">Qty</th>
+                                    <th style="width: 10%;">Rate</th>
+                                    <th style="width: 12%;">Taxable Value</th>
+                                    <th style="width: 8%;">SGST (%)</th>
+                                    <th style="width: 8%;">CGST (%)</th>
+                                    <th style="width: 12%;">Total With Tax</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% salesData.forEach((sales, i) => { %>
+                                <tr>
+                                    <td><%= i + 1 %></td>
+                                    <td><%= sales.ProductName || "N/A" %></td>
+                                    <td><%= sales.Hsn || "N/A" %></td>
+                                    <td><%= sales.BatchNumber || "N/A" %></td>
+                                    <td><%= sales.QuantitySold || 0 %></td>
+                                    <td><%= sales.SalePrice || 0 %></td>
+                                    <td><%= sales.TotalValue || 0 %></td>
+                                    <td><%= sales.sgst || 0 %></td>
+                                    <td><%= sales.cgst || 0 %></td>
+                                    <td><%= sales.TotalValueWithTax || 0 %></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <!-- Bank and Summary Details -->
+            <div class="row mt-1">
+                <div class="col-md-6 border-end border-bottom">
+                    <h6 class="text-center text-uppercase text-decoration-underline">Bank Details</h6>
+                    <p>
+                        <strong>Bank Name:</strong> <%= companyDetails.coreCompanyBankName || "N/A" %><br>
+                        <strong>Branch Name:</strong> <%= companyDetails.coreCompanyBranchName || "N/A" %><br>
+                        <strong>Account Number:</strong> <%= companyDetails.coreCompanyAccountNo || "N/A" %><br>
+                        <strong>IFSC Code:</strong> <%= companyDetails.coreCompanyIFSCCode || "N/A" %>
+                    </p>
+                </div>
+                <div class="col-md-6 border-bottom 1px">
+                    <h6 class="text-center text-uppercase text-decoration-underline">Summary</h6>
+                    <p>
+                        <strong>Taxable Amount:</strong> <%= totalSaleDetails[0]?.TotalValue || 0 %>&nbsp;Rs.<br>
+                        <strong>Add SGST:</strong> <%= totalSaleDetails[0]?.TotalSgstAmount || 0 %>&nbsp;Rs.<br>
+                        <strong>Add CGST:</strong> <%= totalSaleDetails[0]?.TotalCgstAmount || 0 %>&nbsp;Rs.<br>
+                        <strong>Total Tax:</strong> <%= (Number(totalSaleDetails[0]?.TotalSgstAmount || 0) + Number(totalSaleDetails[0]?.TotalCgstAmount || 0)) %>&nbsp;Rs.<br>
+                        <strong>Total After Tax:</strong> <%= totalSaleDetails[0]?.TotalValueWithTax || 0 %>&nbsp;Rs.
+                    </p>
+                </div>
+            </div>
+            <!-- Terms and Conditions -->
+            <div class="row mt-1">
+                <div class="col-md-8 border-end">
+                    <h6 class="text-uppercase text-decoration-underline">Terms and Conditions</h6>
+                    <ol>
+                        <li> Subject to Patna Jurisdiction.</li>
+                        <li> Goods once sold are non-returnable.</li>
+                        <li> Delivery is ex-premises.</li>
+                        <li> Payment within 30 days of Invoice generated.</li>
+                    </ol>
+                </div>
+                <div class="col-md-4 text-center mt-4">
+                    <h6 class="text-uppercase">Authorized Signatory</h6>
+                    <p>(Place for signature)</p>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+
+<section>
+    <nav
+      style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);"
+      aria-label="breadcrumb">
+      <ol class="breadcrumb m-3">
+        <li class="breadcrumb-item"><a href="#">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Library</li>
+      </ol>
+    </nav>
+  </section>
+  
+  <!--Hero section starts-->
+  <section class="m-3">
+    <div class="container rounded border form-floating bg-white">
+      <h4 class="mt-3">Clinic Registration Details </h4>
+      <%- include ("./partials/messages"); %>
+      <form action="/clinic/updateClinicDetails?id=<%=id%>" class="needs-validation" novalidate method="post">
+        <div class="row mt-3">
+          <div class="col ">
+            <input type="text" class="text-capitalize form-control" value="<%= typeof ClinicName!= 'undefined' ? ClinicName : '' %>" aria-describedby="Clinic Name" name="ClinicName"
+              id="clinicName" placeholder="Clinic Name" required>
+          </div>
+          <div class="col">
+            <input type="email" class="text-capitalize form-control" value="<%= typeof Email!= 'undefined' ? Email : '' %>" name="Email" placeholder="Email" id="email" required>
+            <label for="email"></lable>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col">
+            <input type="number"   class="form-control" id="phoneNumber" placeholder="Phone Number" value="<%= typeof PhoneNumber!= 'undefined' ? PhoneNumber : '' %>"name="PhoneNumber"
+              required>
+            <label for="phoneNumber"></lable>
+          </div>
+          <div class="col">
+            <input type="number" class="form-control" value="<%= typeof SecondaryNumber!= 'undefined' ? SecondaryNumber : '' %>" id="SecondaryNumber" name="SecondaryNumber"
+              placeholder="Secondary Phone Number">
+            <label for="SecondaryNumber"></lable>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col">
+            <input type="text" value="<%= typeof Address!= 'undefined' ? Address : '' %>" class="text-capitalize form-control" name="Address" id="address1"
+              placeholder="Address Line 1" required>
+            <label for="address1"></lable>
+          </div>
+          <div class="col">
+            <input type="text" value="<%= typeof AdditionalAddress!= 'undefined' ? AdditionalAddress : '' %>" id="address2" placeholder="Address Line 2"
+              class="text-capitalize form-control needs-validation" name="AdditionalAddress">
+            <label for="address2"></lable>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col">
+            <input type="text" class="form-control text-capitalize" value="<%= typeof KeyArea!= 'undefined' ? KeyArea : '' %>" placeholder="Key Area" name="KeyArea" id="keyArea"
+              required>
+            <label for="keyArea"></lable>
+          </div>
+          <div class="col">
+            <input type="number" class="form-control " id="pincode" value="<%= typeof Pincode!= 'undefined' ? Pincode : '' %>" placeholder="Pincode" name="Pincode" required>
+            <label for="pincode"></lable>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col">
+            <input type="text" class="form-control text-capitalize" value="<%= typeof City!= 'undefined' ? City : '' %>" placeholder="City" id="city" name="City" required>
+            <label for="city"></lable>
+          </div>
+          <div class="col">
+            <input type="text" placeholder="State" id="state" value="<%= typeof State!= 'undefined' ? State : '' %>" class="form-control text-capitalize needs-validation" name="State"
+              required>
+            <label for="state"></lable>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-6">
+            <input type="text" class="form-control text-capitalize " value="<%= typeof LandMark!= 'undefined' ? LandMark : '' %>" id="LandMark" placeholder="LandMark" name="LandMark" required>
+            <label for="LandMark"></lable>
+          </div>
+          <div class="col-6">
+            <label for="formFile" class="form-label">Upload Prescription</label>
+            <input class="form-control" accept="image/*" name="clinicPrescription" type="file" id="clinicPrescription">
+          </div>
+        </div>
+        <div class="row mt-3 mb-3">
+          <div class="col">
+            <img  class="img-fluid" alt="clinic prescription" src="/<%=ClinicName%>_<%=id%>.jpg" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3 mb-3">Update Clinic Details</button>
+      </form>
+    </div>
+  </section> <!--Footer Section starts here-->
+  <!-- Footer -->
+  <footer class="text-center text-lg-start bg-white text-muted" style="background-color: #3f51b5">
+    <!-- Section: Social media -->
+    <section class="d-flex justify-content-center justify-content-lg-between p-4 border-bottom">
+      <!-- Left -->
+      <div class="me-5 d-none d-lg-block">
+        <span>Get connected with us on social networks:</span>
+      </div>
+      <!-- Left -->
+  
+      <!-- Right -->
+      <div>
+        <a href="" class="me-4 link-secondary">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="" class="me-4 link-secondary">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="" class="me-4 link-secondary">
+          <i class="fab fa-google"></i>
+        </a>
+        <a href="" class="me-4 link-secondary">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="" class="me-4 link-secondary">
+          <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="" class="me-4 link-secondary">
+          <i class="fab fa-github"></i>
+        </a>
+      </div>
+      <!-- Right -->
+    </section>
+    <!-- Section: Social media -->
+  
+    <!-- Section: Links  -->
+    <section class="">
+      <div class="container text-center text-md-start mt-5">
+        <!-- Grid row -->
+        <div class="row mt-3">
+          <!-- Grid column -->
+          <div class="col-md-3 col-lg-4 col-xl-3 mx-auto mb-4">
+            <!-- Content -->
+            <h6 class="text-uppercase fw-bold mb-4">
+              <i class="fas fa-gem me-3 text-secondary"></i>Company name
+            </h6>
+            <p>
+              Here you can use rows and columns to organize your footer content. Lorem ipsum
+              dolor sit amet, consectetur adipisicing elit.
+            </p>
+          </div>
+          <!-- Grid column -->
+  
+          <!-- Grid column -->
+          <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mb-4">
+            <!-- Links -->
+            <h6 class="text-uppercase fw-bold mb-4">
+              Products
+            </h6>
+            <p>
+              <a href="#!" class="text-reset">Angular</a>
+            </p>
+            <p>
+              <a href="#!" class="text-reset">React</a>
+            </p>
+            <p>
+              <a href="#!" class="text-reset">Vue</a>
+            </p>
+            <p>
+              <a href="#!" class="text-reset">Laravel</a>
+            </p>
+          </div>
+          <!-- Grid column -->
+  
+          <!-- Grid column -->
+          <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
+            <!-- Links -->
+            <h6 class="text-uppercase fw-bold mb-4">
+              Useful links
+            </h6>
+            <p>
+              <a href="#!" class="text-reset">Pricing</a>
+            </p>
+            <p>
+              <a href="#!" class="text-reset">Settings</a>
+            </p>
+            <p>
+              <a href="#!" class="text-reset">Orders</a>
+            </p>
+            <p>
+              <a href="#!" class="text-reset">Help</a>
+            </p>
+          </div>
+          <!-- Grid column -->
+  
+          <!-- Grid column -->
+          <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mb-md-0 mb-4">
+            <!-- Links -->
+            <h6 class="text-uppercase fw-bold mb-4">Contact</h6>
+            <p><i class="fas fa-home me-3 text-secondary"></i> New York, NY 10012, US</p>
+            <p>
+              <i class="fas fa-envelope me-3 text-secondary"></i>
+              info@example.com
+            </p>
+            <p><i class="fas fa-phone me-3 text-secondary"></i> + 01 234 567 88</p>
+            <p><i class="fas fa-print me-3 text-secondary"></i> + 01 234 567 89</p>
+          </div>
+          <!-- Grid column -->
+        </div>
+        <!-- Grid row -->
+      </div>
+    </section>
+    <!-- Section: Links  -->
+  
+    <!-- Copyright -->
+    <div class="text-center p-4" style="background-color: rgba(0, 0, 0, 0.025);">
+      © 2021 Copyright:
+      <a class="text-reset fw-bold" href="https://mdbootstrap.com/">MDBootstrap.com</a>
+    </div>
+    <!-- Copyright -->
+  </footer>
+  <!-- Footer -->
+  <!--Footer sections ends here -->
+  
+  <!-- Remove the container if you want to extend the Footer to full width. -->
+  <div class="container my-5">
+    <!-- Footer -->
+    <footer class="text-center text-white" style="background-color: #3f51b5">
+      <!-- Grid container -->
+      <div class="container">
+        <!-- Section: Links -->
+        <section class="mt-5">
+          <!-- Grid row-->
+          <div class="row text-center d-flex justify-content-center pt-5">
+            <!-- Grid column -->
+            <div class="col-md-2">
+              <h6 class="text-uppercase font-weight-bold">
+                <a href="#!" class="text-white">About us</a>
+              </h6>
+            </div>
+            <!-- Grid column -->
+  
+            <!-- Grid column -->
+            <div class="col-md-2">
+              <h6 class="text-uppercase font-weight-bold">
+                <a href="#!" class="text-white">Products</a>
+              </h6>
+            </div>
+            <!-- Grid column -->
+  
+            <!-- Grid column -->
+            <div class="col-md-2">
+              <h6 class="text-uppercase font-weight-bold">
+                <a href="#!" class="text-white">Awards</a>
+              </h6>
+            </div>
+            <!-- Grid column -->
+  
+            <!-- Grid column -->
+            <div class="col-md-2">
+              <h6 class="text-uppercase font-weight-bold">
+                <a href="#!" class="text-white">Help</a>
+              </h6>
+            </div>
+            <!-- Grid column -->
+  
+            <!-- Grid column -->
+            <div class="col-md-2">
+              <h6 class="text-uppercase font-weight-bold">
+                <a href="#!" class="text-white">Contact</a>
+              </h6>
+            </div>
+            <!-- Grid column -->
+          </div>
+          <!-- Grid row-->
+        </section>
+        <!-- Section: Links -->
+  
+        <hr class="my-5" />
+  
+        <!-- Section: Text -->
+        <section class="mb-5">
+          <div class="row d-flex justify-content-center">
+            <div class="col-lg-8">
+              <p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt
+                distinctio earum repellat quaerat voluptatibus placeat nam,
+                commodi optio pariatur est quia magnam eum harum corrupti
+                dicta, aliquam sequi voluptate quas.
+              </p>
+            </div>
+          </div>
+        </section>
+        <!-- Section: Text -->
+  
+        <!-- Section: Social -->
+        <section class="text-center mb-5">
+          <a href="" class="text-white me-4">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="" class="text-white me-4">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="" class="text-white me-4">
+            <i class="fab fa-google"></i>
+          </a>
+          <a href="" class="text-white me-4">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="" class="text-white me-4">
+            <i class="fab fa-linkedin"></i>
+          </a>
+          <a href="" class="text-white me-4">
+            <i class="fab fa-github"></i>
+          </a>
+        </section>
+        <!-- Section: Social -->
+      </div>
+      <!-- Grid container -->
+  
+      <!-- Copyright -->
+      <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">
+        © 2020 Copyright:
+        <a class="text-white" href="https://mdbootstrap.com/">MDBootstrap.com</a>
+      </div>
+      <!-- Copyright -->
+    </footer>
+    <!-- Footer -->
+  </div>
+  <!-- End of .container -->
+
+
+<!--attach doctor -->
+
+<section class="m-3">
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);">
+    <ol class="breadcrumb m-3">
+      <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Attach Doctor</li>
+    </ol>
+  </nav>
+<!--Hero section starts-->
+
+  <div class="container rounded border form-floating bg-white">
+    <%- include ("./partials/messages"); %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Clinic Name</th>
+          <th>Email</th>
+          <th>PhoneNumber</th>
+          <th>Address</th>
+          <th>Key Area</th>
+          <th>LandMark</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">
+            <%=1.%>
+          </th>
+          <td>
+            <%=clinicDetails.Name%>
+          </td>
+          <td>
+            <%=clinicDetails.Email%>
+          </td>
+          <td>
+            <%=clinicDetails.PhoneNumber%>
+          </td>
+          <td>
+            <%=clinicDetails.Address %>
+          </td>
+          <td>
+            <%=clinicDetails.KeyArea %>
+          </td>
+          <td>
+            <%=clinicDetails.LandMark %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <% if(attachedDoctorList){%>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Doctor Name</th>
+          <th>Degree</th>
+          <th>specialistIn</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% i=1;attachedDoctorList.forEach(function(doctor){ %>
+          <tr>
+            <th scope="row">
+              <%=i%>.
+            </th>
+            <td><%=doctor.FirstName%> <%=doctor.LastName%></td>
+                <td><p><%=doctor.Degree1%></p><p><%=doctor.Degree2%></p><p><%=doctor.Degree3%></p></td>
+                <td><%=doctor.SpecialistIn%></td>
+            <td>
+              <p><a href="/clinic/detachDoctor?Id=<%= doctor.Id %>&clinicId=<%=clinicDetails.Id%>" class="detach link-danger link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">Remove</a></p>
+            </td>
+            
+          </tr>
+          <%i++;}) %>
+      </tbody>
+    </table>
+    <%}%>
+    <h4 class="mt-3">Register Doctor With Clinic </h4>
+      <!--Hero section starts-->
+      <section class="m-3">
+        <div class="container rounded border bg-white">
+          <h4 class="mt-3">Doctor Details</h4>
+          <form action="/clinic/attachDoctorToClinic?clinicId=<%=clinicDetails.Id%>" id="attachDoctorToClinic" method="post">
+            <div class="input-group mb-3">
+              <input type="text" class="form-control search" placeholder="search doctor" aria-label="search doctor" aria-describedby="search doctor">
+            </div>
+          <table class="table table-striped" id="filterTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Doctor Name</th>
+                <th>Degree</th>
+                <th>SpecialistIn</th>
+                <th>WorkedAt</th>
+                <th>Select</th>
+              </tr>
+            </thead>
+            <tbody class="pagination-loop">
+              <% i=1;unAttachedDoctorList.forEach(function(doctor){ %>
+              <tr>
+                <th scope="row"><%=i%>.</th>
+                <td><%=doctor.FirstName%> <%=doctor.LastName%></td>
+                <td><p><%=doctor.Degree1%></p><p><%=doctor.Degree2%></p><p><%=doctor.Degree3%></p><p><%=doctor.Degree4%></p></td>
+                <td><%=doctor.SpecialistIn%></td>
+                <td><%=doctor.WorkedAt %></td>
+                <td><div class="form-check">
+                  <input class="form-check-input attachDoctor" type="checkbox" value="<%=doctor.Id%>" name="doctor" Id="doctor<%=doctor.Id%>">
+                  <label class="form-check-label" for="doctor<%=doctor.Id%>"">
+                  </label>
+                </div></td>
+              </tr>
+              <% i++})%>
+            </tbody>
+          </table>
+          <nav aria-label="Page navigation ">
+            <ul class="pagination pagination-lg pager justify-content-center" id="pagination_Number"></ul>
+          </nav>
+        </div>
+      </section> 
+  </div>
+  <button type="submit" class="btn btn-primary mt-3 mb-3">Attach Doctor</button>
+</form>
+</section>

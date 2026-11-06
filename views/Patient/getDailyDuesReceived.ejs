@@ -1,0 +1,470 @@
+<%# views/dues/received.ejs — uses layout %>
+
+<style>
+  :root {
+    --brand:#185FA5; --brand-soft:#E6F1FB; --brand-text:#0C447C;
+    --surface:#fff; --surface-alt:#F8F9FB;
+    --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+    --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+    --success-bg:#EAF3DE; --success-text:#3B6D11;
+    --warning-bg:#FAEEDA; --warning-text:#854F0B;
+    --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+    --info-bg:#E6F1FB;    --info-text:#185FA5;
+    --purple-bg:#EEEDFE;  --purple-text:#534AB7;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+    --shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);
+  }
+  /* Tom Select — match dr-input-wrap style */
+  #drCollector + .ts-wrapper { width:100%; }
+  #drCollector + .ts-wrapper .ts-control {
+      border:1px solid var(--border-strong)!important;
+      border-radius:var(--radius-sm)!important;
+      padding:8px 10px!important;
+      font-size:13px!important;
+      background:#fff!important;
+      min-height:unset!important;
+      box-shadow:none!important;
+      line-height:1.5!important;
+  }
+  #drCollector + .ts-wrapper.focus .ts-control {
+      border-color:var(--brand)!important;
+      box-shadow:0 0 0 3px rgba(24,95,165,.1)!important;
+  }
+  .dr-wrapper { padding:16px 0 40px; }
+  .dr-card    { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden; margin-bottom:16px; }
+
+  /* Header */
+  .dr-header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+  .dr-header-left { display:flex; align-items:center; gap:12px; }
+  .dr-header-icon { width:36px; height:36px; border-radius:var(--radius-sm); background:var(--success-bg); display:flex; align-items:center; justify-content:center; color:var(--success-text); font-size:16px; }
+  .dr-header-title { font-size:15px; font-weight:600; color:var(--text-primary); margin:0; }
+  .dr-header-sub   { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+  .dr-badge { font-size:11px; font-weight:500; padding:4px 10px; border-radius:99px; background:var(--success-bg); color:var(--success-text); }
+
+  /* Search */
+  .dr-search { padding:20px 24px; border-bottom:1px solid var(--border); background:var(--surface-alt); }
+  .dr-search-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:10px; align-items:flex-end; }
+  .dr-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:5px; }
+  .dr-input-wrap { display:flex; align-items:center; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:#fff; overflow:hidden; transition:border-color .15s; }
+  .dr-input-wrap:focus-within { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+  .dr-input-icon { padding:0 9px; color:var(--text-hint); font-size:12px; flex-shrink:0; }
+  .dr-input-wrap input,
+  .dr-input-wrap select { border:none; outline:none; background:transparent; font-size:13px; color:var(--text-primary); padding:8px 10px 8px 0; width:100%; font-family:inherit; }
+  .dr-input-wrap input::placeholder { color:var(--text-hint); }
+  .dr-btn-search { display:flex; align-items:center; gap:6px; padding:9px 18px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; white-space:nowrap; }
+  .dr-btn-search:hover { background:var(--brand-text); }
+
+  /* KPI */
+  .dr-kpi { display:grid; grid-template-columns:repeat(5,1fr); border-bottom:1px solid var(--border); }
+  .dr-kpi-cell { padding:18px 20px; border-right:1px solid var(--border); }
+  .dr-kpi-cell:last-child { border-right:none; }
+  .dr-kpi-label { font-size:11px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
+  .dr-kpi-val   { font-size:19px; font-weight:600; font-family:'DM Mono',monospace; }
+  .dr-kpi-val.success { color:var(--success-text); }
+  .dr-kpi-val.info    { color:var(--brand); }
+  .dr-kpi-val.warning { color:var(--warning-text); }
+  .dr-kpi-val.purple  { color:var(--purple-text); }
+  .dr-kpi-meta { font-size:11px; color:var(--text-hint); margin-top:3px; }
+
+  /* Table section */
+  .dr-section { padding:20px 24px; }
+  .dr-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .dr-section-title { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:7px; }
+  .dr-count { font-size:11px; padding:2px 10px; border-radius:99px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-secondary); }
+
+  /* Table */
+  .drt { width:100%; border-collapse:collapse; }
+  .drt thead th { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary); padding:10px 14px; border-bottom:1px solid var(--border-strong); text-align:left; background:var(--surface-alt); white-space:nowrap; }
+  .drt tbody td { padding:13px 14px; font-size:13px; color:var(--text-primary); border-bottom:1px solid var(--border); vertical-align:middle; }
+  .drt tbody tr:last-child td { border-bottom:none; }
+  .drt tbody tr:hover td { background:#fafbfc; }
+  .drt-sub { font-size:11px; color:var(--text-hint); display:block; margin-top:2px; }
+  .drt-link { color:var(--brand); text-decoration:none; font-weight:500; }
+  .drt-link:hover { text-decoration:underline; }
+
+  /* Badges */
+  .bdg { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .bdg-success { background:var(--success-bg); color:var(--success-text); }
+  .bdg-info    { background:var(--info-bg);    color:var(--info-text); }
+  .bdg-purple  { background:var(--purple-bg);  color:var(--purple-text); }
+  .bdg-warning { background:var(--warning-bg); color:var(--warning-text); }
+
+  /* Avatar */
+  .dr-avatar { width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; flex-shrink:0; margin-right:6px; }
+
+  /* Total bar */
+  .dr-total-bar { display:flex; align-items:center; justify-content:space-between; margin-top:16px; padding:12px 16px; background:var(--success-bg); border-radius:var(--radius-sm); border:1px solid rgba(59,109,17,.12); }
+  .dr-total-bar .lbl { font-size:12px; font-weight:500; color:var(--success-text); display:flex; align-items:center; gap:7px; }
+  .dr-total-bar .val { font-size:16px; font-weight:700; font-family:'DM Mono',monospace; color:var(--success-text); }
+
+  /* Breakdown by collector */
+  .dr-collector-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:20px; }
+  .dr-collector-card { border:1px solid var(--border); border-radius:var(--radius-md); padding:14px 16px; background:var(--surface-alt); }
+  .dr-collector-name { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); display:flex; align-items:center; }
+  .dr-collector-row  { display:flex; justify-content:space-between; padding:3px 0; font-size:12px; }
+  .dr-collector-row .lbl { color:var(--text-secondary); }
+  .dr-collector-row .val { font-weight:600; font-family:'DM Mono',monospace; color:var(--text-primary); }
+  .dr-collector-total { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:var(--success-text); }
+
+  /* No data */
+  .dr-no-data { display:flex; align-items:center; gap:8px; padding:16px 20px; background:var(--surface-alt); border-radius:var(--radius-sm); border:1px solid var(--border); font-size:13px; color:var(--text-secondary); }
+
+  @media(max-width:991px) {
+    .dr-search-grid { grid-template-columns:1fr 1fr 1fr; }
+    .dr-kpi { grid-template-columns:1fr 1fr; }
+  }
+  @media(max-width:576px) {
+    .dr-search-grid { grid-template-columns:1fr 1fr; }
+    .dr-kpi { grid-template-columns:1fr 1fr; }
+  }
+</style>
+
+<%
+  const n   = (v) => Number(v) || 0;
+  const fmt = (v) => n(v).toLocaleString("en-IN");
+  const recs = duesReceived || [];
+
+  // KPI
+  const totalReceived   = recs.reduce((a,r) => a + n(r.AmountCollected), 0);
+  const totalCash       = recs.filter(r => r.PaymentMode === "cash").reduce((a,r) => a + n(r.AmountCollected), 0);
+  const totalOnline     = recs.filter(r => r.PaymentMode === "online").reduce((a,r) => a + n(r.AmountCollected), 0);
+  const totalRecords    = recs.length;
+  const uniquePatients  = [...new Set(recs.map(r => r.PatientId))].length;
+
+  // Group by collector for summary cards
+  const byCollector = {};
+  recs.forEach(r => {
+    const key = r.CollectedBy;
+    if (!byCollector[key]) {
+      byCollector[key] = { name: r.CollectedByName, cash: 0, online: 0, count: 0 };
+    }
+    if (r.PaymentMode === "cash")   byCollector[key].cash   += n(r.AmountCollected);
+    else                            byCollector[key].online += n(r.AmountCollected);
+    byCollector[key].count++;
+  });
+
+  const avatarColors = [
+    { bg:"#E6F1FB", color:"#185FA5" }, { bg:"#EAF3DE", color:"#3B6D11" },
+    { bg:"#FAEEDA", color:"#854F0B" }, { bg:"#EEEDFE", color:"#534AB7" },
+    { bg:"#E1F5EE", color:"#0F6E56" }
+  ];
+%>
+
+<%- include("../partials/messages") %>
+
+<div class="dr-wrapper">
+
+  <!-- ══ MAIN CARD ═══════════════════════════════════════════ -->
+  <div class="dr-card">
+
+    <!-- Header -->
+    <div class="dr-header">
+      <div class="dr-header-left">
+        <div class="dr-header-icon"><i class="bi bi-check-circle"></i></div>
+        <div>
+          <p class="dr-header-title">Dues Received</p>
+          <p class="dr-header-sub">Outstanding balance collected from previous registrations</p>
+        </div>
+      </div>
+      <span class="dr-badge">
+        <i class="bi bi-circle-fill" style="font-size:7px;margin-right:4px"></i>
+        <%= totalRecords %> record<%= totalRecords !== 1 ? "s" : "" %>
+      </span>
+    </div>
+
+    <!-- Search -->
+    <div class="dr-search">
+      <form action="/patient/dailyDuesReceived" method="POST">
+        <div class="dr-search-grid">
+
+          <div>
+            <label class="dr-label" for="drFromDate">From Date</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-calendar3"></i></span>
+              <input type="text" id="drFromDate" name="FromDate"
+                placeholder="From date" autocomplete="off" readonly
+                value="<%= typeof FromDate != 'undefined' ? FromDate : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dr-label" for="drToDate">To Date</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-calendar3"></i></span>
+              <input type="text" id="drToDate" name="ToDate"
+                placeholder="To date" autocomplete="off" readonly
+                value="<%= typeof ToDate != 'undefined' ? ToDate : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dr-label" for="drPatientName">Patient Name</label>
+            <div class="dr-input-wrap">
+              <span class="dr-input-icon"><i class="bi bi-person"></i></span>
+              <input type="text" id="drPatientName" name="Name"
+                placeholder="Search name"
+                value="<%= typeof Name != 'undefined' ? Name : '' %>">
+            </div>
+          </div>
+
+          <div>
+            <label class="dr-label" for="drCollector">Received By</label>
+            <select id="drCollector" name="CollectedBy">
+                <option value="">All Staff</option>
+                <% (staffList || []).forEach(function(s) { %>
+                  <option value="<%= s.Id %>"
+                    <% if(typeof CollectedBy != 'undefined' && CollectedBy == s.Id){ %>selected<% } %>>
+                    <%= s.FirstName %> <%= s.LastName %>
+                  </option>
+                <% }) %>
+            </select>
+        </div>
+
+          <div>
+            <button type="submit" class="dr-btn-search">
+              <i class="bi bi-search"></i> Search
+            </button>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="dr-kpi">
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Total Received</div>
+        <div class="dr-kpi-val success">₹<%= fmt(totalReceived) %></div>
+        <div class="dr-kpi-meta">All modes combined</div>
+      </div>
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Cash</div>
+        <div class="dr-kpi-val info">₹<%= fmt(totalCash) %></div>
+        <div class="dr-kpi-meta">Physical cash</div>
+      </div>
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Online</div>
+        <div class="dr-kpi-val info">₹<%= fmt(totalOnline) %></div>
+        <div class="dr-kpi-meta">UPI / bank</div>
+      </div>
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Transactions</div>
+        <div class="dr-kpi-val warning"><%= totalRecords %></div>
+        <div class="dr-kpi-meta">Collection entries</div>
+      </div>
+      <div class="dr-kpi-cell">
+        <div class="dr-kpi-label">Patients</div>
+        <div class="dr-kpi-val purple"><%= uniquePatients %></div>
+        <div class="dr-kpi-meta">Unique patients</div>
+      </div>
+    </div>
+
+    <div class="dr-section">
+
+      <% if (recs.length === 0) { %>
+        <div class="dr-no-data">
+          <i class="bi bi-info-circle"></i>
+          No dues received for this period.
+        </div>
+      <% } else { %>
+
+        <!-- Collector summary cards -->
+        <% if (Object.keys(byCollector).length > 1) { %>
+          <div class="dr-section-head">
+            <span class="dr-section-title">
+              <i class="bi bi-people"></i> Collection by Staff
+            </span>
+          </div>
+          <div class="dr-collector-grid">
+            <% Object.entries(byCollector).forEach(function([uid, c], idx) {
+              const ac       = avatarColors[idx % avatarColors.length];
+              const initials = c.name ? c.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2) : "?";
+            %>
+            <div class="dr-collector-card">
+              <div class="dr-collector-name">
+                <div class="dr-avatar" style="background:<%= ac.bg %>;color:<%= ac.color %>">
+                  <%= initials %>
+                </div>
+                <%= c.name || "Unknown" %>
+              </div>
+              <div class="dr-collector-row">
+                <span class="lbl">Cash</span>
+                <span class="val">₹<%= fmt(c.cash) %></span>
+              </div>
+              <div class="dr-collector-row">
+                <span class="lbl">Online</span>
+                <span class="val">₹<%= fmt(c.online) %></span>
+              </div>
+              <div class="dr-collector-row">
+                <span class="lbl">Transactions</span>
+                <span class="val"><%= c.count %></span>
+              </div>
+              <div class="dr-collector-total">
+                <span>Total</span>
+                <span>₹<%= fmt(c.cash + c.online) %></span>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <!-- Detail table -->
+        <div class="dr-section-head" style="margin-top:8px">
+          <span class="dr-section-title">
+            <i class="bi bi-list-ul"></i> Detailed Records
+          </span>
+          <span class="dr-count"><%= totalRecords %> entries</span>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="drt">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Patient</th>
+                <th>Referred By</th>
+                <th>Original Bill</th>
+                <th>Cash Received</th>
+                <th>Online Received</th>
+                <th>Source</th>
+                <th>Received By</th>
+                <th>Received On</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% let srNo = 1; %>
+              <% recs.forEach(function(r) {
+                const isCash = r.PaymentMode === "cash";
+              %>
+              <tr>
+                <td style="color:var(--text-hint);font-size:12px"><%= srNo++ %></td>
+
+                <!-- Patient -->
+                <td>
+                  <a class="drt-link text-capitalize"
+                     href="/patient/getPatientDetail?patientId=<%= r.PatientId %>">
+                    <%= r.PatientName %>
+                  </a>
+                  <span class="drt-sub">
+                    <i class="bi bi-hash" style="font-size:10px"></i>Bill <%= r.PatientId %>
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-phone" style="font-size:10px"></i><%= r.PhoneNumber %>
+                  </span>
+                  <span class="drt-sub">
+                    Reg: <%= r.RegisteredOn %>
+                    <% if (r.IsAdvanceBooking) { %>
+                      &nbsp;·&nbsp;
+                      <span style="color:var(--purple-text);font-weight:500">
+                        <i class="bi bi-calendar-plus" style="font-size:10px"></i>
+                        Advance
+                      </span>
+                    <% } %>
+                  </span>
+                </td>
+
+                <!-- Referred by (Doctor) -->
+                <td>
+                  <span style="font-size:12.5px;font-weight:500">
+                    Dr. <%= r.DoctorFirstName %> <%= r.DoctorLastName %>
+                  </span>
+                  <span class="drt-sub"><%= r.DoctorSpecialistIn || "" %></span>
+                </td>
+
+                <!-- Original bill amounts -->
+                <td>
+                  <span style="font-size:12px;font-family:'DM Mono',monospace">
+                    ₹<%= fmt(r.GrossAmount) %>
+                  </span>
+                  <span class="drt-sub">Gross bill</span>
+                </td>
+
+                <!-- Cash received -->
+                <td>
+                  <% if (isCash) { %>
+                    <span class="bdg bdg-success" style="font-family:'DM Mono',monospace">
+                      <i class="bi bi-cash-stack"></i>
+                      ₹<%= fmt(r.AmountCollected) %>
+                    </span>
+                  <% } else { %>
+                    <span style="color:var(--text-hint);font-size:12px">—</span>
+                  <% } %>
+                </td>
+
+                <!-- Online received -->
+                <td>
+                  <% if (!isCash) { %>
+                    <span class="bdg bdg-info" style="font-family:'DM Mono',monospace">
+                      <i class="bi bi-qr-code-scan"></i>
+                      ₹<%= fmt(r.AmountCollected) %>
+                    </span>
+                  <% } else { %>
+                    <span style="color:var(--text-hint);font-size:12px">—</span>
+                  <% } %>
+                </td>
+
+                <!-- Online source -->
+                <td>
+                  <% if (!isCash && r.OnlineSource) { %>
+                    <span class="bdg bdg-info"><%= r.OnlineSource %></span>
+                  <% } else if (isCash) { %>
+                    <span class="bdg bdg-success">Cash</span>
+                  <% } else { %>
+                    <span style="color:var(--text-hint);font-size:12px">—</span>
+                  <% } %>
+                </td>
+
+                <!-- Received by -->
+                <td>
+                  <%
+                    const cidx = Object.keys(byCollector).indexOf(String(r.CollectedBy));
+                    const cac  = avatarColors[Math.max(0, cidx) % avatarColors.length];
+                    const cin  = r.CollectedByName
+                      ? r.CollectedByName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)
+                      : "?";
+                  %>
+                  <div style="display:flex;align-items:center;gap:7px">
+                    <div class="dr-avatar" style="background:<%= cac.bg %>;color:<%= cac.color %>">
+                      <%= cin %>
+                    </div>
+                    <span style="font-size:12.5px;font-weight:500"><%= r.CollectedByName %></span>
+                  </div>
+                </td>
+
+                <!-- Received on -->
+                <td>
+                  <span style="font-size:12.5px;font-weight:500"><%= r.CollectedAt %></span>
+                  <span class="drt-sub"><%= r.ShiftDate %></span>
+                </td>
+
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Total bar -->
+        <div class="dr-total-bar">
+          <span class="lbl">
+            <i class="bi bi-check-circle-fill"></i>
+            Total dues received in this period
+          </span>
+          <span class="val">₹<%= fmt(totalReceived) %></span>
+        </div>
+
+      <% } %>
+    </div>
+
+  </div>
+
+</div>
+
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+      // flatpickr is already loaded by layout at this point
+      if (typeof flatpickr !== "undefined") {
+        flatpickr("#drFromDate", { dateFormat: "d-m-Y", allowInput: false });
+        flatpickr("#drToDate",   { dateFormat: "d-m-Y", allowInput: false });
+      }
+  });
+  </script>

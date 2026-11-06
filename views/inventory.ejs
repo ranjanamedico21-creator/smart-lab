@@ -1,0 +1,56 @@
+<section>
+    <div class="container mt-5">
+        <h2>Add Inventory Item</h2>
+        <form action="/billing/createInventory" method="POST">
+            <div class="mb-3">
+                <label for="particulars" class="form-label">Particulars</label>
+                <input type="text" class="form-control" id="particulars" name="particulars" required>
+            </div>
+            <div class="mb-3">
+                <label for="mfg" class="form-label">Manufacturer</label>
+                <input type="text" class="form-control" id="mfg" name="mfg" required>
+            </div>
+            <div class="mb-3">
+                <label for="hsn" class="form-label">HSN Code</label>
+                <input type="text" class="form-control" id="hsn" name="hsn" required>
+            </div>
+            <div class="mb-3">
+                <label for="batch" class="form-label">Batch</label>
+                <input type="text" class="form-control" id="batch" name="batch" required>
+            </div>
+            <div class="mb-3">
+                <label for="expiry_date" class="form-label">Expiry Date</label>
+                <input type="date" class="form-control" id="expiry_date" name="expiry_date" required>
+            </div>
+            <div class="mb-3">
+                <label for="qty" class="form-label">Quantity</label>
+                <input type="number" class="form-control" id="qty" name="qty" required>
+            </div>
+            <div class="mb-3">
+                <label for="fr" class="form-label">Free Rate (FR)</label>
+                <input type="number" step="0.01" class="form-control" id="fr" name="fr" required>
+            </div>
+            <div class="mb-3">
+                <label for="mrp" class="form-label">MRP</label>
+                <input type="number" step="0.01" class="form-control" id="mrp" name="mrp" required>
+            </div>
+            <div class="mb-3">
+                <label for="ptr" class="form-label">Purchase Rate (PTR)</label>
+                <input type="number" step="0.01" class="form-control" id="ptr" name="ptr" required>
+            </div>
+            <div class="mb-3">
+                <label for="pts" class="form-label">Points (PTS)</label>
+                <input type="number" class="form-control" id="pts" name="pts" required>
+            </div>
+            <div class="mb-3">
+                <label for="sgst" class="form-label">SGST (%)</label>
+                <input type="number" step="0.01" class="form-control" id="sgst" name="sgst" required>
+            </div>
+            <div class="mb-3">
+                <label for="cgst" class="form-label">CGST (%)</label>
+                <input type="number" step="0.01" class="form-control" id="cgst" name="cgst" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Item</button>
+        </form>
+    </div>
+</section>

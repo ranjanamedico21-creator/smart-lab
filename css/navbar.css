@@ -1,0 +1,526 @@
+/* =========================================================
+   SMARTLAB NAVIGATION
+   Keep common.css: it contains page-specific application CSS.
+========================================================= */
+
+:root {
+    --smartlab-primary: #334091;
+    --smartlab-primary-hover: #283579;
+    --smartlab-sidebar-text: #e9ecff;
+    --smartlab-sidebar-muted: #aeb8ef;
+    --smartlab-border: #e7eaf2;
+    --smartlab-page-bg: #f5f7fb;
+    --smartlab-topbar-height: 64px;
+    --smartlab-sidebar-width: 260px;
+}
+
+/* Base layout */
+html {
+    min-height: 100%;
+    overflow-x: clip;
+}
+
+body {
+    min-height: 100vh !important;
+    height: auto !important;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-x: clip !important;
+    overflow-y: auto !important;
+    background: var(--smartlab-page-bg);
+}
+
+/* Top bar */
+.smartlab-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--smartlab-topbar-height);
+    padding: 8px 20px;
+    background: #fff;
+    border-bottom: 1px solid var(--smartlab-border);
+    box-shadow: 0 2px 8px rgb(22 34 70 / 5%);
+}
+
+.smartlab-brand,
+.smartlab-brand-link,
+.smartlab-topbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.smartlab-brand {
+    gap: 12px;
+    min-width: 0;
+}
+
+.smartlab-brand-link {
+    gap: 10px;
+    color: var(--smartlab-primary);
+    text-decoration: none;
+    font-weight: 750;
+    font-size: 20px;
+    white-space: nowrap;
+}
+
+.smartlab-logo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.smartlab-brand-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.smartlab-topbar-right {
+    gap: 18px;
+}
+
+.smartlab-topbar-label {
+    color: #737b91;
+    font-size: 12px;
+}
+
+.smartlab-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--smartlab-border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--smartlab-primary);
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.smartlab-menu-toggle:hover,
+.smartlab-user-button:hover {
+    background: #f1f3ff;
+}
+
+.smartlab-user-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid var(--smartlab-border);
+    border-radius: 10px;
+    background: #fff;
+    color: #30384d;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.smartlab-user-button::after {
+    margin-left: 2px;
+}
+
+.smartlab-account-menu {
+    z-index: 1060;
+    min-width: 190px;
+    padding: 7px;
+    border: 1px solid var(--smartlab-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgb(22 34 70 / 12%);
+}
+
+.smartlab-account-menu .dropdown-item {
+    padding: 10px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+}
+
+/* Main layout wrapper */
+#layout-wrapper {
+    display: flex !important;
+    align-items: stretch;
+    flex: 1 0 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: calc(100vh - var(--smartlab-topbar-height));
+    height: auto !important;
+    overflow: visible !important;
+}
+
+/* Sidebar desktop */
+#sidebar {
+    position: sticky !important;
+    top: var(--smartlab-topbar-height) !important;
+    z-index: 1020;
+    flex: 0 0 var(--smartlab-sidebar-width);
+    width: var(--smartlab-sidebar-width) !important;
+    min-width: var(--smartlab-sidebar-width);
+    height: calc(100vh - var(--smartlab-topbar-height)) !important;
+    padding: 18px 12px 12px;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    background: var(--smartlab-primary) !important;
+    color: #fff;
+    border-right: 1px solid rgb(255 255 255 / 8%);
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 30%) transparent;
+}
+
+.smartlab-sidebar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 10px 18px;
+    border-bottom: 1px solid rgb(255 255 255 / 13%);
+    margin-bottom: 12px;
+}
+
+.smartlab-sidebar-eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--smartlab-sidebar-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+
+.smartlab-sidebar-heading h6 {
+    margin: 0;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.smartlab-sidebar-close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 10%);
+    color: #fff;
+    font-size: 18px;
+}
+
+.smartlab-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.smartlab-nav-section {
+    padding: 17px 10px 7px;
+    color: var(--smartlab-sidebar-muted);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.2px;
+}
+
+.smartlab-nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    min-height: 43px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--smartlab-sidebar-text);
+    text-align: left;
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.smartlab-nav-link > i:first-child {
+    flex: 0 0 20px;
+    width: 20px;
+    font-size: 17px;
+    text-align: center;
+}
+
+.smartlab-nav-link > span {
+    flex: 1;
+    min-width: 0;
+}
+
+.smartlab-nav-link:hover,
+.smartlab-nav-link.active,
+.smartlab-nav-parent[aria-expanded="true"] {
+    background: rgb(255 255 255 / 13%);
+    color: #fff;
+}
+
+.smartlab-nav-link.active {
+    box-shadow: inset 3px 0 #fff;
+    font-weight: 700;
+}
+
+.smartlab-chevron {
+    margin-left: auto;
+    font-size: 11px;
+    transition: transform 0.2s ease;
+}
+
+.smartlab-nav-parent[aria-expanded="true"] .smartlab-chevron {
+    transform: rotate(180deg);
+}
+
+/* Nested navigation */
+.smartlab-submenu {
+    padding: 4px 0 5px 17px;
+    margin: 0 0 3px 19px;
+    border-left: 1px solid rgb(255 255 255 / 22%);
+}
+
+.smartlab-submenu a {
+    display: block;
+    padding: 9px 10px;
+    margin: 2px 0;
+    border-radius: 7px;
+    color: #dce2ff;
+    text-decoration: none;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.smartlab-submenu a:hover,
+.smartlab-submenu a.active {
+    background: rgb(255 255 255 / 13%);
+    color: #fff;
+}
+
+.smartlab-submenu a.active {
+    font-weight: 700;
+}
+
+/* Sidebar footer */
+.smartlab-sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 20px;
+    padding: 12px 4px 2px;
+    border-top: 1px solid rgb(255 255 255 / 15%);
+}
+
+.smartlab-sidebar-footer a {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px;
+    border-radius: 8px;
+    color: var(--smartlab-sidebar-text);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.smartlab-sidebar-footer a:hover {
+    background: rgb(255 255 255 / 12%);
+    color: #fff;
+}
+
+.smartlab-sidebar-footer i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.smartlab-logout-link {
+    color: #ffe1e1 !important;
+}
+
+/* Page content */
+#main-content {
+    flex: 1 1 auto !important;
+    width: 0;
+    min-width: 0;
+    min-height: calc(100vh - var(--smartlab-topbar-height));
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: var(--smartlab-page-bg);
+}
+
+.smartlab-page-content {
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    padding: 22px;
+}
+
+/* Overlay is disabled on desktop */
+#sidebarOverlay {
+    display: none;
+}
+
+/* Prevent existing global CSS from breaking the navigation */
+#sidebar a {
+    text-decoration: none;
+}
+
+#sidebar button:focus-visible,
+.smartlab-menu-toggle:focus-visible,
+.smartlab-user-button:focus-visible {
+    outline: 2px solid #9daaff;
+    outline-offset: 2px;
+}
+
+/* =========================================================
+   TABLET AND MOBILE
+========================================================= */
+@media (max-width: 991.98px) {
+    .smartlab-topbar {
+        min-height: 58px;
+        padding: 8px 12px;
+    }
+
+    .smartlab-menu-toggle {
+        display: inline-flex !important;
+    }
+
+    #layout-wrapper {
+        display: block !important;
+        width: 100%;
+        min-height: calc(100vh - 58px);
+        overflow: visible !important;
+    }
+
+    #sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0;
+        left: 0;
+        z-index: 1050;
+        width: min(290px, 86vw) !important;
+        min-width: 0;
+        height: 100dvh !important;
+        max-height: 100dvh;
+        padding: 16px 12px 20px;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        box-shadow: 8px 0 30px rgb(0 0 0 / 15%);
+        transform: translateX(-105%);
+        visibility: hidden;
+        transition:
+            transform 0.25s ease,
+            visibility 0.25s ease;
+        will-change: transform;
+    }
+
+    #sidebar.sidebar-open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    .smartlab-sidebar-heading {
+        padding-top: 8px;
+    }
+
+    .smartlab-sidebar-close {
+        display: inline-flex;
+        flex: 0 0 34px;
+    }
+
+    #sidebarOverlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1040;
+        background: rgb(15 21 42 / 55%);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+            opacity 0.25s ease,
+            visibility 0.25s ease;
+    }
+
+    #sidebarOverlay.overlay-visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    body.sidebar-is-open {
+        overflow: hidden !important;
+        touch-action: none;
+    }
+
+    #main-content {
+        width: 100% !important;
+        min-height: calc(100vh - 58px);
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    .smartlab-page-content {
+        padding: 16px;
+    }
+}
+
+/* Small phones */
+@media (max-width: 575.98px) {
+    .smartlab-brand {
+        gap: 8px;
+    }
+
+    .smartlab-brand-link {
+        gap: 7px;
+        font-size: 17px;
+    }
+
+    .smartlab-logo {
+        width: 34px;
+        height: 34px;
+    }
+
+    .smartlab-topbar-right {
+        gap: 6px;
+    }
+
+    .smartlab-user-button {
+        width: 38px;
+        height: 38px;
+        justify-content: center;
+        padding: 0;
+        font-size: 17px;
+    }
+
+    .smartlab-user-button::after {
+        display: none;
+    }
+
+    .smartlab-page-content {
+        padding: 12px;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    #sidebar,
+    #sidebarOverlay,
+    .smartlab-chevron {
+        transition: none !important;
+    }
+}

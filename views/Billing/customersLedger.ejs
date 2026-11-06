@@ -1,0 +1,494 @@
+<%
+  // Safe defaults: the page never crashes, even when the controller sends an error page
+  const cust = (typeof customerDetails !== 'undefined' && customerDetails) ? (Array.isArray(customerDetails) ? customerDetails[0] : customerDetails) : null;
+  const rows = (typeof customerLedger !== 'undefined' && Array.isArray(customerLedger)) ? customerLedger : [];
+  const sDate = (typeof startDate !== 'undefined' && startDate) ? startDate : '';
+  const eDate = (typeof endDate !== 'undefined' && endDate) ? endDate : '';
+  const fy = (typeof financialYear !== 'undefined' && financialYear) ? financialYear : '';
+  const tDebit = Number(typeof totalDebit !== 'undefined' ? totalDebit : 0) || 0;
+  const tCredit = Number(typeof totalCredit !== 'undefined' ? totalCredit : 0) || 0;
+  const closing = String((typeof closingBalance !== 'undefined' && closingBalance) ? closingBalance : '0.00 DR');
+
+  const inr = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const splitBal = (b) => { const m = String(b || '').match(/^(-?[\d.]+)\s*(DR|CR)$/i); return m ? { amt: inr(m[1]), side: m[2].toUpperCase() } : { amt: String(b || ''), side: '' }; };
+
+  // period figures (opening row excluded) for the summary cards
+  const openingRow = rows.find((r) => r.IsOpening);
+  const txns = rows.filter((r) => !r.IsOpening);
+  const periodDebit = txns.reduce((s, r) => s + (Number(r.Debit) || 0), 0);
+  const periodCredit = txns.reduce((s, r) => s + (Number(r.Credit) || 0), 0);
+  const opening = splitBal(openingRow ? openingRow.Balance : '0.00 DR');
+  const close = splitBal(closing);
+  const hasClose = close.amt !== '0.00';
+
+  const typeTone = { SALE: 'blue', RECEIPT: 'green', SALES_RETURN: 'amber' };
+  const metaItems = cust ? [
+    cust.GstNo ? ['GSTIN', cust.GstNo] : null,
+    cust.DlNo ? ['DL', cust.DlNo] : null,
+    cust.MobileNo ? ['Phone', cust.MobileNo] : null,
+  ].filter(Boolean) : [];
+  const address = cust ? [cust.BillingAddress, cust.BillingDistrict, cust.BillingState, cust.BillingPincode].filter(Boolean).join(', ') : '';
+  const dl = (path) => cust && sDate && eDate ? `${path}/${cust.Id}/${encodeURIComponent(sDate)}/${encodeURIComponent(eDate)}` : '';
+%>
+
+<style>
+  .sl {
+    --sl-bg: #f8fafd;
+    --sl-surface: #ffffff;
+    --sl-border: #e3e7ec;
+    --sl-border-soft: #eef1f4;
+    --sl-text: #1f1f1f;
+    --sl-muted: #5f6368;
+    --sl-faint: #80868b;
+    --sl-blue: #1a73e8;   --sl-blue-bg: #e8f0fe;   --sl-blue-ink: #174ea6;
+    --sl-green: #188038;  --sl-green-bg: #e6f4ea;  --sl-green-ink: #0d652d;
+    --sl-red: #d93025;    --sl-red-bg: #fce8e6;    --sl-red-ink: #a50e0e;
+    --sl-amber-bg: #fef7e0; --sl-amber-ink: #8a5300;
+    --sl-purple-bg: #f3e8fd; --sl-purple-ink: #681da8;
+    --sl-grey-bg: #f1f3f4;  --sl-grey-ink: #3c4043;
+    --sl-radius: 16px;
+    background: var(--sl-bg);
+    color: var(--sl-text);
+    font-family: "Google Sans", Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
+    padding: 1rem 0 2rem; border-radius: 0; overflow-x: hidden;
+    min-height: 100%;
+  }
+  .sl .num { font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .sl a { text-decoration: none; }
+
+  /* header */
+  .sl-back { color: var(--sl-muted); font-size: .875rem; display: inline-flex; align-items: center; gap: .35rem; }
+  .sl-back:hover { color: var(--sl-blue); }
+  .sl-title { font-size: 1.5rem; font-weight: 500; letter-spacing: -.01em; margin: .15rem 0 .25rem; text-transform: capitalize; }
+  .sl-meta { display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; color: var(--sl-muted); font-size: .8125rem; }
+  .sl-meta b { font-weight: 500; color: var(--sl-faint); margin-right: .3rem; }
+  .sl-address { color: var(--sl-faint); font-size: .78rem; margin-top: .1rem; }
+
+  /* pill buttons */
+  .sl-btn { border-radius: 999px; padding: .5rem 1.1rem; font-weight: 500; font-size: .875rem; display: inline-flex; align-items: center; gap: .45rem; border: 1px solid transparent; transition: background .15s, box-shadow .15s; }
+  .sl-btn-primary { background: var(--sl-blue); color: #fff; }
+  .sl-btn-primary:hover { background: #1765cc; color: #fff; box-shadow: 0 1px 3px rgba(26,115,232,.35); }
+  .sl-btn-outline { background: var(--sl-surface); color: var(--sl-blue); border-color: #dadce0; }
+  .sl-btn-outline:hover { background: var(--sl-blue-bg); color: var(--sl-blue-ink); }
+  .sl-btn-text { background: transparent; color: var(--sl-muted); }
+  .sl-btn-text:hover { background: var(--sl-grey-bg); color: var(--sl-text); }
+
+  /* cards */
+  .sl-card { background: var(--sl-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius); }
+
+  /* filter bar */
+  .sl-filter { padding: .6rem .75rem; }
+  .sl-filter .form-control, .sl-filter .form-select {
+    border-radius: 10px; border-color: #dadce0; font-size: .875rem; min-height: 40px; background-color: #fff;
+  }
+  .sl-filter .form-control:focus, .sl-filter .form-select:focus { border-color: var(--sl-blue); box-shadow: 0 0 0 3px rgba(26,115,232,.15); }
+  .sl-filter label { font-size: .75rem; color: var(--sl-muted); margin-bottom: .2rem; }
+  .sl-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .sl-chip { border: 1px solid #dadce0; background: #fff; color: var(--sl-grey-ink); border-radius: 8px; padding: 0 .8rem; min-height: 40px; font-size: .8125rem; font-weight: 500; line-height: 1.2; white-space: nowrap; transition: background .15s, color .15s; }
+  .sl-chip:disabled { opacity: .6; }
+  .sl-chip:hover { background: var(--sl-grey-bg); }
+  .sl-chip.active { background: var(--sl-blue-bg); border-color: var(--sl-blue-bg); color: var(--sl-blue-ink); }
+
+  /* summary */
+  .sl-stat { padding: .75rem 1rem; height: 100%; }
+  .sl-stat-label { font-size: .75rem; font-weight: 500; color: var(--sl-muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: .4rem; }
+  .sl-stat-value { font-size: 1.25rem; font-weight: 500; margin-top: .2rem; white-space: nowrap; }
+  .sl-stat-sub { font-size: .75rem; color: var(--sl-faint); margin-top: .15rem; }
+  .sl-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .sl-stat.is-due { background: var(--sl-red-bg); border-color: #f6cdc8; }
+  .sl-stat.is-due .sl-stat-value { color: var(--sl-red-ink); }
+  .sl-stat.is-adv { background: var(--sl-green-bg); border-color: #cde8d4; }
+  .sl-stat.is-adv .sl-stat-value { color: var(--sl-green-ink); }
+  .sl-side { display: inline-block; white-space: nowrap; font-size: .7rem; font-weight: 600; letter-spacing: .04em; padding: .12rem .4rem; border-radius: 6px; vertical-align: middle; margin-left: .3rem; }
+  .sl-side.DR { background: var(--sl-red-bg); color: var(--sl-red-ink); }
+  .sl-side.CR { background: var(--sl-green-bg); color: var(--sl-green-ink); }
+
+  /* table */
+  .sl-table-head { padding: .65rem 1.15rem; border-bottom: 1px solid var(--sl-border-soft); }
+  .sl-table-head h2 { font-size: 1rem; font-weight: 500; margin: 0; }
+  .sl-search { position: relative; max-width: 300px; width: 100%; }
+  .sl-search i { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--sl-faint); font-size: .85rem; }
+  .sl-search input { border-radius: 999px; background: var(--sl-grey-bg); border: 1px solid transparent; padding: .45rem .9rem .45rem 2.1rem; font-size: .8125rem; width: 100%; }
+  .sl-search input:focus { outline: none; background: #fff; border-color: var(--sl-blue); box-shadow: 0 0 0 3px rgba(26,115,232,.12); }
+  .sl-table-wrap { border-radius: 0 0 var(--sl-radius) var(--sl-radius); overflow: hidden; }   /* no inner scroll: the page scrolls once */
+  .sl-table { margin: 0; font-size: .875rem; --bs-table-bg: transparent; --bs-table-hover-bg: #f6f9fe; }
+  .sl-table thead th {
+    background: #fff;
+    font-size: .7rem; font-weight: 500; color: var(--sl-muted); text-transform: uppercase; letter-spacing: .06em;
+    border-bottom: 1px solid var(--sl-border); padding: .55rem .6rem; white-space: nowrap;
+  }
+  .sl-table td { padding: .5rem .6rem; border-bottom: 1px solid var(--sl-border-soft); vertical-align: middle; }
+  .sl-table tbody tr:last-child td { border-bottom: 0; }
+  .sl-table th:first-child, .sl-table td:first-child { padding-left: 1.15rem; }
+  .sl-table th:last-child, .sl-table td:last-child { padding-right: 1.15rem; }
+  .sl-date { color: var(--sl-muted); white-space: nowrap; }
+  .sl-tag { display: inline-block; font-size: .7rem; font-weight: 500; padding: .12rem .5rem; border-radius: 6px; white-space: nowrap; }
+  .sl-tag.blue { background: var(--sl-blue-bg); color: var(--sl-blue-ink); }
+  .sl-tag.green { background: var(--sl-green-bg); color: var(--sl-green-ink); }
+  .sl-tag.amber { background: var(--sl-amber-bg); color: var(--sl-amber-ink); }
+  .sl-tag.purple { background: var(--sl-purple-bg); color: var(--sl-purple-ink); }
+  .sl-tag.grey { background: var(--sl-grey-bg); color: var(--sl-grey-ink); }
+  .sl-desc { color: var(--sl-muted); font-size: .78rem; line-height: 1.3; }
+  .sl-tag + .sl-desc { display: inline; margin-left: .4rem; }
+  .sl-ref { font-weight: 500; }
+  .sl-ref .sl-code { white-space: nowrap; }
+  .sl-ref small, .sl-sub { color: var(--sl-faint); font-size: .72rem; font-weight: 400; white-space: nowrap; margin-left: .35rem; }
+  .sl-ref .sl-lbl { display: inline; color: var(--sl-faint); font-size: .7rem; font-weight: 500; margin-right: .25rem; }
+  .sl-none { color: #c4c7c5; }
+  .sl-amt { text-align: right; white-space: nowrap; }
+  .sl-amt.credit { color: var(--sl-green); }
+  .sl-bal { text-align: right; white-space: nowrap; font-weight: 500; }
+  .sl-opening td { background: var(--sl-bg); }
+  .sl-opening .sl-desc { font-style: italic; }
+  .sl-table tfoot td { background: var(--sl-bg); border-top: 1px solid var(--sl-border); border-bottom: 0; font-weight: 500; padding-top: .65rem; padding-bottom: .65rem; }
+  .sl-m-only { display: none; }
+  .sl-ref a { color: var(--sl-blue); }
+  .sl-ref a:hover { text-decoration: underline; }
+  .sl-empty { padding: 3rem 1rem; text-align: center; color: var(--sl-muted); }
+  .sl-empty i { font-size: 2rem; color: #c4c7c5; display: block; margin-bottom: .5rem; }
+  .sl-note { font-size: .75rem; color: var(--sl-faint); }
+
+  @media (max-width: 767.98px) {
+    .sl-title { font-size: 1.3rem; }
+    .sl-stat { padding: .85rem .9rem; }
+    .sl-stat-label { font-size: .68rem; letter-spacing: .04em; }
+    .sl-stat-value { font-size: 1rem; white-space: normal; }
+    .sl-side { margin-left: .2rem; }
+    .sl-search { max-width: none; }
+
+    /* each ledger row becomes a compact 3-line card: no sideways scrolling */
+    .sl-table thead { display: none; }
+    .sl-table, .sl-table tbody, .sl-table tfoot { display: block; width: 100%; }
+    .sl-table tr { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "date type amt" "ref ref bal";
+                   align-items: center; column-gap: .5rem; row-gap: .1rem; padding: .55rem 1rem; border-bottom: 1px solid var(--sl-border-soft); }
+    .sl-table tbody tr:last-child { border-bottom: 0; }
+    .sl-table td { display: block; padding: 0 !important; border: 0 !important; background: transparent; }
+    .sl-table .c-date { grid-area: date; } .sl-table .c-bal { grid-area: bal; }
+    .sl-table .c-type { grid-area: type; } .sl-table .c-amt { grid-area: amt; text-align: right; font-weight: 500; }
+    .sl-table .c-bal { font-size: .78rem; color: var(--sl-muted); font-weight: 400; }
+    .sl-table .c-date { font-size: .8rem; }
+    .sl-table .c-ref { grid-area: ref; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sl-table .c-ref small { display: none; }
+    .sl-table .c-type .sl-desc { display: none; }
+    .sl-opening .c-type .sl-desc { display: inline; }
+    .sl-table .c-bal { white-space: nowrap; }
+    .sl-table tfoot .c-type { display: none; }
+    .sl-table tfoot .c-date { text-align: left !important; }
+    .sl-table tfoot tr { grid-template-areas: "date date bal"; }
+    .sl-table .c-dr, .sl-table .c-cr { display: none; }
+    .sl-m-only { display: block; }
+    .sl-table td[data-label]::before { content: attr(data-label); color: var(--sl-faint); font-size: .7rem; font-weight: 500; margin-right: .35rem; }
+    .sl-table td.is-blank { display: none; }
+    .sl-opening, .sl-table tfoot tr { background: var(--sl-bg); }
+    .sl-opening { grid-template-areas: "date type bal"; }
+    .sl-opening .c-bal, .sl-table tfoot .c-bal { font-size: .875rem; color: var(--sl-text); font-weight: 500; }
+    .sl-table tfoot .c-type { text-align: right; }
+    .sl-table tfoot td.c-dr, .sl-table tfoot td.c-cr { display: none; }
+  }
+  @media print {
+    .sl { background: #fff; padding: 0; }
+    .sl-noprint, .alert { display: none !important; }
+    .sl-card { border-color: #ccc; }
+    .sl-table-wrap { overflow: visible; }
+  }
+</style>
+
+<div class="sl">
+  <div class="container-xxl">
+
+    <!-- ============ HEADER ============ -->
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+      <div class="min-w-0">
+        <a href="/billing/getCustomerList" class="sl-back sl-noprint"><i class="bi bi-arrow-left"></i> Customers</a>
+        <h1 class="sl-title"><%= cust ? String(cust.CustomerName || '').toLowerCase() : 'Customer ledger' %></h1>
+        <% if (cust) { %>
+          <div class="sl-meta">
+            <span><i class="bi bi-journal-text me-1"></i>Customer ledger</span>
+            <% metaItems.forEach(([k, v]) => { %><span class="text-uppercase"><b><%= k %></b><%= v %></span><% }) %>
+          </div>
+          <% if (address) { %><div class="sl-address text-uppercase"><%= address %></div><% } %>
+        <% } %>
+      </div>
+
+      <% if (cust) { %>
+        <div class="d-flex flex-wrap gap-2 sl-noprint">
+          <a class="sl-btn sl-btn-text" href="/billing/updatePrice/<%= cust.Id %>" target="_blank"><i class="bi bi-tag"></i> Set price</a>
+          <% if (dl('')) { %>
+            <a class="sl-btn sl-btn-outline" href="<%= dl('/billing/customerLedgerInPdf') %>" target="_blank"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+            <a class="sl-btn sl-btn-outline" href="<%= dl('/billing/downloadLedgerInExcel') %>" target="_blank"><i class="bi bi-download"></i> Excel</a>
+          <% } %>
+          <a class="sl-btn sl-btn-primary" href="/billing/addPayment?cId=<%= cust.Id %>" target="_blank"><i class="bi bi-plus-lg"></i> Add payment</a>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="sl-noprint">
+      <%- include("../partials/messages"); %>
+      <% if (typeof errorMessage !== 'undefined' && errorMessage && !(typeof notifications !== 'undefined' && notifications && notifications.length)) { %>
+        <div class="alert alert-danger rounded-4 border-0"><i class="bi bi-exclamation-circle me-1"></i> <%= errorMessage %></div>
+      <% } %>
+    </div>
+
+    <% if (!cust) { %>
+      <div class="sl-card sl-empty">
+        <i class="bi bi-person-x"></i>
+        <div class="mb-3">Customer not found.</div>
+        <a href="/billing/getCustomerList" class="sl-btn sl-btn-outline"><i class="bi bi-people"></i> Open customer list</a>
+      </div>
+    <% } else { %>
+
+    <!-- ============ FILTER BAR ============ -->
+    <form action="/billing/customerLedger/<%= cust.Id %>" method="post" id="ledgerFilterForm" class="sl-card sl-filter mb-3 sl-noprint">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-auto">
+          <label class="d-block">Quick range</label>
+          <div class="sl-chips" role="group" aria-label="Quick range">
+            <button type="button" class="sl-chip sl-range" data-range="thisMonth">This month</button>
+            <button type="button" class="sl-chip sl-range" data-range="last3Months">Last 3 months</button>
+            <button type="button" class="sl-chip sl-range" data-range="thisFY">This FY</button>
+            <button type="button" class="sl-chip sl-range" data-range="lastFY">Last FY</button>
+          </div>
+        </div>
+        <div class="col-12 col-sm-4 col-lg-2">
+          <label for="slFinancialYear">Financial year</label>
+          <select id="slFinancialYear" name="financialYear" data-selected="<%= fy %>" class="form-select">
+            <option value="">Custom dates</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-3 col-lg-2">
+          <label for="FromDate">From</label>
+          <input type="text" name="startDate" id="FromDate" class="form-control datepicker num" value="<%= sDate %>" autocomplete="off" placeholder="DD-MM-YYYY" required>
+        </div>
+        <div class="col-6 col-sm-3 col-lg-2">
+          <label for="ToDate">To</label>
+          <input type="text" name="endDate" id="ToDate" class="form-control datepicker num" value="<%= eDate %>" autocomplete="off" placeholder="DD-MM-YYYY" required>
+        </div>
+        <div class="col-12 col-sm-2 col-lg-auto ms-lg-auto">
+          <button type="submit" class="sl-btn sl-btn-primary w-100 justify-content-center" style="min-height:40px"><i class="bi bi-funnel"></i> Apply</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- ============ SUMMARY ============ -->
+    <div class="row g-2 g-lg-3 mb-3">
+      <div class="col-6 col-lg-3">
+        <div class="sl-card sl-stat">
+          <div class="sl-stat-label"><span class="sl-dot" style="background:#9aa0a6"></span>Opening</div>
+          <div class="sl-stat-value num">₹<%= opening.amt %><% if (opening.side) { %><span class="sl-side <%= opening.side %>"><%= opening.side %></span><% } %></div>
+          <div class="sl-stat-sub">as on <%= openingRow ? openingRow.Date : sDate %></div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="sl-card sl-stat">
+          <div class="sl-stat-label"><span class="sl-dot" style="background:var(--sl-blue)"></span>Sales (Dr)</div>
+          <div class="sl-stat-value num">₹<%= inr(periodDebit) %></div>
+          <div class="sl-stat-sub"><%= txns.filter((r) => Number(r.Debit) > 0).length %> invoices in period</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="sl-card sl-stat">
+          <div class="sl-stat-label"><span class="sl-dot" style="background:var(--sl-green)"></span>Received &amp; returns (Cr)</div>
+          <div class="sl-stat-value num">₹<%= inr(periodCredit) %></div>
+          <div class="sl-stat-sub"><%= txns.filter((r) => Number(r.Credit) > 0).length %> entries in period</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="sl-card sl-stat <%= hasClose ? (close.side === 'CR' ? 'is-adv' : 'is-due') : '' %>">
+          <div class="sl-stat-label"><i class="bi bi-wallet2"></i><%= hasClose && close.side === 'CR' ? 'Advance from customer' : 'Outstanding' %></div>
+          <div class="sl-stat-value num">₹<%= close.amt %><% if (close.side) { %><span class="sl-side <%= close.side %>"><%= close.side %></span><% } %></div>
+          <div class="sl-stat-sub">closing as on <%= eDate %></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ LEDGER TABLE ============ -->
+    <div class="sl-card">
+      <div class="sl-table-head d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h2>Transactions</h2>
+          <div class="sl-note"><span class="num"><%= sDate %></span> – <span class="num"><%= eDate %></span> · <%= txns.length %> entries</div>
+        </div>
+        <% if (txns.length) { %>
+          <label class="sl-search sl-noprint mb-0">
+            <i class="bi bi-search"></i>
+            <input type="search" id="ledgerSearch" placeholder="Search invoice, CN, UTR…" autocomplete="off" aria-label="Search ledger">
+          </label>
+        <% } %>
+      </div>
+
+      <% if (!rows.length) { %>
+        <div class="sl-empty"><i class="bi bi-inbox"></i>No transactions found for this customer.</div>
+      <% } else { %>
+      <div class="sl-table-wrap">
+        <table class="table table-hover sl-table" id="ledgerTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Particulars</th>
+              <th>Reference</th>
+              <th class="text-end">Debit</th>
+              <th class="text-end">Credit</th>
+              <th class="text-end">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.forEach((entry) => {
+                 const b = splitBal(entry.Balance);
+                 const narr = String(entry.Narration != null ? entry.Narration : (entry.Description || ''));
+                 // extra text only when it adds something (payment note, or a narration that does not repeat the ref)
+                 const extra = entry.Note ? entry.Note : (narr && !(entry.Ref && narr.includes(entry.Ref)) ? narr : '');
+                 const sameAsType = extra && extra.toLowerCase().replace(/\s*\d+$/, '') === String(entry.Type || '').toLowerCase(); %>
+              <% if (entry.IsOpening) { %>
+                <tr class="sl-opening" data-keep="1">
+                  <td class="sl-date num c-date"><%= entry.Date %></td>
+                  <td colspan="4" class="c-type"><span class="sl-desc">Opening balance</span></td>
+                  <td class="sl-bal num c-bal"><%= b.amt %><% if (b.side) { %><span class="sl-side <%= b.side %>"><%= b.side %></span><% } %></td>
+                </tr>
+              <% } else { %>
+                <tr title="<%= narr %>">
+                  <td class="sl-date num c-date"><%= entry.Date %></td>
+                  <td class="c-type">
+                    <span class="sl-tag <%= typeTone[entry.TransactionType] || 'grey' %>"><%= entry.Type || entry.TransactionType || 'Entry' %></span>
+                    <% if (extra && !sameAsType) { %><span class="sl-desc"><%= extra %></span><% } %>
+                  </td>
+                  <td class="sl-ref c-ref <%= entry.Ref ? '' : 'is-blank' %>">
+                    <% if (entry.Ref) { %>
+                      <span class="sl-code">
+                        <% if (entry.RefLabel) { %><span class="sl-lbl"><%= entry.RefLabel %></span><% } %>
+                        <% if (entry.SaleId) { %>
+                          <a href="/billing/viewSalesInHtml/<%= entry.SaleId %>/<%= cust.Id %>" target="_blank" title="Open invoice"><%= entry.Ref %></a>
+                        <% } else { %><%= entry.Ref %><% } %>
+                      </span><% if (entry.Mode) { %><small><%= entry.Mode %></small><% } %>
+                    <% } else { %><span class="sl-none">—</span><% } %>
+                  </td>
+                  <td class="sl-amt num c-dr"><%- Number(entry.Debit) > 0 ? inr(entry.Debit) : '<span class="sl-none">—</span>' %></td>
+                  <td class="sl-amt credit num c-cr"><%- Number(entry.Credit) > 0 ? inr(entry.Credit) : '<span class="sl-none">—</span>' %></td>
+                  <td class="sl-m-only c-amt num">
+                    <% if (Number(entry.Debit) > 0) { %><span>Dr <%= inr(entry.Debit) %></span><% } %>
+                    <% if (Number(entry.Credit) > 0) { %><span class="text-success"><%= Number(entry.Debit) > 0 ? ' · ' : '' %>Cr <%= inr(entry.Credit) %></span><% } %>
+                  </td>
+                  <td class="sl-bal num c-bal"><%= b.amt %><% if (b.side) { %><span class="sl-side <%= b.side %>"><%= b.side %></span><% } %></td>
+                </tr>
+              <% } %>
+            <% }) %>
+            <tr id="ledgerNoMatch" class="d-none"><td colspan="7" class="sl-empty py-4">No entry matches your search.</td></tr>
+            <% if (!txns.length) { %>
+              <tr><td colspan="7" class="sl-empty py-4">No transactions in this period. Only the opening balance is shown.</td></tr>
+            <% } %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-end c-date">Total <span class="sl-note fw-normal">(incl. opening)</span></td>
+              <td class="sl-amt num c-dr"><%= inr(tDebit) %></td>
+              <td class="sl-amt credit num c-cr"><%= inr(tCredit) %></td>
+              <td class="sl-m-only c-type sl-note">Dr <%= inr(tDebit) %> · Cr <%= inr(tCredit) %></td>
+              <td class="sl-bal num c-bal"><%= close.amt %><% if (close.side) { %><span class="sl-side <%= close.side %>"><%= close.side %></span><% } %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <% } %>
+    </div>
+
+    <p class="sl-note mt-3 mb-0"><span class="sl-side DR ms-0">DR</span> amount the customer has to pay &nbsp;·&nbsp; <span class="sl-side CR ms-0">CR</span> advance / excess received from the customer</p>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // instant search over the ledger rows (opening row always stays)
+    var input = document.getElementById('ledgerSearch');
+    var table = document.getElementById('ledgerTable');
+    if (input && table) {
+      var rows = Array.prototype.slice.call(table.tBodies[0].rows).filter(function (r) { return r.id !== 'ledgerNoMatch' && !r.dataset.keep; });
+      var none = document.getElementById('ledgerNoMatch');
+      input.addEventListener('input', function () {
+        var q = input.value.trim().toLowerCase(), shown = 0;
+        rows.forEach(function (r) {
+          var hit = !q || r.textContent.toLowerCase().indexOf(q) !== -1;
+          r.classList.toggle('d-none', !hit);
+          if (hit) shown++;
+        });
+        if (none) none.classList.toggle('d-none', shown > 0 || !q);
+      });
+    }
+    /* ---------- quick range + financial year (self-contained, no other script needed) ---------- */
+    var form = document.getElementById('ledgerFilterForm');
+    var fromEl = document.getElementById('FromDate');
+    var toEl = document.getElementById('ToDate');
+    var fySel = document.getElementById('slFinancialYear');
+    if (!form || !fromEl || !toEl) return;
+
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var fmt = function (d) { return pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear(); };
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;   // FY starts 1 April
+    var fyRange = function (y) {                                    // y = year in which the FY starts
+      var end = new Date(y + 1, 2, 31);
+      return [new Date(y, 3, 1), end > today ? today : end];
+    };
+    var ranges = {
+      thisMonth: [new Date(today.getFullYear(), today.getMonth(), 1), today],
+      last3Months: [new Date(today.getFullYear(), today.getMonth() - 3, today.getDate() + 1), today],
+      thisFY: fyRange(fyStartYear),
+      lastFY: fyRange(fyStartYear - 1),
+    };
+
+    // works with plain inputs AND with jQuery datepickers (bootstrap-datepicker / jQuery UI)
+    var setVal = function (el, d) {
+      var v = fmt(d);
+      if (window.jQuery) {
+        var $el = window.jQuery(el);
+        try { if ($el.data('datepicker') && $el.datepicker) $el.datepicker('update', v); } catch (e) {}
+        $el.val(v).trigger('change');
+      } else { el.value = v; }
+    };
+    var go = function (r, fyValue) {
+      setVal(fromEl, r[0]);
+      setVal(toEl, r[1]);
+      if (fySel) fySel.value = fyValue || '';
+      form.querySelectorAll('.sl-range, [type=submit]').forEach(function (b) { b.disabled = true; });
+      form.submit();
+    };
+
+    // financial years: from FY 2023-24 up to the current one
+    if (fySel) {
+      for (var y = fyStartYear; y >= 2023; y--) {
+        var o = document.createElement('option');
+        o.value = y + '-' + String(y + 1).slice(2);
+        o.textContent = 'FY ' + o.value;
+        fySel.appendChild(o);
+      }
+      fySel.addEventListener('change', function () {
+        if (!fySel.value) return;
+        go(fyRange(parseInt(fySel.value, 10)), fySel.value);
+      });
+    }
+
+    // chips: one click = set dates + show ledger
+    document.querySelectorAll('.sl-range').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var r = ranges[chip.getAttribute('data-range')];
+        if (r) go(r, chip.getAttribute('data-range') === 'thisFY' ? fyStartYear + '-' + String(fyStartYear + 1).slice(2)
+                    : chip.getAttribute('data-range') === 'lastFY' ? (fyStartYear - 1) + '-' + String(fyStartYear).slice(2) : '');
+      });
+    });
+
+    // show which range is on screen now
+    var cur = fromEl.value + '|' + toEl.value, matched = false;
+    document.querySelectorAll('.sl-range').forEach(function (chip) {
+      var r = ranges[chip.getAttribute('data-range')];
+      if (!matched && r && fmt(r[0]) + '|' + fmt(r[1]) === cur) { chip.classList.add('active'); matched = true; }
+    });
+    if (fySel) {
+      var want = fySel.getAttribute('data-selected');
+      for (var i = 0; i < fySel.options.length; i++) {
+        var v = fySel.options[i].value;
+        if (!v) continue;
+        var fr = fyRange(parseInt(v, 10));
+        if (v === want || fmt(fr[0]) + '|' + fmt(fr[1]) === cur) { fySel.value = v; break; }
+      }
+    }
+  })();
+</script>

@@ -1,0 +1,1139 @@
+<style>
+  .ct-page {
+    --ct-bg: #f0f4f8;
+    --ct-surface: #ffffff;
+    --ct-surface-2: #f8fafc;
+    --ct-border: #e2e8f0;
+    --ct-focus: #3b6ef6;
+    --ct-primary: #3b6ef6;
+    --ct-primary-dark: #2a55d4;
+    --ct-primary-light: #ebf0ff;
+    --ct-accent: #06b6a2;
+    --ct-text: #1a202c;
+    --ct-text-2: #4a5568;
+    --ct-text-3: #94a3b8;
+    --ct-danger: #e53e3e;
+    --ct-warning: #d97706;
+    --ct-shadow: 0 4px 16px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04);
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+    padding: 24px;
+    background: var(--ct-bg);
+    min-height: 100%;
+  }
+
+  .ct-page .ct-title    { font-size: 22px; font-weight: 700; color: var(--ct-text); letter-spacing: -0.4px; margin-bottom: 3px; }
+  .ct-page .ct-subtitle { font-size: 13px; color: var(--ct-text-3); margin-bottom: 24px; }
+  .ct-page .ct-card     { background: var(--ct-surface); border-radius: 16px; box-shadow: var(--ct-shadow); border: 1px solid var(--ct-border); overflow: hidden; max-width: 1100px; }
+
+  /* Steps */
+  .ct-page .ct-steps    { display: flex; padding: 18px 28px 0; border-bottom: 1px solid var(--ct-border); }
+  .ct-page .ct-step     { display: flex; align-items: center; gap: 8px; flex: 1; padding-bottom: 14px; border-bottom: 2px solid var(--ct-border); }
+  .ct-page .ct-step.active { border-color: var(--ct-primary); }
+  .ct-page .ct-step.done   { border-color: var(--ct-accent); }
+  .ct-page .ct-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--ct-border); color: var(--ct-text-3); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .ct-page .ct-step.active .ct-step-num { background: var(--ct-primary); color: #fff; }
+  .ct-page .ct-step.done   .ct-step-num { background: var(--ct-accent);  color: #fff; }
+  .ct-page .ct-step-text { font-size: 12px; font-weight: 600; color: var(--ct-text-3); }
+  .ct-page .ct-step.active .ct-step-text { color: var(--ct-primary); }
+  .ct-page .ct-step.done   .ct-step-text { color: var(--ct-accent); }
+
+  /* Sections */
+  .ct-page .ct-section { padding: 22px 28px; border-bottom: 1px solid var(--ct-border); }
+  .ct-page .ct-section:last-of-type { border-bottom: none; }
+  .ct-page .ct-section-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--ct-text-3); margin-bottom: 18px; }
+  .ct-page .ct-section-label::after { content:''; flex:1; height:1px; background:var(--ct-border); }
+  .ct-page .ct-sec-icon { width:26px; height:26px; border-radius:6px; background:var(--ct-primary-light); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ct-page .ct-sec-icon svg { width:13px; height:13px; stroke:var(--ct-primary); fill:none; stroke-width:2; }
+  .ct-page .ct-path-section { background:linear-gradient(135deg,#fffbf0,#fff8ed); border-left:3px solid var(--ct-warning); }
+  .ct-page .ct-path-section .ct-sec-icon { background:#fef3c7; }
+  .ct-page .ct-path-section .ct-sec-icon svg { stroke:var(--ct-warning); }
+
+  .ct-page .ct-context-note { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:500; }
+  .ct-page .ct-context-note.path { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
+  .ct-page .ct-context-note svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
+
+  /* Grid */
+  .ct-page .ct-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .ct-page .ct-row:last-child { margin-bottom:0; }
+  @media (max-width:600px) { .ct-page .ct-row { grid-template-columns:1fr; } .ct-page { padding:14px; } .ct-page .ct-section { padding:16px; } }
+
+  /* Form groups */
+  .ct-page .ct-fg { display:flex; flex-direction:column; gap:5px; }
+  .ct-page .ct-fg label { font-size:13px; font-weight:600; color:var(--ct-text-2); }
+  .ct-page .ct-fg label .req { color:var(--ct-danger); margin-left:2px; }
+  .ct-page .ct-fg input,
+  .ct-page .ct-fg select,
+  .ct-page .ct-fg textarea {
+    font-family:inherit; font-size:14px; color:var(--ct-text);
+    background:var(--ct-surface-2); border:1.5px solid var(--ct-border);
+    border-radius:8px; padding:9px 13px; outline:none;
+    transition:border-color .16s, box-shadow .16s, background .16s; width:100%;
+  }
+  .ct-page .ct-fg input:focus,
+  .ct-page .ct-fg select:focus,
+  .ct-page .ct-fg textarea:focus  { border-color:var(--ct-focus); background:#fff; box-shadow:0 0 0 3px rgba(59,110,246,.10); }
+  .ct-page .ct-fg.ct-error input,
+  .ct-page .ct-fg.ct-error select,
+  .ct-page .ct-fg.ct-error textarea { border-color:var(--ct-danger); box-shadow:0 0 0 3px rgba(229,62,62,.08); }
+  .ct-page .ct-err-msg  { font-size:12px; color:var(--ct-danger); display:none; }
+  .ct-page .ct-fg.ct-error .ct-err-msg { display:block; }
+  .ct-page .ct-hint     { font-size:12px; color:var(--ct-text-3); }
+
+  /* Native select — no Bootstrap Select / TomSelect classes here */
+  .ct-page select {
+    appearance:-webkit-appearance;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    padding-right:34px;
+    cursor:pointer;
+  }
+  .ct-page select:disabled { opacity:.55; cursor:not-allowed; background-color:#f1f5f9; }
+
+  /* Pills */
+  .ct-page .ct-pills { display:flex; flex-wrap:wrap; gap:9px; }
+  .ct-page .ct-pill  { padding:7px 16px; border-radius:50px; font-size:13px; font-weight:500; border:1.5px solid var(--ct-border); background:var(--ct-surface-2); color:var(--ct-text-2); cursor:pointer; transition:all .15s; user-select:none; display:flex; align-items:center; gap:6px; }
+  .ct-page .ct-pill:hover  { border-color:var(--ct-primary); color:var(--ct-primary); background:var(--ct-primary-light); }
+  .ct-page .ct-pill.sel-rad   { border-color:var(--ct-primary); background:var(--ct-primary); color:#fff; }
+  .ct-page .ct-pill.sel-path  { border-color:#b45309; background:#d97706; color:#fff; }
+  .ct-page .ct-pill.sel-usg   { border-color:#0891b2; background:#0e7490; color:#fff; }
+  .ct-page .ct-pill.sel-other { border-color:#7c3aed; background:#7c3aed; color:#fff; }
+
+  /* Stepper */
+  .ct-page .ct-stepper { display:flex; align-items:center; background:var(--ct-surface-2); border:1.5px solid var(--ct-border); border-radius:8px; overflow:hidden; height:40px; }
+  .ct-page .ct-stepper:focus-within { border-color:var(--ct-focus); box-shadow:0 0 0 3px rgba(59,110,246,.10); }
+  .ct-page .ct-stepper button { background:none; border:none; width:36px; height:100%; font-size:17px; color:var(--ct-text-3); cursor:pointer; transition:background .14s,color .14s; display:flex; align-items:center; justify-content:center; }
+  .ct-page .ct-stepper button:hover { background:var(--ct-border); color:var(--ct-text); }
+  .ct-page .ct-stepper input  { flex:1; border:none !important; background:transparent !important; box-shadow:none !important; text-align:center; font-weight:600; font-size:14px; padding:0; min-width:0; }
+
+  /* Blood row */
+  .ct-page .ct-blood-row { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:end; }
+  .ct-page .ct-blood-sep { padding-bottom:10px; color:var(--ct-text-3); font-weight:600; text-align:center; font-size:13px; }
+
+  /* Toggle */
+  .ct-page .ct-toggle-wrap { display:flex; align-items:center; gap:11px; padding:9px 13px; background:var(--ct-surface-2); border:1.5px solid var(--ct-border); border-radius:8px; cursor:pointer; height:40px; transition:border-color .16s; }
+  .ct-page .ct-toggle-wrap:hover { border-color:var(--ct-focus); }
+  .ct-page .ct-track { width:36px; height:20px; background:var(--ct-border); border-radius:99px; position:relative; transition:background .2s; flex-shrink:0; }
+  .ct-page .ct-thumb { position:absolute; top:3px; left:3px; width:14px; height:14px; background:white; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+  .ct-page .ct-toggle-lbl { font-size:14px; color:var(--ct-text-2); font-weight:500; }
+  .ct-page input[type="checkbox"].ct-toggle-input { display:none; }
+  .ct-page input[type="checkbox"].ct-toggle-input:checked ~ .ct-toggle-wrap .ct-track { background:var(--ct-primary); }
+  .ct-page input[type="checkbox"].ct-toggle-input:checked ~ .ct-toggle-wrap .ct-thumb { transform:translateX(16px); }
+  .ct-page input[type="checkbox"].ct-toggle-input:checked ~ .ct-toggle-wrap .ct-toggle-lbl { color:var(--ct-primary); font-weight:600; }
+
+  /* Badges */
+  .ct-page .ct-badge      { display:inline-flex; align-items:center; gap:6px; font-size:12px; border-radius:6px; padding:4px 10px; font-weight:500; margin-bottom:14px; }
+  .ct-page .ct-badge-warn { color:var(--ct-warning); background:#fef3c7; }
+  .ct-page .ct-badge-info { color:#0C447C; background:#E6F1FB; }
+  .ct-page .ct-badge svg  { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2; }
+
+  /* Template mode buttons */
+  .ct-page .ct-tmpl-mode-btn { display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:8px; border:1.5px solid var(--ct-border); background:var(--ct-surface); font-size:13px; cursor:pointer; font-weight:500; }
+  .ct-page .ct-tmpl-mode-btn.ct-tmpl-active { background:var(--ct-primary-light) !important; border-color:var(--ct-primary) !important; color:var(--ct-primary); font-weight:600; }
+
+  /* Upload zone */
+  .ct-page .ct-upload-zone { border:2px dashed var(--ct-border); border-radius:10px; padding:22px; text-align:center; background:var(--ct-surface-2); cursor:pointer; transition:all .2s; }
+  .ct-page .ct-upload-zone:hover { border-color:var(--ct-primary); background:var(--ct-primary-light); }
+  .ct-page .ct-upload-zone.ct-upload-err { border-color:var(--ct-danger); background:#fff5f5; }
+
+  /* Footer */
+  .ct-page .ct-footer { padding:20px 28px; display:flex; align-items:center; justify-content:flex-end; gap:10px; background:var(--ct-surface-2); border-top:1px solid var(--ct-border); }
+  .ct-page .ct-btn { font-family:inherit; font-size:14px; font-weight:600; border:none; border-radius:8px; padding:9px 22px; cursor:pointer; transition:all .16s; display:flex; align-items:center; gap:6px; }
+  .ct-page .ct-btn svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; }
+  .ct-page .ct-btn-ghost   { background:transparent; color:var(--ct-text-2); border:1.5px solid var(--ct-border); }
+  .ct-page .ct-btn-ghost:hover { border-color:var(--ct-text-2); }
+  .ct-page .ct-btn-primary { background:var(--ct-primary); color:white; box-shadow:0 2px 8px rgba(59,110,246,.22); }
+  .ct-page .ct-btn-primary:hover { background:var(--ct-primary-dark); transform:translateY(-1px); box-shadow:0 4px 16px rgba(59,110,246,.30); }
+  .ct-page .ct-d-none { display:none !important; }
+
+  /* ── Toast stack (top-right, above everything) ───────────────────── */
+  #ctToastStack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 380px;
+    width: calc(100vw - 40px);
+  }
+  .ct-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid transparent;
+    pointer-events: all;
+    animation: ct-toast-in .28s cubic-bezier(.21,1.02,.73,1) forwards;
+    transition: opacity .2s, transform .2s;
+  }
+  .ct-toast.ct-toast-danger  { border-color: #e53e3e; }
+  .ct-toast.ct-toast-success { border-color: #38a169; }
+  .ct-toast.ct-toast-warning { border-color: #d97706; }
+  .ct-toast.ct-toast-info    { border-color: #3b82f6; }
+  .ct-toast-icon { flex-shrink:0; width:20px; height:20px; margin-top:1px; }
+  .ct-toast-icon svg { width:20px; height:20px; }
+  .ct-toast-body { flex:1; min-width:0; }
+  .ct-toast-title { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .ct-toast-msg   { font-size:13px; color:#4a5568; line-height:1.5; word-break:break-word; }
+  .ct-toast-close {
+    flex-shrink:0; background:none; border:none; cursor:pointer;
+    color:#94a3b8; padding:0; font-size:16px; line-height:1;
+    margin-top:-1px; transition:color .15s;
+  }
+  .ct-toast-close:hover { color:#1a202c; }
+  .ct-toast.ct-toast-out { opacity:0; transform:translateX(24px); pointer-events:none; }
+  @keyframes ct-toast-in { from { opacity:0; transform:translateX(24px); } to { opacity:1; transform:translateX(0); } }
+
+  /* ── TomSelect overrides ─────────────────────────────────────────── */
+  .ts-wrapper.ct-select .ts-control {
+    border: 1.5px solid var(--ct-border);
+    border-radius: 8px;
+    padding: 9px 34px 9px 13px;
+    background: var(--ct-surface-2);
+    font-size: 14px;
+    color: var(--ct-text);
+    min-height: 40px;
+    box-shadow: none;
+  }
+  .ts-wrapper.ct-select.focus .ts-control {
+    border-color: var(--ct-focus);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(59,110,246,.10);
+  }
+  .ts-wrapper.ct-select.disabled .ts-control {
+    opacity: .55;
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+  }
+  .ts-wrapper.ct-select .ts-dropdown {
+    border: 1.5px solid var(--ct-border);
+    border-radius: 8px;
+    box-shadow: var(--ct-shadow);
+    margin-top: 4px;
+  }
+  .ts-wrapper.ct-select .ts-dropdown .option {
+    padding: 8px 13px;
+    font-size: 14px;
+  }
+  .ts-wrapper.ct-select .ts-dropdown .option.active {
+    background: var(--ct-primary-light);
+    color: var(--ct-primary);
+  }
+  .ts-wrapper.ct-select .ts-dropdown .option.selected {
+    background: var(--ct-primary);
+    color: #fff;
+  }
+  .ts-wrapper.ct-select .ts-dropdown .create,
+  .ts-wrapper.ct-select .ts-dropdown .no-results {
+    padding: 8px 13px;
+    font-size: 13px;
+    color: var(--ct-text-3);
+  }
+  .ts-wrapper.ct-select .ts-control .item {
+    background: transparent;
+    color: var(--ct-text);
+  }
+  .ts-wrapper.ct-select .ts-control input::placeholder {
+    color: var(--ct-text-3);
+  }
+  .ts-wrapper.ct-select .ts-control .clear-button {
+    font-size: 18px;
+    color: var(--ct-text-3);
+  }
+</style>
+
+<!-- ── Toast Stack (lives outside the form card) ───────────────────── -->
+<div id="ctToastStack"></div>
+
+<div class="ct-page">
+  <div class="ct-title">Create New Test</div>
+  <div class="ct-subtitle">Fields adjust automatically based on category — Pathology hides film fields; Radiology/CT/MRI hides lab-sample fields.</div>
+
+  <div class="ct-card">
+
+    <div class="ct-steps">
+      <div class="ct-step active"><div class="ct-step-num">1</div><div class="ct-step-text">Basic Info</div></div>
+      <div class="ct-step"><div class="ct-step-num">2</div><div class="ct-step-text">Configuration</div></div>
+      <div class="ct-step"><div class="ct-step-num">3</div><div class="ct-step-text">Templates</div></div>
+    </div>
+
+    <form id="ctForm" action="/test/registerTest" method="post" novalidate>
+
+      <%- include("../partials/messages"); %>
+
+      <!-- 1. Category & Basic -->
+      <div class="ct-section">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2"/></svg>
+          </div>
+          Basic Information
+        </div>
+
+        <div class="ct-fg" style="margin-bottom:18px">
+          <label>Main Category <span class="req">*</span></label>
+          <input type="hidden" id="ctMainCategory" name="MainCategory" value="">
+          <div class="ct-pills" id="ctPills">
+            <% if (typeof categories != 'undefined') { %>
+              <% categories.forEach(function(c) { %>
+                <%
+                  var catLower = c.Name.toLowerCase();
+                  var dataCat  = 'other';
+                  if      (catLower.includes('pathology'))                                         dataCat = 'pathology';
+                  else if (catLower.includes('mri'))                                               dataCat = 'mri';
+                  else if (catLower.includes('usg') || catLower.includes('ultrasound'))            dataCat = 'usg';
+                  else if (catLower.includes('ct')  || catLower.includes('scan'))                  dataCat = 'ct';
+                  else if (catLower.includes('xray') || catLower.includes('x-ray') || catLower.includes('radio')) dataCat = 'radiology';
+                %>
+                <div class="ct-pill"
+                     data-value="<%= c.Id %>"
+                     data-cat="<%= dataCat %>"
+                     onclick="ctSelectCategory(this)">
+                  <%= c.Name %>
+                </div>
+              <% }) %>
+            <% } %>
+          </div>
+          <div class="ct-err-msg" id="ctCatErr" style="display:none">Please select a category.</div>
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label for="ctName">Test Name <span class="req">*</span></label>
+            <input type="text" id="ctName" name="Name" placeholder="e.g., Complete Blood Count" required autocomplete="off">
+            <div class="ct-err-msg">Please enter a test name.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctPrice">Price (₹) <span class="req">*</span></label>
+            <input type="number" id="ctPrice" name="Price" placeholder="e.g., 500" min="0" required>
+            <div class="ct-err-msg">Please enter a valid price.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Timing & Film -->
+      <div class="ct-section">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          Timing &amp; Media
+        </div>
+
+        <div class="ct-row" style="margin-bottom:16px">
+          <div class="ct-fg">
+            <label for="ctReportingTime">Reporting Time <span class="req">*</span></label>
+            <input type="text" id="ctReportingTime" name="TimeTakenForReporting" placeholder="e.g., 2 hours / Same day" required>
+            <div class="ct-err-msg">Please enter reporting time.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctDay">Test Duration (mins) <span class="req">*</span></label>
+            <input type="number" id="ctDay" name="Day" placeholder="e.g., 30" min="1" required>
+            <div class="ct-err-msg">Please enter test duration.</div>
+          </div>
+        </div>
+
+        <div class="ct-row" id="ctFilmRow">
+          <div class="ct-fg">
+            <label for="ctFilmType">Film Type Required <span class="req">*</span></label>
+            <select id="ctFilmType" name="FilmType" required>
+              <option value="" disabled selected>Select film type</option>
+              <% filmTypes.forEach(function(film) { %>
+                <option value="<%= film.Id %>"><%= film.Name %></option>
+              <% }) %>
+            </select>
+            <div class="ct-err-msg">Please select a film type.</div>
+          </div>
+          <div class="ct-fg">
+            <label>Number of Films</label>
+            <div class="ct-stepper">
+              <button type="button" onclick="ctStep('ctNoOfFilms',-1)">−</button>
+              <input type="number" id="ctNoOfFilms" name="NoOfFilms" value="0" min="0" max="10" readonly>
+              <button type="button" onclick="ctStep('ctNoOfFilms',1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ct-context-note path ct-d-none" id="ctFilmPathMsg">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+          Film / imaging media is not applicable for Pathology tests.
+        </div>
+      </div>
+
+      <!-- 3. Report & Description -->
+      <div class="ct-section">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+          </div>
+          Report Settings
+        </div>
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label>Report Required <span class="req">*</span></label>
+            <input type="checkbox" class="ct-toggle-input" id="ctReportToggle" name="reportRequired" value="1">
+            <label for="ctReportToggle" class="ct-toggle-wrap">
+              <div class="ct-track"><div class="ct-thumb"></div></div>
+              <span class="ct-toggle-lbl">No Report Required</span>
+            </label>
+          </div>
+          <div class="ct-fg">
+            <label for="ctDesc">Description</label>
+            <textarea id="ctDesc" name="Description" placeholder="Brief description of this test…" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Pathology Specific -->
+      <div class="ct-section ct-path-section ct-d-none" id="ctPathologySection">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18"/></svg>
+          </div>
+          Pathology Details
+        </div>
+        <div class="ct-badge ct-badge-warn">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Shown only for Pathology category
+        </div>
+
+        <div class="ct-row" style="margin-bottom:16px">
+          <div class="ct-fg">
+            <label for="ctType">Pathology Test Type</label>
+            <select id="ctType" name="Type">
+              <option value="1">Normal</option>
+              <option value="2">Special</option>
+            </select>
+          </div>
+          <div class="ct-fg">
+            <label>Number of Parameters <span class="req">*</span></label>
+            <div class="ct-stepper">
+              <button type="button" onclick="ctStep('ctParameter',-1)">−</button>
+              <input type="number" id="ctParameter" name="Parameter" value="1" min="1" max="100" readonly>
+              <button type="button" onclick="ctStep('ctParameter',1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:13px;font-weight:600;color:var(--ct-text-2);display:block;margin-bottom:7px">
+            Blood Sample Amount (ml) <span class="req">*</span>
+          </label>
+          <div class="ct-blood-row">
+            <div class="ct-fg">
+              <input type="number" id="ctMinBlood" name="MinAmountOfBlood" placeholder="Min e.g. 2" min="0" step="0.5">
+              <span class="ct-hint">Minimum volume</span>
+              <div class="ct-err-msg">Minimum blood volume required.</div>
+            </div>
+            <div class="ct-blood-sep">–</div>
+            <div class="ct-fg">
+              <input type="number" id="ctMaxBlood" name="MaxAmountOfBlood" placeholder="Max e.g. 10" min="0" step="0.5">
+              <span class="ct-hint">Maximum volume</span>
+              <div class="ct-err-msg">Maximum blood volume required.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ct-row" style="margin-bottom:16px">
+          <div class="ct-fg">
+            <label>Specimen Type <span class="req">*</span></label>
+            <select name="SpecimenType" id="ctSpecimenType" class="ct-select">
+              <option value="" disabled selected>Select specimen</option>
+              <% if (typeof specimenTypes !== 'undefined' && specimenTypes.length) { %>
+                <% specimenTypes.forEach(function(st) { %>
+                  <option value="<%= st.Id %>"><%= st.TypeName %></option>
+                <% }) %>
+              <% } %>
+            </select>
+            <div class="ct-err-msg">Please select a specimen type.</div>
+          </div>
+          <div class="ct-fg">
+            <label>Sample Container <span class="req">*</span></label>
+            <select name="SampleContainer" id="ctSampleContainer" class="ct-select">
+              <option value="" disabled selected>Select specimen type first</option>
+            </select>
+            <div class="ct-err-msg">Please select a container.</div>
+          </div>
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label>Inversions Required</label>
+            <div class="ct-stepper">
+              <button type="button" onclick="ctStep('ctInversion',-1)">−</button>
+              <input type="number" id="ctInversion" name="Inversion" value="0" min="0" max="20" readonly>
+              <button type="button" onclick="ctStep('ctInversion',1)">+</button>
+            </div>
+            <span class="ct-hint">No. of tube inversions needed</span>
+          </div>
+          <div class="ct-fg">
+            <label>Fasting Required</label>
+            <select name="FastingRequired">
+              <option value="0">Not Required</option>
+              <option value="1">8 Hours Fasting</option>
+              <option value="2">12 Hours Fasting</option>
+              <option value="3">Overnight Fasting</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Report Templates -->
+      <div class="ct-section ct-d-none" id="ctTemplateSection">
+        <div class="ct-section-label">
+          <div class="ct-sec-icon">
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          Default Report Templates
+        </div>
+        <div class="ct-badge ct-badge-info">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+          These templates will be used by all doctors unless they create custom templates
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <label class="ct-tmpl-mode-btn ct-tmpl-active" id="btnTemplateCommon">
+            <input type="radio" name="templateMode" value="common" checked
+                   onchange="ctSetTemplateMode('common')" style="accent-color:var(--ct-primary)">
+            ⚥ Common (same for both)
+          </label>
+          <label class="ct-tmpl-mode-btn" id="btnTemplateSeparate">
+            <input type="radio" name="templateMode" value="separate"
+                   onchange="ctSetTemplateMode('separate')" style="accent-color:var(--ct-primary)">
+            ♂♀ Separate (gender specific)
+          </label>
+        </div>
+
+        <div id="ctUploadCommon">
+          <div class="ct-fg">
+            <label>Common Template (Male &amp; Female)</label>
+            <div class="ct-upload-zone" id="zoneCommon" onclick="document.getElementById('fileTemplateCommon').click()">
+              <input type="file" id="fileTemplateCommon" name="fileTemplateCommon"
+                     accept=".docx" onchange="ctHandleTemplateFile('Common')" style="display:none">
+              <svg viewBox="0 0 24 24" style="width:32px;height:32px;margin:0 auto 10px;stroke:var(--ct-primary);fill:none;stroke-width:2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <div style="font-size:13px;font-weight:600;color:var(--ct-primary)" id="lblTemplateCommon">Click to upload .docx template</div>
+              <div style="font-size:11px;color:var(--ct-text-3);margin-top:4px">Applies to both male and female patients</div>
+            </div>
+            <div id="previewTemplateCommon" style="display:none;margin-top:12px">
+              <button type="button" class="ct-btn ct-btn-ghost" style="padding:7px 16px;font-size:13px" onclick="ctPreviewTemplate('Common')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Preview Template
+              </button>
+            </div>
+            <div id="previewBoxTemplateCommon" style="display:none;margin-top:12px;border:1.5px solid var(--ct-border);border-radius:10px;padding:14px;background:var(--ct-surface);max-height:240px;overflow-y:auto;font-size:12px"></div>
+            <div id="statusTemplateCommon" style="font-size:11px;margin-top:6px;color:var(--ct-text-3)"></div>
+            <textarea name="templateCommon" id="htmlTemplateCommon" style="display:none"></textarea>
+          </div>
+        </div>
+
+        <div id="ctUploadSeparate" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--ct-primary);margin-bottom:8px">♂ Male Template</div>
+              <div class="ct-upload-zone" onclick="document.getElementById('fileTemplateMale').click()">
+                <input type="file" id="fileTemplateMale" name="fileTemplateMale" accept=".docx" onchange="ctHandleTemplateFile('Male')" style="display:none">
+                <svg viewBox="0 0 24 24" style="width:24px;height:24px;margin:0 auto 6px;stroke:var(--ct-primary);fill:none;stroke-width:2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <div style="font-size:12px;font-weight:600;color:var(--ct-primary)" id="lblTemplateMale">Upload male template</div>
+              </div>
+              <div id="previewTemplateMale" style="display:none;margin-top:10px">
+                <button type="button" class="ct-btn ct-btn-ghost" style="padding:6px 14px;font-size:12px" onclick="ctPreviewTemplate('Male')">
+                  <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Preview
+                </button>
+              </div>
+              <div id="previewBoxTemplateMale" style="display:none;margin-top:10px;border:1.5px solid var(--ct-border);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:11px"></div>
+              <div id="statusTemplateMale" style="font-size:10px;margin-top:4px"></div>
+              <textarea name="templateMale" id="htmlTemplateMale" style="display:none"></textarea>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#A32D2D;margin-bottom:8px">♀ Female Template</div>
+              <div class="ct-upload-zone" onclick="document.getElementById('fileTemplateFemale').click()">
+                <input type="file" id="fileTemplateFemale" name="fileTemplateFemale" accept=".docx" onchange="ctHandleTemplateFile('Female')" style="display:none">
+                <svg viewBox="0 0 24 24" style="width:24px;height:24px;margin:0 auto 6px;stroke:#A32D2D;fill:none;stroke-width:2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <div style="font-size:12px;font-weight:600;color:#A32D2D" id="lblTemplateFemale">Upload female template</div>
+              </div>
+              <div id="previewTemplateFemale" style="display:none;margin-top:10px">
+                <button type="button" class="ct-btn ct-btn-ghost" style="padding:6px 14px;font-size:12px" onclick="ctPreviewTemplate('Female')">
+                  <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Preview
+                </button>
+              </div>
+              <div id="previewBoxTemplateFemale" style="display:none;margin-top:10px;border:1.5px solid var(--ct-border);border-radius:8px;padding:12px;max-height:200px;overflow-y:auto;font-size:11px"></div>
+              <div id="statusTemplateFemale" style="font-size:10px;margin-top:4px"></div>
+              <textarea name="templateFemale" id="htmlTemplateFemale" style="display:none"></textarea>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--ct-text-3);margin-top:8px;text-align:center">You can upload one or both. Skip whichever doesn't apply.</div>
+        </div>
+
+        <div style="margin-top:16px;padding:12px 16px;background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;font-size:11px;color:#633806;line-height:1.8">
+          <strong>Available placeholders:</strong><br>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;border-radius:3px">{{PatientName}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{Age}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{Gender}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{Date}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{TestName}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{DoctorName}}</code>
+          <code style="background:rgba(0,0,0,.08);padding:1px 5px;margin-left:2px;border-radius:3px">{{ReportingDoctor}}</code>
+        </div>
+      </div>
+
+      <div class="ct-footer">
+        <button type="button" class="ct-btn ct-btn-ghost" onclick="ctReset()">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+        <button type="submit" class="ct-btn ct-btn-primary">
+          <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+          Create Test
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<%# Safe JSON island — browser never executes type="application/json" blocks.
+    JSON is stored as text content (not attribute), so <, >, & are safe.
+    JS reads el.textContent which gives the raw JSON string. %>
+<script type="application/json" id="ctContainerJson"><%- JSON.stringify(typeof containers !== 'undefined' ? containers : []) %></script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOAST SYSTEM
+  ═══════════════════════════════════════════════════════════════════ */
+
+  var TOAST_ICONS = {
+    danger:  '<svg viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>',
+  };
+  var TOAST_TITLES = { danger:'Error', success:'Success', warning:'Warning', info:'Info' };
+
+  window.ctToast = function (type, title, message, ms) {
+    var stack    = document.getElementById('ctToastStack');
+    var duration = (ms === undefined) ? 5000 : ms;
+    var t        = document.createElement('div');
+    t.className  = 'ct-toast ct-toast-' + type;
+    t.innerHTML  =
+      '<div class="ct-toast-icon">' + (TOAST_ICONS[type] || TOAST_ICONS.info) + '</div>' +
+      '<div class="ct-toast-body">' +
+        '<div class="ct-toast-title">' + ctEsc(title || TOAST_TITLES[type] || 'Notice') + '</div>' +
+        '<div class="ct-toast-msg">'   + ctEsc(message || '').replace(/\n/g, '<br>') + '</div>' +
+      '</div>' +
+      '<button type="button" class="ct-toast-close" aria-label="Dismiss">&times;</button>';
+    stack.appendChild(t);
+    t.querySelector('.ct-toast-close').addEventListener('click', function () { ctDismissToast(t); });
+    if (duration > 0) setTimeout(function () { ctDismissToast(t); }, duration);
+    return t;
+  };
+
+  function ctDismissToast(el) {
+    if (!el || !el.parentNode) return;
+    el.classList.add('ct-toast-out');
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+  }
+
+  function ctEsc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  window.ctShowErrors = function (errors) {
+    ctToast('danger', 'Please fix ' + errors.length + ' error' + (errors.length > 1 ? 's' : '') + ' before submitting', errors.join('\n'), 0);
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CONSTANTS
+  ═══════════════════════════════════════════════════════════════════ */
+  var PATHOLOGY_CATS = ['pathology'];
+  var IMAGING_CATS   = ['radiology','mri','ct'];
+  var USG_CATS       = ['usg'];
+  var PILL_CLASS     = { radiology:'sel-rad', mri:'sel-rad', ct:'sel-rad', usg:'sel-usg', pathology:'sel-path', other:'sel-other' };
+
+  var currentCat = null;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CONTAINER MAP
+  ═══════════════════════════════════════════════════════════════════ */
+  var ctContainerData = (function () {
+    var el = document.getElementById('ctContainerJson');
+    if (!el) return [];
+    try { return JSON.parse(el.textContent || el.innerHTML || '[]'); } catch (e) { return []; }
+  }());
+
+  var ctContainerMap = {};
+  ctContainerData.forEach(function (c) {
+    var sid = c.SpecimenTypeId || c.specimenTypeId ||
+              c.SpecimenTypeID || c.specimenTypeID ||
+              c.specimen_type_id;
+    if (sid == null) return;
+    sid = String(sid);
+    if (!ctContainerMap[sid]) ctContainerMap[sid] = [];
+    ctContainerMap[sid].push(c);
+  });
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOMSELECT HELPERS
+  ═══════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Get the TomSelect instance for an element id (if it exists).
+   */
+  function getTS(id) {
+    var el = document.getElementById(id);
+    return (el && el.tomselect) ? el.tomselect : null;
+  }
+
+  /**
+   * Replace all options in a TomSelect-controlled select.
+   * Uses TomSelect's public API (v2.x compatible).
+   */
+  function tsReplaceOptions(id, items, placeholder, disabled) {
+    var ts = getTS(id);
+
+    if (ts) {
+      /* ── TomSelect v2.x public API ─────────────────────────── */
+      ts.clear(true);           // deselect silently
+      ts.clearOptions();        // wipe internal options cache
+
+      if (items.length) {
+        // addOption (singular) is the correct method in TomSelect v2
+        items.forEach(function (item) {
+          ts.addOption({ value: item.value, text: item.label });
+        });
+      }
+
+      ts.refreshOptions(false); // refresh dropdown without triggering search
+      ts.sync();              // re-sync native <select> for form submission
+
+      /* Update the visible placeholder */
+      ts.settings.placeholder = placeholder;
+      if (ts.control_input) {
+        ts.control_input.placeholder = placeholder;
+      }
+
+      if (disabled) {
+        ts.disable();
+      } else {
+        ts.enable();
+      }
+
+    } else {
+      /* ── Native DOM fallback (TomSelect not yet initialised) ────── */
+      var sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '';
+      var ph = document.createElement('option');
+      ph.value = ''; ph.disabled = true; ph.selected = true;
+      ph.textContent = placeholder;
+      sel.appendChild(ph);
+      items.forEach(function (item) {
+        var opt = document.createElement('option');
+        opt.value = item.value; opt.textContent = item.label;
+        sel.appendChild(opt);
+      });
+      if (disabled) sel.setAttribute('disabled','');
+      else          sel.removeAttribute('disabled');
+    }
+  }
+
+  function resetContainerSelect() {
+    tsReplaceOptions('ctSampleContainer', [], 'Select specimen type first', true);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ctFilterContainers — specimen → container cascade
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctFilterContainers = function () {
+    var ts = getTS('ctSpecimenType');
+    var specId = String(ts ? ts.getValue() : '').trim();
+
+    var rows = (specId && ctContainerMap[specId]) ? ctContainerMap[specId] : [];
+
+    if (!rows.length) {
+      tsReplaceOptions(
+        'ctSampleContainer',
+        [],
+        specId ? 'No containers for this specimen' : 'Select specimen type first',
+        true
+      );
+      var fg = document.getElementById('ctSampleContainer');
+      if (fg) {
+        var closest = fg.closest && fg.closest('.ct-fg');
+        if (closest) closest.classList.remove('ct-error');
+      }
+      return;
+    }
+
+    var items = rows.map(function (c) {
+      return { value: String(c.Id), label: c.ContainerName + ' \u2014 ' + c.CapColor + ' cap' };
+    });
+
+    tsReplaceOptions('ctSampleContainer', items, 'Select container', false);
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TOM SELECT INITIALIZATION
+     Must run AFTER DOM is ready and AFTER ctContainerMap is built
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function initTomSelect() {
+    /* ── Specimen Type ───────────────────────────────────────────── */
+    new TomSelect('#ctSpecimenType', {
+      plugins: [],
+      placeholder: 'Select specimen',
+      allowEmptyOption: true,
+      maxItems: 1,
+      onChange: function () {
+        ctFilterContainers();
+      }
+    });
+
+    /* ── Sample Container (starts empty/disabled) ───────────────── */
+    new TomSelect('#ctSampleContainer', {
+      plugins: [],
+      placeholder: 'Select specimen type first',
+      allowEmptyOption: true,
+      maxItems: 1
+    });
+
+    /* Disable container initially since no specimen selected */
+    var tsContainer = getTS('ctSampleContainer');
+    if (tsContainer) tsContainer.disable();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PILL SELECTION
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctSelectCategory = function (el) {
+    document.querySelectorAll('.ct-pill').forEach(function (p) {
+      p.classList.remove('sel-rad','sel-path','sel-usg','sel-other');
+    });
+    el.classList.add(PILL_CLASS[el.dataset.cat] || 'sel-rad');
+    document.getElementById('ctMainCategory').value = el.dataset.value;
+    currentCat = el.dataset.cat;
+    document.getElementById('ctCatErr').style.display = 'none';
+    applyRules();
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     CATEGORY RULES
+  ═══════════════════════════════════════════════════════════════════ */
+  function applyRules() {
+    var isPath    = PATHOLOGY_CATS.indexOf(currentCat) !== -1;
+    var isImaging = IMAGING_CATS.indexOf(currentCat)   !== -1;
+    var isUSG     = USG_CATS.indexOf(currentCat)       !== -1;
+
+    document.getElementById('ctFilmRow').classList.toggle('ct-d-none', isPath);
+    document.getElementById('ctFilmPathMsg').classList.toggle('ct-d-none', !isPath);
+    var filmSel = document.getElementById('ctFilmType');
+    if (isImaging) { filmSel.setAttribute('required',''); }
+    else { filmSel.removeAttribute('required'); if (isPath || isUSG) filmSel.value = ''; }
+
+    document.getElementById('ctPathologySection').classList.toggle('ct-d-none', !isPath);
+    setPathRequired(isPath);
+    if (!isPath) {
+      document.getElementById('ctMinBlood').value = '';
+      document.getElementById('ctMaxBlood').value = '';
+    }
+
+    var tog = document.getElementById('ctReportToggle');
+    var tpl = document.getElementById('ctTemplateSection');
+    if (isPath) {
+      tpl.classList.add('ct-d-none');
+      tog.checked = false;
+      setTogLabel(tog, false);
+    } else {
+      tpl.classList.toggle('ct-d-none', !tog.checked);
+    }
+  }
+
+  function setPathRequired(on) {
+    ['ctMinBlood','ctMaxBlood'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (on) el.setAttribute('required','');
+      else    el.removeAttribute('required');
+    });
+    
+    /* Handle specimen and container required attributes via TomSelect */
+    var tsSpec = getTS('ctSpecimenType');
+    var tsCont = getTS('ctSampleContainer');
+    
+    if (on) {
+      document.getElementById('ctSpecimenType').setAttribute('required','');
+      document.getElementById('ctSampleContainer').setAttribute('required','');
+    } else {
+      document.getElementById('ctSpecimenType').removeAttribute('required');
+      document.getElementById('ctSampleContainer').removeAttribute('required');
+    }
+
+    if (!on) {
+      if (tsSpec) tsSpec.clear(true);
+      else { var s = document.getElementById('ctSpecimenType'); if (s) s.value = ''; }
+      resetContainerSelect();
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     STEPPER
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctStep = function (id, delta) {
+    var el = document.getElementById(id);
+    var mn = parseInt(el.min,  10); if (isNaN(mn)) mn = 0;
+    var mx = parseInt(el.max,  10); if (isNaN(mx)) mx = 999;
+    el.value = Math.max(mn, Math.min(mx, (parseInt(el.value,10) || 0) + delta));
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     REPORT TOGGLE
+  ═══════════════════════════════════════════════════════════════════ */
+  function setTogLabel(cb, checked) {
+    var lbl = cb.nextElementSibling && cb.nextElementSibling.querySelector('.ct-toggle-lbl');
+    if (lbl) lbl.textContent = checked ? 'Report Required' : 'No Report Required';
+  }
+
+  var togReport = document.getElementById('ctReportToggle');
+  if (togReport) {
+    togReport.addEventListener('change', function () {
+      setTogLabel(this, this.checked);
+      if (PATHOLOGY_CATS.indexOf(currentCat) === -1) {
+        document.getElementById('ctTemplateSection').classList.toggle('ct-d-none', !this.checked);
+      }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     TEMPLATE MODE
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctSetTemplateMode = function (mode) {
+    document.getElementById('ctUploadCommon').style.display   = mode === 'common'   ? '' : 'none';
+    document.getElementById('ctUploadSeparate').style.display = mode === 'separate' ? '' : 'none';
+    document.getElementById('btnTemplateCommon').classList.toggle('ct-tmpl-active',   mode === 'common');
+    document.getElementById('btnTemplateSeparate').classList.toggle('ct-tmpl-active', mode === 'separate');
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FILE UPLOAD
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctHandleTemplateFile = async function (cap) {
+    var inp  = document.getElementById('fileTemplate'       + cap);
+    var lbl  = document.getElementById('lblTemplate'        + cap);
+    var pr   = document.getElementById('previewTemplate'    + cap);
+    var st   = document.getElementById('statusTemplate'     + cap);
+    var box  = document.getElementById('previewBoxTemplate' + cap);
+    var htm  = document.getElementById('htmlTemplate'       + cap);
+    var zone = inp.closest('.ct-upload-zone');
+
+    if (!inp.files.length) {
+      lbl.textContent   = cap === 'Common' ? 'Click to upload .docx template' : 'Upload ' + cap.toLowerCase() + ' template';
+      st.textContent    = ''; pr.style.display = 'none'; box.style.display = 'none'; htm.value = '';
+      return;
+    }
+
+    lbl.textContent  = inp.files[0].name;
+    zone.classList.remove('ct-upload-err');
+    st.textContent   = 'Converting\u2026'; st.style.color = '#633806';
+    pr.style.display = 'none'; box.style.display = 'none';
+
+    var fd = new FormData();
+    fd.append('docxFile', inp.files[0]);
+    try {
+      var res  = await fetch('/test/previewTemplate', { method:'POST', body:fd });
+      var data = await res.json();
+      if (data.success) {
+        htm.value = data.html; pr.style.display = 'block';
+        st.textContent = '\u2713 Converted successfully'; st.style.color = '#27500A';
+        ctToast('success', 'Template converted', cap + ' template ready to preview.', 3000);
+      } else {
+        st.textContent = 'Conversion failed: ' + data.message; st.style.color = '#A32D2D'; htm.value = '';
+        ctToast('danger', 'Template conversion failed', data.message, 0);
+      }
+    } catch (e) {
+      st.textContent = 'Error: ' + e.message; st.style.color = '#A32D2D'; htm.value = '';
+      ctToast('danger', 'Upload error', e.message, 0);
+    }
+  };
+
+  window.ctPreviewTemplate = function (cap) {
+    var htm = document.getElementById('htmlTemplate'       + cap);
+    var box = document.getElementById('previewBoxTemplate' + cap);
+    if (!htm.value) { ctToast('warning','No template','Please upload a template file first.',3000); return; }
+    var showing = box.style.display === 'block';
+    box.style.display = showing ? 'none' : 'block';
+    if (!showing) box.innerHTML = htm.value;
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FORM VALIDATION & SUBMIT
+  ═══════════════════════════════════════════════════════════════════ */
+  var form = document.getElementById('ctForm');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      document.querySelectorAll('#ctToastStack .ct-toast').forEach(function (t) {
+        t.classList.add('ct-toast-out');
+        setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 220);
+      });
+
+      var ok = true, errs = [];
+
+      if (!currentCat) {
+        document.getElementById('ctCatErr').style.display = 'block';
+        errs.push('Please select a category'); ok = false;
+      }
+
+      var pathOnlyIds = ['ctMinBlood','ctMaxBlood'];
+
+      form.querySelectorAll('[required]').forEach(function (el) {
+        /* Skip path-only fields when not pathology */
+        if (pathOnlyIds.indexOf(el.id) !== -1 && PATHOLOGY_CATS.indexOf(currentCat) === -1) return;
+        
+        /* Skip film type for non-imaging */
+        if (el.id === 'ctFilmType') {
+          if (PATHOLOGY_CATS.indexOf(currentCat) !== -1 || USG_CATS.indexOf(currentCat) !== -1 || currentCat === 'other') return;
+        }
+        
+        /* Skip specimen/container when not pathology */
+        if ((el.id === 'ctSpecimenType' || el.id === 'ctSampleContainer') && PATHOLOGY_CATS.indexOf(currentCat) === -1) return;
+
+        /* Read value from TomSelect if available, otherwise native */
+        var tsInst = getTS(el.id);
+        var val    = tsInst ? String(tsInst.getValue() || '').trim() : (el.value || '').trim();
+        var fg     = el.closest('.ct-fg');
+        if (!val) {
+          ok = false;
+          if (fg) fg.classList.add('ct-error');
+          var lbl = fg && fg.querySelector('label');
+          var nm  = lbl ? lbl.textContent.replace('*','').trim() : 'A required field';
+          if (errs.indexOf(nm + ' is required') === -1) errs.push(nm + ' is required');
+        } else { if (fg) fg.classList.remove('ct-error'); }
+      });
+
+      var priceEl = document.getElementById('ctPrice');
+      if (priceEl && priceEl.value !== '') {
+        var p = parseFloat(priceEl.value);
+        if (isNaN(p) || p < 0) { errs.push('Price must be a valid positive number'); ok = false; }
+        else if (p > 1000000)  { errs.push('Price seems unusually high (max \u20b910,00,000)'); ok = false; }
+      }
+
+      if (PATHOLOGY_CATS.indexOf(currentCat) !== -1) {
+        var mn = parseFloat(document.getElementById('ctMinBlood').value);
+        var mx = parseFloat(document.getElementById('ctMaxBlood').value);
+        if (!isNaN(mn) && !isNaN(mx) && mn > mx) { errs.push('Min blood volume cannot exceed max blood volume'); ok = false; }
+      }
+
+      var togRep = document.getElementById('ctReportToggle');
+      if (togRep && togRep.checked && PATHOLOGY_CATS.indexOf(currentCat) === -1) {
+        var mode = document.querySelector('input[name="templateMode"]:checked');
+        if (mode && mode.value === 'common') {
+          if (!document.getElementById('htmlTemplateCommon').value) {
+            errs.push('Please upload a common report template (.docx)'); ok = false;
+            var zc = document.getElementById('zoneCommon'); if (zc) zc.classList.add('ct-upload-err');
+          }
+        } else if (mode && mode.value === 'separate') {
+          if (!document.getElementById('htmlTemplateMale').value && !document.getElementById('htmlTemplateFemale').value) {
+            errs.push('Please upload at least one gender template (male or female)'); ok = false;
+          }
+        }
+      }
+
+      if (!ok) {
+        ctShowErrors(errs);
+        var firstErr = form.querySelector('.ct-fg.ct-error');
+        if (firstErr) firstErr.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        return;
+      }
+
+      form.submit();
+    });
+
+    form.querySelectorAll('input, select, textarea').forEach(function (el) {
+      el.addEventListener('change', function () { var fg = this.closest('.ct-fg'); if (fg) fg.classList.remove('ct-error'); });
+      el.addEventListener('input',  function () {
+        var fg = this.closest('.ct-fg'); if (fg) fg.classList.remove('ct-error');
+        var z  = this.closest('.ct-upload-zone'); if (z) z.classList.remove('ct-upload-err');
+      });
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     RESET
+  ═══════════════════════════════════════════════════════════════════ */
+  window.ctReset = function () {
+    if (form) form.reset();
+
+    document.querySelectorAll('.ct-pill').forEach(function (p) {
+      p.classList.remove('sel-rad','sel-path','sel-usg','sel-other');
+    });
+    currentCat = null;
+    document.getElementById('ctMainCategory').value = '';
+
+    ['ctPathologySection','ctTemplateSection','ctFilmPathMsg'].forEach(function (id) {
+      document.getElementById(id).classList.add('ct-d-none');
+    });
+    document.getElementById('ctFilmRow').classList.remove('ct-d-none');
+
+    var fs = document.getElementById('ctFilmType'); if (fs) fs.setAttribute('required','');
+    var tog = document.getElementById('ctReportToggle'); if (tog) setTogLabel(tog, false);
+
+    [['ctNoOfFilms',0],['ctInversion',0],['ctParameter',1]].forEach(function (p) {
+      var el = document.getElementById(p[0]); if (el) el.value = p[1];
+    });
+
+    ['Common','Male','Female'].forEach(function (cap) {
+      var e;
+      e = document.getElementById('htmlTemplate'       + cap); if (e) e.value         = '';
+      e = document.getElementById('previewTemplate'    + cap); if (e) e.style.display = 'none';
+      e = document.getElementById('previewBoxTemplate' + cap); if (e) e.style.display = 'none';
+      e = document.getElementById('statusTemplate'     + cap); if (e) e.textContent   = '';
+    });
+
+    /* Reset TomSelect instances */
+    var tsSpec = getTS('ctSpecimenType');
+    var tsCont = getTS('ctSampleContainer');
+    if (tsSpec) tsSpec.clear(true);
+    if (tsCont) {
+      tsCont.clear(true);
+      tsCont.disable();
+    }
+
+    setPathRequired(false);
+    document.getElementById('ctCatErr').style.display = 'none';
+    document.querySelectorAll('.ct-fg.ct-error').forEach(function (fg) { fg.classList.remove('ct-error'); });
+    document.querySelectorAll('#ctToastStack .ct-toast').forEach(function (t) { ctDismissToast(t); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════
+     INITIALIZE ON DOM READY
+  ═══════════════════════════════════════════════════════════════════ */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTomSelect);
+  } else {
+    initTomSelect();
+  }
+
+})();
+</script>

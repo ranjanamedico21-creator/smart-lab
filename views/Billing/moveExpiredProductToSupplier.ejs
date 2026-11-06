@@ -1,0 +1,315 @@
+<%
+  /* views/Billing/moveExpiredProductToSupplier.ejs
+     Variables: expiredList, supplierId, status, notifications (optional)
+     The GST % of every row is an editable box (gst_<id>). The GST % of the purchase is only the starting value:
+     if the GST rate has changed, type the new % (or press a quick button) BEFORE you generate the debit note. */
+  const flash = locals.notifications || [];
+  const n = (v) => Number(v) || 0;
+%>
+<style>
+  .xr-page .xr-gst { min-width: 84px; max-width: 100px; margin-left: auto; }
+  .xr-page .xr-gst-note { font-size: .7rem; min-height: 1em; }
+  .xr-page tr.xr-row.xr-picked > td { background: #f4f8ff; }
+  .xr-page td { white-space: nowrap; vertical-align: middle; }
+  .xr-page td.xr-product { white-space: normal; min-width: 200px; }
+</style>
+
+<div class="container-fluid py-4 xr-page">
+
+    <% flash.forEach(function (m) { %>
+        <div class="alert alert-<%= m.type %> d-flex align-items-start gap-2 shadow-sm" role="alert">
+            <i class="bi <%= m.icon || 'bi-info-circle-fill' %> mt-1"></i><div><%= m.messages %></div>
+        </div>
+    <% }) %>
+
+    <div class="card shadow-sm border-0">
+
+        <!-- HEADER -->
+        <div class="card-header bg-white border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-semibold mb-0">Return Expired Products To Supplier</h5>
+                    <small class="text-muted">Select items and enter quantity to generate debit note</small>
+                </div>
+                <div>
+                    <span class="badge bg-danger-subtle text-danger px-3 py-2">Expired Stock</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GST: quick set -->
+        <div class="px-3 pb-3">
+            <div class="d-flex flex-wrap align-items-center gap-2 p-3 rounded-3 bg-light border">
+                <span class="fw-semibold small"><i class="bi bi-percent me-1"></i>GST % of the debit note</span>
+                <span class="small text-muted">The GST % below is the one from the purchase. If the rate has changed, set the new % here <strong>before</strong> you generate the debit note.</span>
+                <span class="ms-auto d-flex flex-wrap align-items-center gap-2">
+                    <span class="small text-muted">Set all rows to</span>
+                    <span class="btn-group btn-group-sm" role="group" aria-label="Quick GST">
+                        <button type="button" class="btn btn-outline-primary xr-quick" data-gst="0">0%</button>
+                        <button type="button" class="btn btn-outline-primary xr-quick" data-gst="5">5%</button>
+                        <button type="button" class="btn btn-outline-primary xr-quick" data-gst="12">12%</button>
+                        <button type="button" class="btn btn-outline-primary xr-quick" data-gst="18">18%</button>
+                    </span>
+                    <span class="input-group input-group-sm" style="width:150px">
+                        <input type="number" class="form-control" id="xrCustomGst" min="0" max="100" step="0.01" placeholder="other %">
+                        <button type="button" class="btn btn-outline-secondary" id="xrApplyCustom">Set</button>
+                    </span>
+                </span>
+            </div>
+            <div class="small text-muted mt-2"><i class="bi bi-info-circle me-1"></i>A GST % you change for a batch is also remembered for the rest of that batch, so its next debit note starts at the same rate. Debit notes already made are not changed here (use <strong>Revise GST</strong> on their settlement page).</div>
+        </div>
+
+        <form method="POST" action="/billing/sendToSupplier" id="sendReturnForm" autocomplete="off">
+
+            <input type="hidden" name="supplierId" value="<%= supplierId %>">
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small text-muted">
+                        <tr>
+                            <th width="40"><input type="checkbox" class="form-check-input" id="xrSelectAll" title="Select all"></th>
+                            <th>Product</th>
+                            <th>Batch</th>
+                            <th>Expiry</th>
+                            <th class="text-end">Expired</th>
+                            <th class="text-end">Sent</th>
+                            <th class="text-end">Remaining</th>
+                            <th class="text-end">Rate</th>
+                            <th class="text-end" width="120">GST %</th>
+                            <th width="120">Send Qty</th>
+                            <th class="text-end">Taxable</th>
+                            <th class="text-end">GST</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <% if (!expiredList.length) { %>
+                            <tr><td colspan="13" class="text-center text-muted py-5"><i class="bi bi-check-circle me-1 text-success"></i>Nothing is waiting to be sent to this supplier.</td></tr>
+                        <% } %>
+
+                        <% expiredList.forEach(row => { %>
+                            <tr class="xr-row" data-rate="<%= n(row.PurchasePrice) %>" data-remaining="<%= n(row.RemainingSendQty) %>"
+                                data-orig-gst="<%= n(row.IgstPercentage).toFixed(2) %>" data-name="<%= row.ProductName %>" data-batch="<%= row.BatchNumber %>">
+
+                                <td><input type="checkbox" class="form-check-input xr-select" name="expiredIds[]" value="<%= row.Id %>"></td>
+
+                                <td class="fw-semibold xr-product"><%= row.ProductName %></td>
+
+                                <td><span class="badge bg-secondary-subtle text-dark"><%= row.BatchNumber %></span></td>
+
+                                <td><span class="text-danger small"><%= row.ExpiryDate %></span></td>
+
+                                <td class="text-end"><%= row.ExpiredQty %></td>
+
+                                <td class="text-end text-muted"><%= row.AlreadySentQty %></td>
+
+                                <td class="text-end"><span class="badge bg-danger-subtle text-danger"><%= row.RemainingSendQty %></span></td>
+
+                                <td class="text-end"><%= row.PurchasePrice %></td>
+
+                                <!-- GST: editable -->
+                                <td class="text-end">
+                                    <input type="number" name="gst_<%= row.Id %>" class="form-control form-control-sm text-end xr-gst"
+                                           value="<%= n(row.IgstPercentage).toFixed(2) %>" min="0" max="100" step="0.01" aria-label="GST %">
+                                    <div class="xr-gst-note text-muted"></div>
+                                </td>
+
+                                <td>
+                                    <input type="number" name="sendQty_<%= row.Id %>" class="form-control form-control-sm xr-qty"
+                                           min="1" max="<%= row.RemainingSendQty %>" disabled>
+                                </td>
+
+                                <td class="text-end fw-semibold xr-taxable">0.00</td>
+                                <td class="text-end xr-gstamt">0.00</td>
+                                <td class="text-end fw-semibold text-primary xr-total">0.00</td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TOTAL SUMMARY -->
+            <div class="card-footer bg-white">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">Enter quantity for items you want to return to supplier</small>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm mb-0">
+                            <tr>
+                                <td class="text-end">Taxable Amount</td>
+                                <td class="text-end fw-semibold" id="xrTotalTaxable">0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="text-end">GST</td>
+                                <td class="text-end fw-semibold" id="xrTotalGst">0.00</td>
+                            </tr>
+                            <tr class="border-top">
+                                <td class="text-end fw-bold">Grand Total</td>
+                                <td class="text-end fw-bold text-primary" id="xrGrandTotal">0.00</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="xrAlerts" class="mt-3"></div>
+
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-primary px-4" id="xrSubmit">Generate Debit Note</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- CONFIRM (Bootstrap modal) -->
+    <div class="modal fade" id="xrConfirmModal" tabindex="-1" aria-labelledby="xrConfirmLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="xrConfirmLabel"><i class="bi bi-question-circle me-2 text-primary"></i>Generate the debit note?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="xrConfirmBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep editing</button>
+                    <button type="button" class="btn btn-primary" id="xrConfirmBtn">Yes, generate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    var form = document.getElementById('sendReturnForm');
+    if (!form) return;
+
+    var rows = Array.prototype.slice.call(form.querySelectorAll('tr.xr-row'));
+    var alertsBox = document.getElementById('xrAlerts');
+    var r2 = function (x) { return Math.round((Number(x) + Number.EPSILON) * 100) / 100; };          // same rounding as the server
+    var money = function (x) { return Number(x).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+    /* ---------- Bootstrap alerts (no browser alert()) ---------- */
+    var ICONS = { danger: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill' };
+    function notify(type, html) {
+        alertsBox.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show mb-0" role="alert"><i class="bi ' + (ICONS[type] || ICONS.info) + ' me-2"></i>' +
+            html + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+    }
+    alertsBox.addEventListener('click', function (e) {
+        if (e.target.classList && e.target.classList.contains('btn-close')) alertsBox.innerHTML = '';     // works even without Bootstrap's JS
+    });
+
+    function parts(tr) {
+        return {
+            sel: tr.querySelector('.xr-select'), qty: tr.querySelector('.xr-qty'), gst: tr.querySelector('.xr-gst'),
+            rate: parseFloat(tr.getAttribute('data-rate')), remaining: parseFloat(tr.getAttribute('data-remaining')),
+            orig: parseFloat(tr.getAttribute('data-orig-gst')), name: tr.getAttribute('data-name'), batch: tr.getAttribute('data-batch')
+        };
+    }
+
+    function recalc() {
+        var sumT = 0, sumG = 0, sumTot = 0;
+        rows.forEach(function (tr) {
+            var p = parts(tr), q = parseFloat(p.qty.value), g = parseFloat(p.gst.value);
+            var taxable = 0, gstAmt = 0;
+            if (p.sel.checked && q > 0 && !isNaN(g)) {
+                taxable = r2(q * p.rate);
+                gstAmt = r2(taxable * g / 100);
+            }
+            tr.querySelector('.xr-taxable').textContent = money(taxable);
+            tr.querySelector('.xr-gstamt').textContent = money(gstAmt);
+            tr.querySelector('.xr-total').textContent = money(r2(taxable + gstAmt));
+            tr.classList.toggle('xr-picked', p.sel.checked);
+            var changed = !isNaN(g) && r2(g) !== r2(p.orig);
+            tr.querySelector('.xr-gst-note').textContent = changed ? 'bought at ' + p.orig + '%' : '';
+            sumT += taxable; sumG += gstAmt; sumTot += r2(taxable + gstAmt);
+        });
+        document.getElementById('xrTotalTaxable').textContent = money(r2(sumT));
+        document.getElementById('xrTotalGst').textContent = money(r2(sumG));
+        document.getElementById('xrGrandTotal').textContent = money(r2(sumTot));
+        return { taxable: r2(sumT), gst: r2(sumG), total: r2(sumTot) };
+    }
+
+    rows.forEach(function (tr) {
+        var p = parts(tr);
+        p.sel.addEventListener('change', function () {
+            p.qty.disabled = !p.sel.checked;
+            if (!p.sel.checked) p.qty.value = '';
+            recalc();
+        });
+        p.qty.addEventListener('input', recalc);
+        p.gst.addEventListener('input', recalc);
+    });
+
+    var all = document.getElementById('xrSelectAll');
+    if (all) all.addEventListener('change', function () {
+        rows.forEach(function (tr) {
+            var p = parts(tr);
+            p.sel.checked = all.checked; p.qty.disabled = !all.checked;
+            if (!all.checked) p.qty.value = '';
+        });
+        recalc();
+    });
+
+    /* ---------- quick GST buttons ---------- */
+    function setAll(v) {
+        v = parseFloat(v);
+        if (isNaN(v) || v < 0 || v > 100) { notify('warning', 'Enter a GST % between 0 and 100.'); return; }
+        alertsBox.innerHTML = '';
+        rows.forEach(function (tr) { var p = parts(tr); p.gst.value = v.toFixed(2); p.gst.classList.remove('is-invalid'); });
+        recalc();
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.xr-quick'), function (b) {
+        b.addEventListener('click', function () { setAll(b.getAttribute('data-gst')); });
+    });
+    document.getElementById('xrApplyCustom').addEventListener('click', function () { setAll(document.getElementById('xrCustomGst').value); });
+
+    /* ---------- save: validate -> Bootstrap modal -> submit ---------- */
+    var modalEl = document.getElementById('xrConfirmModal');
+    var modal = window.bootstrap && window.bootstrap.Modal && modalEl ? window.bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+
+    function doSubmit() {
+        document.getElementById('xrSubmit').disabled = true;
+        document.getElementById('xrConfirmBtn').disabled = true;
+        form.submit();
+    }
+    document.getElementById('xrConfirmBtn').addEventListener('click', function () { if (modal) modal.hide(); doSubmit(); });
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        alertsBox.innerHTML = '';
+        var picked = [], problems = [];
+        rows.forEach(function (tr) {
+            var p = parts(tr);
+            p.qty.classList.remove('is-invalid'); p.gst.classList.remove('is-invalid');
+            if (!p.sel.checked) return;
+            var q = parseFloat(p.qty.value), g = parseFloat(p.gst.value);
+            if (!(q > 0) || q > p.remaining) { p.qty.classList.add('is-invalid'); problems.push(esc(p.name) + ' (Batch ' + esc(p.batch) + '): quantity must be between 1 and ' + p.remaining + '.'); }
+            if (isNaN(g) || g < 0 || g > 100) { p.gst.classList.add('is-invalid'); problems.push(esc(p.name) + ' (Batch ' + esc(p.batch) + '): GST % must be between 0 and 100.'); }
+            picked.push({ p: p, q: q, g: g });
+        });
+
+        if (!picked.length) { notify('warning', 'Select at least one product and enter its quantity.'); return; }
+        if (problems.length) { notify('danger', '<strong>Please correct this:</strong><br>' + problems.join('<br>')); return; }
+
+        var t = recalc();
+        var changed = picked.filter(function (x) { return r2(x.g) !== r2(x.p.orig); });
+        document.getElementById('xrConfirmBody').innerHTML =
+            '<div class="d-flex justify-content-between p-3 rounded-3 bg-light mb-3"><span class="text-muted"><strong>' + picked.length + '</strong> product' + (picked.length > 1 ? 's' : '') + ' &middot; taxable ' + money(t.taxable) + ' + GST ' + money(t.gst) + '</span>' +
+            '<strong class="fs-5">' + money(t.total) + '</strong></div>' +
+            (changed.length
+                ? '<div class="small mb-1">GST % changed from the purchase:</div><ul class="small mb-0">' + changed.map(function (x) { return '<li>' + esc(x.p.name) + ' (Batch ' + esc(x.p.batch) + '): <strong>' + x.p.orig + '%</strong> &rarr; <strong>' + x.g + '%</strong></li>'; }).join('') + '</ul>'
+                : '<div class="small text-muted">GST % is the one from the purchase.</div>');
+
+        if (modal) modal.show();
+        else if (window.confirm('Generate the debit note?\nTotal ' + money(t.total))) doSubmit();       // Bootstrap JS missing
+    });
+
+    recalc();
+})();
+</script>

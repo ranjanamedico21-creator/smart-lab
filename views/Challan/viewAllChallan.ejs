@@ -1,0 +1,530 @@
+<%# views/Challan/viewChallans.ejs %>
+
+<style>
+:root {
+  --brand:#185FA5; --brand-dark:#0C447C;
+  --surface:#fff; --surface-alt:#F8F9FB;
+  --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.13);
+  --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+  --success-bg:#EAF3DE; --success-text:#3B6D11;
+  --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+  --warning-bg:#FAEEDA; --warning-text:#854F0B;
+  --info-bg:#E6F1FB;    --info-text:#185FA5;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+  --shadow:0 1px 6px rgba(0,0,0,.07), 0 0 0 1px rgba(0,0,0,.05);
+}
+
+.vc-page { padding:8px 0 48px; }
+
+/* ── Search card ── */
+.vc-search-card {
+  background:var(--surface); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow); margin-bottom:16px; overflow:visible;
+}
+.vc-card-head {
+  display:flex; align-items:center; gap:12px;
+  padding:16px 20px; border-bottom:1px solid var(--border);
+}
+.vc-card-head-icon {
+  width:36px; height:36px; border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.vc-card-head-title { font-size:14px; font-weight:700; color:var(--text-primary); margin:0; }
+
+.vc-search-body { padding:16px 20px; }
+.vc-search-grid {
+  display:grid;
+  grid-template-columns:1fr 1.4fr 1fr 1fr;
+  gap:10px; align-items:end;
+}
+.vc-field { display:flex; flex-direction:column; gap:4px; }
+.vc-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; }
+.vc-input {
+  width:100%; height:36px;
+  border:1.5px solid var(--border-strong); border-radius:var(--radius-sm);
+  padding:0 10px; font-size:13px; color:var(--text-primary);
+  background:#fff; outline:none; font-family:inherit;
+  transition:border-color .15s, box-shadow .15s; box-sizing:border-box;
+}
+.vc-input:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+.vc-input[readonly] { cursor:pointer; background:#fff; }
+
+/* Tom Select match */
+.vc-search-card .ts-wrapper { width:100%; }
+.vc-search-card .ts-wrapper.single .ts-control {
+  height:36px !important; min-height:36px !important;
+  border:1.5px solid var(--border-strong) !important;
+  border-radius:var(--radius-sm) !important;
+  padding:0 10px !important; font-size:13px !important;
+  background:#fff !important; box-shadow:none !important;
+  display:flex !important; align-items:center !important;
+  box-sizing:border-box !important;
+}
+.vc-search-card .ts-wrapper.single:focus-within .ts-control {
+  border-color:var(--brand) !important;
+  box-shadow:0 0 0 3px rgba(24,95,165,.1) !important;
+}
+
+.vc-search-actions { display:flex; gap:8px; justify-content:flex-end; padding:0 20px 16px; flex-wrap:wrap; }
+
+/* ── List card ── */
+.vc-list-card {
+  background:var(--surface); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow); overflow:visible;
+}
+
+/* ── Challan rows ── */
+.vc-challan-row {
+  border-bottom:1px solid var(--border);
+  transition:background .12s;
+}
+.vc-challan-row:last-child { border-bottom:none; }
+.vc-challan-main {
+  display:grid;
+  grid-template-columns:40px 1.6fr 1fr 100px 1fr;
+  align-items:center; gap:12px;
+  padding:12px 20px; cursor:default;
+}
+.vc-sr { font-size:12px; font-weight:600; color:var(--text-hint); }
+.vc-customer-link {
+  font-size:13px; font-weight:600; color:var(--brand);
+  text-decoration:none; text-transform:uppercase;
+}
+.vc-customer-link:hover { text-decoration:underline; }
+.vc-challan-id { font-size:11px; color:var(--text-hint); font-family:'DM Mono',monospace; margin-top:2px; }
+.vc-date { font-size:12.5px; color:var(--text-secondary); }
+
+/* Status badge */
+.vc-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600;
+}
+.vc-badge-delivered  { background:var(--success-bg); color:var(--success-text); }
+.vc-badge-pending    { background:var(--warning-bg); color:var(--warning-text); }
+.vc-badge-cancelled  { background:var(--danger-bg);  color:var(--danger-text); }
+.vc-badge-converted  { background:var(--info-bg);    color:var(--info-text); }
+
+/* Action buttons */
+.vc-actions { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+.vc-btn {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:4px 10px; border-radius:var(--radius-sm);
+  font-size:11.5px; font-weight:600; border:none; cursor:pointer;
+  font-family:inherit; transition:opacity .12s; white-space:nowrap; text-decoration:none;
+}
+.vc-btn:hover:not(:disabled) { opacity:.82; }
+.vc-btn:disabled { opacity:.42; cursor:not-allowed; }
+.vc-btn-success  { background:var(--success-bg); color:var(--success-text); }
+.vc-btn-delivery { background:var(--info-bg);    color:var(--info-text); }
+.vc-btn-danger   { background:var(--danger-bg);  color:var(--danger-text); }
+.vc-btn-print    { background:var(--surface-alt); color:var(--text-secondary); border:1px solid var(--border-strong); }
+.vc-btn-expand   { background:var(--surface-alt); color:var(--brand); border:1px solid var(--border-strong); }
+
+/* Products sub-table */
+.vc-products-wrap {
+  padding:0 20px 14px 60px;
+  display:none;
+}
+.vc-products-wrap.open { display:block; }
+.vc-sub-table { width:100%; border-collapse:collapse; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--border-strong); }
+.vc-sub-table thead th {
+  background:var(--surface-alt); font-size:10.5px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);
+  padding:7px 12px; border-bottom:1px solid var(--border-strong); text-align:left;
+}
+.vc-sub-table tbody td {
+  padding:8px 12px; font-size:12.5px; color:var(--text-primary);
+  border-bottom:1px solid var(--border);
+}
+.vc-sub-table tbody tr:last-child td { border-bottom:none; }
+.vc-sub-table tbody tr:hover td { background:#fafbfd; }
+
+/* Empty state */
+.vc-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:48px 24px; color:var(--text-hint); gap:8px;
+}
+.vc-empty i { font-size:36px; }
+.vc-empty p { font-size:14px; margin:0; }
+
+/* Modal */
+.vc-modal .modal-content { border:none; border-radius:var(--radius-lg); box-shadow:0 8px 40px rgba(0,0,0,.18); overflow:hidden; }
+.vc-modal .modal-header { padding:16px 20px; border-bottom:1px solid var(--border); background:var(--surface-alt); }
+.vc-modal .modal-title { font-size:14px; font-weight:700; }
+.vc-modal .modal-body { padding:20px; font-size:13.5px; color:var(--text-secondary); }
+.vc-modal .modal-footer { padding:12px 20px; border-top:1px solid var(--border); background:var(--surface-alt); }
+
+/* Action buttons in modal */
+.vc-btn-modal-cancel  { padding:8px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; background:var(--surface-alt); color:var(--text-secondary); border:1px solid var(--border-strong); cursor:pointer; font-family:inherit; }
+.vc-btn-modal-confirm { padding:8px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; background:var(--brand); color:#fff; border:none; cursor:pointer; font-family:inherit; }
+.vc-btn-modal-danger  { padding:8px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; background:#dc2626; color:#fff; border:none; cursor:pointer; font-family:inherit; }
+
+@media(max-width:768px) {
+  .vc-search-grid { grid-template-columns:1fr 1fr; }
+  .vc-challan-main { grid-template-columns:32px 1fr 80px; }
+  .vc-challan-main .vc-date,
+  .vc-challan-main .vc-actions { grid-column:2 / -1; }
+  .vc-products-wrap { padding-left:20px; }
+}
+</style>
+
+<!-- Breadcrumb -->
+<section class="py-2">
+  <div class="container-fluid">
+    <nav class="p-2 bg-light rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/user/home" class="text-decoration-none text-primary">Home</a></li>
+        <li class="breadcrumb-item active fw-bold">View Challans</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<div class="vc-page">
+<div class="container-fluid">
+
+  <%- include("../partials/messages") %>
+
+  <!-- ── Search card ── -->
+  <div class="vc-search-card">
+    <div class="vc-card-head">
+      <div class="vc-card-head-icon" style="background:var(--info-bg);color:var(--info-text)">
+        <i class="bi bi-search"></i>
+      </div>
+      <p class="vc-card-head-title">Search Challans</p>
+    </div>
+
+    <form method="POST" action="/billing/viewChallans">
+      <div class="vc-search-body">
+        <div class="vc-search-grid">
+
+          <div class="vc-field">
+            <label class="vc-label">Challan ID</label>
+            <input type="text" class="vc-input" name="challanId"
+              placeholder="e.g. 1042"
+              value="<%= filters?.challanId || '' %>">
+          </div>
+
+          <div class="vc-field">
+            <label class="vc-label">Customer</label>
+            <select name="customerId" id="vcCustomer">
+              <option value="">All Customers</option>
+              <% (customers || []).forEach(function(c){ %>
+              <option value="<%= c.Id %>"
+                <%= filters?.customerId == c.Id ? 'selected' : '' %>>
+                <%= c.CustomerName %>
+              </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="vc-field">
+            <label class="vc-label">From Date</label>
+            <input type="text" class="vc-input" id="vcFromDate" name="fromDate"
+              placeholder="dd-mm-yyyy" autocomplete="off" readonly
+              value="<%= filters?.fromDate || '' %>">
+          </div>
+
+          <div class="vc-field">
+            <label class="vc-label">To Date</label>
+            <input type="text" class="vc-input" id="vcToDate" name="toDate"
+              placeholder="dd-mm-yyyy" autocomplete="off" readonly
+              value="<%= filters?.toDate || '' %>">
+          </div>
+
+        </div>
+      </div>
+
+      <div class="vc-search-actions">
+        <a href="/billing/createChallan" class="vc-btn vc-btn-success" style="padding:7px 14px">
+          <i class="bi bi-plus-circle"></i> Create Challan
+        </a>
+        <button type="submit" class="vc-btn vc-btn-delivery" style="padding:7px 14px">
+          <i class="bi bi-search"></i> Search
+        </button>
+        <a href="/billing/viewChallans" class="vc-btn vc-btn-print" style="padding:7px 14px">
+          <i class="bi bi-arrow-repeat"></i> Reset
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Challan list ── -->
+  <div class="vc-list-card">
+    <div class="vc-card-head">
+      <div class="vc-card-head-icon" style="background:var(--brand);color:#fff">
+        <i class="bi bi-file-earmark-text"></i>
+      </div>
+      <p class="vc-card-head-title">Challans</p>
+
+      <!-- Count badge -->
+      <%
+        var totalChallans = 0;
+        if (typeof groupedChallans !== 'undefined') {
+          Object.keys(groupedChallans).forEach(function(cid) {
+            totalChallans += Object.keys(groupedChallans[cid].challans).length;
+          });
+        }
+      %>
+      <span style="margin-left:auto;font-size:11px;font-weight:600;background:var(--surface-alt);
+                   padding:3px 10px;border-radius:99px;color:var(--text-secondary)">
+        <%= totalChallans %> record<%= totalChallans !== 1 ? 's' : '' %>
+      </span>
+    </div>
+
+    <div id="challanListBody">
+      <%
+        var serial = 1;
+        var hasRows = false;
+      %>
+      <% for (var custId in groupedChallans) { %>
+        <% var customer = groupedChallans[custId]; %>
+        <% for (var challanId in customer.challans) { %>
+          <% var challan = customer.challans[challanId]; %>
+          <% var isConverted = challan.SaleIds && challan.SaleIds.length > 0; %>
+          <% hasRows = true; %>
+
+          <%
+            var statusClass = 'vc-badge-pending';
+            var statusIcon  = 'bi-clock';
+            if (challan.Status === 'Delivered') { statusClass = 'vc-badge-delivered'; statusIcon = 'bi-check-circle'; }
+            else if (challan.Status === 'Cancelled') { statusClass = 'vc-badge-cancelled'; statusIcon = 'bi-x-circle'; }
+            else if (isConverted) { statusClass = 'vc-badge-converted'; statusIcon = 'bi-arrow-left-right'; }
+          %>
+
+          <div class="vc-challan-row">
+            <!-- Main row -->
+            <div class="vc-challan-main">
+
+              <span class="vc-sr"><%= serial++ %></span>
+
+              <div>
+                <a href="/billing/customerLedger/<%= custId %>"
+                   class="vc-customer-link"><%= customer.CustomerName %></a>
+                <div class="vc-challan-id">Challan #<%= challanId %></div>
+              </div>
+
+              <span class="vc-date">
+                <i class="bi bi-calendar2 me-1" style="font-size:11px"></i>
+                <%= new Date(challan.ChallanDate).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) %>
+              </span>
+
+              <span class="vc-badge <%= statusClass %>">
+                <i class="bi <%= statusIcon %>"></i> <%= challan.Status %>
+              </span>
+
+              <div class="vc-actions">
+                <% if (challan.Status !== 'Cancelled') { %>
+
+                  <!-- Convert to Sale -->
+                  <button class="vc-btn vc-btn-success action-btn"
+                    data-id="<%= challanId %>"
+                    data-customer="<%= customer.CustomerName %>"
+                    data-customer-id="<%= custId %>"
+                    data-action="convert"
+                    <%= isConverted ? 'disabled title="Already converted: Sale ' + challan.SaleIds.join(', ') + '"' : '' %>>
+                    <i class="bi bi-arrow-left-right"></i> Convert
+                  </button>
+
+                  <% if (challan.Status !== 'Delivered') { %>
+                  <!-- Delivery -->
+                  <button class="vc-btn vc-btn-delivery action-btn"
+                    data-id="<%= challanId %>"
+                    data-customer="<%= customer.CustomerName %>"
+                    data-customer-id="<%= custId %>"
+                    data-action="delivery">
+                    <i class="bi bi-truck"></i> Deliver
+                  </button>
+                  <% } %>
+
+                  <!-- Cancel -->
+                  <button class="vc-btn vc-btn-danger action-btn"
+                    data-id="<%= challanId %>"
+                    data-customer="<%= customer.CustomerName %>"
+                    data-customer-id="<%= custId %>"
+                    data-action="cancel"
+                    <%= isConverted ? 'disabled title="Already converted to sale"' : '' %>>
+                    <i class="bi bi-x-circle"></i> Cancel
+                  </button>
+
+                  <!-- Print -->
+                  <a href="/billing/viewChallan/<%= challanId %>/<%= custId %>"
+                     target="_blank" class="vc-btn vc-btn-print">
+                     <i class="bi bi-eye-fill"></i> View
+                  </a>
+                  
+                  <a href="/billing/viewChallanInHtml/<%= challanId %>/<%= custId %>"
+                    target="_blank"
+                    class="vc-btn vc-btn-print">
+                 
+                     <i class="bi bi-printer"></i>
+                     Print
+                 
+                 </a>
+
+                <% } %>
+
+                <!-- View products toggle -->
+                <button class="vc-btn vc-btn-expand"
+                  onclick="toggleProducts(this, '<%= challanId %>')">
+                  <i class="bi bi-box-seam"></i> Items
+                  <i class="bi bi-chevron-down" style="font-size:10px"></i>
+                </button>
+              </div>
+
+            </div><!-- /vc-challan-main -->
+
+            <!-- Products sub-table -->
+            <div class="vc-products-wrap" id="products-<%= challanId %>">
+              <table class="vc-sub-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Batch</th>
+                    <th>Qty</th>
+                    <th>Expiry</th>
+                    <th>Sale ID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% challan.items.forEach(function(item){ %>
+                  <tr>
+                    <td style="font-weight:500"><%= item.ProductName %></td>
+                    <td style="font-family:'DM Mono',monospace;font-size:12px"><%= item.BatchNumber %></td>
+                    <td style="font-weight:700;color:var(--brand)"><%= item.QuantitySold %></td>
+                    <td style="font-size:12px">
+                      <%= item.ExpiryDate ? new Date(item.ExpiryDate).toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : '—' %>
+                    </td>
+                    <td>
+                      <% if (item.SaleId) { %>
+                        <span style="background:var(--info-bg);color:var(--info-text);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600">
+                          #<%= item.SaleId %>
+                        </span>
+                      <% } else { %>
+                        <span style="color:var(--text-hint)">—</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+
+          </div><!-- /vc-challan-row -->
+
+        <% } %>
+      <% } %>
+
+      <% if (!hasRows) { %>
+      <div class="vc-empty">
+        <i class="bi bi-inbox"></i>
+        <p>No challans found</p>
+        <a href="/billing/createChallan" class="vc-btn vc-btn-success" style="padding:7px 16px;margin-top:4px">
+          <i class="bi bi-plus-circle"></i> Create First Challan
+        </a>
+      </div>
+      <% } %>
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ── Confirm Modal ── -->
+<div class="modal fade vc-modal" id="confirmModalChallan" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Confirm Action</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        Are you sure you want to proceed?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="vc-btn-modal-cancel" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>Cancel
+        </button>
+        <form id="actionForm" method="POST" action="" class="m-0">
+          <input type="hidden" name="challanId"  id="hiddenChallanId">
+          <input type="hidden" name="actionType" id="hiddenActionType">
+          <input type="hidden" name="customerId" id="hiddenCustomerId">
+          <button type="submit" id="modalConfirmBtn" class="vc-btn-modal-confirm">
+            <i class="bi bi-check-circle me-1"></i>Confirm
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // Flatpickr
+  if (typeof flatpickr !== 'undefined') {
+    flatpickr('#vcFromDate', { dateFormat:'d-m-Y', allowInput:false, disableMobile:true });
+    flatpickr('#vcToDate',   { dateFormat:'d-m-Y', allowInput:false, disableMobile:true });
+  }
+
+  // Tom Select — customer dropdown
+  var custEl = document.getElementById('vcCustomer');
+  if (custEl && typeof TomSelect !== 'undefined') {
+    new TomSelect(custEl, {
+      allowEmptyOption: true,
+      minLength: 0,
+      dropdownParent: 'body'
+    });
+  }
+
+  // Action buttons — open modal
+  document.querySelectorAll('.action-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var action     = this.dataset.action;
+      var challanId  = this.dataset.id;
+      var customer   = this.dataset.customer;
+      var customerId = this.dataset.customerId;
+
+      var titles = { convert:'Convert to Sale', delivery:'Mark as Delivered', cancel:'Cancel Challan' };
+      var bodies = {
+        convert:  'Convert challan <strong>#' + challanId + '</strong> for <strong>' + customer + '</strong> into a sale?',
+        delivery: 'Mark challan <strong>#' + challanId + '</strong> for <strong>' + customer + '</strong> as delivered?',
+        cancel:   'Cancel challan <strong>#' + challanId + '</strong> for <strong>' + customer + '</strong>? This cannot be undone.'
+      };
+      var routes = {
+            convert:  '/billing/convertToSale',
+            delivery: '/billing/deliver',
+            cancel:   '/billing/cancelChallan'
+          };
+      var btnClasses = { convert:'vc-btn-modal-confirm', delivery:'vc-btn-modal-confirm', cancel:'vc-btn-modal-danger' };
+
+      document.getElementById('modalTitle').textContent      = titles[action] || 'Confirm';
+      document.getElementById('modalBody').innerHTML         = bodies[action] || 'Proceed?';
+      document.getElementById('hiddenChallanId').value       = challanId;
+      document.getElementById('hiddenActionType').value      = action;
+      document.getElementById('hiddenCustomerId').value      = customerId;
+     // document.getElementById('actionForm').action           = '/billing/challanAction';
+     document.getElementById('actionForm').action = routes[action];
+
+      var confirmBtn = document.getElementById('modalConfirmBtn');
+      confirmBtn.className = btnClasses[action];
+      confirmBtn.innerHTML = action === 'cancel'
+        ? '<i class="bi bi-x-circle me-1"></i>Yes, Cancel'
+        : '<i class="bi bi-check-circle me-1"></i>Confirm';
+
+      new bootstrap.Modal(document.getElementById('confirmModalChallan')).show();
+    });
+  });
+});
+
+// Products toggle
+function toggleProducts(btn, challanId) {
+  var wrap = document.getElementById('products-' + challanId);
+  var icon = btn.querySelector('.bi-chevron-down, .bi-chevron-up');
+  var isOpen = wrap.classList.contains('open');
+  wrap.classList.toggle('open', !isOpen);
+  if (icon) { icon.classList.toggle('bi-chevron-down', isOpen); icon.classList.toggle('bi-chevron-up', !isOpen); }
+}
+</script>

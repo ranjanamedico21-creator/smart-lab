@@ -1,0 +1,403 @@
+<%
+  // Data islands: safe to embed (< is escaped so a product name can never close the script tag)
+  const safeJson = function (v) { return JSON.stringify(v).replace(/</g, '\\u003c'); };
+%>
+<style>
+  @media (max-width: 767.98px) {
+    #linesTable thead { display: none; }
+    #linesTable, #linesTable tbody, #linesTable tr, #linesTable td { display: block; width: 100%; }
+    #linesTable tr { position: relative; padding: .75rem .5rem; border-bottom: 1px solid var(--bs-border-color); }
+    #linesTable td { border: 0; padding: .25rem 0; text-align: left !important; }
+    #linesTable td:has(.f-remove) { position: absolute; top: .6rem; right: .5rem; width: auto; }
+    #linesTable td.line-no::before { content: 'Line '; }
+    #linesTable td:has(.f-avail)::before { content: 'In stock '; font-size: .85rem; color: var(--bs-secondary-color); }
+    #linesTable td:has(.f-qty)::before { content: 'Quantity'; display: block; font-size: .85rem; color: var(--bs-secondary-color); }
+  }
+</style>
+<div class="container-fluid mt-3 mt-md-4 mb-5" style="max-width:1200px;">
+  <%- include('../partials/messages') %>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary"
+            style="width:42px;height:42px;">
+        <i class="bi bi-box-seam fs-5"></i>
+      </span>
+      <div>
+        <h4 class="mb-0 fw-semibold">Issue Products to MR</h4>
+        <div class="text-secondary small">Pick a supplier to filter its products, then add as many lines as you need</div>
+      </div>
+    </div>
+    <a href="/mrStockIssue" class="btn btn-outline-secondary rounded-3">
+      <i class="bi bi-arrow-left me-1"></i>Back to list
+    </a>
+  </div>
+
+  <div id="loadWarning" class="alert alert-warning d-none rounded-4 border-0 shadow-sm" role="alert"></div>
+
+  <form method="post" action="/mrStockIssue" id="issueForm" novalidate>
+    <input type="hidden" name="linesJson" id="linesJson">
+    <input type="hidden" name="formToken" value="<%= formToken %>">
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+      <div class="card-body p-4 row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="issuedToId"><i class="bi bi-person-badge me-1"></i>Marketing person (MR)</label>
+          <select name="issuedToId" id="issuedToId" class="form-select" required>
+            <option value="">Select MR...</option>
+            <% mrOptions.forEach(function(u){ %>
+              <option value="<%= u.Id %>" class="text-capitalize"><%= u.Name %></option>
+            <% }) %>
+          </select>
+          <div class="invalid-feedback d-block d-none" id="mrError">Select the MR taking the products.</div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-floating">
+            <input type="text" name="issuedOn" id="issuedOn" class="form-control" placeholder="Issue date" autocomplete="off" required>
+            <label for="issuedOn"><i class="bi bi-calendar3 me-1"></i>Issue date</label>
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="form-floating">
+            <input type="text" name="purpose" id="purpose" class="form-control" placeholder="Purpose" value="Sample / customer testing">
+            <label for="purpose"><i class="bi bi-flag me-1"></i>Purpose</label>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="form-floating">
+            <input type="text" name="remarks" id="topRemarks" class="form-control" placeholder="Remarks" maxlength="200">
+            <label for="topRemarks">Remarks <span class="text-secondary">(optional)</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+      <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+        <strong><i class="bi bi-list-check me-2 text-secondary"></i>Products</strong>
+        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" id="addLine">
+          <i class="bi bi-plus-lg me-1"></i>Add product
+        </button>
+      </div>
+      <div class="px-2">
+        <table class="table align-middle mb-0" id="linesTable">
+          <thead>
+            <tr class="text-secondary small text-uppercase">
+              <th style="width:4%">#</th>
+              <th style="width:20%">Supplier</th>
+              <th style="width:29%">Product / batch</th>
+              <th style="width:9%" class="text-end">In stock</th>
+              <th style="width:11%">Qty</th>
+              <th style="width:22%">For customer <span class="normal-case">(optional)</span></th>
+              <th style="width:5%"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-white border-0 rounded-bottom-4 px-4 py-3">
+        <span class="badge text-bg-light text-secondary rounded-pill fs-6 fw-normal" id="totalsBar">No products added yet.</span>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary rounded-3 px-4 shadow-sm">
+      <i class="bi bi-check2-circle me-1"></i>Issue to MR
+    </button>
+    <a href="/mrStockIssue" class="btn btn-link">Cancel</a>
+  </form>
+</div>
+
+<script type="application/json" id="stocksData"><%- safeJson(stocks) %></script>
+<script type="application/json" id="suppliersData"><%- safeJson(suppliers.map(function (s) { return { Id: s.Id, Name: s.Name }; })) %></script>
+<script type="application/json" id="customersData"><%- safeJson(customers.map(function (c) { return { Id: c.Id, CustomerName: c.CustomerName }; })) %></script>
+
+<script>
+// Waits for DOMContentLoaded rather than assuming $/flatpickr/TomSelect
+// already exist the instant this line runs (safe regardless of where your
+// layout puts its vendor <script> tags).
+document.addEventListener('DOMContentLoaded', function () {
+  var missing = [];
+  if (typeof window.jQuery === 'undefined') missing.push('jQuery');
+  if (typeof window.flatpickr === 'undefined') missing.push('Flatpickr');
+  if (missing.length) {
+    console.error('[Issue Products to MR] Not loaded on this page: ' + missing.join(', ') + '.');
+    var $w = document.getElementById('loadWarning');
+    $w.textContent = 'This page needs ' + missing.join(' and ') + ' to work, but ' +
+      (missing.length > 1 ? "they weren't" : "it wasn't") + ' found. Check your layout\'s script tags.';
+    $w.classList.remove('d-none');
+    return;
+  }
+
+  var $ = window.jQuery;
+  var hasTomSelect = typeof window.TomSelect !== 'undefined';
+  function trimStr(v) { return String(v == null ? '' : v).trim(); }
+
+  var stocks = JSON.parse(document.getElementById('stocksData').textContent || '[]');
+  var suppliers = JSON.parse(document.getElementById('suppliersData').textContent || '[]');
+  var customers = JSON.parse(document.getElementById('customersData').textContent || '[]');
+  var stockById = {};
+  stocks.forEach(function (s) { stockById[s.Id] = s; });
+
+  if (!suppliers.length || !stocks.length) {
+    console.warn('[Issue Products to MR] suppliers:', suppliers.length, 'stocks:', stocks.length);
+  }
+
+  // Only suppliers that actually have something in stock
+  var supplierIdsWithStock = {};
+  stocks.forEach(function (s) { supplierIdsWithStock[s.SupplierId] = true; });
+  var supplierOptions = suppliers.filter(function (s) { return supplierIdsWithStock[s.Id]; });
+
+  flatpickr('#issuedOn', { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd-m-Y', defaultDate: '<%= today %>', maxDate: '<%= today %>' });
+
+  function esc(t) { return $('<div>').text(t == null ? '' : t).html(); }
+
+  // ---------------------------------------------------------------------
+  // TomSelect helpers. Your site converts `.form-select` elements to
+  // TomSelect once, at page load — that never catches rows added later by
+  // "Add product", and updating a TomSelect-enhanced <select>'s innerHTML
+  // directly does nothing (it only reads what YOU tell its own instance).
+  // So every select this form creates is mounted/rebuilt explicitly here,
+  // "destroy + recreate" on change since that's the most reliable way to
+  // swap out its whole option list. If TomSelect isn't on the page at all,
+  // everything below still works as plain <select> elements.
+  // ---------------------------------------------------------------------
+
+  function destroyTs(el) { if (el && el.tomselect) el.tomselect.destroy(); }
+
+  function mountSimpleSelect(el, placeholder) {
+    if (!hasTomSelect) return null;
+    destroyTs(el);
+    return new TomSelect(el, {
+      placeholder: placeholder,
+      allowEmptyOption: true,
+      maxOptions: null
+    });
+  }
+
+  // Product select gets a real two-line renderer instead of one long
+  // concatenated string: product name bold, batch/expiry/stock as a
+  // smaller line underneath.
+  function mountProductSelect(el, rows) {
+    if (!hasTomSelect) return null;
+    destroyTs(el);
+    return new TomSelect(el, {
+      valueField: 'Id',
+      labelField: 'ProductName',
+      searchField: ['ProductName', 'BatchNumber'],
+      options: rows,
+      placeholder: rows.length ? 'Select product...' : 'Pick a supplier first',
+      allowEmptyOption: true,
+      maxOptions: null,
+      render: {
+        option: function (data, escape) {
+          return '<div class="py-1">' +
+            '<div class="fw-medium">' + escape(data.ProductName) + '</div>' +
+            '<div class="small text-secondary">Batch ' + escape(data.BatchNumber) +
+            ' &middot; Exp ' + escape(data.ExpiryDate) + ' &middot; ' + escape(String(data.Quantity)) + ' in stock</div>' +
+            '</div>';
+        },
+        item: function (data, escape) {
+          return '<div>' + escape(data.ProductName) + ' <span class="text-secondary">(Batch ' + escape(data.BatchNumber) + ')</span></div>';
+        },
+        no_results: function () { return '<div class="p-2 text-secondary small">No products for this supplier.</div>'; }
+      }
+    });
+  }
+
+  function supplierRowsForSelect() {
+    return supplierOptions.map(function (s) { return { value: s.Id, text: s.Name }; });
+  }
+  function customerRowsForSelect() {
+    var rows = [{ value: '', text: '— none —' }];
+    customers.forEach(function (c) { rows.push({ value: c.Id, text: c.CustomerName }); });
+    return rows;
+  }
+  function productRowsForSupplier(supplierId) {
+    return stocks.filter(function (s) { return String(s.SupplierId) === String(supplierId); });
+  }
+
+  // Plain-select fallback markup (only used when TomSelect isn't present)
+  function supplierSelectHtml() {
+    var h = '<option value="">Supplier...</option>';
+    supplierOptions.forEach(function (s) { h += '<option value="' + s.Id + '">' + esc(s.Name) + '</option>'; });
+    return h;
+  }
+  function customerSelectHtml() {
+    var h = '<option value="">— none —</option>';
+    customers.forEach(function (c) { h += '<option value="' + c.Id + '">' + esc(c.CustomerName) + '</option>'; });
+    return h;
+  }
+  function productSelectHtml(supplierId) {
+    var h = '<option value="">' + (supplierId ? 'Select product...' : 'Pick a supplier first') + '</option>';
+    productRowsForSupplier(supplierId).forEach(function (s) {
+      h += '<option value="' + s.Id + '">' + esc(s.ProductName) + ' — Batch ' + esc(s.BatchNumber) +
+           ' — Exp ' + esc(s.ExpiryDate) + ' (' + s.Quantity + ')</option>';
+    });
+    return h;
+  }
+
+  function addLine() {
+    var $tr = $(
+      '<tr>' +
+        '<td class="line-no text-secondary"></td>' +
+        '<td><select class="form-select form-select-sm f-supplier">' + supplierSelectHtml() + '</select></td>' +
+        '<td><select class="form-select form-select-sm f-stock" disabled>' + productSelectHtml('') + '</select>' +
+            '<div class="invalid-feedback">Select a product.</div></td>' +
+        '<td class="text-end"><span class="badge text-bg-light text-secondary f-avail">–</span></td>' +
+        '<td><input type="number" class="form-control form-control-sm f-qty" min="1" step="1" inputmode="numeric">' +
+            '<div class="invalid-feedback f-qty-msg"></div></td>' +
+        '<td><select class="form-select form-select-sm f-customer">' + customerSelectHtml() + '</select></td>' +
+        '<td><button type="button" class="btn btn-sm btn-outline-danger rounded-circle f-remove" title="Remove line" style="width:30px;height:30px;line-height:1;">' +
+              '<i class="bi bi-x"></i></button></td>' +
+      '</tr>'
+    );
+    $('#linesTable tbody').append($tr);
+
+    mountSimpleSelect($tr.find('.f-supplier')[0], 'Supplier...');
+    var tsProduct = mountProductSelect($tr.find('.f-stock')[0], []);
+    if (tsProduct) tsProduct.disable();
+    mountSimpleSelect($tr.find('.f-customer')[0], '— none —');
+
+    renumber();
+    return $tr;
+  }
+
+  function renumber() {
+    $('#linesTable tbody tr').each(function (i) { $(this).find('.line-no').text(i + 1); });
+    refreshTotals();
+  }
+
+  // Quantity already claimed for a batch on ALL lines — same batch can be on several lines
+  function claimedForStock(stockId) {
+    var sum = 0;
+    $('#linesTable tbody tr').each(function () {
+      if ($(this).find('.f-stock').val() === String(stockId)) sum += parseInt($(this).find('.f-qty').val(), 10) || 0;
+    });
+    return sum;
+  }
+
+  // Returns an error string for the qty on this row, or '' when fine
+  function qtyError($tr) {
+    var raw = trimStr($tr.find('.f-qty').val());
+    var stockId = $tr.find('.f-stock').val();
+    if (!stockId) return '';
+    if (raw === '') return 'Enter a quantity.';
+    if (!/^-?\d+$/.test(raw)) return 'Whole numbers only.';
+    var n = parseInt(raw, 10);
+    if (n <= 0) return 'Must be at least 1.';
+    var avail = Number(stockById[stockId].Quantity);
+    var total = claimedForStock(stockId);
+    if (n > avail) return 'Only ' + avail + ' in stock.';
+    if (total > avail) return 'Lines for this batch add up to ' + total + ' (only ' + avail + ' in stock).';
+    return '';
+  }
+
+  function validateRow($tr) {
+    var ok = true;
+    var $stock = $tr.find('.f-stock');
+    var $qty = $tr.find('.f-qty');
+    var $stockWrap = $stock[0] && $stock[0].tomselect ? $($stock[0].tomselect.control) : $stock;
+    if (!$stock.val()) { $stockWrap.addClass('is-invalid'); ok = false; } else { $stockWrap.removeClass('is-invalid'); }
+    var msg = qtyError($tr);
+    if (msg) { $qty.addClass('is-invalid'); $tr.find('.f-qty-msg').text(msg); ok = false; } else { $qty.removeClass('is-invalid'); }
+    return ok;
+  }
+
+  function revalidateAll() { $('#linesTable tbody tr').each(function () { if ($(this).find('.f-qty').val() !== '') validateRow($(this)); }); }
+
+  function refreshTotals() {
+    var n = $('#linesTable tbody tr').length, units = 0;
+    $('#linesTable tbody tr').each(function () { units += parseInt($(this).find('.f-qty').val(), 10) || 0; });
+    $('#totalsBar').text(n ? (n + ' line' + (n > 1 ? 's' : '') + ' · ' + units + ' units in total') : 'No products added yet.');
+  }
+
+  var $body = $('#linesTable tbody');
+
+  // Choosing a supplier rebuilds the product TomSelect for THIS row with
+  // just that supplier's in-stock batches (destroy + recreate, since
+  // mutating the hidden <select> alone never reaches TomSelect's own UI).
+  $body.on('change', '.f-supplier', function () {
+    var $tr = $(this).closest('tr');
+    var supplierId = $(this).val();
+    var $stockEl = $tr.find('.f-stock');
+    var rows = productRowsForSupplier(supplierId);
+
+    if (hasTomSelect) {
+      var ts = mountProductSelect($stockEl[0], rows);
+      if (supplierId) ts.enable(); else ts.disable();
+    } else {
+      $stockEl.html(productSelectHtml(supplierId)).prop('disabled', !supplierId);
+    }
+    $stockEl.val('').removeClass('is-invalid');
+    $tr.find('.f-avail').text('–');
+    $tr.find('.f-qty').val('').removeClass('is-invalid');
+    revalidateAll(); refreshTotals();
+  });
+
+  $body.on('change', '.f-stock', function () {
+    var $tr = $(this).closest('tr');
+    var s = stockById[$(this).val()];
+    $tr.find('.f-avail').text(s ? s.Quantity : '–');
+    if (s) {
+      $tr.find('.f-qty').attr('max', s.Quantity);
+      if ($tr.find('.f-qty').val() === '') $tr.find('.f-qty').val(1);
+    }
+    validateRow($tr); revalidateAll(); refreshTotals();
+  });
+
+  $body.on('input change', '.f-qty', function () { validateRow($(this).closest('tr')); revalidateAll(); refreshTotals(); });
+
+  // Block the characters that produce negatives / decimals / exponents in a number box
+  $body.on('keydown', '.f-qty', function (e) { if (['-', '+', '.', ',', 'e', 'E'].indexOf(e.key) !== -1) e.preventDefault(); });
+
+  $body.on('click', '.f-remove', function () {
+    var $tr = $(this).closest('tr');
+    destroyTs($tr.find('.f-supplier')[0]);
+    destroyTs($tr.find('.f-stock')[0]);
+    destroyTs($tr.find('.f-customer')[0]);
+    $tr.remove();
+    if (!$body.children().length) addLine();
+    renumber(); revalidateAll();
+  });
+
+  $('#addLine').on('click', function () {
+    var $tr = addLine();
+    var sel = $tr.find('.f-supplier')[0];
+    if (sel && sel.tomselect) sel.tomselect.focus(); else $(sel).focus();
+  });
+
+  mountSimpleSelect(document.getElementById('issuedToId'), 'Select MR...');
+
+  $('#issueForm').on('submit', function (e) {
+    var ok = true;
+
+    var $mr = $('#issuedToId');
+    var $mrWrap = $mr[0].tomselect ? $($mr[0].tomselect.control) : $mr;
+    if (!$mr.val()) { $mrWrap.addClass('is-invalid'); $('#mrError').removeClass('d-none'); ok = false; }
+    else { $mrWrap.removeClass('is-invalid'); $('#mrError').addClass('d-none'); }
+    if (!$('#issuedOn').val()) { $('#issuedOn').addClass('is-invalid'); ok = false; } else { $('#issuedOn').removeClass('is-invalid'); }
+
+    var lines = [];
+    $body.children().each(function () {
+      var $tr = $(this);
+      if (!validateRow($tr)) ok = false;
+      lines.push({
+        stockId: $tr.find('.f-stock').val(),
+        quantity: $tr.find('.f-qty').val(),
+        customerId: $tr.find('.f-customer').val()
+      });
+    });
+
+    if (!lines.length) ok = false;
+    if (!ok) { e.preventDefault(); $('.is-invalid').first().focus(); return; }
+
+    // A double click must not save twice (the server also refuses a repeated form token)
+    if (this.dataset.sent) { e.preventDefault(); return; }
+    this.dataset.sent = '1';
+    $(this).find('[type=submit]').prop('disabled', true);
+    $('#linesJson').val(JSON.stringify(lines));
+  });
+
+  addLine();
+});
+</script>

@@ -1,0 +1,134 @@
+<!-- views/Leave/leaveApplication.ejs — used for both Apply and Edit & Resubmit -->
+<%
+  const v = (typeof values !== 'undefined' && values) || {};
+  const ed = (typeof editing !== 'undefined' && editing) || null;
+%>
+<%- include('../partials/leaveAssets') %>
+
+<div class="container-fluid py-3 px-2 px-sm-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h4 class="mb-0"><%= ed ? 'Edit & Resubmit Leave' : 'Apply for Leave' %></h4>
+    <a href="/user/myLeaves" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-list-ul me-1"></i> My Leaves
+    </a>
+  </div>
+
+  <% if (ed && ed.AdminRemarks) { %>
+    <div class="alert alert-warning">
+      <i class="bi bi-arrow-return-left me-1"></i>
+      <strong>Sent back with remark:</strong> <%= ed.AdminRemarks %>
+      <div class="small mt-1">Make the changes asked for and resubmit. It will go back for approval.</div>
+    </div>
+  <% } %>
+
+  <form id="leaveForm" action="<%= ed ? '/user/leaves/resubmit' : '/user/applyLeave' %>" method="post"
+        class="card shadow-sm border-0" novalidate>
+    <div class="card-body p-3 p-md-4">
+      <% if (ed) { %><input type="hidden" name="leaveId" value="<%= ed.Id %>"><% } %>
+
+      <div class="row g-3 mb-3">
+      <!-- Leave type (Tom Select) -->
+      <div class="col-12 col-lg-4">
+        <label for="leaveType" class="form-label fw-semibold">Leave type</label>
+        <select name="leaveTypeId" id="leaveType" required>
+          <option value="">Select leave type…</option>
+          <% leaveTypes.forEach(type => { %>
+            <option value="<%= type.Id %>" <%= Number(v.leaveTypeId) === Number(type.Id) ? 'selected' : '' %>><%= type.Name %></option>
+          <% }) %>
+        </select>
+        <div class="invalid-feedback d-block small" id="typeError" hidden>Please select a leave type.</div>
+      </div>
+
+      <!-- Dates (Flatpickr range) -->
+      <div class="col-12 col-lg-8">
+        <label for="leaveDates" class="form-label fw-semibold">Dates</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+          <input type="text" id="leaveDates" class="form-control" placeholder="Pick start and end date">
+        </div>
+        <input type="hidden" name="startDate" id="startDate" value="<%= v.startDate %>">
+        <input type="hidden" name="endDate" id="endDate" value="<%= v.endDate %>">
+        <div class="form-text" id="dayCount">For a single day, tap the same date twice.</div>
+        <div class="invalid-feedback d-block small" id="dateError" hidden>Please select your leave dates.</div>
+      </div>
+      </div>
+
+      <!-- Reason -->
+      <div class="mb-3">
+        <label for="reason" class="form-label fw-semibold">Reason</label>
+        <textarea id="reason" name="reason" rows="3" class="form-control"
+                  placeholder="Optional, but it helps the approver"><%= v.reason %></textarea>
+      </div>
+
+      <div class="d-grid d-sm-flex justify-content-sm-end gap-2">
+        <a href="/user/myLeaves" class="btn btn-light order-2 order-sm-1">Cancel</a>
+        <button type="submit" class="btn btn-primary order-1 order-sm-2">
+          <i class="bi bi-send me-1"></i><%= ed ? 'Resubmit for approval' : 'Apply leave' %>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('leaveForm');
+    var start = document.getElementById('startDate');
+    var end = document.getElementById('endDate');
+    var out = document.getElementById('dayCount');
+    var dateErr = document.getElementById('dateError');
+    var typeErr = document.getElementById('typeError');
+
+    // ── Leave type ─────────────────────────────
+    var ts = new TomSelect('#leaveType', {
+      create: false,
+      allowEmptyOption: false,
+      placeholder: 'Select leave type…',
+      controlInput: null,            // no typing / keyboard popping up on phones
+      onChange: function () { typeErr.hidden = true; ts.wrapper.classList.remove('is-invalid'); }
+    });
+
+    // ── Date range ─────────────────────────────
+    function iso(d) { return flatpickr.formatDate(d, 'Y-m-d'); }
+    function showDays() {
+      if (start.value && end.value) {
+        var days = Math.round((new Date(end.value) - new Date(start.value)) / 86400000) + 1;
+        out.textContent = days + ' day' + (days > 1 ? 's' : '') + ' of leave';
+        out.classList.add('fw-semibold', 'text-primary');
+      } else {
+        out.textContent = 'For a single day, tap the same date twice.';
+        out.classList.remove('fw-semibold', 'text-primary');
+      }
+    }
+
+    var fp = flatpickr('#leaveDates', {
+      mode: 'range',
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'D, d M Y',
+      locale: { rangeSeparator: '  →  ', firstDayOfWeek: 1 },
+      disableMobile: true,            // same calendar on phones instead of the native one
+      showMonths: window.innerWidth >= 992 ? 3 : (window.innerWidth >= 768 ? 2 : 1),
+      defaultDate: start.value ? [start.value, end.value || start.value] : null,
+      onChange: function (dates) {
+        start.value = dates[0] ? iso(dates[0]) : '';
+        end.value = dates[1] ? iso(dates[1]) : (dates[0] ? iso(dates[0]) : '');
+        dateErr.hidden = true;
+        showDays();
+      },
+      onClose: function (dates, _, inst) {
+        // Closed after picking one date → treat as a one-day leave
+        if (dates.length === 1) inst.setDate([dates[0], dates[0]], true);
+      }
+    });
+    showDays();
+
+    // ── Validate before submit ─────────────────
+    form.addEventListener('submit', function (e) {
+      var ok = true;
+      if (!ts.getValue()) { typeErr.hidden = false; ts.wrapper.classList.add('is-invalid'); ok = false; }
+      if (!start.value || !end.value) { dateErr.hidden = false; ok = false; }
+      if (!ok) e.preventDefault();
+    });
+  })();
+</script>

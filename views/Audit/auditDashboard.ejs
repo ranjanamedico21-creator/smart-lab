@@ -1,0 +1,406 @@
+<%
+  const n  = v => Number(v) || 0;
+  const rs = v => '₹' + (Math.round(n(v) * 100) / 100).toLocaleString('en-IN');
+  const qs = (over) => {
+    const o = Object.assign({ tab: tab, from: f.from, to: f.to, level: f.level, review: f.review, actorId: f.actorId, action: f.action, q: f.q }, over || {});
+    return Object.keys(o).filter(function(k){ return o[k] !== '' && o[k] != null; })
+      .map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(o[k]); }).join('&');
+  };
+  const lvCls = { none:'lv-none', low:'lv-low', medium:'lv-medium', high:'lv-high', critical:'lv-critical' };
+  const vdCls = { ok:'vd-ok', explained:'vd-ok', suspicious:'vd-warn', fraud:'vd-bad' };
+  const csrf  = locals.csrfToken || '';
+  const today = new Date();
+  const ymd = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const back = d => { const x = new Date(today); x.setDate(x.getDate() - d); return ymd(x); };
+  const monthStart = ymd(new Date(today.getFullYear(), today.getMonth(), 1));
+  const dmy = v => { const p = String(v || '').split('-'); return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : ''; };
+  const presets = [['Today', ymd(today), ymd(today)], ['7 days', back(6), ymd(today)], ['30 days', back(29), ymd(today)], ['This month', monthStart, ymd(today)]];
+%>
+
+<style>
+:root{ --border:#e2e8f0; --muted:#94a3b8; --sub:#64748b; --ink:#0f172a; --card:#fff; --r:14px; }
+.ac-wrap{ max-width:1320px; margin:0 auto; }
+.ac-head{ background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:var(--r); padding:16px 20px; margin-bottom:14px;
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.ac-head h1{ font-size:1.15rem; font-weight:700; margin:0; }
+.ac-head small{ color:rgba(255,255,255,.6); font-size:.75rem; }
+.ac-range{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.ac-range input{ max-width:150px; }
+.ac-range .preset{ font-size:.72rem; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.2); border-radius:99px; padding:3px 10px; text-decoration:none; }
+.ac-range .preset:hover,.ac-range .preset.on{ background:rgba(255,255,255,.15); color:#fff; }
+
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+.kpi{ background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:12px 14px; text-decoration:none; color:inherit; display:block; }
+.kpi:hover{ box-shadow:0 4px 14px rgba(0,0,0,.06); color:inherit; }
+.kpi-l{ font-size:.64rem; text-transform:uppercase; letter-spacing:.07em; font-weight:700; color:var(--muted); display:flex; gap:5px; align-items:center; }
+.kpi-v{ font-size:1.25rem; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
+.kpi-s{ font-size:.7rem; color:var(--sub); }
+.kpi.bad{ border-color:#fecaca; background:#fff7f7; } .kpi.bad .kpi-v{ color:#dc2626; }
+.kpi.warn .kpi-v{ color:#c2410c; } .kpi.ok .kpi-v{ color:#0ea882; }
+
+.ac-tabs{ display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:12px; overflow-x:auto; }
+.ac-tabs a{ padding:8px 14px; font-size:.82rem; font-weight:600; color:var(--sub); text-decoration:none; border-bottom:2px solid transparent; white-space:nowrap; }
+.ac-tabs a.on{ color:#1a56e8; border-color:#1a56e8; }
+.ac-tabs .cnt{ font-size:.66rem; background:#fee2e2; color:#b91c1c; border-radius:99px; padding:1px 7px; margin-left:4px; }
+
+.card-x{ background:var(--card); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+.filters-x{ padding:10px 12px; border-bottom:1px solid var(--border); display:flex; gap:8px; flex-wrap:wrap; align-items:end; background:#fbfcfe; }
+.filters-x .form-select,.filters-x .form-control{ font-size:.8rem; }
+.filters-x label{ font-size:.66rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:2px; }
+
+.tbl{ width:100%; font-size:.78rem; border-collapse:collapse; }
+.tbl th{ font-size:.64rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; padding:8px 10px; background:#f8fafc; border-bottom:1px solid var(--border); white-space:nowrap; }
+.tbl td{ padding:8px 10px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+.tbl tr:hover td{ background:#fafcff; }
+.tbl .num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.tbl tr.row-critical td:first-child{ box-shadow:inset 4px 0 0 #dc2626; }
+.tbl tr.row-high td:first-child{ box-shadow:inset 4px 0 0 #f87171; }
+.tbl tr.row-medium td:first-child{ box-shadow:inset 4px 0 0 #fbbf24; }
+
+.lv{ display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:700; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+.lv-none{ background:#f1f5f9; color:#64748b; } .lv-low{ background:#ecfeff; color:#0e7490; }
+.lv-medium{ background:#fef3c7; color:#92400e; } .lv-high{ background:#fee2e2; color:#b91c1c; } .lv-critical{ background:#dc2626; color:#fff; }
+.fl{ display:inline-block; font-size:.66rem; background:#fff1f2; color:#9f1239; border:1px solid #fecdd3; border-radius:5px; padding:0 5px; margin:1px 2px 1px 0; }
+.vd{ display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:600; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+.vd-ok{ background:#dcfce7; color:#166534; } .vd-warn{ background:#fef3c7; color:#92400e; } .vd-bad{ background:#dc2626; color:#fff; } .vd-none{ background:#f1f5f9; color:#64748b; }
+.mv{ white-space:nowrap; } .mv .dn{ color:#dc2626; font-weight:700; } .mv .old{ color:var(--muted); text-decoration:line-through; }
+
+.bulk{ position:sticky; bottom:10px; z-index:5; display:none; margin:10px; background:#0f172a; color:#fff; border-radius:12px; padding:10px 14px;
+  align-items:center; gap:10px; flex-wrap:wrap; box-shadow:0 10px 30px rgba(0,0,0,.25); }
+.bulk.show{ display:flex; }
+
+.bar{ height:6px; background:#f1f5f9; border-radius:99px; overflow:hidden; min-width:60px; }
+.bar span{ display:block; height:100%; background:#ef4444; }
+.empty{ text-align:center; padding:40px 16px; color:var(--muted); }
+
+@media(max-width:768px){
+  .tbl .hide-sm{ display:none; }
+  .ac-range input{ max-width:130px; }
+}
+</style>
+
+<div class="ac-wrap">
+
+<% (notifications || []).forEach(function(nt){ %>
+  <div class="alert alert-<%= nt.type %> alert-dismissible fade show" role="alert" style="white-space:pre-line">
+    <i class="bi <%= nt.icon %> me-1"></i><%= nt.messages %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% }) %>
+
+<!-- ── Header + date range ── -->
+<div class="ac-head">
+  <div>
+    <h1><i class="bi bi-shield-lock me-1"></i>Audit Center</h1>
+    <small>Every registration, edit, cancellation, dues and thanks entry — signed and scored for risk.</small>
+  </div>
+  <form class="ac-range" method="get" action="/audit">
+    <input type="hidden" name="tab" value="<%= tab %>">
+    <% presets.forEach(function(p){ %>
+      <a class="preset <%= f.from===p[1] && f.to===p[2] ? 'on' : '' %>" href="/audit?<%= qs({ from:p[1], to:p[2], page:'' }) %>"><%= p[0] %></a>
+    <% }) %>
+    <input type="text" name="from" id="acFrom" value="<%= dmy(f.from) %>" class="form-control form-control-sm js-date" placeholder="From" autocomplete="off" aria-label="From date">
+    <input type="text" name="to"   id="acTo"   value="<%= dmy(f.to) %>"   class="form-control form-control-sm js-date" placeholder="To"   autocomplete="off" aria-label="To date">
+    <button class="btn btn-sm btn-light"><i class="bi bi-funnel"></i> Apply</button>
+  </form>
+</div>
+
+<!-- ── KPIs ── -->
+<div class="kpis">
+  <a class="kpi <%= kpis.highUnreviewed ? 'bad' : 'ok' %>" href="/audit?<%= qs({ tab:'events', level:'high', review:'unreviewed', page:'' }) %>">
+    <div class="kpi-l"><i class="bi bi-exclamation-octagon"></i>High risk to review</div>
+    <div class="kpi-v"><%= kpis.highUnreviewed %></div><div class="kpi-s"><%= kpis.highRisk %> high/critical in range</div></a>
+  <a class="kpi <%= kpis.billCut ? 'warn' : '' %>" href="/audit?<%= qs({ tab:'events', action:'EDIT', level:'low', page:'' }) %>">
+    <div class="kpi-l"><i class="bi bi-graph-down-arrow"></i>Bills reduced</div>
+    <div class="kpi-v"><%= rs(kpis.billCut) %></div><div class="kpi-s">by editing after registration</div></a>
+  <a class="kpi <%= kpis.cashBack ? 'bad' : '' %>" href="/audit?<%= qs({ tab:'events', action:'EDIT', page:'' }) %>">
+    <div class="kpi-l"><i class="bi bi-cash-stack"></i>Cash taken back</div>
+    <div class="kpi-v"><%= rs(kpis.cashBack) %></div><div class="kpi-s">cash reduced on edits</div></a>
+  <a class="kpi <%= kpis.receiptMismatch ? 'bad' : 'ok' %>" href="/audit?<%= qs({ tab:'receipts', page:'' }) %>">
+    <div class="kpi-l"><i class="bi bi-receipt-cutoff"></i>Receipt ≠ bill</div>
+    <div class="kpi-v"><%= kpis.receiptMismatch %></div><div class="kpi-s"><%= rs(kpis.receiptMismatchAmount) %> more on receipts</div></a>
+  <a class="kpi <%= kpis.cancels ? 'warn' : '' %>" href="/audit?<%= qs({ tab:'events', action:'CANCEL', page:'' }) %>">
+    <div class="kpi-l"><i class="bi bi-x-octagon"></i>Cancellations</div>
+    <div class="kpi-v"><%= kpis.cancels %></div><div class="kpi-s"><%= rs(kpis.cancelRefund) %> refunded</div></a>
+  <a class="kpi <%= kpis.outside ? 'bad' : 'ok' %>" href="/audit?<%= qs({ tab:'outside', page:'' }) %>">
+    <div class="kpi-l"><i class="bi bi-database-exclamation"></i>Outside-app changes</div>
+    <div class="kpi-v"><%= kpis.outside %></div><div class="kpi-s">direct database edits</div></a>
+  <div class="kpi">
+    <div class="kpi-l"><i class="bi bi-activity"></i>Activity</div>
+    <div class="kpi-v"><%= kpis.events %></div><div class="kpi-s"><%= kpis.registrations %> registered · <%= kpis.edits %> edits</div></div>
+</div>
+
+<!-- ── Tabs + actions ── -->
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+  <div class="ac-tabs flex-grow-1">
+    <a class="<%= tab==='events'?'on':'' %>"   href="/audit?<%= qs({ tab:'events', page:'' }) %>"><i class="bi bi-list-check"></i> Events</a>
+    <a class="<%= tab==='staff'?'on':'' %>"    href="/audit?<%= qs({ tab:'staff', page:'' }) %>"><i class="bi bi-people"></i> Staff summary</a>
+    <a class="<%= tab==='receipts'?'on':'' %>" href="/audit?<%= qs({ tab:'receipts', page:'' }) %>"><i class="bi bi-receipt"></i> Receipt mismatch<% if (kpis.receiptMismatch) { %><span class="cnt"><%= kpis.receiptMismatch %></span><% } %></a>
+    <a class="<%= tab==='outside'?'on':'' %>"  href="/audit?<%= qs({ tab:'outside', page:'' }) %>"><i class="bi bi-database-exclamation"></i> Outside app<% if (kpis.outside) { %><span class="cnt"><%= kpis.outside %></span><% } %></a>
+  </div>
+  <div class="d-flex gap-2 mb-2">
+    <form method="post" action="/audit/verify-range" class="m-0">
+      <% if (csrf) { %><input type="hidden" name="_csrf" value="<%= csrf %>"><% } %>
+      <input type="hidden" name="from" value="<%= f.from %>"><input type="hidden" name="to" value="<%= f.to %>">
+      <button class="btn btn-sm btn-outline-dark" title="Re-check every signature in this date range"><i class="bi bi-shield-check"></i> Verify integrity</button>
+    </form>
+    <a class="btn btn-sm btn-outline-success" href="/audit/export.csv?<%= qs({ page:'' }) %>"><i class="bi bi-filetype-csv"></i> Export</a>
+  </div>
+</div>
+
+<% if (tab === 'events') { %>
+<!-- ════════ EVENTS ════════ -->
+<div class="card-x">
+  <form class="filters-x" method="get" action="/audit">
+    <input type="hidden" name="tab" value="events"><input type="hidden" name="from" value="<%= f.from %>"><input type="hidden" name="to" value="<%= f.to %>">
+    <div><label>Risk</label>
+      <select name="level" class="form-select form-select-sm">
+        <option value="" <%= !f.level?'selected':'' %>>All</option>
+        <option value="low" <%= f.level==='low'?'selected':'' %>>Low and above</option>
+        <option value="medium" <%= f.level==='medium'?'selected':'' %>>Medium and above</option>
+        <option value="high" <%= f.level==='high'?'selected':'' %>>High and above</option>
+        <option value="critical" <%= f.level==='critical'?'selected':'' %>>Critical only</option>
+      </select></div>
+    <div><label>Review</label>
+      <select name="review" class="form-select form-select-sm">
+        <option value="all" <%= f.review==='all'?'selected':'' %>>All</option>
+        <option value="unreviewed" <%= f.review==='unreviewed'?'selected':'' %>>Not reviewed</option>
+        <option value="reviewed" <%= f.review==='reviewed'?'selected':'' %>>Reviewed</option>
+        <option value="flagged" <%= f.review==='flagged'?'selected':'' %>>Suspicious / fraud</option>
+      </select></div>
+    <div><label>Action</label>
+      <select name="action" class="form-select form-select-sm">
+        <option value="">All</option>
+        <% Object.keys(actions).forEach(function(k){ %><option value="<%= k %>" <%= f.action===k?'selected':'' %>><%= actions[k] %></option><% }) %>
+      </select></div>
+    <div><label>Staff</label>
+      <select name="actorId" class="form-select form-select-sm">
+        <option value="">Everyone</option>
+        <% actors.forEach(function(a){ %><option value="<%= a.id %>" <%= String(f.actorId)===String(a.id)?'selected':'' %>><%= a.name %></option><% }) %>
+      </select></div>
+    <div style="flex:1;min-width:160px"><label>Bill no / name / phone</label>
+      <input type="search" name="q" value="<%= f.q %>" class="form-control form-control-sm" placeholder="e.g. 10452 or Ramesh"></div>
+    <div><button class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+      <a class="btn btn-sm btn-light" href="/audit?tab=events&from=<%= f.from %>&to=<%= f.to %>">Reset</a></div>
+  </form>
+
+  <% if (!events.rows.length) { %>
+    <div class="empty"><i class="bi bi-emoji-smile" style="font-size:1.8rem"></i><div>No events for these filters.</div></div>
+  <% } else { %>
+  <div class="table-responsive">
+  <table class="tbl" id="evTable">
+    <thead><tr>
+      <% if (canReview) { %><th style="width:28px"><input type="checkbox" class="form-check-input" id="chkAll" aria-label="Select all"></th><% } %>
+      <th>Risk</th><th>When</th><th>Bill / Patient</th><th>Action</th><th>Done by</th>
+      <th class="hide-sm">What changed</th><th class="num">Impact</th><th>Review</th>
+    </tr></thead>
+    <tbody>
+    <% events.rows.forEach(function(r){
+         const own = String(r.ActorId) === String(currentUserId); %>
+      <tr class="row-<%= r.RiskLevel %>">
+        <% if (canReview) { %><td><% if (!own && r.RiskLevel !== 'none') { %><input type="checkbox" class="form-check-input ev-chk" value="<%= r.Id %>" aria-label="Select event <%= r.Id %>"><% } %></td><% } %>
+        <td><span class="lv <%= lvCls[r.RiskLevel] %>"><%= r.RiskLevel === 'none' ? '—' : r.RiskLevel %><%= r.RiskScore ? ' · ' + r.RiskScore : '' %></span></td>
+        <td class="text-nowrap"><%= r.DisplayAt %></td>
+        <td><a href="<%= historyUrl %><%= r.PatientId %>" class="fw-semibold text-decoration-none">#<%= r.PatientId %></a>
+            <div class="text-muted" style="font-size:.72rem"><%= r.Title || '' %> <%= r.PatientName || '' %><%= Number(r.PatientStatus)===0 ? ' · cancelled' : '' %></div></td>
+        <td class="text-nowrap"><%= r.ActionLabel %></td>
+        <td><%= r.ActorName || '—' %><div class="text-muted" style="font-size:.7rem"><%= r.ActorRole || '' %></div></td>
+        <td class="hide-sm" style="max-width:380px">
+          <% if (r.NetBefore != null && r.NetAfter != null && Math.abs(n(r.NetBefore) - n(r.NetAfter)) >= 0.5) { %>
+            <span class="mv me-2">Bill <span class="old"><%= rs(r.NetBefore) %></span> <span class="<%= n(r.NetAfter) < n(r.NetBefore) ? 'dn' : '' %>"><%= rs(r.NetAfter) %></span></span>
+          <% } %>
+          <% if (r.CashBefore != null && r.CashAfter != null && Math.abs(n(r.CashBefore) - n(r.CashAfter)) >= 0.5 && r.Action === 'EDIT') { %>
+            <span class="mv me-2">Cash <span class="old"><%= rs(r.CashBefore) %></span> <span class="<%= n(r.CashAfter) < n(r.CashBefore) ? 'dn' : '' %>"><%= rs(r.CashAfter) %></span></span>
+          <% } %>
+          <div><% r.Flags.forEach(function(fl){ %><span class="fl"><%= fl.label %></span><% }) %></div>
+          <% if (r.Reason) { %><div class="text-muted" style="font-size:.72rem"><i class="bi bi-chat-quote"></i> <%= r.Reason %></div><% } %>
+        </td>
+        <td class="num"><%= n(r.AmountImpact) ? rs(r.AmountImpact) : '—' %></td>
+        <td>
+          <% if (r.Verdict) { %><span class="vd <%= vdCls[r.Verdict] %>" title="<%= r.ReviewNote || '' %> — <%= r.ReviewedByName || '' %>"><%= verdicts[r.Verdict] %></span>
+          <% } else if (r.RiskLevel !== 'none') { %><span class="vd vd-none">Pending</span><% } %>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center p-2 flex-wrap gap-2" style="font-size:.78rem">
+    <span class="text-muted"><%= events.total %> event(s) · page <%= f.page %> of <%= events.pages %> · sorted by risk</span>
+    <span class="d-flex gap-1">
+      <% if (f.page > 1) { %><a class="btn btn-sm btn-light" href="/audit?<%= qs({ page: f.page - 1 }) %>">‹ Prev</a><% } %>
+      <% if (f.page < events.pages) { %><a class="btn btn-sm btn-light" href="/audit?<%= qs({ page: f.page + 1 }) %>">Next ›</a><% } %>
+    </span>
+  </div>
+  <% } %>
+
+  <% if (canReview) { %>
+  <form class="bulk" id="bulkBar" method="post" action="/audit/review">
+    <% if (csrf) { %><input type="hidden" name="_csrf" value="<%= csrf %>"><% } %>
+    <input type="hidden" name="back" value="/audit?<%= qs({}) %>">
+    <span id="bulkIds"></span>
+    <strong><span id="bulkCount">0</span> selected</strong>
+    <select name="verdict" class="form-select form-select-sm" style="width:auto">
+      <% Object.keys(verdicts).forEach(function(k){ %><option value="<%= k %>"><%= verdicts[k] %></option><% }) %>
+    </select>
+    <input name="note" class="form-control form-control-sm" style="flex:1;min-width:180px" maxlength="1000" placeholder="Note (required unless OK)">
+    <button class="btn btn-sm btn-light"><i class="bi bi-check2-all"></i> Save review</button>
+  </form>
+  <% } %>
+</div>
+<% } %>
+
+<% if (tab === 'staff') { %>
+<!-- ════════ STAFF ════════ -->
+<div class="card-x">
+  <div class="p-2 px-3 small text-muted border-bottom">Who reduces bills, takes cash back or cancels most — compare people doing the same job. Sorted by total risk.</div>
+  <% if (!staff.length) { %><div class="empty">No activity in this range.</div><% } else { %>
+  <div class="table-responsive">
+  <table class="tbl">
+    <thead><tr>
+      <th>Staff</th><th class="num">Registered</th><th class="num">Billed</th><th class="num">Discount</th>
+      <th class="num">Edits</th><th class="num">Bills cut</th><th>Cut rate</th><th class="num">Amount cut</th>
+      <th class="num">Cash back</th><th class="num">Tests removed</th><th class="num">Cancels</th><th class="num">Refunded</th>
+      <th class="num">High risk</th><th class="num">Flagged</th><th class="num">Risk pts</th>
+    </tr></thead>
+    <tbody>
+    <% const maxRate = Math.max.apply(null, staff.map(function(s){ return s.cutRate; }).concat([1]));
+       staff.forEach(function(s){ %>
+      <tr>
+        <td><a class="fw-semibold text-decoration-none" href="/audit?<%= qs({ tab:'events', actorId: s.ActorId || '', page:'' }) %>"><%= s.ActorName || 'System' %></a>
+          <div class="text-muted" style="font-size:.7rem"><%= s.ActorRole || '' %></div></td>
+        <td class="num"><%= s.registrations %></td>
+        <td class="num"><%= rs(s.registeredValue) %></td>
+        <td class="num"><%= rs(s.discountGiven) %><div class="text-muted" style="font-size:.68rem"><%= s.discountRate %>%</div></td>
+        <td class="num"><%= s.edits %></td>
+        <td class="num <%= s.billCuts ? 'text-danger fw-semibold' : '' %>"><%= s.billCuts %></td>
+        <td style="min-width:90px"><div class="bar"><span style="width:<%= Math.min(100, (s.cutRate / maxRate) * 100) %>%"></span></div><div style="font-size:.68rem"><%= s.cutRate %>%</div></td>
+        <td class="num <%= s.billCutAmount ? 'text-danger fw-semibold' : '' %>"><%= rs(s.billCutAmount) %></td>
+        <td class="num <%= s.cashBack ? 'text-danger fw-semibold' : '' %>"><%= rs(s.cashBack) %></td>
+        <td class="num"><%= s.testsRemoved %></td>
+        <td class="num"><%= s.cancels %></td>
+        <td class="num"><%= rs(s.cancelRefund) %></td>
+        <td class="num <%= s.highRisk ? 'text-danger fw-bold' : '' %>"><%= s.highRisk %></td>
+        <td class="num <%= s.flagged ? 'text-danger fw-bold' : '' %>"><%= s.flagged %></td>
+        <td class="num fw-semibold"><%= s.totalScore %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</div>
+<% } %>
+
+<% if (tab === 'receipts') { %>
+<!-- ════════ RECEIPTS ════════ -->
+<div class="card-x">
+  <div class="p-2 px-3 small text-muted border-bottom">
+    The patient walked out with a receipt showing <strong>more</strong> than the bill now shows, or the bill was cancelled after printing.
+    Call the patient and ask how much they paid — this is the most reliable fraud check.
+  </div>
+  <% if (!receipts.length) { %><div class="empty"><i class="bi bi-check-circle" style="font-size:1.8rem;color:#0ea882"></i><div>Every printed receipt matches its bill.</div></div><% } else { %>
+  <div class="table-responsive">
+  <table class="tbl">
+    <thead><tr><th>Bill / Patient</th><th>Phone</th><th class="num">Receipt net</th><th class="num">Bill now</th>
+      <th class="num">Receipt paid</th><th class="num">Paid now</th><th class="num">Gap</th><th>Prints</th><th>Registered by</th><th>Last changed by</th></tr></thead>
+    <tbody>
+    <% receipts.forEach(function(r){ %>
+      <tr class="row-<%= r.Kind === 'cancelled' ? 'medium' : 'high' %>">
+        <td><a href="<%= historyUrl %><%= r.PatientId %>" class="fw-semibold text-decoration-none">#<%= r.PatientId %></a>
+          <div class="text-muted" style="font-size:.72rem"><%= r.Title || '' %> <%= r.Name %><%= r.Kind === 'cancelled' ? ' · cancelled' : '' %></div></td>
+        <td><a href="tel:<%= r.PhoneNumber %>"><%= r.PhoneNumber %></a></td>
+        <td class="num"><%= rs(r.MaxNet) %></td>
+        <td class="num <%= r.CurrentNet < r.MaxNet - 0.5 ? 'text-danger fw-bold' : '' %>"><%= Number(r.Status)===0 ? 'Cancelled' : rs(r.CurrentNet) %></td>
+        <td class="num"><%= rs(r.MaxPaid) %></td>
+        <td class="num <%= r.CurrentPaid < r.MaxPaid - 0.5 ? 'text-danger fw-bold' : '' %>"><%= rs(r.CurrentPaid) %></td>
+        <td class="num text-danger fw-bold"><%= rs(r.Diff) %></td>
+        <td class="text-nowrap" style="font-size:.72rem"><%= r.Prints %>× <div class="text-muted"><%= r.FirstPrint %><%= r.Prints > 1 ? ' … ' + r.LastPrint : '' %></div></td>
+        <td><%= r.RegisteredByName || '—' %></td>
+        <td><%= r.LastChangedBy || '—' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</div>
+<% } %>
+
+<% if (tab === 'outside') { %>
+<!-- ════════ OUTSIDE APP ════════ -->
+<div class="card-x">
+  <div class="p-2 px-3 small text-muted border-bottom">
+    Money fields changed directly in the database (phpMyAdmin, a script, or a screen that does not write the audit).
+    <strong>DB user</strong> tells you which login did it — your app's user is the normal one; anything else is a person.
+  </div>
+  <% if (!outside.length) { %><div class="empty"><i class="bi bi-check-circle" style="font-size:1.8rem;color:#0ea882"></i><div>No changes outside SmartLab.</div></div><% } else { %>
+  <div class="table-responsive">
+  <table class="tbl">
+    <thead><tr><th>When</th><th>Bill / Patient</th><th>Table</th><th>Change</th><th>DB user</th></tr></thead>
+    <tbody>
+    <% outside.forEach(function(r){ %>
+      <tr class="row-critical">
+        <td class="text-nowrap"><%= r.DisplayAt %></td>
+        <td><a href="<%= historyUrl %><%= r.PatientId %>" class="fw-semibold text-decoration-none">#<%= r.PatientId %></a>
+          <div class="text-muted" style="font-size:.72rem"><%= r.Title || '' %> <%= r.Name || '(deleted)' %></div></td>
+        <td><%= r.TableName %> <span class="badge bg-danger-subtle text-danger-emphasis"><%= r.Op %></span></td>
+        <td style="font-size:.74rem">
+          <% String(r.ColumnsChanged || '').split(',').filter(Boolean).forEach(function(c){ %>
+            <div><strong><%= c %></strong>:
+              <span class="text-muted text-decoration-line-through"><%= r.old && r.old[c] != null ? r.old[c] : (c==='ROW'||c==='TestId' ? JSON.stringify(r.old) : '—') %></span>
+              → <%= r.neu && r.neu[c] != null ? r.neu[c] : (r.Op === 'DELETE' ? 'deleted' : '—') %></div>
+          <% }) %>
+        </td>
+        <td><code><%= r.DbUser %></code></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</div>
+<% } %>
+
+</div>
+
+<script>
+/* Flatpickr date range (same style as the rest of SmartLab: DD-MM-YYYY, no altInput) */
+(function () {
+  function init() {
+    var from = document.getElementById('acFrom'), to = document.getElementById('acTo');
+    if (!from || !to || !window.flatpickr) return;
+    var opts = { dateFormat: 'd-m-Y', allowInput: true, maxDate: 'today', disableMobile: true };
+    var fpTo = flatpickr(to, Object.assign({}, opts, { minDate: from.value || null }));
+    flatpickr(from, Object.assign({}, opts, {
+      onChange: function (sel) { if (sel[0]) { fpTo.set('minDate', sel[0]); if (fpTo.selectedDates[0] && fpTo.selectedDates[0] < sel[0]) fpTo.setDate(sel[0]); } }
+    }));
+  }
+  if (window.flatpickr) return init();
+  var css = document.createElement('link'); css.rel = 'stylesheet';
+  css.href = 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css'; document.head.appendChild(css);
+  var js = document.createElement('script'); js.src = 'https://cdn.jsdelivr.net/npm/flatpickr'; js.onload = init; document.head.appendChild(js);
+})();
+
+(function () {
+  var bar = document.getElementById('bulkBar');
+  if (!bar) return;
+  var all = document.getElementById('chkAll');
+  var ids = document.getElementById('bulkIds');
+  var cnt = document.getElementById('bulkCount');
+  function sync() {
+    var picked = Array.prototype.slice.call(document.querySelectorAll('.ev-chk:checked'));
+    ids.innerHTML = '';
+    picked.forEach(function (c) {
+      var i = document.createElement('input'); i.type = 'hidden'; i.name = 'eventIds'; i.value = c.value; ids.appendChild(i);
+    });
+    cnt.textContent = picked.length;
+    bar.classList.toggle('show', picked.length > 0);
+  }
+  document.querySelectorAll('.ev-chk').forEach(function (c) { c.addEventListener('change', sync); });
+  if (all) all.addEventListener('change', function () {
+    document.querySelectorAll('.ev-chk').forEach(function (c) { c.checked = all.checked; }); sync();
+  });
+})();
+</script>

@@ -1,0 +1,866 @@
+<%#
+  Variables from controller:
+  patientId, testId, testRefId, patientName, testName, categoryName
+  reportContent, templateId, templateType
+  allTemplates          — flat array [{Id, Name, TemplateType, GenderType, Content}]
+  isReportReady, isFinalized, finalizedAt, finalizedByName
+  patientAge, patientYMD, patientGender (1/2 integer), patientGenderKey ('male'/'female'/'common')
+  doctorName, registeredOn, currentUserQual
+%>
+
+<script src="/ckeditor/ckeditor.js"></script>
+
+<style>
+:root {
+  --primary:#1a73e8;
+  --primary-dark:#1557b0;
+  --success:#1e8e3e;
+  --warning:#f9ab00;
+  --danger:#d93025;
+  --surface:#fff;
+  --background:#f8f9fa;
+  --border:#dadce0;
+  --text:#202124;
+  --text-secondary:#5f6368;
+  --shadow:0 1px 2px 0 rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);
+  --shadow-lg:0 1px 3px 0 rgba(60,64,67,.3),0 4px 8px 3px rgba(60,64,67,.15);
+}
+
+#main-content {
+  display:flex!important;flex-direction:column!important;
+  height:calc(100vh - var(--navbar-height,60px))!important;
+  min-height:0!important;overflow:hidden!important;
+}
+.content-area {
+  flex:1!important;display:flex!important;flex-direction:column!important;
+  min-height:0!important;overflow:hidden!important;padding:0.5rem;
+}
+.rp-topbar {
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:8px 16px;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;flex-wrap:wrap;
+  flex-shrink:0;z-index:100;box-shadow:var(--shadow);
+  margin-bottom:16px;border-radius:8px;
+}
+.rp-topbar-left { display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
+.rp-back-btn {
+  background:transparent;border:none;color:var(--text-secondary);
+  font-size:20px;cursor:pointer;padding:8px;border-radius:50%;
+  transition:all .2s;display:flex;align-items:center;
+  justify-content:center;text-decoration:none;
+}
+.rp-back-btn:hover { background:rgba(0,0,0,.04);color:var(--text); }
+.rp-title-group h1 { font-size:16px;font-weight:500;color:var(--text);margin-bottom:2px; }
+.rp-subtitle { font-size:12px;color:var(--text-secondary); }
+.rp-info-chips { display:flex;gap:8px;flex-wrap:wrap; }
+.rp-chip {
+  background:#e8f0fe;color:#1967d2;padding:4px 12px;border-radius:16px;
+  font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:6px;
+}
+.rp-chip i { font-size:14px; }
+.rp-chip.success { background:#e6f4ea;color:#1e8e3e; }
+.rp-chip.warning { background:#fef7e0;color:#f9ab00; }
+.rp-topbar-actions { display:flex;gap:8px;align-items:center; }
+.rp-btn {
+  padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;
+  cursor:pointer;border:none;font-family:inherit;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;text-decoration:none;
+}
+.rp-btn-outlined { background:transparent;color:var(--text);border:1px solid var(--border); }
+.rp-btn-outlined:hover { background:rgba(0,0,0,.04); }
+.rp-btn-warning { background:var(--warning);color:#000; }
+.rp-btn-warning:hover { background:#ea8600; }
+.lock-icon-wrap { position:relative;display:inline-block;width:1em;height:1em;vertical-align:middle; }
+.lock-icon-wrap i { position:absolute;top:0;left:0;transition:all .35s cubic-bezier(.4,0,.2,1); }
+.lock-closed { opacity:1;transform:scale(1) rotate(0deg); }
+.lock-open { opacity:0;transform:scale(.5) rotate(-25deg); }
+.rp-btn-warning:hover .lock-closed { opacity:0;transform:scale(.5) rotate(25deg); }
+.rp-btn-warning:hover .lock-open { opacity:1;transform:scale(1) rotate(0deg); }
+.rp-status {
+  display:inline-flex;align-items:center;gap:6px;padding:4px 12px;
+  border-radius:12px;font-size:12px;font-weight:500;
+  background:#f1f3f4;color:var(--text-secondary);
+}
+.rp-status-dot { width:8px;height:8px;border-radius:50%;background:#34a853; }
+.rp-status-dot.saving { background:var(--warning);animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+
+.rp-template-bar {
+  background:#f8f9fa;border-bottom:1px solid var(--border);
+  padding:10px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;
+}
+.rp-template-bar label { font-size:12px;color:var(--text-secondary);font-weight:500;white-space:nowrap; }
+.rp-template-select {
+  flex:1;max-width:340px;padding:7px 10px;border:1px solid var(--border);
+  border-radius:6px;font-size:13px;font-family:inherit;
+  background:var(--surface);cursor:pointer;outline:none;
+}
+.rp-template-select:focus { border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,115,232,.1); }
+.rp-template-load-btn {
+  padding:7px 16px;background:var(--primary);color:#fff;border:none;
+  border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.rp-template-load-btn:hover { background:var(--primary-dark); }
+.rp-template-load-btn:disabled { opacity:.6;cursor:not-allowed; }
+
+.rp-no-template-banner {
+  background:#fff8e1;border-bottom:1px solid #ffe082;
+  padding:10px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;
+}
+.rp-no-template-banner span { font-size:13px;color:#5d4037;flex:1; }
+.rp-save-tpl-btn {
+  padding:7px 16px;background:#ff8f00;color:#fff;border:none;border-radius:6px;
+  font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.rp-save-tpl-btn:hover { background:#e65100; }
+
+.rp-editor-container { max-width:100%;margin:0 auto;width:100%;flex:1;display:flex;flex-direction:column;min-height:0; }
+.rp-editor-card { background:var(--surface);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0; }
+.editor-wrapper-ck4 { flex:1;display:flex;flex-direction:column;min-height:0; }
+#cke_reportEditor,#cke_reportEditor .cke_chrome,#cke_reportEditor .cke_inner { flex:1;display:flex;flex-direction:column;min-height:0;border:none;box-shadow:none; }
+#cke_reportEditor .cke_top { flex-shrink:0;background:#f8f9fa;border-bottom:1px solid var(--border);padding:8px; }
+#cke_reportEditor .cke_contents { flex:1;min-height:0;padding:0;background:#e8eaed; }
+#cke_reportEditor .cke_bottom { display:none; }
+#cke_reportEditor.cke_maximized { position:fixed!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:99999!important;border-radius:0!important; }
+.cke_notification_warning { display:none!important; }
+
+.rp-fab { position:fixed;bottom:32px;right:32px;display:flex;flex-direction:column-reverse;gap:12px;z-index:1000; }
+.rp-fab-btn { width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;font-size:24px;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative; }
+.rp-fab-btn:hover { transform:scale(1.05); }
+.rp-fab-btn.primary { background:var(--primary);color:#fff; }
+.rp-fab-btn.success { background:var(--success);color:#fff; }
+.rp-fab-btn::before { content:attr(data-tooltip);position:absolute;right:68px;background:rgba(0,0,0,.8);color:#fff;padding:6px 12px;border-radius:4px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s; }
+.rp-fab-btn:hover::before { opacity:1; }
+
+.rp-modal-overlay { display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:24px; }
+.rp-modal-overlay.open { display:flex; }
+.rp-modal { background:var(--surface);border-radius:8px;padding:24px;max-width:480px;width:100%;box-shadow:0 8px 10px 1px rgba(0,0,0,.14); }
+.rp-modal-title { font-size:20px;font-weight:500;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:12px; }
+.rp-modal-title i { font-size:24px;color:var(--primary); }
+.rp-modal-body { font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:24px; }
+.rp-modal-body ul { padding-left:20px;margin:12px 0; }
+.rp-modal-body li { margin-bottom:8px; }
+.rp-modal-actions { display:flex;gap:8px;justify-content:flex-end; }
+.rp-modal-btn { padding:10px 24px;border:none;border-radius:4px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s; }
+.rp-modal-btn.cancel { background:transparent;color:var(--primary); }
+.rp-modal-btn.cancel:hover { background:rgba(26,115,232,.04); }
+.rp-modal-btn.confirm { background:var(--primary);color:#fff; }
+.rp-modal-btn.confirm:hover { background:var(--primary-dark); }
+.rp-modal-btn.danger { background:var(--danger);color:#fff; }
+.rp-modal-btn.danger:hover { background:#b3261e; }
+
+.rp-snackbar { position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);z-index:10000;background:#323232;color:#fff;padding:14px 24px;border-radius:4px;font-size:14px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:16px;min-width:344px;opacity:0;transition:all .3s; }
+.rp-snackbar.show { opacity:1;transform:translateX(-50%) translateY(0); }
+.rp-snackbar.error { background:#d93025; }
+.rp-snackbar.success { background:#1e8e3e; }
+.rp-snackbar-message { flex:1; }
+.rp-snackbar-action { background:transparent;border:none;color:#fff;font-weight:500;cursor:pointer;padding:6px 8px;font-size:14px;text-transform:uppercase; }
+
+@media(max-width:768px) { .rp-info-chips{display:none;} .rp-fab{bottom:16px;right:16px;} }
+@media print {
+  .rp-topbar,.rp-template-bar,.rp-no-template-banner,.rp-fab,.rp-snackbar,.rp-modal-overlay,.cke_top{display:none!important;}
+  #main-content,.content-area{height:auto!important;overflow:visible!important;}
+}
+</style>
+
+<%
+  const isReportReady   = locals.isReportReady   || false;
+  const isFinalized     = locals.isFinalized     || false;
+  const finalizedAt     = locals.finalizedAt     || '';
+  const finalizedByName = locals.finalizedByName || '';
+
+  const tplPatientName = locals.patientName     || '';
+  const tplAge         = locals.patientAge      || '';
+  const tplYMD         = locals.patientYMD      || '';
+  const tplGenderInt   = locals.patientGender   || '';
+  const tplGenderKey   = locals.patientGenderKey || 'common';
+  const tplGenderLabel = tplGenderInt == 1 ? 'Male' : tplGenderInt == 2 ? 'Female' : '';
+  const tplDoctorName  = locals.doctorName ? 'Dr. ' + locals.doctorName : '';
+  const tplDate        = locals.registeredOn
+    ? new Date(locals.registeredOn).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+    : new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const tplAgeSex      = [tplAge + (tplYMD ? ' ' + tplYMD : ''), tplGenderLabel].filter(Boolean).join(' / ');
+
+  const allTemplates   = locals.allTemplates || [];
+  const primaryTpl     = allTemplates[0] || null;
+  const altTemplates   = allTemplates.slice(1);
+  const noTemplate     = allTemplates.length === 0;
+%>
+
+<!-- Snackbar -->
+<div id="snackbar" class="rp-snackbar">
+  <span class="rp-snackbar-message" id="snackbarMessage"></span>
+  <button class="rp-snackbar-action" onclick="hideSnackbar()">DISMISS</button>
+</div>
+
+<!-- TOP BAR -->
+<div class="rp-topbar">
+  <div class="rp-topbar-left">
+    <a href="/patient/getPatientDetail?patientId=<%= patientId %>" class="rp-back-btn">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div class="rp-title-group">
+      <h1><%= testName %></h1>
+      <div class="rp-subtitle text-capitalize">
+        <%= patientName %> &middot; Bill #<%= patientId %>
+        <% if(tplAgeSex) { %> &middot; <%= tplAgeSex %><% } %>
+        <% if(categoryName) { %> &middot; <span style="color:var(--primary)"><%= categoryName %></span><% } %>
+      </div>
+    </div>
+    <div class="rp-info-chips">
+      <% if(tplDoctorName) { %>
+      <span class="rp-chip text-capitalize"><i class="bi bi-person-badge"></i> <%= tplDoctorName %></span>
+      <% } %>
+      <% if(primaryTpl) { %>
+      <span class="rp-chip" title="Active template">
+        <i class="bi bi-file-earmark-text"></i>
+        <%= primaryTpl.TemplateType === 'doctor_test' ? 'Your Template' :
+            primaryTpl.TemplateType === 'doctor_default' ? 'Your Default' : 'Test Default' %>
+      </span>
+      <% } %>
+      <% if(isFinalized) { %>
+      <span class="rp-chip success"><i class="bi bi-lock-fill"></i> Finalized</span>
+      <% } else if(isReportReady) { %>
+      <span class="rp-chip warning"><i class="bi bi-check-circle-fill"></i> Ready</span>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="rp-topbar-actions">
+    <div class="rp-status">
+      <span class="rp-status-dot" id="statusDot"></span>
+      <span id="statusText"><%= isFinalized ? 'Finalized' : isReportReady ? 'Ready' : 'Draft' %></span>
+    </div>
+    <% if(isReportReady || isFinalized) { %>
+      <a href="/report/downloadPdf?patientId=<%= patientId %>&testId=<%= testId %>"
+         class="rp-btn rp-btn-outlined" target="_blank" title="With letterhead — send to patient">
+        <i class="bi bi-file-pdf"></i> PDF
+      </a>
+      <a href="/report/downloadPdfPrint?patientId=<%= patientId %>&testId=<%= testId %>"
+         class="rp-btn rp-btn-outlined" target="_blank" title="Without letterhead — print on pad">
+        <i class="bi bi-printer"></i> Print PDF
+      </a>
+      <a href="/report/downloadDoc?patientId=<%= patientId %>&testId=<%= testId %>"
+         class="rp-btn rp-btn-outlined">
+        <i class="bi bi-file-word"></i> Word
+      </a>
+      <% } %>
+    <% if(isFinalized) { %>
+    <button class="rp-btn rp-btn-warning" onclick="openUnfinalizeModal()">
+      <span class="lock-icon-wrap">
+        <i class="bi bi-lock-fill lock-closed"></i>
+        <i class="bi bi-unlock lock-open"></i>
+      </span>
+      Un-finalize
+    </button>
+    <% } %>
+  </div>
+</div>
+
+<!-- EDITOR CARD -->
+<div class="rp-editor-container">
+  <div class="rp-editor-card">
+
+    <!-- Template switcher -->
+    <% if(!isFinalized && altTemplates.length > 0) { %>
+    <div class="rp-template-bar">
+      <label><i class="bi bi-arrow-repeat"></i> Switch template:</label>
+      <select id="templateSelector" class="rp-template-select">
+        <option value="">— choose —</option>
+        <% altTemplates.forEach(function(tpl) { %>
+        <option value="<%= tpl.Id || '' %>" data-type="<%= tpl.TemplateType %>">
+          <%
+            var icon  = tpl.TemplateType === 'doctor_test'    ? '🩺' :
+                        tpl.TemplateType === 'doctor_default' ? '👤' : '🧪';
+            var label = tpl.TemplateType === 'doctor_test'    ? 'Your Template' :
+                        tpl.TemplateType === 'doctor_default' ? 'Your Default'  : 'Test Default';
+            var gLabel = tpl.GenderType.charAt(0).toUpperCase() + tpl.GenderType.slice(1);
+          %>
+          <%= icon %> <%= label %> — <%= gLabel %><% if(tpl.Name){ %> (<%= tpl.Name %>)<% } %>
+        </option>
+        <% }) %>
+      </select>
+      <button class="rp-template-load-btn" id="btnSwitchTemplate" onclick="switchTemplate()">
+        <i class="bi bi-arrow-repeat"></i> Load
+      </button>
+    </div>
+    <% } %>
+
+    <!-- No-template banner -->
+    <% if(!isFinalized && noTemplate) { %>
+    <div class="rp-no-template-banner" id="noTemplateBanner">
+      <i class="bi bi-lightbulb" style="color:#ff8f00;font-size:18px;"></i>
+      <span>No template found for this test. Type your report below — you can save it as a template for next time.</span>
+      <button class="rp-save-tpl-btn" id="btnSaveAsTemplate" onclick="openSaveTemplateModal()">
+        <i class="bi bi-bookmark-plus"></i> Save as My Template
+      </button>
+    </div>
+    <% } %>
+
+    <!-- CKEditor -->
+    <div class="editor-wrapper-ck4">
+      <textarea id="reportEditor"><%- reportContent || '' %></textarea>
+    </div>
+
+  </div>
+</div>
+
+<!-- FABs -->
+<% if(!isFinalized) { %>
+<div class="rp-fab">
+  <button class="rp-fab-btn success" data-tooltip="Finalize Report" onclick="openFinalizeModal()">
+    <i class="bi bi-lock-fill"></i>
+  </button>
+  <button class="rp-fab-btn primary" data-tooltip="Save Draft" onclick="saveReport(false)">
+    <i class="bi bi-save"></i>
+  </button>
+</div>
+<% } %>
+
+<!-- FINALIZE MODAL -->
+<div class="rp-modal-overlay" id="finalizeModal">
+  <div class="rp-modal">
+    <div class="rp-modal-title"><i class="bi bi-lock-fill"></i> Finalize Report?</div>
+    <div class="rp-modal-body">
+      <p>Once finalized:</p>
+      <ul>
+        <li>Report will be <strong>locked</strong> — no further edits</li>
+        <li>Available to download as <strong>PDF and Word</strong></li>
+        <li>You can un-finalize if corrections are needed</li>
+      </ul>
+    </div>
+    <div class="rp-modal-actions">
+      <button class="rp-modal-btn cancel" onclick="closeFinalizeModal()">Cancel</button>
+      <button class="rp-modal-btn confirm" id="confirmFinalizeBtn" onclick="confirmFinalize()">Finalize</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNFINALIZE MODAL -->
+<div class="rp-modal-overlay" id="unfinalizeModal">
+  <div class="rp-modal">
+    <div class="rp-modal-title"><i class="bi bi-unlock"></i> Un-finalize Report?</div>
+    <div class="rp-modal-body">
+      <p>This will <strong>unlock</strong> the report for editing.</p>
+      <ul>
+        <li>PDF and Word downloads will be <strong>disabled</strong> until re-finalized</li>
+        <li>All existing content will remain intact</li>
+      </ul>
+    </div>
+    <div class="rp-modal-actions">
+      <button class="rp-modal-btn cancel" onclick="closeUnfinalizeModal()">Cancel</button>
+      <button class="rp-modal-btn danger" id="confirmUnfinalizeBtn" onclick="confirmUnfinalize()">Un-finalize</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE AS TEMPLATE MODAL -->
+<div class="rp-modal-overlay" id="saveTemplateModal">
+  <div class="rp-modal">
+    <div class="rp-modal-title"><i class="bi bi-bookmark-star"></i> Save as My Template</div>
+    <div class="rp-modal-body">
+      <p>This will save your current report content as your personal template for
+         <strong><%= testName %></strong>
+         <% if(tplGenderLabel) { %>(for <strong><%= tplGenderLabel %></strong> patients)<% } %>.</p>
+      <p style="margin-top:10px;font-size:13px;color:var(--text-secondary);">
+        Next time you create a report for this test, your template will load automatically.
+      </p>
+    </div>
+    <div class="rp-modal-actions">
+      <button class="rp-modal-btn cancel" onclick="closeSaveTemplateModal()">Not Now</button>
+      <button class="rp-modal-btn confirm" id="confirmSaveTemplateBtn" onclick="confirmSaveTemplate()">
+        <i class="bi bi-bookmark-plus"></i> Save Template
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────
+const IS_FINALIZED       = <%- isFinalized ? 'true' : 'false' %>;
+const PATIENT_ID         = '<%- patientId %>';
+const TEST_ID            = '<%- testId %>';
+const TEST_REF_ID        = '<%- testRefId %>';
+const PATIENT_GENDER_KEY = '<%- tplGenderKey %>';
+const NO_TEMPLATE        = <%- noTemplate ? 'true' : 'false' %>;
+
+// Doctor info for print window
+const CURRENT_DOCTOR_NAME = '<%- locals.doctorName ? "Dr. " + locals.doctorName : "" %>';
+const CURRENT_DOCTOR_QUAL = '<%- locals.currentUserQual || "" %>';
+
+// Patient info for print window — all resolved server-side, no nested quotes
+const PRINT_PATIENT = {
+    name:    '<%- (patientName || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'") %>',
+    age:     '<%- patientAge || "" %>',
+    ymd:     '<%- patientYMD || "" %>',
+    gender:  '<%= tplGenderLabel %>',
+    doctor:  '<%- (tplDoctorName || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'") %>',
+    test:    '<%- (testName || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'") %>',
+    date:    '<%= tplDate %>',
+    billNo:  '<%- patientId %>',
+};
+
+let CURRENT_TEMPLATE_ID   = <%- templateId ? JSON.stringify(templateId) : 'null' %>;
+let CURRENT_TEMPLATE_TYPE = '<%- templateType || "manual" %>';
+
+let templateSaveOffered = false;
+let editorInstance      = null;
+let autoSaveTimer       = null;
+
+// ── SNACKBAR ──────────────────────────────────────────────
+var snackbarTimeout = null;
+function showSnackbar(message, type) {
+    type = type || 'info';
+    var sb  = document.getElementById('snackbar');
+    var msg = document.getElementById('snackbarMessage');
+    if (!sb || !msg) return;
+    clearTimeout(snackbarTimeout);
+    sb.className = 'rp-snackbar' + (type === 'error' ? ' error' : type === 'success' ? ' success' : '');
+    msg.textContent = message;
+    setTimeout(function(){ sb.classList.add('show'); }, 10);
+    snackbarTimeout = setTimeout(hideSnackbar, 4000);
+}
+function hideSnackbar() {
+    var sb = document.getElementById('snackbar');
+    if (sb) sb.classList.remove('show');
+}
+
+// ── STATUS DOT ────────────────────────────────────────────
+function setStatus(type, text) {
+    var dot = document.getElementById('statusDot');
+    var txt = document.getElementById('statusText');
+    if (!dot || !txt) return;
+    txt.textContent = text;
+    dot.className = 'rp-status-dot' + (type === 'saving' ? ' saving' : '');
+}
+
+// ── CKEDITOR 4 INIT ───────────────────────────────────────
+CKEDITOR.replace('reportEditor', {
+    versionCheck: false,
+    toolbar: IS_FINALIZED ? [] : [
+        { name: 'styles',      items: ['Format','Font','FontSize'] },
+        { name: 'basicstyles', items: ['Bold','Italic','Underline','Strike','Subscript','Superscript'] },
+        { name: 'colors',      items: ['TextColor','BGColor'] },
+        { name: 'paragraph',   items: ['NumberedList','BulletedList','-','Outdent','Indent','-','JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock'] },
+        { name: 'insert',      items: ['Image','Link','Table','HorizontalRule'] },
+        { name: 'tools',       items: ['Find','Maximize','Replace','Undo','Redo','Print'] },
+        { name: 'cleanup',     items: ['RemoveFormat'] }
+    ],
+    font_names:
+        'Arial/Arial, Helvetica, sans-serif;' +
+        'Times New Roman/Times New Roman, Times, serif;' +
+        'Georgia/Georgia, serif;' +
+        'Calibri/Calibri, sans-serif;' +
+        'Cambria/Cambria, serif;' +
+        'Courier New/Courier New, Courier, monospace;' +
+        'Verdana/Verdana, Geneva, sans-serif;',
+    fontSize_sizes: '8/8pt;9/9pt;10/10pt;11/11pt;12/12pt;13/13pt;14/14pt;16/16pt;18/18pt;20/20pt;24/24pt;28/28pt;36/36pt;48/48pt',
+    font_defaultLabel:     'Times New Roman',
+    fontSize_defaultLabel: '13pt',
+    forcePasteAsPlainText:       false,
+    pasteFromWordRemoveFontStyles: false,
+    pasteFromWordRemoveStyles:   false,
+    allowedContent:       true,
+    extraAllowedContent:  '*(*);*{*}',
+    removePlugins:        'elementspath',
+    resize_enabled:       false,
+    on: {
+        instanceReady: function(evt) {
+            editorInstance = this;
+
+            // Inject body styles into editor iframe
+            var iframe = evt.editor.document.$;
+            var style  = iframe.createElement('style');
+            style.innerHTML = [
+                'body{font-family:"Times New Roman",Times,serif!important;font-size:13pt!important;',
+                'line-height:1.6!important;padding:60px 80px!important;background:#fff!important;',
+                'color:#111!important;margin:0!important;}',
+                '*{margin:0;padding:0;}',
+                'h1{font-size:18pt!important;font-weight:700!important;color:#1a3a6e!important;text-align:center!important;margin:16px 0 12px!important;}',
+                'h2{font-size:14pt!important;font-weight:700!important;color:#1a3a6e!important;border-bottom:1.5px solid #1a3a6e!important;padding-bottom:4px!important;margin:14px 0 10px!important;}',
+                'h3{font-size:12pt!important;font-weight:700!important;color:#333!important;margin:12px 0 8px!important;}',
+                'p{margin:0 0 8px!important;line-height:1.6!important;}',
+                'ul,ol{margin:8px 0!important;padding-left:30px!important;}',
+                'li{margin:4px 0!important;line-height:1.6!important;}',
+                'table{border-collapse:collapse!important;border:none!important;margin:10px 0!important;width:100%!important;}',
+                'table td,table th{border:none!important;padding:6px 8px!important;vertical-align:top!important;}',
+                'hr{border:none!important;border-top:1.5px solid #1a3a6e!important;margin:12px 0!important;}',
+                'img{max-width:100%!important;height:auto!important;display:block!important;margin:10px 0!important;}'
+            ].join('');
+            iframe.head.appendChild(style);
+
+            if (IS_FINALIZED) this.setReadOnly(true);
+
+            // Auto-save on change
+            this.on('change', function() {
+                if (IS_FINALIZED) return;
+                clearTimeout(autoSaveTimer);
+                setStatus('saving', 'Unsaved changes');
+                autoSaveTimer = setTimeout(function(){ saveReport(false); }, 5000);
+                // Offer save-as-template when content is substantial and no template exists
+                if (NO_TEMPLATE && !templateSaveOffered) {
+                    var content = editorInstance.getData().trim();
+                    if (content.length > 150 && content !== '<p>&nbsp;</p>') {
+                        templateSaveOffered = true;
+                        setTimeout(openSaveTemplateModal, 3000);
+                    }
+                }
+            });
+
+            // Intercept CKEditor Print button — use our custom print window instead
+            this.on('beforeCommandExec', function(evt) {
+                if (evt.data.name !== 'print') return;
+                evt.cancel();
+                printReport();
+            });
+
+            setStatus('ready', IS_FINALIZED ? 'Finalized' : 'Ready');
+        }
+    }
+});
+
+// ── PRINT FUNCTION ────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════
+// Replace the printReport() function in createReport.ejs
+// Place inside the <script> block — NOT in the controller
+// ═══════════════════════════════════════════════════════════
+
+// These constants must also be in the <script> block (already added earlier):
+// const CURRENT_DOCTOR_NAME = '...'
+// const CURRENT_DOCTOR_QUAL = '...'
+// const PRINT_PATIENT = { ... }
+// const PRINT_ALL_DOCTORS = [ ... ]   ← ADD THIS (see below)
+
+// ── In getReportPage controller, add this to res.render() ──
+// allDoctors: await Report.getAllReportingDoctors(),
+//
+// Then in the EJS <script> block, add after PRINT_PATIENT:
+//
+// const PRINT_ALL_DOCTORS = <%- JSON.stringify(locals.allDoctors || []) %>;
+// const FINALIZED_BY_ID   = '<%- locals.finalizedByUserId || "" %>';
+//
+// And add finalizedByUserId to getReportPage render:
+// finalizedByUserId: data.FinalizedBy || '',   ← from getReportPageData query
+
+function printReport() {
+    if (!editorInstance) return;
+
+    var content = editorInstance.getData();
+    var p       = PRINT_PATIENT;
+    var parts   = [];
+    if (p.age)    parts.push(p.age + (p.ymd ? ' ' + p.ymd : ''));
+    if (p.gender) parts.push(p.gender);
+    var ageSex = parts.join(' / ');
+
+    // Build doctor cells for print
+    var doctorCells = '';
+    if (typeof PRINT_ALL_DOCTORS !== 'undefined' && PRINT_ALL_DOCTORS.length > 0) {
+        PRINT_ALL_DOCTORS.forEach(function(doc) {
+            var name      = ('Dr. ' + (doc.FirstName || '') + ' ' + (doc.LastName || '')).trim();
+            var degree    = doc.Qualification || '';
+            var isFinal   = String(doc.Id) === String(FINALIZED_BY_ID);
+            var sigBlock  = '<div style="height:44px;"></div>';
+
+            // Signature appears only for the finalizing doctor
+            // (we cannot embed base64 here server-side during draft print,
+            //  so we show a blank space — finalizing doctor signs physically)
+            // If you want signature on print, use the PDF download instead.
+
+            doctorCells += '<div style="flex:0 0 auto;min-width:160px;">' +
+                sigBlock +
+                '<div style="border-top:1.5px solid #333;width:160px;margin-bottom:4px;"></div>' +
+                '<div style="font-size:11pt;font-weight:700;">' + name + '</div>' +
+                (degree ? '<div style="font-size:8.5pt;color:#555;margin-top:1px;">' + degree + '</div>' : '') +
+                '<div style="font-size:8pt;color:#777;font-style:italic;margin-top:1px;">Radiologist</div>' +
+                '</div>';
+        });
+    } else {
+        // Fallback — logged in doctor only
+        doctorCells = '<div style="flex:0 0 auto;min-width:160px;">' +
+            '<div style="height:44px;"></div>' +
+            '<div style="border-top:1.5px solid #333;width:160px;margin-bottom:4px;"></div>' +
+            '<div style="font-size:11pt;font-weight:700;">' + CURRENT_DOCTOR_NAME + '</div>' +
+            (CURRENT_DOCTOR_QUAL ? '<div style="font-size:8.5pt;color:#555;margin-top:1px;">' + CURRENT_DOCTOR_QUAL + '</div>' : '') +
+            '<div style="font-size:8pt;color:#777;font-style:italic;margin-top:1px;">Radiologist</div>' +
+            '</div>';
+    }
+
+    var win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) {
+        showSnackbar('Pop-up blocked. Please allow pop-ups for this site.', 'error');
+        return;
+    }
+
+    var html = '<!DOCTYPE html>' +
+'<html lang="en"><head><meta charset="UTF-8">' +
+'<title>Report</title>' +
+'<style>' +
+
+// Page margins — 3cm top for letterhead header, 1.5cm bottom for footer
+'@page{size:A4;margin-top:30mm;margin-bottom:15mm;margin-left:15mm;margin-right:15mm;}' +
+'*{box-sizing:border-box;margin:0;padding:0;}' +
+
+// No body padding — @page margins handle all spacing
+'body{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.6;color:#111;background:#fff;}' +
+
+// Patient block — 6mm gap from top (after letterhead ends)
+'.pb{width:100%;border-collapse:collapse;font-size:10pt;margin-top:6mm;margin-bottom:0;border-bottom:1.5px solid #1a3a6e;}' +
+'.pb td{padding:4px 8px 4px 0;vertical-align:top;}' +
+'.lbl{font-weight:600;color:#555;font-size:8.5pt;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;width:22%;}' +
+'.val{color:#111;}' +
+'.nv{font-weight:700;font-size:12pt;color:#1a3a6e;}' +
+'.tv{font-weight:600;color:#1a3a6e;}' +
+
+// Divider between patient block and report body
+'.div{border:none;border-top:2px solid #1a3a6e;margin:8px 0 0;}' +
+
+// Report body — no extra top gap, content starts right after divider
+'.rb{font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.6;margin-top:10px;}' +
+'.rb *{background:transparent!important;}' +
+'.rb p{margin-bottom:6px;text-align:justify;}' +
+'.rb h1{font-size:13pt;font-weight:700;color:#1a3a6e;text-align:center;text-transform:uppercase;margin:8px 0 6px;}' +
+'.rb h2{font-size:12pt;font-weight:700;color:#1a3a6e;border-bottom:1px solid #e2e8f0;padding-bottom:2px;margin:8px 0 5px;}' +
+'.rb h3{font-size:11pt;font-weight:700;margin:6px 0 4px;}' +
+'.rb table{width:100%;border-collapse:collapse;margin:6px 0;font-size:11pt;page-break-inside:avoid;}' +
+'.rb table td,.rb table th{border:none;padding:4px 8px;vertical-align:top;}' +
+'.rb table th{font-weight:700;color:#1a3a6e;border-bottom:1.5px solid #1a3a6e;font-size:10pt;text-transform:uppercase;}' +
+'.rb ul,.rb ol{margin:4px 0 6px 22px;}' +
+'.rb li{margin-bottom:3px;}' +
+'.rb img{max-width:100%;height:auto;display:block;page-break-inside:avoid;}' +
+
+// Closing block — doctors row, never splits across pages
+'.cb{margin-top:30px;page-break-inside:avoid;break-inside:avoid;}' +
+'.dr{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-end;margin-top:10px;}' +
+
+// Screen preview only
+'@media screen{body{padding:10mm;max-width:180mm;margin:0 auto;}}' +
+
+'</style></head><body>' +
+
+// Patient details block
+'<table class="pb">' +
+'<tr><td class="lbl">Patient Name</td><td class="val nv" colspan="3">' + p.name + '</td></tr>' +
+'<tr><td class="lbl">Age / Gender</td><td class="val">' + (ageSex || '\u2014') + '</td>' +
+'<td class="lbl">Bill No.</td><td class="val">#' + p.billNo + '</td></tr>' +
+'<tr><td class="lbl">Referred By</td><td class="val">' + (p.doctor || '\u2014') + '</td>' +
+'<td class="lbl">Date</td><td class="val">' + (p.date || '\u2014') + '</td></tr>' +
+'<tr><td class="lbl">Investigation</td><td class="val tv" colspan="3">' + (p.test || '\u2014') + '</td></tr>' +
+'</table>' +
+// Report content
+'<div class="rb">' + (content || '<p style="color:#aaa;text-align:center">No content</p>') + '</div>' +
+
+// Closing block — all doctors
+'<div class="cb">' +
+'<hr style="border:none;border-top:1px solid #cbd5e0;margin:8px 0;" />' +
+'<div class="dr">' + doctorCells + '</div>' +
+'</div>' +
+
+// Auto-print, no title bar interference
+'<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});<\/script>' +
+'</body></html>';
+
+    win.document.write(html);
+    win.document.close();
+}
+// ── TEMPLATE SWITCHING ────────────────────────────────────
+async function switchTemplate() {
+    if (IS_FINALIZED || !editorInstance) return;
+    var sel = document.getElementById('templateSelector');
+    if (!sel || !sel.value) {
+        showSnackbar('Please select a template first.', 'error');
+        return;
+    }
+
+    var currentContent = editorInstance.getData().trim();
+    if (currentContent && !confirm('This will replace your current content. Continue?')) return;
+
+    var btn = document.getElementById('btnSwitchTemplate');
+    btn.disabled   = true;
+    btn.innerHTML  = '<i class="bi bi-hourglass-split"></i> Loading...';
+    setStatus('saving', 'Loading template');
+
+    var selectedOption = sel.options[sel.selectedIndex];
+    var templateId     = sel.value;
+    var templateType   = selectedOption.getAttribute('data-type');
+
+    try {
+        var res  = await fetch('/report/switchTemplate', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                patientId:    PATIENT_ID,
+                testId:       TEST_ID,
+                testRefId:    TEST_REF_ID,
+                templateId:   templateId,
+                templateType: templateType,
+            })
+        });
+        var data = await res.json();
+        if (data.success) {
+            editorInstance.setData(data.content);
+            CURRENT_TEMPLATE_ID   = data.templateId;
+            CURRENT_TEMPLATE_TYPE = data.templateType;
+            sel.value = '';
+            setStatus('ready', 'Template loaded');
+            showSnackbar('Template loaded.', 'success');
+        } else {
+            showSnackbar(data.message || 'Failed to load template.', 'error');
+            setStatus('ready', 'Error');
+        }
+    } catch (err) {
+        showSnackbar('Network error.', 'error');
+        setStatus('ready', 'Error');
+    } finally {
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Load';
+    }
+}
+
+// ── SAVE REPORT ───────────────────────────────────────────
+async function saveReport(finalize) {
+    finalize = finalize || false;
+    if (IS_FINALIZED || !editorInstance) return;
+    clearTimeout(autoSaveTimer);
+    setStatus('saving', finalize ? 'Finalizing' : 'Saving');
+
+    try {
+        var res  = await fetch('/report/saveReport', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                patientId:    PATIENT_ID,
+                testId:       TEST_ID,
+                testRefId:    TEST_REF_ID,
+                report:       editorInstance.getData(),
+                finalize:     finalize ? '1' : '0',
+                templateId:   CURRENT_TEMPLATE_ID,
+                templateType: CURRENT_TEMPLATE_TYPE,
+            })
+        });
+        var data = await res.json();
+        if (data.success) {
+            setStatus('ready', finalize ? 'Ready' : 'Saved');
+            if (!finalize) showSnackbar('Draft saved.', 'success');
+        } else {
+            setStatus('ready', 'Error');
+            showSnackbar(data.message || 'Save failed.', 'error');
+        }
+    } catch (err) {
+        setStatus('ready', 'Error');
+        showSnackbar('Network error.', 'error');
+    }
+}
+
+// ── FINALIZE ──────────────────────────────────────────────
+function openFinalizeModal()  { document.getElementById('finalizeModal').classList.add('open'); }
+function closeFinalizeModal() { document.getElementById('finalizeModal').classList.remove('open'); }
+document.getElementById('finalizeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeFinalizeModal();
+});
+
+async function confirmFinalize() {
+    var btn = document.getElementById('confirmFinalizeBtn');
+    btn.disabled = true; btn.textContent = 'Finalizing...';
+    try {
+        await saveReport(true);
+        var res  = await fetch('/report/finalizeReport', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ patientId: PATIENT_ID, testId: TEST_ID, testRefId: TEST_REF_ID })
+        });
+        var data = await res.json();
+        if (data.success) {
+            closeFinalizeModal();
+            showSnackbar('Report finalized!', 'success');
+            setTimeout(function(){ window.location.reload(); }, 1500);
+        } else {
+            showSnackbar(data.message || 'Finalization failed.', 'error');
+            btn.disabled = false; btn.textContent = 'Finalize';
+        }
+    } catch (err) {
+        showSnackbar('Network error.', 'error');
+        btn.disabled = false; btn.textContent = 'Finalize';
+    }
+}
+
+// ── UN-FINALIZE ───────────────────────────────────────────
+function openUnfinalizeModal()  { document.getElementById('unfinalizeModal').classList.add('open'); }
+function closeUnfinalizeModal() { document.getElementById('unfinalizeModal').classList.remove('open'); }
+document.getElementById('unfinalizeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeUnfinalizeModal();
+});
+
+async function confirmUnfinalize() {
+    var btn = document.getElementById('confirmUnfinalizeBtn');
+    btn.disabled = true; btn.textContent = 'Un-finalizing...';
+    setStatus('saving', 'Un-finalizing');
+    try {
+        var res  = await fetch('/report/unfinalizeReport', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ testRefId: TEST_REF_ID })
+        });
+        var data = await res.json();
+        if (data.success) {
+            closeUnfinalizeModal();
+            showSnackbar('Report un-finalized!', 'success');
+            setTimeout(function(){ window.location.reload(); }, 1500);
+        } else {
+            showSnackbar(data.message || 'Un-finalize failed.', 'error');
+            setStatus('ready', 'Error');
+            btn.disabled = false; btn.textContent = 'Un-finalize';
+        }
+    } catch (err) {
+        showSnackbar('Network error.', 'error');
+        setStatus('ready', 'Error');
+        btn.disabled = false; btn.textContent = 'Un-finalize';
+    }
+}
+
+// ── SAVE AS TEMPLATE ──────────────────────────────────────
+function openSaveTemplateModal()  { document.getElementById('saveTemplateModal').classList.add('open'); }
+function closeSaveTemplateModal() { document.getElementById('saveTemplateModal').classList.remove('open'); }
+document.getElementById('saveTemplateModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSaveTemplateModal();
+});
+
+async function confirmSaveTemplate() {
+    if (!editorInstance) return;
+    var btn = document.getElementById('confirmSaveTemplateBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+    try {
+        var res  = await fetch('/report/saveAsDefaultTemplate', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                testId:    TEST_ID,
+                patientId: PATIENT_ID,
+                content:   editorInstance.getData(),
+            })
+        });
+        var data = await res.json();
+        if (data.success) {
+            closeSaveTemplateModal();
+            showSnackbar(data.message || 'Template saved!', 'success');
+            var banner = document.getElementById('noTemplateBanner');
+            if (banner) banner.remove();
+        } else {
+            showSnackbar(data.message || 'Could not save template.', 'error');
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save Template';
+        }
+    } catch (err) {
+        showSnackbar('Network error.', 'error');
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save Template';
+    }
+}
+
+window.addEventListener('beforeunload', function(e) {
+    var txt = document.getElementById('statusText');
+    if (!IS_FINALIZED && txt && txt.textContent.indexOf('Unsaved') !== -1) {
+        e.preventDefault(); e.returnValue = '';
+    }
+});
+</script>

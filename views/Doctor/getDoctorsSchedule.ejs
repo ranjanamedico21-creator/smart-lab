@@ -1,0 +1,825 @@
+<%
+  var docs   = (typeof doctors !== 'undefined' && doctors) ? doctors : [];
+  var open   = (typeof openVisit !== 'undefined') ? openVisit : null;
+  var mine   = (typeof myToday !== 'undefined' && myToday) ? myToday : [];
+  var S      = (typeof summary !== 'undefined' && summary) ? summary : { planned: docs.length, visited: 0, verified: 0 };
+  var photoMode = (typeof photoMode !== 'undefined' && ['required','optional','off'].indexOf(photoMode) !== -1) ? photoMode : 'required';
+  var needPhoto = photoMode !== 'off';
+  var DAYS   = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  var selDay = (typeof day !== 'undefined' && day) ? day : '';
+  var todayN = (typeof today !== 'undefined' && today) ? today : '';
+  var DC     = (typeof dayCounts !== 'undefined' && dayCounts) ? dayCounts : {};
+  var team   = (typeof canViewTeam !== 'undefined') && !!canViewTeam;
+  var ready  = (typeof assignReady !== 'undefined') && !!assignReady;
+  var SCOPE  = (typeof scope !== 'undefined' && scope) ? String(scope) : 'all';
+  var MRS    = (typeof mrOptions !== 'undefined' && mrOptions) ? mrOptions : [];
+  var showMr = team && ready && SCOPE !== 'mine';
+  var fmtTime = function (d) { if (!d) return ''; return new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); };
+  var initials = function (a, b) { return ((a || '').charAt(0) + (b || '').charAt(0)).toUpperCase() || 'DR'; };
+  var cap = function (s) { s = String(s || ''); return s.split(' ').map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }).join(' '); };
+  var statusLabel = { verified: ['✓ At clinic', 'ok'], far: ['Far from clinic', 'bad'], new_location: ['New clinic pin', 'info'], weak_gps: ['Weak GPS', 'warn'], no_gps: ['No GPS', 'gray'] };
+  var reviewLabel = { approved: ['Verified by admin', 'ok'], rejected: ['Rejected', 'bad'], pending: ['Awaiting review', 'gray'] };
+  var outcomeLabel = { met: 'Met doctor', not_available: 'Not available', left_material: 'Left material', follow_up: 'Follow-up needed', other: 'Other' };
+  var allAreas = []; docs.forEach(function (d) { d.areas.forEach(function (a) { if (allAreas.indexOf(a) === -1) allAreas.push(a); }); }); allAreas.sort();
+  var cnt = { follow: 0, stale: 0, nopin: 0 };
+  docs.forEach(function (d) { if (d.followUpDue) cnt.follow++; if (d.daysSinceVisit == null || d.daysSinceVisit > 14) cnt.stale++; if (!d.hasLocation) cnt.nopin++; });
+%>
+<script>
+  /* Phones need this tag, or they show the page at desktop width, zoomed out.
+     Best place for it is the <head> of your layout; this adds it if the layout has none. */
+  (function () { if (!document.querySelector('meta[name="viewport"]')) { var m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width, initial-scale=1, viewport-fit=cover'; document.head.appendChild(m); } })();
+</script>
+<style>
+  /* colours shared by the page AND its pop-up sheets (Bootstrap places those outside .mr) */
+  .mr,.mr-sheet,.mr-busy{--card:#fff;--line:#e8ebf3;--ink:#101828;--ink2:#475467;--ink3:#98a2b3;--pri:#3056d3;--pris:#eef2ff;
+      --ok:#0f7b55;--oks:#e7f6ef;--bad:#c0362c;--bads:#fdeeec;--warn:#b45309;--warns:#fff5e6;--info:#0e7490;--infos:#e7f6f9}
+  .mr{max-width:1240px;margin:0 auto;padding:4px 0 110px;color:var(--ink);container:mr / inline-size;width:100%;box-sizing:border-box}
+  .mr *,.mr-sheet *{box-sizing:border-box}
+  .mr-main{container:mrmain / inline-size}
+  .dc-name,.dc-spec,.dc-slot{overflow-wrap:anywhere}
+  .mr h1{font-size:1.3rem;font-weight:700;margin:0}
+  .mr-sub{font-size:.8rem;color:var(--ink2)}
+  .mr-card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+  .mr-btn{border:0;border-radius:12px;font-weight:700;font-size:.9rem;padding:0 16px;height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;text-decoration:none;cursor:pointer}
+  .mr-btn:disabled{opacity:.6;cursor:default}
+  .b-pri{background:var(--pri);color:#fff}.b-pri:hover{background:#2747b8;color:#fff}
+  .b-ok{background:#16a34a;color:#fff}.b-bad{background:#dc2626;color:#fff}.b-bad:hover{background:#b91c1c;color:#fff}
+  .b-ghost{background:#fff;border:1px solid var(--line);color:var(--ink2)}.b-ghost:hover{background:#f8f9fc;color:var(--ink)}
+
+  /* layout: one column on phones; list + sticky side panel on laptops */
+  .mr-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin:4px 0 12px}
+  .mr-head-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .mr-scope{height:38px;border-radius:10px;border:1px solid var(--line);font-size:.84rem;font-weight:600;min-width:170px;max-width:230px}
+  .mr-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0 20px}
+  .mr-side{display:contents}
+  .mr-side-top{order:1}.mr-main{order:2;min-width:0}.mr-side-bot{order:3}
+  @container mr (min-width:920px){
+    .mr-grid{grid-template-columns:minmax(0,1fr) 320px;align-items:start}
+    .mr-main{grid-column:1;grid-row:1}
+    .mr-side{display:block;grid-column:2;grid-row:1;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;scrollbar-width:thin}
+    .mr-side .mr-open{position:static;margin-top:0}
+    .mr-side .mr-stats{margin-top:0}
+  }
+
+  .mr-open{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:10px;padding:12px 14px;margin:0 0 12px;background:#0f172a;color:#fff;border-radius:16px;box-shadow:0 10px 24px rgba(15,23,42,.25)}
+  .mr-open .t{font-size:.72rem;opacity:.75}.mr-open .n{font-weight:700;text-transform:capitalize}
+  .mr-open .dot{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.25);flex-shrink:0;animation:mrPulse 1.6s infinite}
+  @keyframes mrPulse{50%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
+  .mr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
+  .mr-stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .mr-stat b{font-size:1.25rem;display:block;line-height:1.1}.mr-stat span{font-size:.72rem;color:var(--ink3)}
+  .mr-prog{grid-column:1/-1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:.78rem;color:var(--ink2)}
+  .mr-prog .bar{height:6px;border-radius:99px;background:#eef1f6;margin-top:6px;overflow:hidden}
+  .mr-prog .bar i{display:block;height:100%;background:linear-gradient(90deg,#3056d3,#16a34a);border-radius:99px;transition:width .3s}
+
+  /* filters */
+  .mr-tools{padding:12px;margin-bottom:12px}
+  .mr-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:10px;scrollbar-width:none}
+  .mr-days::-webkit-scrollbar{display:none}
+  .mr-days button{flex:0 0 auto;font-size:.8rem;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--ink2);display:inline-flex;gap:6px;align-items:center}
+  .mr-days button small{font-size:.68rem;font-weight:700;background:#f2f4f7;color:var(--ink2);border-radius:99px;padding:0 6px;min-width:18px;text-align:center}
+  .mr-days button.on{background:var(--pri);border-color:var(--pri);color:#fff}.mr-days button.on small{background:rgba(255,255,255,.22);color:#fff}
+  .mr-days button.today:not(.on){border-color:var(--pri);color:var(--pri)}
+  .mr-days button.zero:not(.on){opacity:.55}
+  .mr-row{display:flex;gap:8px;flex-wrap:wrap}
+  .mr-search{position:relative;flex:1 1 240px;min-width:0}
+  .mr-search i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+  .mr-search input{width:100%;height:42px;border:1px solid var(--line);border-radius:12px;padding:0 14px 0 38px;font-size:.92rem;background:#fff}
+  .mr-row select{flex:1 1 140px;min-width:0;height:42px;border:1px solid var(--line);border-radius:12px;font-size:.88rem;color:var(--ink2)}
+  .mr-search input:focus,.mr-row select:focus{outline:0;border-color:var(--pri);box-shadow:0 0 0 4px rgba(48,86,211,.12)}
+  .mr-quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .mr-quick button{font-size:.76rem;font-weight:600;border:1px dashed #cfd5e3;background:#fff;color:var(--ink2);border-radius:99px;padding:5px 11px}
+  .mr-quick button.on{border-style:solid;border-color:var(--pri);background:var(--pris);color:var(--pri)}
+  .mr-quick .clr{border:0;color:var(--ink3);text-decoration:underline;background:none}
+  .mr-count{font-size:.76rem;color:var(--ink3);margin:0 2px 8px}
+
+  /* doctor cards */
+  .mr-list{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  @container mrmain (min-width:580px){ .mr-list{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @container mrmain (min-width:1000px){ .mr-list{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  /* very old browsers without container queries: fall back to screen width */
+  @supports not (container-type:inline-size){
+    @media (min-width:768px){ .mr-list{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  }
+  .dc{padding:14px;display:flex;flex-direction:column;transition:box-shadow .15s}
+  .dc:hover{box-shadow:0 6px 18px rgba(16,24,40,.06)}
+  .dc.done{background:#fbfdfc;border-color:#cdebd9}
+  .dc.here{border:2px solid #16a34a}
+  .dc-head{display:flex;gap:12px;align-items:flex-start}
+  .dc-av{width:44px;height:44px;border-radius:14px;background:var(--pris);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .dc.done .dc-av{background:var(--oks);color:var(--ok)}
+  .dc-name{font-weight:700;font-size:.98rem;line-height:1.25}
+  .dc-spec{font-size:.78rem;color:var(--ink2)}
+  .dc-slot{font-size:.8rem;color:var(--ink);margin-top:6px;display:flex;gap:6px;align-items:flex-start}
+  .dc-slot i{color:var(--pri);margin-top:1px}
+  .dc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .tg{font-size:.7rem;font-weight:600;border-radius:99px;padding:3px 9px;background:#f2f4f7;color:var(--ink2);white-space:nowrap}
+  .tg.ok{background:var(--oks);color:var(--ok)}.tg.bad{background:var(--bads);color:var(--bad)}.tg.warn{background:var(--warns);color:var(--warn)}.tg.info{background:var(--infos);color:var(--info)}.tg.pri{background:var(--pris);color:var(--pri)}
+  .dc-act{display:flex;gap:8px;margin-top:auto;padding-top:12px}
+  .dc-act .mr-btn{height:44px;font-size:.88rem}
+  .dc-act .grow{flex:1}
+  @container mr (min-width:920px){ .dc-act .mr-btn{height:40px} }
+  @container mr (max-width:380px){
+    .mr-stats{gap:6px}.mr-stat{padding:8px 9px}.mr-stat b{font-size:1.1rem}
+    .mr-tools{padding:10px}.mr-row select{flex-basis:100%}
+    .dc{padding:12px}.dc-av{width:38px;height:38px;border-radius:12px}
+  }
+  .mr-sec{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:18px 2px 8px}
+  .mr-side .mr-sec{margin-top:4px}
+  .tl{padding:4px 14px}
+  .tl-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f8}
+  .tl-row:last-child{border-bottom:0}
+  .tl-time{font-size:.74rem;color:var(--ink3);width:66px;flex-shrink:0;padding-top:2px}
+  .mr-empty{text-align:center;padding:36px 16px;color:var(--ink2);grid-column:1/-1}
+  .mr-warnbox{background:var(--warns);color:#7a3e06;border-radius:12px;padding:10px 12px;font-size:.82rem;margin:0 0 12px}
+  .mr-infobox{background:var(--pris);color:#1e3a8a;border-radius:12px;padding:10px 12px;font-size:.82rem;margin:0 0 12px}
+
+  /* sheets: bottom sheet on phones, centred dialog on laptops */
+  .mr-sheet .modal-content{border:0;border-radius:20px}
+  @media (max-width:575.98px){ .mr-sheet:not(.mr-cam) .modal-dialog{margin:0;position:fixed;bottom:0;left:0;right:0;max-width:none;min-height:0;display:block}
+    .mr-sheet:not(.mr-cam) .modal-content{border-radius:20px 20px 0 0} }
+  .oc{display:flex;flex-wrap:wrap;gap:6px}
+  .oc input{display:none}
+  .oc label{border:1px solid var(--line);border-radius:99px;padding:8px 13px;font-size:.84rem;font-weight:600;color:var(--ink2);cursor:pointer}
+  .oc input:checked+label{background:var(--pri);border-color:var(--pri);color:#fff}
+  .hist-row{border-bottom:1px solid #f0f2f8;padding:10px 0}
+  .hist-row:last-child{border-bottom:0}
+  .mr-busy{position:fixed;inset:0;background:rgba(255,255,255,.82);z-index:2100;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-weight:600;color:var(--ink2);text-align:center;padding:24px}
+  .mr-busy.on{display:flex}
+  .mr-busy img{width:120px;height:120px;object-fit:cover;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+
+  /* live camera */
+  .mr-cam .modal-content{background:#0b0f19;color:#fff;overflow:hidden}
+  @media (min-width:576px){ .mr-cam .modal-dialog{max-width:680px} }
+  .cam-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px}
+  .cam-top .n{font-weight:700;font-size:.95rem}
+  .cam-top .s{font-size:.74rem;opacity:.7}
+  .cam-view{position:relative;background:#000;aspect-ratio:4/3;width:100%;display:flex;align-items:center;justify-content:center}
+  @media (max-width:575.98px){ .mr-cam .modal-content{display:flex;flex-direction:column;height:100%} .cam-view{flex:1;aspect-ratio:auto} }
+  .cam-view video,.cam-view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cam-view video.mirror{transform:scaleX(-1)}
+  .cam-view img{object-fit:contain;background:#000}
+  .cam-msg{position:relative;z-index:2;text-align:center;padding:24px;max-width:420px;font-size:.9rem}
+  .cam-msg .bi{font-size:2rem;display:block;margin-bottom:8px;opacity:.8}
+  .cam-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
+  .cam-bar .side{flex:1;display:flex;gap:8px}.cam-bar .side.r{justify-content:flex-end}
+  .cam-shot{width:68px;height:68px;border-radius:50%;border:4px solid #fff;background:#fff;box-shadow:inset 0 0 0 3px #0b0f19;flex-shrink:0}
+  .cam-shot:active{transform:scale(.94)}
+  .cam-shot:disabled{opacity:.4}
+  .cam-ghost{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:12px;height:42px;padding:0 14px;font-weight:600;font-size:.86rem;display:inline-flex;align-items:center;gap:6px}
+  .cam-ghost:hover{background:rgba(255,255,255,.2);color:#fff}
+  .cam-use{background:#16a34a;color:#fff;border:0;border-radius:12px;height:46px;padding:0 18px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+</style>
+
+<div class="mr">
+  <%- include("../partials/messages") %>
+
+  <div class="mr-head">
+    <div>
+      <h1>My visits</h1>
+      <div class="mr-sub"><%= new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) %></div>
+    </div>
+    <div class="mr-head-r">
+      <% if (team && ready) { %>
+        <select class="form-select mr-scope ts-exclude" id="mrScope" aria-label="Whose doctors">
+          <option value="mine" <%= SCOPE === 'mine' ? 'selected' : '' %>>My doctors</option>
+          <option value="all" <%= SCOPE === 'all' ? 'selected' : '' %>>All doctors</option>
+          <option value="unassigned" <%= SCOPE === 'unassigned' ? 'selected' : '' %>>Not assigned</option>
+          <optgroup label="Officer">
+            <% MRS.forEach(function (u) { %><option value="<%= u.Id %>" <%= SCOPE === String(u.Id) ? 'selected' : '' %>><%= u.Name %></option><% }) %>
+          </optgroup>
+        </select>
+      <% } %>
+      <% if (team) { %>
+        <a href="/schedule/team" class="mr-btn b-ghost" style="height:38px;font-size:.8rem"><i class="bi bi-people"></i> Team</a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="mr-warnbox d-none" id="mrInsecure"><i class="bi bi-shield-exclamation me-1"></i>Location and camera only work on a secure (https://) address. Ask the admin to open SmartLab with https.</div>
+  <% if (team && !ready) { %>
+    <div class="mr-infobox"><i class="bi bi-info-circle me-1"></i>Doctors are not assigned to officers yet, so everyone sees all doctors. Set it up on <a href="/schedule/team?tab=doctors">Team → Doctors</a>.</div>
+  <% } %>
+
+  <div class="mr-grid">
+    <!-- side panel (top part): punched-in bar + today's numbers -->
+    <aside class="mr-side">
+      <div class="mr-side-top">
+        <% if (open) { %>
+          <div class="mr-open">
+            <span class="dot" aria-hidden="true"></span>
+            <div class="flex-grow-1" style="min-width:0">
+              <div class="t">Punched in since <%= fmtTime(open.CheckInAt) %></div>
+              <div class="n text-truncate">Dr. <%= open.DoctorName %></div>
+            </div>
+            <button type="button" class="mr-btn b-bad" style="height:42px" data-bs-toggle="modal" data-bs-target="#mrOut"><i class="bi bi-box-arrow-right"></i> Punch out</button>
+          </div>
+        <% } %>
+        <div class="mr-stats">
+          <div class="mr-stat"><b id="mrPlanned"><%= S.planned %></b><span id="mrPlannedLbl"><%= selDay === 'all' ? 'Doctors' : 'Planned' %></span></div>
+          <div class="mr-stat"><b style="color:var(--pri)"><%= S.visited %></b><span>Visited today</span></div>
+          <div class="mr-stat"><b style="color:var(--ok)"><%= S.verified %></b><span>At clinic ✓</span></div>
+          <div class="mr-prog" id="mrProg"><span id="mrProgTxt">&nbsp;</span><div class="bar"><i id="mrProgBar" style="width:0"></i></div></div>
+        </div>
+      </div>
+
+      <div class="mr-side-bot">
+        <% if (mine.length) { %>
+          <div class="mr-sec">Today's visits</div>
+          <div class="mr-card tl">
+            <% mine.forEach(function (v) { var st = statusLabel[v.LocationStatus] || ['—', 'gray']; var rv = reviewLabel[v.ReviewStatus] || reviewLabel.pending; %>
+              <div class="tl-row">
+                <div class="tl-time"><%= v.InAt || '' %></div>
+                <div class="flex-grow-1" style="min-width:0">
+                  <div class="fw-semibold text-capitalize">Dr. <%= v.DoctorName %></div>
+                  <div class="d-flex flex-wrap gap-1 mt-1">
+                    <span class="tg <%= st[1] %>"><%= st[0] %><%= v.LocationStatus === 'far' && v.DistanceM ? ' · ' + (v.DistanceM >= 1000 ? (v.DistanceM / 1000).toFixed(1) + ' km' : v.DistanceM + ' m') : '' %></span>
+                    <span class="tg"><%= v.OutAt ? v.InAt + ' – ' + v.OutAt + ' · ' + v.Minutes + ' min' : 'In progress' %></span>
+                    <% if (v.Outcome) { %><span class="tg pri"><%= outcomeLabel[v.Outcome] %></span><% } %>
+                    <span class="tg <%= rv[1] %>"><%= rv[0] %></span>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+        <div class="text-center mt-3">
+          <button type="button" class="btn btn-link btn-sm text-secondary" data-bs-toggle="modal" data-bs-target="#mrManual">Phone GPS not working? Log a visit manually</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- main: filters + doctors -->
+    <section class="mr-main">
+      <div class="mr-card mr-tools">
+        <div class="mr-days" role="tablist" aria-label="Visiting day">
+          <% DAYS.forEach(function (d) { %>
+            <button type="button" data-day="<%= d %>" class="<%= selDay === d ? 'on' : '' %> <%= todayN === d ? 'today' : '' %> <%= DC[d] ? '' : 'zero' %>" aria-pressed="<%= selDay === d %>"><%= todayN === d ? 'Today' : d.slice(0, 3) %><small><%= DC[d] || 0 %></small></button>
+          <% }) %>
+          <button type="button" data-day="all" class="<%= selDay === 'all' ? 'on' : '' %>" aria-pressed="<%= selDay === 'all' %>">All days<small><%= docs.length %></small></button>
+        </div>
+        <div class="mr-row">
+          <div class="mr-search">
+            <i class="bi bi-search"></i>
+            <input type="search" id="mrFilter" placeholder="Search doctor, speciality or area" autocomplete="off" aria-label="Search">
+          </div>
+          <select id="mrArea" class="form-select ts-exclude" aria-label="Area">
+            <option value="">All areas</option>
+            <% allAreas.forEach(function (a) { %><option value="<%= a.toLowerCase() %>"><%= a %></option><% }) %>
+          </select>
+          <select id="mrSort" class="form-select ts-exclude" aria-label="Sort">
+            <option value="due">Sort: who to visit first</option>
+            <option value="name">Sort: name A–Z</option>
+            <option value="biz">Sort: most business</option>
+            <option value="lowbiz">Sort: least business</option>
+            <option value="month">Sort: fewest visits this month</option>
+          </select>
+        </div>
+        <div class="mr-quick" id="mrQuick">
+          <button type="button" data-q="follow">Follow-up due · <%= cnt.follow %></button>
+          <button type="button" data-q="stale">Not visited 15+ days · <%= cnt.stale %></button>
+          <button type="button" data-q="pending">Not visited today</button>
+          <button type="button" data-q="nopin">No clinic pin · <%= cnt.nopin %></button>
+          <button type="button" data-q="nobiz">No patients in 30 days</button>
+          <button type="button" class="clr d-none" id="mrClear">Clear filters</button>
+        </div>
+      </div>
+
+      <div class="mr-count" id="mrCount"></div>
+      <div class="mr-list" id="mrList">
+        <% if (!docs.length) { %>
+          <div class="mr-card mr-empty">
+            <i class="bi bi-person-x fs-2 d-block mb-2"></i>
+            <% if (ready && SCOPE === 'mine') { %>No doctors are assigned to you yet.<br><span class="small">Ask your admin to assign your doctors<%= team ? ' on Team → Doctors' : '' %>.</span>
+            <% } else { %>No doctors found.<% } %>
+          </div>
+        <% } %>
+        <% docs.forEach(function (d) {
+             var nm = 'Dr. ' + cap(d.first + ' ' + d.last);
+             var stale = d.daysSinceVisit == null || d.daysSinceVisit > 14;
+             var here = open && open.DoctorId === d.id;
+        %>
+          <div class="mr-card dc <%= d.visitedTodayByMe ? 'done' : '' %> <%= here ? 'here' : '' %>"
+               data-id="<%= d.id %>"
+               data-days="<%= d.days.join('|') %>"
+               data-areas="<%= d.areas.join('|').toLowerCase() %>"
+               data-text="<%= (d.first + ' ' + d.last + ' ' + d.spec + ' ' + d.degrees + ' ' + d.areas.join(' ') + ' ' + (d.assignedName || '')).toLowerCase() %>"
+               data-name="<%= (d.first + ' ' + d.last).toLowerCase() %>"
+               data-since="<%= d.daysSinceVisit == null ? 9999 : d.daysSinceVisit %>"
+               data-month="<%= d.monthVisits %>" data-biz="<%= d.refBilled %>" data-pts="<%= d.refPatients %>"
+               data-visited="<%= d.visitedTodayByMe ? 1 : 0 %>" data-follow="<%= d.followUpDue ? 1 : 0 %>" data-pin="<%= d.hasLocation ? 1 : 0 %>"
+               data-slots="<%= JSON.stringify(d.slots) %>">
+            <div class="dc-head">
+              <div class="dc-av" aria-hidden="true"><%= d.visitedTodayByMe ? '✓' : initials(d.first, d.last) %></div>
+              <div class="flex-grow-1" style="min-width:0">
+                <div class="dc-name"><%= nm %></div>
+                <div class="dc-spec"><%= [d.degrees, d.spec].filter(Boolean).join(' · ') %></div>
+                <div class="dc-slot"><i class="bi bi-calendar2-week"></i><span data-slot></span></div>
+              </div>
+            </div>
+            <div class="dc-tags">
+              <% if (d.followUpDue) { %><span class="tg bad"><i class="bi bi-bell"></i> Follow-up due · <%= d.followUp %></span><% } else if (d.followUp) { %><span class="tg info">Next visit <%= d.followUp %></span><% } %>
+              <% if (d.visitedTodayByMe) { %><span class="tg ok">Visited today</span>
+              <% } else if (d.lastVisit) { %><span class="tg <%= stale ? 'bad' : '' %>">Last <%= d.lastVisit %><%= d.daysSinceVisit ? ' · ' + d.daysSinceVisit + 'd ago' : '' %></span>
+              <% } else { %><span class="tg bad">Never visited</span><% } %>
+              <span class="tg pri"><%= d.monthVisits %> this month</span>
+              <% if (d.refPatients) { %><span class="tg ok" title="Patients referred in the last 30 days"><i class="bi bi-person-plus"></i> <%= d.refPatients %> pts · ₹<%= d.refBilled.toLocaleString('en-IN') %></span>
+              <% } else { %><span class="tg warn">0 patients · 30d</span><% } %>
+              <% if (!d.hasLocation) { %><span class="tg info" title="The first punch-in with GPS saves the clinic location"><i class="bi bi-pin-map"></i> <%= d.locationPending ? 'Pin awaiting approval' : 'No clinic pin' %></span><% } %>
+              <% if (showMr) { %><span class="tg <%= d.assignedName ? '' : 'warn' %>"><i class="bi bi-person"></i> <%= d.assignedName ? cap(d.assignedName) : 'Not assigned' %></span><% } %>
+            </div>
+            <div class="dc-act">
+              <% if (here) { %>
+                <button type="button" class="mr-btn b-bad grow" data-bs-toggle="modal" data-bs-target="#mrOut"><i class="bi bi-box-arrow-right"></i> Punch out</button>
+              <% } else if (!open) { %>
+                <button type="button" class="mr-btn b-pri grow" data-act="punch-in" data-doctor="<%= d.id %>" data-name="<%= nm %>"><i class="bi <%= needPhoto ? 'bi-camera-fill' : 'bi-geo-alt-fill' %>"></i> Punch in</button>
+              <% } %>
+              <button type="button" class="mr-btn b-ghost <%= (here || !open) ? '' : 'grow' %>" data-act="history" data-doctor="<%= d.id %>" data-name="<%= nm %>" title="Visit history"><i class="bi bi-clock-history"></i><span class="<%= (here || !open) ? 'd-none d-sm-inline' : '' %>">History</span></button>
+              <a class="mr-btn b-ghost" target="_blank" rel="noopener" title="Directions" aria-label="Directions to <%= nm %>"
+                 href="https://www.google.com/maps/search/?api=1&query=<%= encodeURIComponent(nm + ' ' + (d.areas[0] || '') + ' Patna') %>"><i class="bi bi-sign-turn-right"></i></a>
+            </div>
+          </div>
+        <% }) %>
+        <div class="mr-card mr-empty d-none" id="mrNoMatch">
+          <i class="bi bi-funnel fs-2 d-block mb-2"></i><span id="mrNoMatchTxt">No doctor matches.</span>
+          <div class="mt-2 d-flex gap-2 justify-content-center flex-wrap">
+            <button type="button" class="mr-btn b-ghost" style="height:38px" id="mrNoMatchAll">Show all days</button>
+            <button type="button" class="mr-btn b-ghost" style="height:38px" id="mrNoMatchClr">Clear filters</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- fallback only: phone/browser without live camera support -->
+<input type="file" id="mrCam" accept="image/*" capture="environment" class="d-none">
+
+<!-- Live camera (laptop webcam or phone camera) -->
+<div class="modal fade mr-sheet mr-cam" id="mrCamSheet" tabindex="-1" aria-labelledby="mrCamTitle" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <div class="cam-top">
+        <div style="min-width:0"><div class="n text-truncate" id="mrCamTitle">Photo at clinic</div><div class="s" id="mrCamSub">Live photo · time-stamped</div></div>
+        <button type="button" class="btn-close btn-close-white" data-cam="cancel" aria-label="Cancel"></button>
+      </div>
+      <div class="cam-view">
+        <video id="mrVideo" autoplay playsinline muted></video>
+        <img id="mrShot" class="d-none" alt="Captured photo">
+        <div class="cam-msg" id="mrCamMsg"><div class="spinner-border spinner-border-sm mb-2"></div><div>Starting camera…</div></div>
+      </div>
+      <div class="cam-bar">
+        <div class="side">
+          <button type="button" class="cam-ghost d-none" data-cam="switch" title="Switch camera"><i class="bi bi-arrow-repeat"></i><span class="d-none d-sm-inline">Switch</span></button>
+          <button type="button" class="cam-ghost d-none" data-cam="retake"><i class="bi bi-arrow-counterclockwise"></i> Retake</button>
+        </div>
+        <button type="button" class="cam-shot" data-cam="shoot" aria-label="Take photo" disabled></button>
+        <button type="button" class="cam-use d-none" data-cam="use"><i class="bi bi-check-lg"></i> Use photo</button>
+        <div class="side r">
+          <button type="button" class="cam-ghost d-none" data-cam="upload"><i class="bi bi-upload"></i> Upload</button>
+          <button type="button" class="cam-ghost d-none" data-cam="skip">Skip photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Punch-out sheet -->
+<% if (open) { %>
+<div class="modal fade mr-sheet" id="mrOut" tabindex="-1" aria-labelledby="mrOutTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content"><div class="modal-body p-4">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div><h5 class="fw-bold mb-0" id="mrOutTitle" style="font-size:1.05rem">Punch out — how did it go?</h5>
+             <div class="mr-sub text-capitalize">Dr. <%= open.DoctorName %> · since <%= fmtTime(open.CheckInAt) %></div></div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="mrOutForm" novalidate>
+        <input type="hidden" name="visitId" value="<%= open.Id %>">
+        <div class="oc mb-3">
+          <% Object.keys(outcomeLabel).forEach(function (k, i) { %>
+            <input type="radio" name="outcome" id="oc<%= i %>" value="<%= k %>"><label for="oc<%= i %>"><%= outcomeLabel[k] %></label>
+          <% }) %>
+        </div>
+        <label class="form-label small fw-semibold" for="mrNotes">Notes</label>
+        <textarea class="form-control mb-3" id="mrNotes" name="notes" rows="3" maxlength="2000" placeholder="What was discussed, tests promised, feedback…"></textarea>
+        <label class="form-label small fw-semibold" for="mrNext">Next visit (optional)</label>
+        <div class="d-flex gap-2 mb-2 flex-wrap" id="mrNextQuick">
+          <button type="button" class="btn btn-sm btn-light border rounded-pill" data-next="1">Tomorrow</button>
+          <button type="button" class="btn btn-sm btn-light border rounded-pill" data-next="7">In a week</button>
+          <button type="button" class="btn btn-sm btn-light border rounded-pill" data-next="14">In 2 weeks</button>
+        </div>
+        <input type="date" class="form-control mb-3" id="mrNext" name="nextVisitOn">
+        <div class="text-danger small mb-2 d-none" id="mrOutErr"></div>
+        <button type="submit" class="mr-btn b-bad w-100"><i class="bi bi-box-arrow-right"></i> Save & punch out</button>
+      </form>
+    </div></div>
+  </div>
+</div>
+<% } %>
+
+<!-- History -->
+<div class="modal fade mr-sheet" id="mrHist" tabindex="-1" aria-labelledby="mrHistTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content"><div class="modal-body p-4">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h5 class="fw-bold mb-0" id="mrHistTitle" style="font-size:1.05rem">Visit history</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div id="mrHistBody" class="small"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- Manual log (no GPS) -->
+<div class="modal fade mr-sheet" id="mrManual" tabindex="-1" aria-labelledby="mrManTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content"><div class="modal-body p-4">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div><h5 class="fw-bold mb-0" id="mrManTitle" style="font-size:1.05rem">Log visit without GPS</h5>
+             <div class="mr-sub">It will be marked "No GPS" and reviewed by the admin.</div></div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/schedule/visiting-logs" method="post" id="mrManForm" novalidate>
+        <select name="doctorId" class="form-select mb-3 ts-exclude" required>
+          <option value="">Choose doctor</option>
+          <% docs.forEach(function (d) { %><option value="<%= d.id %>">Dr. <%= cap(d.first + ' ' + d.last) %></option><% }) %>
+        </select>
+        <textarea name="notes" class="form-control mb-3" rows="3" minlength="3" maxlength="2000" required placeholder="Visit notes"></textarea>
+        <button type="submit" class="mr-btn b-pri w-100">Save visit</button>
+      </form>
+    </div></div>
+  </div>
+</div>
+
+<div class="mr-busy" id="mrBusy"><img id="mrBusyImg" class="d-none" alt=""><div class="spinner-border text-primary"></div><div id="mrBusyTxt">Please wait…</div></div>
+
+<%- include("../partials/uiNotify") %>
+
+<script>
+(function () {
+  'use strict';
+  var PHOTO_MODE = '<%= photoMode %>';   // required | optional | off (admin sets it per officer on the Team page)
+  var TODAY = '<%= todayN %>';
+  var DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  var $ = function (id) { return document.getElementById(id); };
+  var toast = function (t, m) { if (window.ui) ui.toast(t, null, m); else alert(m); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var busy = function (on, txt, img) {
+    $('mrBusy').classList.toggle('on', !!on);
+    if (txt) $('mrBusyTxt').textContent = txt;
+    var i = $('mrBusyImg'); if (img) { i.src = img; i.classList.remove('d-none'); } else if (!on) i.classList.add('d-none');
+  };
+  var secure = window.isSecureContext || location.hostname === 'localhost';
+  if (!secure) $('mrInsecure').classList.remove('d-none');
+
+  /* ───────────── Filters (instant, no reload) ───────────── */
+  var cards = [].slice.call(document.querySelectorAll('#mrList .dc'));
+  var params = new URLSearchParams(location.search);
+  var state = {
+    day:  '<%= selDay %>' || TODAY,
+    q:    params.get('q') || '',
+    area: params.get('area') || '',
+    sort: params.get('sort') || 'due',
+    quick: (params.get('f') || '').split(',').filter(Boolean)
+  };
+  $('mrFilter').value = state.q; $('mrArea').value = state.area; $('mrSort').value = state.sort;
+  if ($('mrArea').value !== state.area) state.area = '';
+  cards.forEach(function (c) { try { c._slots = JSON.parse(c.dataset.slots || '[]'); } catch (e) { c._slots = []; } });
+
+  var short = function (d) { return d === 'AllDay' ? 'Every day' : d.slice(0, 3); };
+  function slotText(c) {
+    var sl = c._slots;
+    if (state.day === 'all') {
+      if (sl.some(function (s) { return s.day === 'AllDay'; })) return 'Every day' + (sl[0] && sl[0].area ? ' · ' + sl[0].area : '');
+      var groups = {};
+      sl.forEach(function (s) { var k = (s.area || '') + '|' + (s.time || ''); (groups[k] = groups[k] || []).push(s.day); });
+      return Object.keys(groups).map(function (k) {
+        var p = k.split('|'), ds = groups[k].sort(function (a, b) { return DAYS.indexOf(a) - DAYS.indexOf(b); }).map(short).join(', ');
+        return ds + (p[0] ? ' · ' + p[0] : '') + (p[1] ? ' · ' + p[1] : '');
+      }).join('  |  ') || 'No visiting day set';
+    }
+    var hit = sl.filter(function (s) { return s.day === state.day || s.day === 'AllDay'; });
+    if (!hit.length) return 'Not on ' + state.day;
+    return (state.day === TODAY ? 'Today' : state.day) + hit.map(function (s) { return (s.area ? ' · ' + s.area : '') + (s.time ? ' · ' + s.time : ''); }).join(' / ');
+  }
+
+  function score(c) {   // who to visit first: follow-up due, not visited today, longest gap
+    return (c.dataset.visited === '1' ? 0 : 1e6) + (c.dataset.follow === '1' ? 5e5 : 0) + Math.min(Number(c.dataset.since), 9999);
+  }
+  function apply(push) {
+    var q = state.q.trim().toLowerCase(), shown = [], dayCount = 0, dayVisited = 0;
+    cards.forEach(function (c) {
+      var days = c.dataset.days ? c.dataset.days.split('|') : [];
+      var onDay = state.day === 'all' || days.indexOf(state.day) !== -1;
+      if (onDay) { dayCount++; if (c.dataset.visited === '1') dayVisited++; }
+      var ok = onDay
+        && (!q || c.dataset.text.indexOf(q) !== -1)
+        && (!state.area || c.dataset.areas.split('|').indexOf(state.area) !== -1)
+        && state.quick.every(function (f) {
+          return f === 'follow' ? c.dataset.follow === '1'
+               : f === 'stale' ? Number(c.dataset.since) > 14
+               : f === 'pending' ? c.dataset.visited !== '1'
+               : f === 'nopin' ? c.dataset.pin !== '1'
+               : f === 'nobiz' ? Number(c.dataset.pts) === 0 : true;
+        });
+      c.classList.toggle('d-none', !ok);
+      c.querySelector('[data-slot]').textContent = slotText(c);
+      if (ok) shown.push(c);
+    });
+    var by = {
+      due:    function (a, b) { return score(b) - score(a); },
+      name:   function (a, b) { return a.dataset.name.localeCompare(b.dataset.name); },
+      biz:    function (a, b) { return Number(b.dataset.biz) - Number(a.dataset.biz); },
+      lowbiz: function (a, b) { return Number(a.dataset.biz) - Number(b.dataset.biz); },
+      month:  function (a, b) { return Number(a.dataset.month) - Number(b.dataset.month); }
+    }[state.sort] || function () { return 0; };
+    var list = $('mrList'), noMatch = $('mrNoMatch');
+    cards.slice().sort(by).forEach(function (c) { list.insertBefore(c, noMatch); });
+
+    document.querySelectorAll('.mr-days [data-day]').forEach(function (b) { var on = b.dataset.day === state.day; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    document.querySelectorAll('#mrQuick [data-q]').forEach(function (b) { b.classList.toggle('on', state.quick.indexOf(b.dataset.q) !== -1); });
+    var filtered = q || state.area || state.quick.length;
+    $('mrClear').classList.toggle('d-none', !filtered);
+    $('mrPlanned').textContent = dayCount;
+    $('mrPlannedLbl').textContent = state.day === 'all' ? 'Doctors' : (state.day === TODAY ? 'Planned today' : 'On ' + state.day.slice(0, 3));
+    $('mrProgTxt').textContent = state.day === TODAY ? dayVisited + ' of ' + dayCount + ' planned doctors visited'
+                               : state.day === 'all' ? dayVisited + ' of ' + dayCount + ' doctors visited today'
+                               : state.day + ' list · ' + dayVisited + ' of ' + dayCount + ' visited today';
+    $('mrProgBar').style.width = (dayCount ? Math.round(dayVisited * 100 / dayCount) : 0) + '%';
+    $('mrCount').textContent = cards.length ? 'Showing ' + shown.length + ' of ' + dayCount + (state.day === 'all' ? ' doctors' : ' doctors on ' + (state.day === TODAY ? 'today' : state.day)) : '';
+    if (cards.length) {
+      noMatch.classList.toggle('d-none', shown.length > 0);
+      $('mrNoMatchTxt').textContent = !dayCount ? 'No doctor visits on ' + state.day + '.' : 'No doctor matches these filters.';
+      $('mrNoMatchAll').classList.toggle('d-none', state.day === 'all');
+      $('mrNoMatchClr').classList.toggle('d-none', !filtered);
+    }
+    if (push !== false && window.history && history.replaceState) {
+      var p = new URLSearchParams(location.search);
+      p.set('day', state.day);
+      ['q', 'area'].forEach(function (k) { if (state[k]) p.set(k, state[k]); else p.delete(k); });
+      if (state.sort !== 'due') p.set('sort', state.sort); else p.delete('sort');
+      if (state.quick.length) p.set('f', state.quick.join(',')); else p.delete('f');
+      history.replaceState(null, '', location.pathname + '?' + p.toString());
+    }
+  }
+  document.querySelector('.mr-days').addEventListener('click', function (e) { var b = e.target.closest('[data-day]'); if (b) { state.day = b.dataset.day; apply(); } });
+  $('mrQuick').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-q]');
+    if (b) { var i = state.quick.indexOf(b.dataset.q); if (i === -1) state.quick.push(b.dataset.q); else state.quick.splice(i, 1); apply(); }
+  });
+  var clearAll = function () { state.q = ''; state.area = ''; state.quick = []; $('mrFilter').value = ''; $('mrArea').value = ''; apply(); };
+  $('mrClear').addEventListener('click', clearAll);
+  $('mrNoMatchClr').addEventListener('click', clearAll);
+  $('mrNoMatchAll').addEventListener('click', function () { state.day = 'all'; apply(); });
+  var t; $('mrFilter').addEventListener('input', function () { clearTimeout(t); var v = this.value; t = setTimeout(function () { state.q = v; apply(); }, 120); });
+  $('mrArea').addEventListener('change', function () { state.area = this.value; apply(); });
+  $('mrSort').addEventListener('change', function () { state.sort = this.value; apply(); });
+  var sc = $('mrScope');
+  if (sc) sc.addEventListener('change', function () { var p = new URLSearchParams(location.search); p.set('scope', sc.value); location.search = p.toString(); });
+  apply(false);
+
+  /* ───────────── GPS: several readings (fake-GPS apps return identical points) ───────────── */
+  function locate(want, maxMs, onProgress) {
+    want = want || 3; maxMs = maxMs || 9000;
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) return reject(new Error('This phone/browser cannot share location.'));
+      var samples = [], done = false, started = Date.now(), lastErr = null;
+      var finish = function () {
+        if (done) return; done = true; clearTimeout(guard);
+        if (samples.length) resolve(samples);
+        else reject(lastErr || new Error('No location yet. If the browser asked "Allow location?", tap Allow and try again.'));
+      };
+      // the browser's own timeout does not run while the "Allow location?" prompt is open
+      var guard = setTimeout(finish, Math.max(maxMs, 20000));
+      var ask = function () {
+        if (done) return;
+        navigator.geolocation.getCurrentPosition(function (p) {
+          if (done) return;
+          samples.push({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy) });
+          if (onProgress) onProgress(samples.length, want);
+          if (samples.length >= want || Date.now() - started > maxMs) return finish();
+          setTimeout(ask, 1200);
+        }, function (e) {
+          lastErr = new Error(e.code === 1 ? 'Location permission is blocked. Allow location for this site in your browser settings, then try again.'
+                            : e.code === 3 ? 'Could not get your location in time. Move to an open area and try again.'
+                            : 'Could not get your location. Turn on GPS / Wi-Fi and try again.');
+          if (e.code === 1 || samples.length || Date.now() - started > maxMs) return finish();
+          setTimeout(ask, 1200);
+        }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+      };
+      ask();
+    });
+  }
+
+  /* ───────────── Live camera: laptop webcam or phone camera, in the page ───────────── */
+  var CANCEL = 'No photo taken.';
+  var camEl = $('mrCamSheet'), video = $('mrVideo'), shotImg = $('mrShot');
+  var cam = { stream: null, facing: 'environment', mirror: false, photo: null, resolve: null, reject: null, name: '' };
+  var camBtn = function (k) { return camEl.querySelector('[data-cam="' + k + '"]'); };
+  var show = function (k, on) { camBtn(k).classList.toggle('d-none', !on); };
+  var hasLiveCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && secure;
+
+  function stopCam() { if (cam.stream) { cam.stream.getTracks().forEach(function (tr) { tr.stop(); }); cam.stream = null; } video.srcObject = null; }
+  function camState(st, msg) {
+    var msgEl = $('mrCamMsg');
+    msgEl.classList.toggle('d-none', st === 'live' || st === 'shot');
+    if (st === 'loading') msgEl.innerHTML = '<div class="spinner-border spinner-border-sm mb-2"></div><div>Starting camera…</div>';
+    if (st === 'error')   msgEl.innerHTML = '<i class="bi bi-camera-video-off"></i><div>' + esc(msg) + '</div>';
+    video.classList.toggle('d-none', st !== 'live');
+    shotImg.classList.toggle('d-none', st !== 'shot');
+    camBtn('shoot').classList.toggle('d-none', st === 'shot');
+    camBtn('shoot').disabled = st !== 'live';
+    show('use', st === 'shot'); show('retake', st === 'shot');
+    show('switch', st === 'live' && cam.many);
+    show('upload', st === 'error');
+    show('skip', PHOTO_MODE === 'optional' && st !== 'shot');
+  }
+  function startCam() {
+    stopCam(); camState('loading');
+    if (!hasLiveCamera) return camState('error', secure ? 'This browser cannot open the camera. Upload a photo instead (the visit will be marked for review).' : 'Camera needs a secure (https://) address.');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: cam.facing }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false })
+      .then(function (s) {
+        if (!camEl.classList.contains('show')) { s.getTracks().forEach(function (tr) { tr.stop(); }); return; }   // sheet closed meanwhile
+        cam.stream = s; video.srcObject = s;
+        var st = (s.getVideoTracks()[0].getSettings && s.getVideoTracks()[0].getSettings()) || {};
+        // laptop webcams and phone front cameras face the user → show as a mirror (the saved photo is not mirrored)
+        cam.mirror = st.facingMode ? st.facingMode === 'user' : !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+        video.classList.toggle('mirror', cam.mirror);
+        var go = function () { camState('live'); };
+        if (video.readyState >= 2) go(); else video.onloadeddata = go;
+        video.play().catch(function () {});
+        return navigator.mediaDevices.enumerateDevices().then(function (ds) {
+          cam.many = ds.filter(function (d) { return d.kind === 'videoinput'; }).length > 1; show('switch', cam.many && !video.classList.contains('d-none'));
+        }).catch(function () {});
+      })
+      .catch(function (e) {
+        var n = e && e.name;
+        camState('error', n === 'NotAllowedError' || n === 'SecurityError' ? 'Camera permission is blocked. Allow the camera for this site (lock icon in the address bar), then tap Retry — or upload a photo (marked for review).'
+                         : n === 'NotFoundError' || n === 'OverconstrainedError' ? 'No camera found on this device. Upload a photo instead (marked for review).'
+                         : n === 'NotReadableError' ? 'The camera is busy in another app (Zoom, WhatsApp…). Close it and tap Retry.'
+                         : 'Could not start the camera. Tap Retry or upload a photo.');
+        show('retake', true); camBtn('retake').innerHTML = '<i class="bi bi-arrow-repeat"></i> Retry'; camBtn('retake').dataset.retry = '1';
+      });
+  }
+  function stamp(canvas) {
+    var g = canvas.getContext('2d'), w = canvas.width, fs = Math.max(14, Math.round(w / 34));
+    var lines = [cam.name, new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })];
+    g.font = '600 ' + fs + 'px sans-serif';
+    var bw = Math.max.apply(null, lines.map(function (l) { return g.measureText(l).width; })) + fs * 1.2, bh = fs * 2.9;
+    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(w - bw - fs * .6, canvas.height - bh - fs * .6, bw, bh);
+    g.fillStyle = '#fff'; g.textBaseline = 'top';
+    lines.forEach(function (l, i) { g.fillText(l, w - bw - fs * .6 + fs * .6, canvas.height - bh - fs * .6 + fs * .45 + i * fs * 1.25); });
+  }
+  function toJpeg(src, sw, sh) {
+    var s = Math.min(1, 1280 / Math.max(sw, sh));
+    var c = document.createElement('canvas'); c.width = Math.round(sw * s); c.height = Math.round(sh * s);
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    stamp(c);
+    return c.toDataURL('image/jpeg', 0.75);
+  }
+  function finishCam(result, err) {
+    var res = cam.resolve, rej = cam.reject; cam.resolve = cam.reject = null;
+    stopCam();
+    if (window.bootstrap) bootstrap.Modal.getOrCreateInstance(camEl).hide();
+    if (err) { if (rej) rej(err); } else if (res) res(result);
+  }
+  camEl.addEventListener('shown.bs.modal', startCam);
+  camEl.addEventListener('hidden.bs.modal', function () { stopCam(); if (cam.reject) { var r = cam.reject; cam.resolve = cam.reject = null; r(new Error(CANCEL)); } });
+  camEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cam]'); if (!b) return;
+    var k = b.dataset.cam;
+    if (k === 'cancel') return finishCam(null, new Error(CANCEL));
+    if (k === 'skip')   return finishCam(null);
+    if (k === 'switch') { cam.facing = cam.facing === 'environment' ? 'user' : 'environment'; return startCam(); }
+    if (k === 'shoot') {
+      if (!video.videoWidth) return;
+      cam.photo = { data: toJpeg(video, video.videoWidth, video.videoHeight), ageSec: 0, source: 'live' };
+      shotImg.src = cam.photo.data; stopCam(); return camState('shot');
+    }
+    if (k === 'retake') { cam.photo = null; delete b.dataset.retry; b.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Retake'; return startCam(); }
+    if (k === 'use')    return finishCam(cam.photo);
+    if (k === 'upload') return pickFile().then(function (p) { cam.photo = p; shotImg.src = p.data; camState('shot'); }, function (er) { if (er.message !== CANCEL) toast('danger', er.message); });
+  });
+  /* last resort: a file / gallery photo (server marks the visit "photo uploaded") */
+  function pickFile() {
+    return new Promise(function (resolve, reject) {
+      var inp = $('mrCam'); inp.value = '';
+      var onChange = function () {
+        inp.removeEventListener('change', onChange);
+        var f = inp.files && inp.files[0];
+        if (!f) return reject(new Error(CANCEL));
+        if (!/^image\//.test(f.type)) return reject(new Error('Please choose a photo.'));
+        var age = f.lastModified ? Math.round((Date.now() - f.lastModified) / 1000) : 0;
+        var img = new Image(), url = URL.createObjectURL(f);
+        img.onload = function () { URL.revokeObjectURL(url); resolve({ data: toJpeg(img, img.width, img.height), ageSec: Math.max(0, age), source: 'file' }); };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('The photo could not be read. Please try again.')); };
+        img.src = url;
+      };
+      inp.addEventListener('change', onChange);
+      inp.click();
+    });
+  }
+  /** Resolves with { data, ageSec, source } — or null when the officer taps "Skip photo" (optional mode). */
+  function takePhoto(name) {
+    return new Promise(function (resolve, reject) {
+      cam.resolve = resolve; cam.reject = reject; cam.photo = null; cam.name = name || '';
+      $('mrCamTitle').textContent = name ? 'Photo at ' + name : 'Photo at clinic';
+      $('mrCamSub').textContent = PHOTO_MODE === 'optional' ? 'Optional · makes your visit easy to verify' : 'Required to punch in · time-stamped';
+      camState('loading');
+      if (!window.bootstrap) return pickFile().then(resolve, reject);
+      bootstrap.Modal.getOrCreateInstance(camEl).show();
+    });
+  }
+
+  function post(url, data) {
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (ct.indexOf('json') === -1) throw new Error(r.status === 413 ? 'The photo is too large. Please try again.' : r.status === 401 || r.redirected ? 'Your session has expired. Please log in again.' : 'Server error. Please try again.');
+        return r.json();
+      })
+      .then(function (d) { if (!d.success) throw new Error(d.message || 'Failed.'); return d; });
+  }
+
+  /* Punch in: photo → GPS readings → server */
+  function punchIn(btn) {
+    btn.disabled = true;
+    var photo = null;
+    var start = PHOTO_MODE === 'off' ? Promise.resolve() : takePhoto(btn.dataset.name).then(function (p) { photo = p; });
+    start
+      .then(function () {
+        busy(true, 'Getting your location…', photo && photo.data);
+        return locate(3, 9000, function (n, w) { busy(true, 'Getting your location… ' + n + '/' + w, photo && photo.data); });
+      })
+      .then(function (samples) {
+        busy(true, 'Punching in at ' + btn.dataset.name + '…', photo && photo.data);
+        return post('/schedule/api/punch-in', { doctorId: btn.dataset.doctor, samples: samples, photo: photo && photo.data, photoAgeSec: photo && photo.ageSec, photoSource: photo && photo.source });
+      })
+      .then(function (d) { busy(false); toast(d.status === 'far' || (d.flags && d.flags.length) ? 'warning' : 'success', d.message); setTimeout(function () { location.reload(); }, 1500); })
+      .catch(function (e) { busy(false); btn.disabled = false; if (e.message !== CANCEL) toast('danger', e.message); });
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    if (b.dataset.act === 'punch-in') punchIn(b);
+    if (b.dataset.act === 'history')  openHistory(b.dataset.doctor, b.dataset.name);
+  });
+
+  /* Punch out */
+  var ymd = function (d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  var of = $('mrOutForm');
+  if (of) of.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = new FormData(of), err = $('mrOutErr');
+    var data = { visitId: f.get('visitId'), outcome: f.get('outcome'), notes: (f.get('notes') || '').trim(), nextVisitOn: f.get('nextVisitOn') };
+    var msg = !data.outcome ? 'Choose how the visit went.' : data.notes.length < 3 ? 'Write a short note.' : '';
+    if (msg) { err.textContent = msg; err.classList.remove('d-none'); return; }
+    err.classList.add('d-none');
+    var btn = of.querySelector('button[type=submit]'); btn.disabled = true;
+    busy(true, 'Getting your location…');
+    locate(2, 5000).catch(function () { return []; })        // punch-out still saves without GPS (it is flagged)
+      .then(function (samples) { busy(true, 'Punching out…'); data.samples = samples; return post('/schedule/api/punch-out', data); })
+      .then(function (d) { busy(false); toast('success', d.message); setTimeout(function () { location.reload(); }, 1000); })
+      .catch(function (e2) { busy(false); btn.disabled = false; err.textContent = e2.message; err.classList.remove('d-none'); });
+  });
+  var next = $('mrNext');
+  if (next) {
+    next.min = ymd(new Date());
+    $('mrNextQuick').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-next]'); if (!b) return;
+      var d = new Date(); d.setDate(d.getDate() + Number(b.dataset.next)); next.value = ymd(d);
+    });
+  }
+
+  /* History */
+  var ST = { verified: ['✓ At clinic', 'ok'], far: ['Far', 'bad'], new_location: ['New pin', 'info'], weak_gps: ['Weak GPS', 'warn'], no_gps: ['No GPS', ''] };
+  var RV = { approved: ['Verified', 'ok'], rejected: ['Rejected', 'bad'], pending: ['Awaiting review', ''] };
+  var OC = { met: 'Met doctor', not_available: 'Not available', left_material: 'Left material', follow_up: 'Follow-up', other: 'Other' };
+  function openHistory(id, name) {
+    $('mrHistTitle').textContent = name;
+    $('mrHistBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></div>';
+    if (window.bootstrap) bootstrap.Modal.getOrCreateInstance($('mrHist')).show();
+    fetch('/schedule/api/doctor-visits/' + encodeURIComponent(id), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.success) throw new Error(d.message);
+        if (!d.visits.length) { $('mrHistBody').innerHTML = '<div class="mr-empty">No visits yet.</div>'; return; }
+        $('mrHistBody').innerHTML = d.visits.map(function (v) {
+          var st = ST[v.LocationStatus] || ['—', ''], rv = RV[v.ReviewStatus] || RV.pending;
+          return '<div class="hist-row"><div class="d-flex justify-content-between gap-2 flex-wrap"><b>' + esc(v.VisitedAt) + '</b>' +
+                 '<span><span class="tg ' + st[1] + '">' + st[0] + '</span> <span class="tg ' + rv[1] + '">' + rv[0] + '</span></span></div>' +
+                 '<div class="text-secondary text-capitalize">' + esc(v.ByName || '') + (v.Minutes != null ? ' · ' + v.Minutes + ' min' : '') + (v.Outcome ? ' · ' + esc(OC[v.Outcome] || v.Outcome) : '') + '</div>' +
+                 (v.Notes ? '<div class="mt-1" style="white-space:pre-wrap">' + esc(v.Notes) + '</div>' : '') +
+                 (v.NextVisitOn ? '<div class="mt-1 text-primary">Next visit: ' + esc(v.NextVisitOn) + '</div>' : '') + '</div>';
+        }).join('');
+      })
+      .catch(function (e) { $('mrHistBody').innerHTML = '<div class="text-danger">' + esc(e.message || 'Could not load history.') + '</div>'; });
+  }
+
+  $('mrManForm').addEventListener('submit', function (e) {
+    if (!this.checkValidity()) { e.preventDefault(); this.classList.add('was-validated'); return; }
+    this.querySelector('button[type=submit]').disabled = true;
+  });
+})();
+</script>

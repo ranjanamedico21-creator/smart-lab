@@ -1,0 +1,427 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; color: #1a202c; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  .page-header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .page-header h1 { font-size: 24px; color: #2c5282; margin-bottom: 5px; }
+  .page-header p { color: #718096; font-size: 14px; }
+  .selector-bar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; flex: 1; min-width: 200px; }
+  .form-group label { font-size: 12px; color: #4a5568; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; }
+  .form-control { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; width: 100%; background: white; color: #1a202c; outline: none; }
+  .btn { padding: 10px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #2c5282; color: white; }
+  .btn-secondary { background: #718096; color: white; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+  .card-header { background: #2c5282; color: white; padding: 15px 20px; font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .card-body { padding: 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f7fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 14px; vertical-align: middle; }
+  .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 26px; }
+  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: #38a169; }
+  input:checked + .slider:before { transform: translateX(24px); }
+  .order-input { width: 60px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; font-size: 13px; }
+  .section-input { width: 100%; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; }
+  .row-mapped { background: #f0fff4; }
+  .row-unmapped { background: white; }
+  .row-suggested { border-left: 3px solid #2c5282; }
+  .param-name strong { color: #2d3748; }
+  .param-name small { color: #718096; font-size: 11px; }
+  .stats { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-box { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex: 1; text-align: center; min-width: 150px; }
+  .stat-box h3 { font-size: 28px; color: #2c5282; margin-bottom: 4px; }
+  .stat-box label { font-size: 12px; color: #718096; text-transform: uppercase; }
+  .badge { font-size: 11px; background: #ebf8ff; color: #2c5282; padding: 2px 6px; border-radius: 4px; }
+  .badge-suggest { background: #feebc8; color: #7c2d12; font-weight: 600; }
+  .empty-state { text-align: center; padding: 40px; color: #718096; }
+
+  /* ─── Tom Select: fix double border + dropdown overflow ─── */
+  .ts-wrapper.form-control {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .ts-wrapper.form-control .ts-control {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: white;
+    font-size: 14px;
+    min-height: 42px;
+    box-shadow: none;
+    color: #1a202c;
+  }
+  .ts-wrapper.form-control.focus .ts-control {
+    border-color: #2c5282;
+    box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+  }
+  .ts-wrapper.form-control .ts-control .ts-input {
+    padding: 0;
+    min-height: 20px;
+    line-height: 20px;
+  }
+  /* Dropdown when attached to body (escapes overflow:hidden containers) */
+  .ts-dropdown {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    z-index: 99999;
+  }
+  .ts-dropdown .option {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  .ts-dropdown .active {
+    background: #ebf8ff !important;
+    color: #2c5282 !important;
+  }
+  .ts-dropdown .create {
+    font-size: 14px;
+    padding: 10px 12px;
+    color: #2c5282;
+  }
+
+  @keyframes toastSlideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastFadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
+</style>
+
+<div class="container">
+  <div class="page-header">
+    <h1>🔗 Test Parameter Mapping</h1>
+    <p>Attach parameters to tests and define department, order, and sections</p>
+  </div>
+
+  <div class="selector-bar">
+    <div class="form-group">
+      <label>Select Test</label>
+      <select class="form-control" id="testSelect">
+        <% tests.forEach(function(t) { %>
+          <option value="<%= t.Id %>" <%= selectedTest == t.Id ? 'selected' : '' %>><%= t.TestName %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Select Department</label>
+      <select class="form-control" id="deptSelect">
+        <% departments.forEach(function(d) { %>
+          <option value="<%= d.Id %>" <%= selectedDept == d.Id ? 'selected' : '' %>><%= d.DepartmentName %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="form-group" style="flex:0;">
+      <button class="btn btn-primary" onclick="reloadPage()">Load Parameters</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 15px;">
+    <button class="btn btn-secondary" onclick="applySuggestions()">✨ Auto-Select Recommended Parameters</button>
+  </div>
+
+  <% 
+    var mappedCount = 0;
+    var unmappedCount = 0;
+    var currentDept = null;
+    
+    mappedParameters.forEach(function(p) {
+      if (p.IsMapped == 1) mappedCount++;
+      else unmappedCount++;
+    });
+    
+    for (var i = 0; i < departments.length; i++) {
+      if (departments[i].Id == selectedDept) {
+        currentDept = departments[i];
+        break;
+      }
+    }
+  %>
+
+  <div class="stats">
+    <div class="stat-box"><h3><%= mappedCount %></h3><label>Mapped Parameters</label></div>
+    <div class="stat-box"><h3><%= unmappedCount %></h3><label>Available to Add</label></div>
+    <div class="stat-box"><h3><%= currentDept ? currentDept.DepartmentCode : 'N/A' %></h3><label>Department Code</label></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span>Parameter List for Selected Test</span>
+    </div>
+    <div class="card-body">
+      <% if (mappedParameters.length === 0) { %>
+        <div class="empty-state">
+          <p>No parameters found. Please select a test and department.</p>
+        </div>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">Include</th>
+              <th>Parameter</th>
+              <th style="width: 80px;">Order</th>
+              <th style="width: 80px;">Required</th>
+              <th>Section Header</th>
+              <th style="width: 100px;">Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% mappedParameters.forEach(function(p) { 
+                 var isMapped = p.IsMapped == 1;
+                 var isSuggested = false;
+                 for (var i = 0; i < suggestedParamIds.length; i++) {
+                   if (suggestedParamIds[i] == p.Id) { isSuggested = true; break; }
+                 }
+            %>
+              <tr class="<%= isMapped ? 'row-mapped' : 'row-unmapped' %> <%= isSuggested ? 'row-suggested' : '' %>" id="row-<%= p.Id %>" data-suggested="<%= isSuggested ? '1' : '0' %>">
+                <td style="text-align:center;">
+                  <label class="toggle-switch">
+                    <input type="checkbox" <%= isMapped ? 'checked' : '' %> onchange="toggleMap('<%= p.Id %>', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </td>
+                <td class="param-name">
+                  <strong><%= p.ParameterName %></strong>
+                  <% if (isSuggested) { %>
+                    <span class="badge badge-suggest">Recommended</span>
+                  <% } %><br>
+                  <small><%= p.ShortName %> | <%= p.Unit || 'no unit' %></small>
+                </td>
+                <td>
+                  <input type="number" class="order-input" value="<%= p.MapOrder || 0 %>" id="order-<%= p.Id %>" <%= isMapped ? '' : 'disabled' %> onchange="updateField('<%= p.Id %>', 'DisplayOrder', this.value)">
+                </td>
+                <td style="text-align:center;">
+                  <input type="checkbox" <%= p.MapRequired ? 'checked' : '' %> id="req-<%= p.Id %>" <%= isMapped ? '' : 'disabled' %> onchange="updateField('<%= p.Id %>', 'IsRequired', this.checked)">
+                </td>
+                <td>
+                  <input type="text" class="section-input" value="<%= p.MapSection || '' %>" id="section-<%= p.Id %>" placeholder="e.g. RBC Indices" <%= isMapped ? '' : 'disabled' %> onchange="updateField('<%= p.Id %>', 'SectionHeader', this.value)">
+                </td>
+                <td>
+                  <span class="badge"><%= p.ResultType %></span>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- TOAST UTILITY ---------- */
+(function() {
+  'use strict';
+  window.showToast = function(message, type) {
+    console.log('[Toast]', message, type);
+    var container = document.getElementById('toastContainer');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toastContainer';
+      container.style.position = 'fixed';
+      container.style.top = '20px';
+      container.style.right = '20px';
+      container.style.zIndex = '999999';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '10px';
+      container.style.maxWidth = '420px';
+      container.style.pointerEvents = 'none';
+      document.body.appendChild(container);
+    }
+
+    var toast = document.createElement('div');
+    toast.style.padding = '14px 18px';
+    toast.style.borderRadius = '8px';
+    toast.style.fontSize = '14px';
+    toast.style.fontWeight = '600';
+    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+    toast.style.borderLeft = '4px solid';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '12px';
+    toast.style.minWidth = '300px';
+    toast.style.maxWidth = '420px';
+    toast.style.wordWrap = 'break-word';
+    toast.style.animation = 'toastSlideIn 0.3s ease';
+    toast.style.pointerEvents = 'auto';
+    toast.style.marginBottom = '8px';
+
+    var colors = {
+      success: { bg: '#f0fdf4', text: '#166534', border: '#22c55e' },
+      error:   { bg: '#fef2f2', text: '#991b1b', border: '#ef4444' },
+      warning: { bg: '#fff7ed', text: '#9a3412', border: '#f97316' },
+      info:    { bg: '#eff6ff', text: '#1e40af', border: '#3b82f6' }
+    };
+    var c = colors[type] || colors.info;
+    toast.style.backgroundColor = c.bg;
+    toast.style.color = c.text;
+    toast.style.borderLeftColor = c.border;
+
+    var icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ';
+    toast.innerHTML =
+      '<span style="font-size:20px;flex-shrink:0;">' + icon + '</span>' +
+      '<span style="flex:1;">' + message + '</span>' +
+      '<span style="margin-left:auto;cursor:pointer;font-size:16px;opacity:0.5;" onclick="this.parentElement.remove()">×</span>';
+
+    container.appendChild(toast);
+    setTimeout(function() {
+      toast.style.animation = 'toastFadeOut 0.3s ease forwards';
+      setTimeout(function() { if (toast.parentElement) toast.remove(); }, 300);
+    }, 4000);
+  };
+})();
+
+/* ---------- PAGE LOGIC ---------- */
+var testId = document.getElementById('testSelect').value;
+var deptId = document.getElementById('deptSelect').value;
+
+function reloadPage() {
+  var t = document.getElementById('testSelect').value;
+  var d = document.getElementById('deptSelect').value;
+  window.location.href = '/pathology/admin/test-mapping?test_id=' + t + '&department_id=' + d;
+}
+
+async function applySuggestions() {
+  var rows = document.querySelectorAll('tr[data-suggested="1"]');
+  var count = 0;
+  var failed = 0;
+
+  for (var i = 0; i < rows.length; i++) {
+    var paramId = rows[i].id.replace('row-', '');
+    var cb = rows[i].querySelector('input[type="checkbox"]');
+    if (!cb.checked) {
+      cb.checked = true;
+      try {
+        await toggleMap(paramId, true);
+        count++;
+      } catch (e) {
+        failed++;
+        cb.checked = false;
+        console.error('Failed to map ' + paramId, e);
+      }
+    }
+  }
+
+  if (failed > 0) {
+    showToast('Auto-selected ' + count + ' parameters. ' + failed + ' failed.', 'warning');
+  } else {
+    showToast('Auto-selected ' + count + ' recommended parameters', 'success');
+  }
+}
+
+async function toggleMap(paramId, checked) {
+  console.log('[toggleMap]', paramId, checked);
+  var row = document.getElementById('row-' + paramId);
+  var orderIn = document.getElementById('order-' + paramId);
+  var reqIn = document.getElementById('req-' + paramId);
+  var secIn = document.getElementById('section-' + paramId);
+  
+  try {
+    if (checked) {
+      var res = await fetch('/pathology/test-parameters', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          test_id: testId,
+          parameter_id: paramId,
+          department_id: deptId,
+          display_order: orderIn.value || 0,
+          is_required: reqIn.checked,
+          section_header: secIn.value || null
+        })
+      });
+      if (!res.ok) { var j = await res.json().catch(function(){ return {}; }); throw new Error(j.message || ('Server returned ' + res.status)); }
+
+      row.classList.remove('row-unmapped');
+      row.classList.add('row-mapped');
+      orderIn.disabled = false;
+      reqIn.disabled = false;
+      secIn.disabled = false;
+      showToast('Parameter added successfully', 'success');
+    } else {
+      var res = await fetch('/pathology/test-parameters', {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ test_id: testId, parameter_id: paramId })
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      
+      row.classList.remove('row-mapped');
+      row.classList.add('row-unmapped');
+      orderIn.disabled = true;
+      reqIn.disabled = true;
+      secIn.disabled = true;
+      showToast('Parameter removed successfully', 'success');
+    }
+  } catch (err) {
+    console.error('[toggleMap error]', err);
+    showToast((checked ? 'Add' : 'Remove') + ' failed: ' + err.message, 'error');
+    throw err;
+  }
+}
+
+async function updateField(paramId, field, value) {
+  console.log('[updateField]', paramId, field, value);
+  try {
+    if (field === 'DisplayOrder') {
+      var res = await fetch('/pathology/test-parameters/order', {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          test_id: testId,
+          parameter_id: paramId,
+          display_order: parseInt(value) || 0
+        })
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      showToast('Display order updated', 'success');
+    } else {
+      var res = await fetch('/pathology/test-parameters', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          test_id: testId,
+          parameter_id: paramId,
+          department_id: deptId,
+          display_order: document.getElementById('order-' + paramId).value || 0,
+          is_required: document.getElementById('req-' + paramId).checked,
+          section_header: document.getElementById('section-' + paramId).value || null
+        })
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      showToast('Field updated successfully', 'success');
+    }
+  } catch (err) {
+    console.error('[updateField error]', err);
+    showToast('Update failed: ' + err.message, 'error');
+  }
+}
+
+/* ---------- TOM SELECT INITIALIZATION ---------- */
+document.addEventListener('DOMContentLoaded', function() {
+  var testEl = document.getElementById('testSelect');
+  var deptEl = document.getElementById('deptSelect');
+
+  if (testEl && !testEl.tomselect) {
+    new TomSelect(testEl, {
+      placeholder: 'Select a test...',
+      dropdownParent: 'body',   // <-- escapes overflow:hidden
+      onChange: function() { reloadPage(); }
+    });
+  }
+
+  if (deptEl && !deptEl.tomselect) {
+    new TomSelect(deptEl, {
+      placeholder: 'Select a department...',
+      dropdownParent: 'body',   // <-- escapes overflow:hidden
+      onChange: function() { reloadPage(); }
+    });
+  }
+});
+
+</script>

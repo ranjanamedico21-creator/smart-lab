@@ -1,0 +1,111 @@
+<div class="container-fluid mt-4">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Supplier Expiry Settlement Ledger</h5>
+        </div>
+
+        <div class="card-body">
+
+            <!-- FILTER -->
+            <form method="GET" class="row g-3 mb-3">
+
+                <input type="hidden" name="supplierId" value="<%= supplierId %>">
+
+                <div class="col-md-2">
+                    <label class="form-label">From</label>
+                    <input type="text" id="FromDate" name="fromDate" value="<%= fromDate %>" class="form-control">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">To</label>
+                    <input type="text" name="toDate" id="ToDate" value="<%= toDate %>" class="form-control">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100">Filter</button>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-success w-100" onclick="exportTableToExcel('ledgerTable')">
+                        Export Excel
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-hover align-middle" id="ledgerTable">
+
+                    <thead class="table-dark text-center">
+
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Reference</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                            <th class="text-end">Balance</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        <% let balance = 0; %>
+
+                        <% ledger.forEach((row, i) => { %>
+
+                            <tr>
+
+                                <td class="text-center"><%= i+1 %></td>
+
+                                <td>
+                                    <%= new Date(row.CreatedAt).toLocaleDateString('en-GB') %>
+                                </td>
+
+                                <td>
+                                    <span class="badge 
+                                        <%= row.ReferenceType === 'DEBIT_NOTE' ? 'bg-danger' :
+                                            row.ReferenceType === 'CREDIT_NOTE' ? 'bg-success' :
+                                            'bg-secondary' %>">
+                                        <%= row.ReferenceType %>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <a href="/supplier-debit-note/<%= row.ReferenceId %>" 
+                                       class="text-decoration-none">
+                                        View
+                                    </a>
+                                </td>
+
+                                <td class="text-end text-danger fw-bold">
+                                    <%= row.DebitAmount ? '₹ ' + Number(row.DebitAmount).toFixed(2) : '' %>
+                                </td>
+
+                                <td class="text-end text-success fw-bold">
+                                    <%= row.CreditAmount ? '₹ ' + Number(row.CreditAmount).toFixed(2) : '' %>
+                                </td>
+
+                                <td class="text-end fw-bold">
+                                    ₹ <%= Number(row.BalanceAfter).toFixed(2) %>
+                                </td>
+
+                            </tr>
+
+                        <% }) %>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>

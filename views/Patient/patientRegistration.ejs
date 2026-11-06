@@ -1,0 +1,413 @@
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PATIENT REGISTRATION PAGE - CLEAN EJS TEMPLATE                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="container-fluid">
+
+  <!-- Page Header -->
+  <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h4><i class="bi bi-person-plus me-2" style="font-size:1.15rem;vertical-align:middle"></i>Register Patient</h4>
+      <p>Fill in the details below to register a new patient visit</p>
+    </div>
+    <div class="emergency-switch-wrap">
+      <input class="form-check-input emergency-toggle" type="checkbox" id="isEmergency" name="isEmergency" value="1"
+        <%= typeof patientDetails.isEmergency !== 'undefined' && patientDetails.isEmergency == 1 ? 'checked' : '' %>>
+      <label for="isEmergency">🚨 EMERGENCY</label>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="register-card">
+    <%- include ("../partials/messages"); %>
+    <form action="/patient/registerPatient" method="post" id="registerForm" novalidate class="needs-validation">
+
+      <!-- Date badge -->
+      <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+        <div class="date-badge">
+            <i class="bi bi-calendar3"></i>
+            <span id="dateDisplay">Loading…</span>
+        </div>
+
+        <!-- Advance booking toggle -->
+        <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+            <input class="form-check-input" type="checkbox" id="advanceBookingToggle" style="cursor:pointer">
+            <label class="form-check-label" for="advanceBookingToggle"
+                style="font-size:.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer">
+                Advance Booking
+            </label>
+        </div>
+
+        <!-- Flatpickr input — shown only when toggle is on -->
+        <div id="advanceDateWrap" style="display:none">
+            <input type="text" id="advanceDatePicker" name="advanceBookingDate" placeholder="Pick a date"
+                class="form-control" style="max-width:180px;font-size:.85rem;padding:7px 12px" readonly>
+        </div>
+
+        <input type="hidden" name="registrationDate"  id="registrationDate">
+        <input type="hidden" name="isAdvanceBooking"  id="isAdvanceBooking" value="0">
+      </div>
+
+      <!-- ── Patient Information ── -->
+      <div class="form-section">
+        <div class="section-label"><i class="bi bi-person-badge"></i>Patient Information</div>
+        <div class="row g-3">
+          <div class="col-6 col-sm-3">
+            <label class="field-label" for="title">Title</label>
+            <select class="form-select" id="title" name="title" required>
+              <option value="">—</option>
+              <option value="Dr."    <% if(typeof patientDetails.title!='undefined'&&patientDetails.title=='Dr.')    {%>selected<%}%>>Dr.</option>
+              <option value="Mr."    <% if(typeof patientDetails.title!='undefined'&&patientDetails.title=='Mr.')    {%>selected<%}%>>Mr.</option>
+              <option value="Mrs."   <% if(typeof patientDetails.title!='undefined'&&patientDetails.title=='Mrs.')   {%>selected<%}%>>Mrs.</option>
+              <option value="Miss"   <% if(typeof patientDetails.title!='undefined'&&patientDetails.title=='Miss')   {%>selected<%}%>>Miss</option>
+              <option value="Master" <% if(typeof patientDetails.title!='undefined'&&patientDetails.title=='Master') {%>selected<%}%>>Master</option>
+              <option value="Baby Of"<% if(typeof patientDetails.title!='undefined'&&patientDetails.title=='Baby Of'){%>selected<%}%>>Baby Of</option>
+            </select>
+          </div>
+          <div class="col-6 col-sm-6">
+            <label class="field-label" for="patientName">Patient Name</label>
+            <input type="text" class="form-control" id="patientName" name="patientName" placeholder="Full name"
+              value="<%= typeof patientDetails.patientName!='undefined'?patientDetails.patientName:'' %>" required>
+          </div>
+          <div class="col-12 col-sm-3">
+            <label class="field-label" for="gender">Gender</label>
+            <select class="form-select" id="gender" name="gender" required>
+              <option value="">Select</option>
+              <option value="1" <% if(typeof patientDetails.gender!='undefined'&&patientDetails.gender=='1'){%>selected<%}%>>Male</option>
+              <option value="2" <% if(typeof patientDetails.gender!='undefined'&&patientDetails.gender=='2'){%>selected<%}%>>Female</option>
+            </select>
+          </div>
+          <div class="col-4 col-sm-2">
+            <label class="field-label" for="age">Age</label>
+            <input type="number" class="form-control" id="age" name="age" placeholder="Age" min="0"
+              value="<%= typeof patientDetails.age!='undefined'?patientDetails.age:'' %>" required>
+          </div>
+          <div class="col-4 col-sm-3">
+            <label class="field-label" for="ymd">Unit</label>
+            <select class="form-select" id="ymd" name="ymd" required>
+              <option value="">Unit</option>
+              <option value="Years"  <% if(typeof patientDetails.ymd!='undefined'&&patientDetails.ymd=='Years')  {%>selected<%}%>>Years</option>
+              <option value="Months" <% if(typeof patientDetails.ymd!='undefined'&&patientDetails.ymd=='Months') {%>selected<%}%>>Months</option>
+              <option value="Days"   <% if(typeof patientDetails.ymd!='undefined'&&patientDetails.ymd=='Days')   {%>selected<%}%>>Days</option>
+            </select>
+          </div>
+          <div class="col-4 col-sm-7">
+            <label class="field-label" for="phoneNumber">Phone Number</label>
+            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" placeholder="10-digit number" maxlength="10" minlength="10"
+              value="<%= typeof patientDetails.phoneNumber!='undefined'?patientDetails.phoneNumber:'' %>" required>
+          </div>
+          <div class="col-12">
+            <label class="field-label" for="patientAddress">Patient Address</label>
+            <input type="text" class="form-control" id="patientAddress" name="patientAddress" placeholder="Patient address (optional)"
+              value="<%= typeof patientDetails.patientAddress!='undefined'?patientDetails.patientAddress:'' %>">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Clinic & Doctor ── -->
+      <div class="form-section">
+        <div class="section-label"><i class="bi bi-hospital"></i>Clinic &amp; Doctor</div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="field-label" for="clinic">Clinic</label>
+            <select class="form-select" id="clinic" name="clinic" required>
+              <option value="">Select a clinic</option>
+              <% clinics.forEach(function(clinic){ %>
+              <option class="text-capitalize"
+                <% if(typeof clinicId!='undefined'&&clinic.Id==clinicId){%>selected<%}%>
+                value="<%=clinic.Id%>"
+                data-clinic="<%=clinic.Name%>"
+                data-address="<%=clinic.Address%>"><%=clinic.Name%> [<%=clinic.Address%>]</option>
+              <%})%>
+            </select>
+          </div>
+          <div class="col-sm-6">
+            <label class="field-label" for="doctor">Doctor</label>
+            <select class="form-select" id="doctor" name="doctor" required>
+              <option value="">Select a doctor</option>
+              <% doctors.forEach(function(doctor){ %>
+              <option
+                data-flat-discount="<%=doctor.FlatDiscount%>"
+                data-authorized-For-Blood="<%=doctor.AuthorizedForBloodTest%>"
+                <% if(typeof doctorId!='undefined'&&doctor.Id==doctorId){%>selected<%}%>
+                value="<%=doctor.Id%>"><%=doctor.FirstName%> <%=doctor.LastName%></option>
+              <%})%>
+            </select>
+          </div>
+
+          <!-- Info strip -->
+          <div class="col-12">
+            <div class="info-strip" id="clinicInfoStrip" style="display:none">
+              <div class="info-item"><i class="bi bi-geo-alt-fill"></i>Address: <strong id="clinicAddress">—</strong></div>
+              <div class="info-item"><i class="bi bi-mortarboard-fill"></i>Doctor: <strong id="doctorName">—</strong></div>
+            </div>
+          </div>
+
+          <!-- Clinic Prescription Panel -->
+          <div class="col-12">
+            <label class="field-label"><i class="bi bi-file-earmark-medical me-1"></i>Clinic Prescription</label>
+            <div class="clinic-image-panel" id="clinicImagePanel">
+              <div class="clinic-image-placeholder" id="clinicPlaceholder">
+                <i class="bi bi-image"></i>
+                <span>Clinic prescription image will appear here</span>
+              </div>
+              <img src="" id="clinicPrescription" class="img-fluid" alt="Clinic prescription" style="display:none">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Test Selection ── -->
+      <div class="section-divider"></div>
+
+      <div id="liveErrorAlertPlaceholder" class="mb-3"></div>
+
+      <div class="form-section">
+        <div class="section-label"><i class="bi bi-clipboard2-pulse"></i>Test Selection</div>
+        <div class="row">
+          <div class="col">
+            <div id="testPriceInfo" style="min-height:18px;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-3">
+            <label class="field-label" for="category">Category</label>
+            <select class="form-select" id="category" name="category">
+              <option id="0" value="">Select Category</option>
+              <% categories.forEach(function(category){ %>
+              <option id="category<%= category.Id %>" value="<%= category.Id %>" data-category-id="<%=category.Id%>"><%= category.Name %></option>
+              <%})%>
+            </select>
+          </div>
+          <div class="col-sm-4">
+            <label class="field-label" for="test">Test</label>
+            <select class="" id="test" name="test" data-size="8" title="Search tests...">
+              <option value="" data-category-id="0" data-price="0">Select Test</option>
+              <% testDetails.forEach(function(test) {
+                  const subs       = subTestMap[test.Id] || [];
+                  const subTotal   = subs.reduce((a, s) => a + parseFloat(s.Price || 0), 0);
+                  const grandTotal = parseFloat(test.Price) + subTotal;
+                  const hasSubTests = subs.length > 0;
+                  const subsJson = JSON.stringify(
+                    subs.map(function(s){ 
+                        return { 
+                            SubTestId: s.SubTestId,
+                            name:     s.SubTestName, 
+                            price:    parseFloat(s.Price    || 0),
+                            discount: parseFloat(s.Discount || 0)
+                        }; 
+                    })
+                  ).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+              %>
+              <option
+                  value="<%= test.Id %>"
+                  data-category-id="<%= test.CategoryId %>"
+                  data-price="<%= test.Price %>"
+                  data-grand-total="<%= grandTotal %>"
+                  data-has-subtests="<%= hasSubTests ? 1 : 0 %>"
+                  data-subtests='<%- subsJson %>'  
+                  data-tokens="<%= test.TestName %> <%= subs.map(s => s.SubTestName).join(' ') %>">
+                  <%= test.TestName %>
+              </option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-sm-2">
+            <label class="field-label" for="price">Price (₹)</label>
+            <input type="number" class="form-control" id="price" name="price" value="0" readonly>
+          </div>
+          <div class="col-sm-2">
+            <label class="field-label" for="discount">Discount (₹)</label>
+            <input type="number" class="form-control" id="discount" name="discount" value="0" min="0">
+          </div>
+          <div class="col-sm-1">
+            <button class="btn-add-test" type="button" id="addTest" title="Add Test">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Test Table -->
+        <div class="test-table-wrap mt-4" id="testTableWrap" style="display:none">
+          <table class="test-table" id="displayTest">
+            <thead>
+              <tr>
+                <th>Test Name</th>
+                <th style="width:110px">Price (₹)</th>
+                <th style="width:120px">Discount (₹)</th>
+                <th style="width:110px">Net (₹)</th>
+                <th style="width:60px">Action</th>
+              </tr>
+            </thead>
+            <tbody id="testTbody"></tbody>
+          </table>
+        </div>
+        <div id="noTestsPlaceholder" class="text-center py-3" style="font-size:.83rem;color:var(--text-muted)">
+          <i class="bi bi-inbox me-1"></i>No tests added yet
+        </div>
+      </div>
+
+      <!-- ── Billing & Payment ── -->
+      <div class="row g-4 mt-1">
+
+        <!-- Billing Summary -->
+        <div class="col-md-4">
+          <div class="billing-card">
+            <div class="bcard-label"><i class="bi bi-receipt"></i>Billing Summary</div>
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="field-label" for="finalDiscount">Total Discount</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="finalDiscount" name="finalDiscount" placeholder="0" readonly>
+                  <span class="input-group-text">₹</span>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="field-label" for="discountApprovedBy">Approved By</label>
+                <input type="text" class="form-control" id="discountApprovedBy" name="discountApprovedBy" placeholder="Discount approved by">
+              </div>
+              <div class="col-12">
+                <label class="field-label" for="grossAmount">Gross Amount</label>
+                <div class="input-group">
+                  <input type="number" class="form-control fw-bold" id="grossAmount" name="grossAmount" placeholder="0" readonly required>
+                  <span class="input-group-text">₹</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="col-md-8">
+          <div class="payment-card">
+            <div class="pay-label"><i class="bi bi-wallet2"></i>Payment Details</div>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="field-label" for="cashPayment">Cash Payment</label>
+                <div class="input-group">
+                  <span class="input-group-icon"><i class="bi bi-cash-stack"></i></span>
+                  <input type="number" class="form-control" id="cashPayment" name="cashPayment" value="0" min="0">
+                  <span class="input-group-text">₹</span>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <label class="field-label" for="onlinePayment">Online Payment</label>
+                <div class="input-group">
+                  <span class="input-group-icon"><i class="bi bi-qr-code-scan"></i></span>
+                  <input type="number" class="form-control" id="onlinePayment" name="onlinePayment" value="0" min="0">
+                  <span class="input-group-text">₹</span>
+                </div>
+
+                <div class="payment-methods" id="paymentMethods">
+                  <div class="payment-methods-label">
+                      <i class="bi bi-building-check me-1"></i>Select Bank / Gateway
+                  </div>
+                  <div class="pay-method-grid" id="paymentMethodGrid">
+                      <% onlineSources.forEach(function(source){ %>
+                      <div class="pay-method-option">
+                          <input type="radio"
+                              class="pm-radio"
+                              id="pm_<%= source.ShortCode %>"
+                              data-source-id="<%= source.Id %>"
+                              data-source-name="<%= source.Name %>">
+                          <label for="pm_<%= source.ShortCode %>">
+                              <span class="bank-icon" style="background:#1a56e8;color:#fff;font-size:9px">
+                                  <%= source.ShortCode %>
+                              </span>
+                              <%= source.Name %>
+                          </label>
+                      </div>
+                      <% }); %>
+                  </div>
+                  <input type="hidden" name="onlinePaymentMethod" id="onlinePaymentMethod" value="">
+                </div>
+              </div>
+            </div>
+
+            <div class="amount-summary mt-3">
+              <div class="amount-row">
+                <span class="amount-key color-paid">Amount Paid</span>
+                <span class="amount-val color-paid" id="paidDisplay">₹0</span>
+              </div>
+              <div class="amount-row">
+                <span class="amount-key color-due">Due Balance</span>
+                <span class="amount-val color-due" id="dueDisplay">₹0</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex justify-content-start gap-3 mt-4 pt-3" style="border-top:1px solid var(--border)">
+        <button type="submit" class="btn-register">
+          <i class="bi bi-check2-circle me-2"></i>Register Patient
+        </button>
+        <a href="/patient/getPatientListView" class="btn-list">
+          <i class="bi bi-list-ul"></i>Patient List
+        </a>
+      </div>
+
+      <!-- Hidden fields -->
+      <input type="hidden" name="selectedTestDetails"    id="selectedTestDetails"    value="[]">
+      <input type="hidden" name="testLength"             id="testLength"             value="0">
+      <input type="hidden" name="subTestLength"          id="subTestLength"          value="0">
+      <input type="hidden" name="patientTestDetails"     id="patientTestDetails"     value="<%= typeof patientTestDetails!='undefined'?patientTestDetails:'' %>">
+      <input type="hidden" name="selectedSubTestDetails" id="selectedSubTestDetails" value="[]">
+      <input type="hidden" name="patientSubTestDetails"  id="patientSubTestDetails"  value="<%= typeof patientSubTestDetails!='undefined'?patientSubTestDetails:'' %>">
+
+    </form>
+  </div>
+</div>
+
+<!-- 
+  ═══════════════════════════════════════════════════════════════════════════════
+  CRITICAL: Only ONE script initializes #test Tom Select — patientBilling.js
+  ═══════════════════════════════════════════════════════════════════════════════
+-->
+<script>
+  // Pass server data to JS module
+  window.subTestMap = <%- JSON.stringify(subTestMap) %>;
+</script>
+
+<style>
+/* ── Dropdown Option Styles ── */
+.dp-test-item   { padding: 8px 12px; line-height: 1.5; cursor: pointer; }
+.dp-test-item:hover { background: #f8fafc; }
+.dp-test-name   { font-weight: 600; font-size: 13.5px; color: #111827; }
+.dp-test-prices { font-size: 12px; margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dp-base-price  { color: #6B7280; }
+.dp-plus        { color: #CBD5E1; }
+.dp-sub-total   { color: #185FA5; font-weight: 600; }
+.dp-total-price { color: #185FA5; font-weight: 600; font-size: 13px; }
+.dp-total-disc  { color: #16a34a; font-size: 11px; font-weight: 500; }
+.dp-subtests    { margin-top: 6px; padding: 6px 0 4px 12px; border-left: 2px solid #e5e7eb; }
+.dp-sub-item    { display: flex; align-items: center; gap: 8px; font-size: 11.5px; padding: 3px 0; }
+.dp-sub-arrow   { color: #CBD5E1; flex-shrink: 0; font-size: 10px; }
+.dp-sub-name    { flex: 1; color: #374151; font-weight: 500; }
+.dp-sub-price   { color: #185FA5; font-weight: 600; }
+.dp-sub-disc    { color: #dc2626; font-size: 10px; text-decoration: line-through; }
+.dp-sub-net     { color: #16a34a; font-weight: 700; margin-left: 2px; }
+
+/* ── Tom Select overrides ── */
+.ts-dropdown .option { white-space: normal !important; }
+.ts-dropdown .option.active { background: #eff6ff; }
+.ts-dropdown .option.selected { background: #dbeafe; }
+.ts-dropdown-content { max-height: 400px; }
+.ts-control { min-height: 38px; }
+
+/* ── Duplicate sub-test warning badge ── */
+.subtest-skipped-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: 500;
+}
+</style>

@@ -1,0 +1,1438 @@
+<%# Partial view: rendered inside loggedInLayout. Its CSS is scoped to .pkv-admin so it cannot change the layout navbar / sidebar. Bootstrap CSS+JS come from the layout. %>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<%- include("pickers") %>
+
+<style>
+.pkv.pkv-admin {
+  --ink:#0c0c0c;--ink3:#2c2c2c;
+  --muted:#6a6a6a;--dim:#9a9a9a;
+  --line:#e8e4de;--line2:#d4cec6;
+  --bg:#f5f1eb;--surface:#fffefb;--surface2:#f9f6f1;
+  --amber:#c8760a;--amber-light:#fff3e0;--amber-mid:#f5a623;
+  --green:#1a6b3c;--green-bg:#e8f5ee;
+  --red:#c0392b;--red-bg:#fdf0ee;
+  --blue:#1a4fa0;--blue-bg:#e8f0fd;
+  --purple:#7c3aed;--purple-bg:#fdf4ff;
+  --syne:'Syne',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --body:'Instrument Sans',sans-serif;
+  --r:6px;--r-lg:10px;
+}
+
+.pkv.pkv-admin {background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;}
+
+/* ── TOPBAR ── */
+.pkv.pkv-admin .topbar {
+  position:sticky;top:0;z-index:1030;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding:0 24px;height:56px;display:flex;align-items:center;gap:12px
+}
+.pkv.pkv-admin .topbar-brand {font-family:var(--syne);font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;white-space:nowrap}
+.pkv.pkv-admin .topbar-brand span {color:var(--amber)}
+.pkv.pkv-admin .topbar-sep {width:1px;height:20px;background:var(--line2);flex-shrink:0}
+.pkv.pkv-admin .topbar-title {font-family:var(--syne);font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.pkv.pkv-admin .month-pick {display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:5px 12px}
+.pkv.pkv-admin .month-pick-label {font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+.pkv.pkv-admin .month-pick input {border:none;background:transparent;font-family:var(--mono);font-size:12px;color:var(--ink);outline:none;cursor:pointer}
+.pkv.pkv-admin .search-wrap {flex:1;max-width:220px;position:relative}
+.pkv.pkv-admin .search-wrap input {width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px 6px 30px;font-family:var(--body);font-size:13px;color:var(--ink);outline:none;transition:border-color 0.2s}
+.pkv.pkv-admin .search-wrap input:focus {border-color:var(--amber);background:#fff;box-shadow:0 0 0 3px rgba(200,118,10,0.1)}
+.pkv.pkv-admin .search-wrap input::placeholder {color:var(--dim)}
+.pkv.pkv-admin .search-ico {position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px;pointer-events:none}
+.pkv.pkv-admin .topbar-right {margin-left:auto;display:flex;align-items:center;gap:8px}
+.pkv.pkv-admin .admin-chip {display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:4px 12px 4px 4px}
+.pkv.pkv-admin .admin-av {width:28px;height:28px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-family:var(--syne);font-size:10px;font-weight:700;color:#fff}
+.pkv.pkv-admin .admin-name-chip {font-size:12px;font-weight:600;color:var(--ink)}
+
+/* CUSTOM STATUS DROPDOWN */
+.pkv.pkv-admin .csel-wrap {position:relative}
+.pkv.pkv-admin .csel-trigger {
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--line);
+  border-radius:var(--r);padding:6px 10px;
+  font-family:var(--body);font-size:13px;color:var(--ink);
+  cursor:pointer;outline:none;white-space:nowrap;min-width:130px;
+  transition:border-color 0.15s
+}
+.pkv.pkv-admin .csel-trigger:focus, .pkv.pkv-admin .csel-trigger.open {border-color:var(--amber);box-shadow:0 0 0 3px rgba(200,118,10,0.1)}
+.pkv.pkv-admin .csel-label {flex:1}
+.pkv.pkv-admin .csel-chevron {font-size:10px;color:var(--muted);transition:transform 0.18s;flex-shrink:0}
+.pkv.pkv-admin .csel-trigger.open .csel-chevron {transform:rotate(180deg)}
+.pkv.pkv-admin .csel-drop {
+  display:none;position:fixed;
+  background:var(--surface);border:1px solid var(--line2);
+  border-radius:var(--r-lg);z-index:9999;
+  box-shadow:0 8px 30px rgba(12,12,12,0.14);
+  min-width:160px;overflow:hidden;margin-top:4px
+}
+.pkv.pkv-admin .csel-drop.open {display:block}
+.pkv.pkv-admin .csel-opt {
+  padding:9px 14px;font-size:13px;font-family:var(--body);
+  color:var(--ink3);cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:background 0.1s
+}
+.pkv.pkv-admin .csel-opt:hover {background:var(--amber-light);color:var(--amber)}
+.pkv.pkv-admin .csel-opt.active {background:var(--amber-light);color:var(--amber);font-weight:600}
+.pkv.pkv-admin .csel-opt+.csel-opt {border-top:1px solid var(--line)}
+.pkv.pkv-admin .csel-dot {width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── CONTENT ── */
+.pkv.pkv-admin .content {padding:20px 24px}
+
+/* ── STAT CARDS ── */
+.pkv.pkv-admin .stat-card {background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;position:relative;overflow:hidden;height:100%}
+.pkv.pkv-admin .stat-card::before {content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--line)}
+.pkv.pkv-admin .stat-card.s-amber::before {background:var(--amber)}
+.pkv.pkv-admin .stat-card.s-green::before {background:var(--green)}
+.pkv.pkv-admin .stat-card.s-red::before {background:var(--red)}
+.pkv.pkv-admin .stat-card.s-blue::before {background:var(--blue)}
+.pkv.pkv-admin .stat-card.s-purple::before {background:var(--purple)}
+.pkv.pkv-admin .stat-label {font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.pkv.pkv-admin .stat-num {font-family:var(--syne);font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-1px;line-height:1}
+.pkv.pkv-admin .stat-sub {font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ── TABS ── */
+.pkv.pkv-admin .tab-bar {border-bottom:1px solid var(--line);margin-bottom:18px;display:flex;flex-wrap:nowrap;overflow-x:auto}
+.pkv.pkv-admin .tab-bar::-webkit-scrollbar {height:0}
+.pkv.pkv-admin .tab-item {padding:10px 18px;font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;display:flex;align-items:center;gap:6px;margin-bottom:-1px;white-space:nowrap;text-decoration:none}
+.pkv.pkv-admin .tab-item:hover {color:var(--ink);text-decoration:none}
+.pkv.pkv-admin .tab-item.active {color:var(--amber);border-bottom-color:var(--amber)}
+.pkv.pkv-admin .tab-badge {font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:10px;background:var(--amber-light);color:var(--amber)}
+
+/* ── SECTION ── */
+.pkv.pkv-admin .section-hd {display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pkv.pkv-admin .section-title {font-family:var(--syne);font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+.pkv.pkv-admin .section-count {font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+
+/* ── TABLE ── */
+.pkv.pkv-admin .tcard {background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.pkv.pkv-admin .tcard .table {margin:0;font-size:13px}
+.pkv.pkv-admin .tcard .table thead tr {background:var(--surface2);border-bottom:2px solid var(--line)}
+.pkv.pkv-admin .tcard .table th {font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:11px 14px;font-weight:400;white-space:nowrap;border:none}
+.pkv.pkv-admin .tcard .table td {padding:12px 14px;vertical-align:middle;border-color:var(--line)}
+.pkv.pkv-admin .tcard .table tbody tr:hover {background:var(--surface2)}
+.pkv.pkv-admin .tcard .table tbody tr:last-child td {border-bottom:none}
+
+.pkv.pkv-admin .form-check-input {width:15px;height:15px;border:1.5px solid var(--line2);border-radius:3px;background:#fff;cursor:pointer;transition:all 0.12s}
+.pkv.pkv-admin .form-check-input:checked {background-color:var(--amber);border-color:var(--amber)}
+.pkv.pkv-admin .form-check-input:focus {box-shadow:0 0 0 3px rgba(200,118,10,0.15);border-color:var(--amber)}
+
+/* pills */
+.pkv.pkv-admin .pkt-code {font-family:var(--mono);font-size:11px;font-weight:600;color:var(--amber);background:var(--amber-light);padding:3px 7px;border-radius:4px;border:1px solid rgba(200,118,10,0.15);white-space:nowrap}
+.pkv.pkv-admin .pkt-name {font-size:13px;font-weight:600;color:var(--ink)}
+.pkv.pkv-admin .pkt-addr {font-size:11px;color:var(--muted);margin-top:2px}
+.pkv.pkv-admin .user-chip {display:flex;align-items:center;gap:7px}
+.pkv.pkv-admin .user-av {width:26px;height:26px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--syne);font-size:10px;font-weight:700;flex-shrink:0}
+.pkv.pkv-admin .user-av.unassigned {background:var(--surface2);color:var(--dim);border:1.5px dashed var(--line2)}
+.pkv.pkv-admin .user-name {font-size:13px;font-weight:500;color:var(--ink)}
+.pkv.pkv-admin .unassigned-txt {font-size:12px;color:var(--dim);font-style:italic}
+.pkv.pkv-admin .status-pill {display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.5px;padding:3px 8px;border-radius:20px;text-transform:uppercase}
+.pkv.pkv-admin .sp-delivered {background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.2)}
+.pkv.pkv-admin .sp-assigned {background:var(--amber-light);color:var(--amber);border:1px solid rgba(200,118,10,0.2)}
+.pkv.pkv-admin .sp-uploaded {background:var(--blue-bg);color:var(--blue);border:1px solid rgba(26,79,160,0.2)}
+.pkv.pkv-admin .sp-returned {background:var(--purple-bg);color:var(--purple);border:1px solid rgba(124,58,237,0.2)}
+.pkv.pkv-admin .sp-dot {width:5px;height:5px;border-radius:50%;background:currentColor}
+.pkv.pkv-admin .recv-name {font-size:12px;font-weight:600;color:var(--ink)}
+.pkv.pkv-admin .recv-phone {font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── USER PICKER ── */
+.pkv.pkv-admin .upick-wrap {position:relative}
+.pkv.pkv-admin .upick-trigger {
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface2);border:1px solid var(--line);
+  border-radius:var(--r);padding:5px 8px;
+  font-size:12px;font-family:var(--body);color:var(--ink);
+  cursor:pointer;outline:none;white-space:nowrap;min-width:140px;
+  transition:border-color 0.15s
+}
+.pkv.pkv-admin .upick-trigger:focus, .pkv.pkv-admin .upick-trigger.open {border-color:var(--amber);box-shadow:0 0 0 3px rgba(200,118,10,0.1)}
+.pkv.pkv-admin .upick-trigger.selected {color:var(--green);border-color:rgba(26,107,60,0.3);background:var(--green-bg)}
+.pkv.pkv-admin .upick-label {flex:1;overflow:hidden;text-overflow:ellipsis}
+.pkv.pkv-admin .upick-chevron {font-size:10px;color:var(--muted);transition:transform 0.18s;flex-shrink:0}
+.pkv.pkv-admin .upick-trigger.open .upick-chevron {transform:rotate(180deg)}
+
+.pkv.pkv-admin .bulk-upick {
+  position: relative;
+}
+
+.pkv.pkv-admin .bulk-upick .upick-drop {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  left: 0 !important;
+  width: 220px !important;
+}
+.pkv.pkv-admin .upick-drop {
+  position:fixed;
+  background:var(--surface);border:1px solid var(--line2);
+  border-radius:var(--r-lg);z-index:9999;
+  box-shadow:0 8px 30px rgba(12,12,12,0.14);
+  min-width:200px;max-height:260px;
+  flex-direction:column;overflow:hidden;
+  display:none;
+}
+.pkv.pkv-admin .upick-drop.open {display:flex}
+.pkv.pkv-admin .bulk-upick {
+  position: relative;
+}
+
+.pkv.pkv-admin .bulk-upick .upick-drop {
+  position: absolute !important;
+  bottom: calc(100% + 8px) !important;
+  top: auto !important;
+  left: 0 !important;
+  width: 220px !important;
+  max-height: 260px;
+  z-index: 99999;
+}
+.pkv.pkv-admin .bulk-upick .upick-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.pkv.pkv-admin .upick-search {
+  border:none;border-bottom:1px solid var(--line);
+  background:var(--surface2);padding:8px 12px;
+  font-size:12px;font-family:var(--body);color:var(--ink);
+  outline:none;width:100%;flex-shrink:0
+}
+.pkv.pkv-admin .upick-search::placeholder {color:var(--dim)}
+.pkv.pkv-admin .upick-list {overflow-y:auto;flex:1}
+.pkv.pkv-admin .upick-opt {
+  padding:9px 14px;font-size:13px;font-family:var(--body);
+  color:var(--ink3);cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:background 0.1s
+}
+.pkv.pkv-admin .upick-opt:hover {background:var(--amber-light);color:var(--amber)}
+.pkv.pkv-admin .upick-opt.active {background:var(--green-bg);color:var(--green);font-weight:600}
+.pkv.pkv-admin .upick-opt+.upick-opt {border-top:1px solid var(--line)}
+.pkv.pkv-admin .upick-av {width:22px;height:22px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--syne);font-size:9px;font-weight:700;flex-shrink:0}
+.pkv.pkv-admin .upick-uname {font-weight:600;font-size:12px}
+.pkv.pkv-admin .upick-uid {font-family:var(--mono);font-size:10px;color:var(--muted)}
+.pkv.pkv-admin .upick-empty {padding:14px;font-size:12px;color:var(--muted);text-align:center;font-style:italic}
+.pkv.pkv-admin .upick-hidden {display:none}
+
+/* inline assign row */
+.pkv.pkv-admin .assign-row {display:flex;gap:6px;align-items:center}
+.pkv.pkv-admin .btn-assign {background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.25);border-radius:var(--r);padding:5px 10px;font-size:11px;font-weight:600;font-family:var(--body);cursor:pointer;white-space:nowrap}
+.pkv.pkv-admin .btn-assign:hover {background:#d0ead9}
+.pkv.pkv-admin .btn-reassign-sm {background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:var(--r);padding:5px 10px;font-size:11px;font-weight:500;font-family:var(--body);cursor:pointer}
+.pkv.pkv-admin .btn-reassign-sm:hover {border-color:var(--amber);color:var(--amber)}
+
+/* ── STATS ── */
+.pkv.pkv-admin .usc-card {background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;height:100%}
+.pkv.pkv-admin .usc-avatar {width:38px;height:38px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--syne);font-size:13px;font-weight:700;flex-shrink:0}
+.pkv.pkv-admin .usc-n {font-family:var(--syne);font-size:20px;font-weight:800;color:var(--ink);line-height:1}
+.pkv.pkv-admin .usc-nl {font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.pkv.pkv-admin .progress {height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:12px}
+.pkv.pkv-admin .progress-bar {background:var(--amber)}
+.pkv.pkv-admin .progress-bar.high {background:var(--green)}
+.pkv.pkv-admin .usc-rate {font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px}
+
+/* ── MAP ── */
+.pkv.pkv-admin .map-card {background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.pkv.pkv-admin .map-head {padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.pkv.pkv-admin #leaflet-map {height:460px;width:100%}
+
+/* ── CALENDAR ── */
+.pkv.pkv-admin #deliveryCalendar {display:flex;justify-content:center}
+.pkv.pkv-admin .cal-input {display:none}
+.pkv.pkv-admin .cal-sum {display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;font-size:12px;color:var(--muted)}
+.pkv.pkv-admin .sp-disabled {background:#fee2e2;color:#b91c1c;border:1px solid rgba(185,28,28,.2)}
+.pkv.pkv-admin .at-disable {background:#fee2e2;color:#b91c1c;border:1px solid rgba(185,28,28,.2)}
+.pkv.pkv-admin .btn-disable-sm {background:none;border:1px solid rgba(185,28,28,.35);color:#b91c1c;border-radius:6px;padding:3px 8px;font-size:11px;margin-top:4px;cursor:pointer}
+.pkv.pkv-admin .btn-enable-sm {background:none;border:1px solid rgba(21,128,61,.4);color:#15803d;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer}
+.pkv.pkv-admin .off-info {font-size:11px;color:#b91c1c;margin-top:4px}
+.flatpickr-day .cal-dots {position:absolute;left:0;right:0;bottom:2px;display:flex;gap:2px;justify-content:center;line-height:1}
+.flatpickr-day .cal-dots i {width:5px;height:5px;border-radius:50%;display:block}
+.flatpickr-day .cal-dots .up {background:#2563eb}.flatpickr-day .cal-dots .as {background:#d97706}.flatpickr-day .cal-dots .de {background:#16a34a}
+.flatpickr-day {position:relative}
+.pkv.pkv-admin .cal-chip {display:inline-block;font-family:var(--mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;margin:1px 2px 0 0}
+.pkv.pkv-admin .cal-chip.up {background:var(--blue-bg);color:var(--blue)}
+.pkv.pkv-admin .cal-chip.as {background:var(--amber-light);color:var(--amber)}
+.pkv.pkv-admin .cal-chip.de {background:var(--green-bg);color:var(--green)}
+.pkv.pkv-admin .day-pkt-row {padding:8px 0;border-bottom:1px solid var(--line);font-size:12px}
+.pkv.pkv-admin .day-pkt-row:last-child {border-bottom:none}
+.pkv.pkv-admin .batch-row {display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12px;flex-wrap:wrap}
+.pkv.pkv-admin .batch-row:last-child {border-bottom:none}
+
+/* ── AUDIT ── */
+.pkv.pkv-admin .audit-row {display:grid;grid-template-columns:155px 130px 1fr auto;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);transition:background 0.12s}
+.pkv.pkv-admin .audit-row:last-child {border-bottom:none}
+.pkv.pkv-admin .audit-row:hover {background:var(--surface2)}
+.pkv.pkv-admin .audit-ts {font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pkv.pkv-admin .audit-pkt {font-family:var(--mono);font-size:11px;color:var(--amber);font-weight:600}
+.pkv.pkv-admin .audit-type {display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;text-transform:uppercase;margin-top:3px}
+.pkv.pkv-admin .at-reassign {background:var(--blue-bg);color:var(--blue);border:1px solid rgba(26,79,160,0.2)}
+.pkv.pkv-admin .at-delivery {background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.2)}
+.pkv.pkv-admin .at-return {background:var(--purple-bg);color:var(--purple);border:1px solid rgba(124,58,237,0.2)}
+.pkv.pkv-admin .audit-detail {font-size:13px;color:var(--ink)}
+.pkv.pkv-admin .audit-by {font-size:11px;color:var(--dim);text-align:right;white-space:nowrap}
+
+/* ── RETURNED PACKETS info row ── */
+.pkv.pkv-admin .ret-info {
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:var(--purple-bg);border-radius:0 0 var(--r) var(--r);
+  padding:6px 12px;font-size:11px;color:var(--purple)
+}
+.pkv.pkv-admin .ret-info i {font-style:normal;font-weight:600}
+
+/* ── BULK BAR ── */
+.pkv.pkv-admin .bulk-bar {position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#111;border:1px solid #2c2c2c;border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 40px rgba(0,0,0,0.3);z-index:1050;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap}
+.pkv.pkv-admin .bulk-bar.show {transform:translateX(-50%) translateY(0);opacity:1}
+.pkv.pkv-admin .bulk-badge {font-family:var(--mono);font-size:11px;background:rgba(200,118,10,0.15);color:var(--amber-mid);border:1px solid rgba(200,118,10,0.25);border-radius:20px;padding:3px 10px}
+.pkv.pkv-admin .bulk-div {width:1px;height:20px;background:#333}
+.pkv.pkv-admin .bulk-lbl {font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#666}
+.pkv.pkv-admin .btn-bulk {background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-family:var(--syne);font-size:12px;font-weight:700;cursor:pointer}
+.pkv.pkv-admin .btn-bulk:hover {background:#b5690a}
+.pkv.pkv-admin .btn-bulk-clear {background:transparent;color:#666;border:1px solid #333;border-radius:6px;padding:7px 10px;font-family:var(--body);font-size:12px;cursor:pointer}
+.pkv.pkv-admin .btn-bulk-clear:hover {color:#ccc;border-color:#555}
+
+/* Bulk user picker dark theme */
+.pkv.pkv-admin .bulk-upick .upick-trigger {background:rgba(255,255,255,0.06);border-color:#333;color:#eee;min-width:160px}
+.pkv.pkv-admin .bulk-upick .upick-trigger.open {border-color:var(--amber-mid)}
+.pkv.pkv-admin .bulk-upick .upick-trigger.selected {background:rgba(26,107,60,0.2);border-color:rgba(26,107,60,0.4);color:#6ee7b7}
+
+/* ── Bootstrap modal overrides ── */
+.pkv.pkv-admin .modal-content {border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 20px 80px rgba(0,0,0,0.15)}
+.pkv.pkv-admin .modal-header {padding:18px 22px;border-bottom:1px solid var(--line);background:var(--surface)}
+.pkv.pkv-admin .modal-title {font-family:var(--syne);font-size:16px;font-weight:700;color:var(--ink)}
+.pkv.pkv-admin .modal-body {padding:18px 22px;background:var(--surface)}
+.pkv.pkv-admin .modal-footer {padding:14px 22px;border-top:1px solid var(--line);background:var(--surface)}
+.pkv.pkv-admin .btn-close:focus {box-shadow:none}
+.pkv.pkv-admin .modal-info {background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:16px}
+.pkv.pkv-admin .modal-info-row {display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.pkv.pkv-admin .modal-info-row:last-child {margin-bottom:0}
+.pkv.pkv-admin .modal-info-lbl {font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);min-width:72px;flex-shrink:0}
+.pkv.pkv-admin .modal-info-val {font-size:13px;font-weight:500;color:var(--ink)}
+.pkv.pkv-admin .modal-info-val.code {font-family:var(--mono);font-size:11px;color:var(--amber);background:var(--amber-light);padding:2px 7px;border-radius:4px;border:1px solid rgba(200,118,10,0.15)}
+.pkv.pkv-admin .field-lbl {font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:5px;display:block}
+.pkv.pkv-admin .field-inp {width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:9px 12px;font-family:var(--body);font-size:13px;color:var(--ink);outline:none;transition:border-color 0.15s}
+.pkv.pkv-admin .field-inp:focus {border-color:var(--amber);background:#fff;box-shadow:0 0 0 3px rgba(200,118,10,0.1)}
+.pkv.pkv-admin .btn-confirm-modal {background:var(--amber);color:#fff;border:none;border-radius:var(--r);padding:8px 20px;font-family:var(--syne);font-size:13px;font-weight:700}
+.pkv.pkv-admin .btn-confirm-modal:hover {background:#b5690a;color:#fff}
+.pkv.pkv-admin .btn-cancel-modal {background:transparent;border:1px solid var(--line);border-radius:var(--r);padding:8px 16px;font-family:var(--body);font-size:13px;color:var(--muted)}
+.pkv.pkv-admin .btn-cancel-modal:hover {border-color:var(--line2);color:var(--ink);background:transparent}
+
+/* ── EMPTY ── */
+.pkv.pkv-admin .empty-state {text-align:center;padding:48px 20px;color:var(--muted)}
+.pkv.pkv-admin .empty-state .eico {font-size:32px;margin-bottom:10px;opacity:0.4}
+
+.pkv.pkv-admin .btn-verify {
+  background:var(--green-bg);
+  color:var(--green);
+  border:1px solid rgba(26,107,60,0.25);
+  border-radius:var(--r);
+  padding:5px 12px;
+  font-size:11px;
+  font-weight:600;
+  font-family:var(--body);
+  cursor:pointer;
+  transition:background 0.15s;
+  white-space:nowrap;
+}
+.pkv.pkv-admin .btn-verify:hover {background:#c5e8d3}
+
+/* ── Flash ── */
+.pkv.pkv-admin .flash-success {background:var(--green-bg);color:var(--green);border:1px solid rgba(26,107,60,0.25);border-radius:var(--r);padding:10px 14px;font-size:13px;margin-bottom:12px}
+.pkv.pkv-admin .flash-error {background:var(--red-bg);color:var(--red);border:1px solid rgba(192,57,43,0.25);border-radius:var(--r);padding:10px 14px;font-size:13px;margin-bottom:12px}
+
+@media(max-width:768px){
+  .pkv.pkv-admin .topbar {padding:0 12px;gap:8px}
+  .pkv.pkv-admin .content {padding:12px}
+  .pkv.pkv-admin .audit-row {grid-template-columns:1fr 1fr}
+  .pkv.pkv-admin .topbar-title {display:none}
+}
+</style>
+
+<style>
+  /* Inside loggedInLayout: the layout navbar is the only sticky bar (page header scrolls away) */
+  .pkv.pkv-admin .topbar{position:relative;top:auto;z-index:20}
+  /* Phone: the filter bar wraps instead of pushing month / search / status off the screen */
+  @media (max-width:768px){
+    .pkv.pkv-admin .topbar{height:auto;flex-wrap:wrap;row-gap:8px;padding:8px 12px}
+    .pkv.pkv-admin .topbar-sep, .pkv.pkv-admin .admin-chip{display:none}
+    .pkv.pkv-admin .search-wrap{max-width:none;flex:1 1 100%;order:5}
+    .pkv.pkv-admin .csel-wrap{flex:1 1 auto}
+    .pkv.pkv-admin .csel-trigger{width:100%}
+    .pkv.pkv-admin .topbar-right{margin-left:0}
+  }
+</style>
+<div class="pkv pkv-admin">
+<!-- ══ TOPBAR ══ -->
+<div class="topbar">
+  <div class="topbar-brand">Packet<span>Ops</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-title" id="topbarTitle">Packet Management</div>
+
+  <form method="GET" action="/packet/adminPacket" style="display:flex">
+    <div class="month-pick">
+      <div class="month-pick-label">Month</div>
+      <input type="text" name="month" id="adminMonth" value="<%= curMonth %>" aria-label="Month" style="width:72px">
+    </div>
+  </form>
+
+  <div class="search-wrap">
+    <span class="search-ico">⌕</span>
+    <input type="text" id="searchInput" placeholder="Search packets…" oninput="filterTable()">
+  </div>
+
+  <!-- CUSTOM STATUS DROPDOWN -->
+  <div class="csel-wrap" id="statusDropWrap">
+    <button type="button" class="csel-trigger" id="statusTrigger" onclick="toggleStatusDrop(event)">
+      <span class="csel-label" id="statusLabel">All status</span>
+      <span class="csel-chevron">▾</span>
+    </button>
+    <div class="csel-drop" id="statusDrop">
+      <div class="csel-opt active" data-val="all"       onclick="pickStatus('all','All status',this)">
+        <span class="csel-dot" style="background:var(--dim)"></span>All status
+      </div>
+      <div class="csel-opt" data-val="DELIVERED"  onclick="pickStatus('DELIVERED','Delivered',this)">
+        <span class="csel-dot" style="background:var(--green)"></span>Delivered
+      </div>
+      <div class="csel-opt" data-val="ASSIGNED"   onclick="pickStatus('ASSIGNED','Assigned',this)">
+        <span class="csel-dot" style="background:var(--amber)"></span>Assigned
+      </div>
+      <div class="csel-opt" data-val="UPLOADED"   onclick="pickStatus('UPLOADED','Uploaded',this)">
+        <span class="csel-dot" style="background:var(--blue)"></span>Uploaded
+      </div>
+      <div class="csel-opt" data-val="RETURNED"   onclick="pickStatus('RETURNED','Returned',this)">
+        <span class="csel-dot" style="background:var(--purple)"></span>Returned
+      </div>
+      <div class="csel-opt" data-val="DISABLED"   onclick="pickStatus('DISABLED','Disabled',this)">
+        <span class="csel-dot" style="background:#b91c1c"></span>Disabled
+      </div>
+    </div>
+  </div>
+  <input type="hidden" id="statusFilter" value="all">
+
+  <div class="topbar-right">
+    <a class="btn btn-sm btn-outline-secondary" style="font-size:12px" href="/packet/report?month=<%= encodeURIComponent(curMonth) %>">Report</a>
+    <div class="admin-chip">
+      <div class="admin-av"><%= initials(userName) %></div>
+      <div class="admin-name-chip"><%= userName %></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <%- include("../partials/messages") %>
+
+  <!-- ══ UPLOAD BATCHES PANEL ══ -->
+  <div class="tcard mb-3" style="padding:14px 18px">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <strong style="font-family:var(--syne);font-size:13px">Recent Uploads — <span id="batchMonthLabel"><%= curMonth %></span></strong>
+      <button class="btn btn-sm btn-outline-secondary" style="font-size:11px" onclick="loadBatches()">↻ Refresh</button>
+      <button class="btn btn-sm" style="font-size:11px;background:var(--amber-light);color:var(--amber);border:1px solid rgba(200,118,10,0.2)"
+              onclick="runAutoAssignNow()">⚡ Run Auto-Assign Now</button>
+    </div>
+    <div id="batchList" style="font-size:12px;color:var(--muted)">Loading…</div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <a class="tab-item active" id="tab-packets" onclick="switchTab('packets',this)" href="#">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M5 8h6M5 5h6"/></svg>
+      Packets <span class="tab-badge"><%= total %></span>
+    </a>
+    <a class="tab-item" id="tab-map" onclick="switchTab('map',this)" href="#">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="3"/><path d="M8 2C5.24 2 3 4.24 3 7c0 3.25 5 9 5 9s5-5.75 5-9c0-2.76-2.24-5-5-5z"/></svg>
+      Map View
+    </a>
+    <a class="tab-item" id="tab-stats" onclick="switchTab('stats',this)" href="#">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12l4-4 3 3 5-6"/></svg>
+      Analytics
+    </a>
+    <a class="tab-item" id="tab-audit" onclick="switchTab('audit',this)" href="#">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h8M4 9h5"/><rect x="1" y="1" width="14" height="14" rx="2"/></svg>
+      Audit Log
+    </a>
+    <a class="tab-item" id="tab-calendar" onclick="switchTab('calendar',this)" href="#">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2"/><path d="M1 6h14M5 1v3M11 1v3"/></svg>
+      Calendar
+    </a>
+  </div>
+
+  <!-- ══════════ PACKETS TAB ══════════ -->
+  <div id="sec-packets">
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-2">
+        <div class="stat-card s-amber">
+          <div class="stat-label">Total</div>
+          <div class="stat-num"><%= total %></div>
+          <div class="stat-sub"><%= curMonth %></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="stat-card s-green">
+          <div class="stat-label">Delivered</div>
+          <div class="stat-num"><%= delivered %></div>
+          <div class="stat-sub"><%= rate %>% completion</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="stat-card s-red">
+          <div class="stat-label">Assigned</div>
+          <div class="stat-num"><%= assigned %></div>
+          <div class="stat-sub">Awaiting delivery</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="stat-card s-blue">
+          <div class="stat-label">Unassigned</div>
+          <div class="stat-num"><%= uploaded %></div>
+          <div class="stat-sub">Needs agent</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="stat-card s-purple">
+          <div class="stat-label">Returned</div>
+          <div class="stat-num" style="color:var(--purple)"><%= typeof returned !== 'undefined' ? returned : 0 %></div>
+          <div class="stat-sub">Back to admin</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="stat-card">
+          <div class="stat-label">Disabled</div>
+          <div class="stat-num" style="color:#b91c1c"><%= typeof disabled !== 'undefined' ? disabled : 0 %></div>
+          <div class="stat-sub">Not counted</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-hd">
+      <div class="section-title">All Packets</div>
+      <div class="section-count"><span id="visCount"><%= packets.length %></span> of <%= packets.length %></div>
+      <div class="ms-auto">
+        <button class="btn btn-sm btn-outline-secondary" style="font-size:12px" onclick="exportCSV()">↓ CSV</button>
+      </div>
+    </div>
+
+    <div class="tcard">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th style="width:36px">
+                <input class="form-check-input" type="checkbox" id="selAll" onchange="toggleAll(this)">
+              </th>
+              <th>#</th>
+              <th>Code</th>
+              <th>Name / Address</th>
+              <th>Type & Month</th>
+              <th>Assigned To</th>
+              <th>Receiver</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ MAP TAB ══════════ -->
+  <div id="sec-map" style="display:none">
+    <div class="row g-2 mb-3">
+      <div class="col-md-4">
+        <div class="stat-card s-green">
+          <div class="stat-label">With GPS</div>
+          <div class="stat-num"><%= withGPS %></div>
+          <div class="stat-sub">Pinned on map</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-card s-amber">
+          <div class="stat-label">No GPS</div>
+          <div class="stat-num"><%= withoutGPS %></div>
+          <div class="stat-sub">Offline delivery</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-card s-blue">
+          <div class="stat-label">Delivered</div>
+          <div class="stat-num"><%= delivered %></div>
+          <div class="stat-sub"><%= rate %>% of month</div>
+        </div>
+      </div>
+    </div>
+    <div class="map-card">
+      <div class="map-head">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">GPS Map — <%= curMonth %></span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--dim)"><%= withGPS %> pins</span>
+      </div>
+      <div id="leaflet-map"></div>
+    </div>
+  </div>
+
+  <!-- ══════════ STATS TAB ══════════ -->
+  <div id="sec-stats" style="display:none">
+    <div class="section-hd mb-3">
+      <div class="section-title">Agent Performance — <%= curMonth %></div>
+      <div class="section-count"><%= agents.length %> agents</div>
+    </div>
+
+    <% if (agents.length === 0) { %>
+      <div class="empty-state"><div class="eico">👥</div><p>No agents assigned packets this month</p></div>
+    <% } else { %>
+      <div class="row g-3 mb-3">
+        <% agents.forEach(function(a) {
+          var r = a.assigned ? Math.round(a.delivered * 100 / a.assigned) : 0;
+        %>
+        <div class="col-md-4">
+          <div class="usc-card">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="usc-avatar"><%= initials(a.name) %></div>
+              <div>
+                <div style="font-family:var(--syne);font-size:14px;font-weight:700;color:var(--ink)"><%= a.name %></div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">ID #<%= a.id %></div>
+              </div>
+            </div>
+            <div class="row g-0 text-center">
+              <div class="col"><div class="usc-n"><%= a.assigned %></div><div class="usc-nl">Assigned</div></div>
+              <div class="col"><div class="usc-n" style="color:var(--green)"><%= a.delivered %></div><div class="usc-nl">Delivered</div></div>
+              <div class="col"><div class="usc-n" style="color:var(--amber)"><%= a.assigned - a.delivered %></div><div class="usc-nl">Pending</div></div>
+            </div>
+            <div class="progress mt-2">
+              <div class="progress-bar <%= r >= 75 ? 'high' : '' %>" style="width:<%= r %>%"></div>
+            </div>
+            <div class="usc-rate"><%= r %>% rate</div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+
+      <div class="section-hd"><div class="section-title">Breakdown</div></div>
+      <div class="tcard">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr><th>Agent</th><th>Assigned</th><th>Delivered</th><th>Pending</th><th>Rate</th></tr>
+            </thead>
+            <tbody>
+              <% agents.forEach(function(a) {
+                var r = a.assigned ? Math.round(a.delivered * 100 / a.assigned) : 0;
+              %>
+              <tr>
+                <td>
+                  <div class="user-chip">
+                    <div class="user-av"><%= initials(a.name) %></div>
+                    <div class="user-name"><%= a.name %></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--mono);font-size:12px"><%= a.assigned %></span></td>
+                <td><span style="font-family:var(--mono);font-size:12px;color:var(--green)"><%= a.delivered %></span></td>
+                <td><span style="font-family:var(--mono);font-size:12px;color:var(--amber)"><%= a.assigned - a.delivered %></span></td>
+                <td>
+                  <span class="status-pill <%= r >= 75 ? 'sp-delivered' : 'sp-assigned' %>">
+                    <span class="sp-dot"></span><%= r %>%
+                  </span>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- ══════════ AUDIT TAB ══════════ -->
+  <div id="sec-audit" style="display:none">
+    <div class="section-hd mb-3">
+      <div class="section-title">Audit Log</div>
+      <% if (auditTotal > 0) { %>
+        <div class="section-count"><%= auditTotal %> events</div>
+      <% } %>
+    </div>
+
+    <div class="tcard">
+      <% if (auditEvents.length === 0) { %>
+        <div class="empty-state"><div class="eico">📋</div><p>No audit events yet</p></div>
+      <% } else { %>
+        <% auditEvents.forEach(function(ev) {
+          var isReassign = ev.eventType === 'REASSIGN';
+          var isReturn   = ev.eventType === 'RETURN';
+          var isOff      = ev.eventType === 'DISABLE' || ev.eventType === 'ENABLE';
+          var ts = ev.eventAt ? new Date(ev.eventAt).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+          var pktCode = ev.PacketCode || ev.packetCode || '—';
+        %>
+        <div class="audit-row">
+          <div class="audit-ts"><%= ts %></div>
+          <div>
+            <div class="audit-pkt"><%= pktCode %></div>
+            <span class="audit-type <%= isOff ? 'at-disable' : isReassign ? 'at-reassign' : isReturn ? 'at-return' : 'at-delivery' %>">
+              <%= ev.eventType %>
+            </span>
+          </div>
+          <div class="audit-detail">
+            <% if (isOff) { %>
+              <span style="font-weight:600"><%= ev.eventType === 'DISABLE' ? 'Disabled' : 'Enabled' %></span>
+              <% if (ev.reason) { %> · <span style="color:var(--muted)"><%= ev.reason %></span><% } %>
+            <% } else if (isReassign) { %>
+              <span style="color:var(--muted)"><%= ev.oldUser || '—' %></span>
+              → <strong><%= ev.newUser || '—' %></strong>
+              <% if (ev.reason) { %> · <span style="color:var(--muted)"><%= ev.reason %></span><% } %>
+            <% } else if (isReturn) { %>
+              <span style="color:var(--purple);font-weight:600">Returned by <%= ev.doneBy || '—' %></span>
+              <% if (ev.reason) { %> · <span style="color:var(--muted)"><%= ev.reason %></span><% } %>
+            <% } else { %>
+              To <strong><%= ev.receiverName || '—' %></strong>
+              <% if (ev.receiverPhone) { %> · <span style="font-family:var(--mono);font-size:12px"><%= ev.receiverPhone %></span><% } %>
+            <% } %>
+            <br><span style="font-size:11px;color:var(--muted)"><%= ev.packetName || '' %></span>
+          </div>
+          <div class="audit-by">by <%= ev.doneBy || '—' %></div>
+        </div>
+        <% }) %>
+
+        <% if (auditPages > 1) { %>
+        <div class="d-flex align-items-center gap-2 justify-content-end p-3" style="border-top:1px solid var(--line)">
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">Page <%= auditPage %> / <%= auditPages %></span>
+          <% if (auditPage > 1) { %>
+            <a href="/packet/adminPacket?month=<%= curMonth %>&tab=audit&auditPage=<%= auditPage - 1 %>"
+               class="btn btn-sm btn-outline-secondary" style="font-family:var(--mono);font-size:11px">← Prev</a>
+          <% } %>
+          <% if (auditPage < auditPages) { %>
+            <a href="/packet/adminPacket?month=<%= curMonth %>&tab=audit&auditPage=<%= auditPage + 1 %>"
+               class="btn btn-sm btn-outline-secondary" style="font-family:var(--mono);font-size:11px">Next →</a>
+          <% } %>
+        </div>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- ══════════ CALENDAR TAB ══════════ -->
+  <div id="sec-calendar" style="display:none">
+    <div class="row g-2">
+      <div class="col-md-8">
+        <div class="tcard" style="padding:16px">
+          <div id="deliveryCalendar"><input type="text" class="cal-input" id="calInput" aria-label="Calendar"></div>
+          <div class="cal-sum" id="calSum"></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="tcard" style="padding:16px;min-height:200px">
+          <div class="section-title mb-2" id="dayPanelTitle">Select a day</div>
+          <div id="dayPanelList" style="font-size:12px;color:var(--muted)">Click a date to see packet activity. Dots: blue uploaded, amber assigned, green delivered.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ══ BULK ASSIGN BAR ══ -->
+<div class="bulk-bar" id="bulkBar">
+  <span class="bulk-badge" id="bulkCount">0 selected</span>
+  <div class="bulk-div"></div>
+  <span class="bulk-lbl">Assign to</span>
+
+  <form id="bulkForm" method="POST" action="/packet/assignBulk" style="display:flex;align-items:center;gap:10px">
+    <input type="hidden" name="month" value="<%= curMonth %>">
+    <input type="hidden" id="bulkUserId" name="userId">
+
+    <div class="upick-wrap bulk-upick" id="bulkPickWrap">
+      <button type="button" class="upick-trigger" id="bulkPickTrigger" onclick="toggleUpick('bulk', event)">
+        <span class="upick-label" id="bulkPickLabel">Select agent…</span>
+        <span class="upick-chevron">▾</span>
+      </button>
+      <div class="upick-drop" id="upick-drop-bulk">
+        <input type="text" class="upick-search" placeholder="Search agent…" oninput="filterUpick('bulk',this.value)">
+        <div class="upick-list" id="upick-list-bulk"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-bulk" onclick="injectBulkIds(event)">⚡ Assign All</button>
+  </form>
+
+  <button class="btn-bulk-clear" id="bulkDisableBtn" onclick="openDisable([...selected])">Disable</button>
+  <button class="btn-bulk-clear" onclick="clearSel()">Deselect</button>
+</div>
+
+<!-- ══ DISABLE MODAL ══ -->
+<div class="modal fade" id="disableModal" tabindex="-1" aria-labelledby="disableModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="disableModalLabel">Disable packets</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px" id="disableWhat"></p>
+        <p style="font-size:13px;color:var(--muted)">Staff will no longer see them. Nothing is deleted and they can be enabled again.</p>
+        <label class="field-lbl" for="disableReason">Why? *</label>
+        <input type="text" class="field-inp" id="disableReason" maxlength="255" placeholder="e.g. Wrong sheet uploaded">
+        <div class="alert alert-danger mt-2 mb-0 d-none" id="disableErr" style="font-size:13px"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel-modal btn" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger btn-sm" id="disableGo" onclick="confirmDisable()">Disable</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REASSIGN MODAL ══ -->
+<div class="modal fade" id="reassignModal" tabindex="-1" aria-labelledby="reassignModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reassignModalLabel">Reassign Packet</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="/packet/reassign" id="reassignForm">
+        <input type="hidden" name="packetId" id="m_packetId">
+        <input type="hidden" name="month"    value="<%= curMonth %>">
+        <input type="hidden" name="newUserId" id="m_newUserIdHidden">
+
+        <div class="modal-body">
+          <div class="modal-info">
+            <div class="modal-info-row">
+              <div class="modal-info-lbl">Code</div>
+              <div class="modal-info-val code" id="m_code">—</div>
+            </div>
+            <div class="modal-info-row">
+              <div class="modal-info-lbl">Name</div>
+              <div class="modal-info-val" id="m_name">—</div>
+            </div>
+            <div class="modal-info-row">
+              <div class="modal-info-lbl">Current</div>
+              <div class="modal-info-val" id="m_current" style="color:var(--muted)">—</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="field-lbl">New Agent *</label>
+            <div class="upick-wrap" id="modalPickWrap">
+              <button type="button" class="upick-trigger" style="min-width:100%;font-size:13px;padding:9px 12px" id="modalPickTrigger" onclick="toggleUpick('modal', event)">
+                <span class="upick-label" id="modalPickLabel">Select agent…</span>
+                <span class="upick-chevron">▾</span>
+              </button>
+              <div class="upick-drop" id="upick-drop-modal">
+                <input type="text" class="upick-search" placeholder="Search agent…" oninput="filterUpick('modal',this.value)">
+                <div class="upick-list" id="upick-list-modal"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-0">
+            <label class="field-lbl" for="m_reason">Reason (optional)</label>
+            <input type="text" class="field-inp" id="m_reason" name="reason" placeholder="e.g. Agent on leave">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel-modal btn" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-confirm-modal btn" onclick="return validateReassign()">Confirm Reassign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<script>
+/* ── Server data ─────────────────────────────────────────────────────── */
+/* ★ safeJson(): data from the database cannot end this script block */
+const packets      = <%- (typeof safeJson === 'function' ? safeJson(packets || []) : JSON.stringify(packets || []).replace(/</g, '\\u003c')) %>;
+const currentMonth = <%- (typeof safeJson === 'function' ? safeJson(curMonth) : JSON.stringify(curMonth).replace(/</g, '\\u003c')) %>;   /* ★ month printed with safeJson() — a crafted ?month= cannot run as script */
+const agents       = <%- (typeof safeJson === 'function' ? safeJson(agents || []) : JSON.stringify(agents || []).replace(/</g, '\\u003c')) %>;
+const allUsers     = <%- (typeof safeJson === 'function' ? safeJson(users || []) : JSON.stringify(users || []).replace(/</g, '\\u003c')) %>;
+
+/* ── Bootstrap modal ─────────────────────────────────────────────────── */
+let reassignModalInstance = null;
+document.addEventListener('DOMContentLoaded', function () {
+  reassignModalInstance = new bootstrap.Modal(document.getElementById('reassignModal'));
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeTab = urlParams.get('tab');
+  if (activeTab && ['packets','map','stats','audit','calendar'].includes(activeTab)) switchTabById(activeTab);
+  renderUpickList('bulk');
+  renderUpickList('modal');
+  pkvMonthPicker('#adminMonth', function (m) { if (m !== currentMonth) document.getElementById('adminMonth').form.submit(); });
+});
+
+/* ── Utility ─────────────────────────────────────────────────────────── */
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function userName(id){ const u = allUsers.find(x => x.id === id); return u ? u.name : ('#' + id); }
+function ini(n){ if(!n)return'?'; return n.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function fmtDate(d){
+  if(!d)return'—';
+  try{ return new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  catch{ return String(d); }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   CUSTOM STATUS DROPDOWN
+────────────────────────────────────────────────────────────────────────*/
+function toggleStatusDrop(e){
+  e && e.stopPropagation();
+  const drop = document.getElementById('statusDrop');
+  const btn  = document.getElementById('statusTrigger');
+  const isOpen = drop.classList.contains('open');
+  closeAllDropdowns();
+  if(!isOpen){
+    drop.classList.add('open');
+    btn.classList.add('open');
+    const r = btn.getBoundingClientRect();
+    drop.style.top  = (r.bottom + 4) + 'px';
+    drop.style.left = r.left + 'px';
+  }
+}
+
+function pickStatus(val, label, el){
+  document.getElementById('statusFilter').value = val;
+  document.getElementById('statusLabel').textContent = label;
+  document.querySelectorAll('#statusDrop .csel-opt').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('statusDrop').classList.remove('open');
+  document.getElementById('statusTrigger').classList.remove('open');
+  filterTable();
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   USER PICKER
+────────────────────────────────────────────────────────────────────────*/
+const upickState = { bulk: null, modal: null };
+
+function renderUpickList(key, search=''){
+  const list = document.getElementById('upick-list-' + key);
+  const q = search.toLowerCase().trim();
+  const filtered = allUsers.filter(a => !q || a.name.toLowerCase().includes(q) || String(a.id).includes(q));
+  if(!filtered.length){
+    list.innerHTML = '<div class="upick-empty">No agents found</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(a => {
+    const isActive = upickState[key] && upickState[key].id === a.id;
+    return `<div class="upick-opt ${isActive?'active':''}" onclick="pickUser('${key}',${a.id},userName(${a.id}))">
+      <div class="upick-av">${ini(a.name)}</div>
+      <div>
+        <div class="upick-uname">${esc(a.name)}</div>
+        <div class="upick-uid">ID #${a.id}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterUpick(key, val){
+  renderUpickList(key, val);
+}
+
+function toggleUpick(key, e){
+  e && e.stopPropagation();
+
+  const drop = document.getElementById('upick-drop-' + key);
+  const btn  = document.getElementById(
+    key === 'bulk' ? 'bulkPickTrigger' : 'modalPickTrigger'
+  );
+
+  const isOpen = drop.classList.contains('open');
+  closeAllDropdowns();
+
+  if (!isOpen) {
+    drop.classList.add('open');
+    btn.classList.add('open');
+
+    drop.querySelector('.upick-search').value = '';
+    renderUpickList(key);
+
+    if (key !== 'bulk') {
+  const r = btn.getBoundingClientRect();
+  drop.style.top = (r.bottom + 4) + 'px';
+  drop.style.left = r.left + 'px';
+  drop.style.width = Math.max(r.width, 200) + 'px';
+}
+
+    setTimeout(() => drop.querySelector('.upick-search').focus(), 60);
+  }
+}
+
+function pickUser(key, id, name){
+  upickState[key] = { id, name };
+  const labelEl = document.getElementById(key === 'bulk' ? 'bulkPickLabel' : 'modalPickLabel');
+  const trigEl  = document.getElementById(key === 'bulk' ? 'bulkPickTrigger' : 'modalPickTrigger');
+  labelEl.textContent = name + ' (#' + id + ')';
+  trigEl.classList.add('selected');
+  if(key === 'bulk') document.getElementById('bulkUserId').value = id;
+  if(key === 'modal') document.getElementById('m_newUserIdHidden').value = id;
+  document.getElementById('upick-drop-' + key).classList.remove('open');
+  trigEl.classList.remove('open');
+  renderUpickList(key);
+}
+
+/* ── Close all dropdowns on outside click ──────────────────────────── */
+function closeAllDropdowns(){
+  document.querySelectorAll('.csel-drop.open, .upick-drop.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.csel-trigger.open, .upick-trigger.open').forEach(b => b.classList.remove('open'));
+}
+document.addEventListener('click', function(e){
+  const inStatus = document.getElementById('statusDropWrap')?.contains(e.target);
+  const inBulk   = document.getElementById('bulkPickWrap')?.contains(e.target);
+  const inModal  = document.getElementById('modalPickWrap')?.contains(e.target);
+  if(!inStatus && !inBulk && !inModal) closeAllDropdowns();
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeAllDropdowns(); });
+
+/* ── Table render ────────────────────────────────────────────────────── */
+let selected = new Set();
+let lastRows = [];
+
+function renderTable(){
+  const search = ($('#searchInput').val()||'').toLowerCase().trim();
+  const status  = document.getElementById('statusFilter').value;
+
+  const rows = lastRows = packets.filter(p => {
+    const mf = status==='all' ? p.Status!=='DISABLED' : p.Status===status;
+    const ms = !search || [p.PacketCode,p.Name,p.Address,p.assignedUser,p.ReceiverName,p.ReceiverPhone]
+      .filter(Boolean).join(' ').toLowerCase().includes(search);
+    return mf && ms;
+  });
+
+  $('#visCount').text(rows.length);
+
+  if(!rows.length){
+    $('#tableBody').html('<tr><td colspan="9"><div class="empty-state"><div class="eico">📭</div><p>No packets match</p></div></td></tr>');
+    return;
+  }
+
+  const pillMap = { DELIVERED:'sp-delivered', ASSIGNED:'sp-assigned', UPLOADED:'sp-uploaded', RETURNED:'sp-returned', DISABLED:'sp-disabled' };
+
+  $('#tableBody').html(rows.map(p => {
+    const isDone     = p.Status==='DELIVERED';
+    const isReturned = p.Status==='RETURNED';
+    const isOff      = p.Status==='DISABLED';
+    const isSel      = selected.has(p.Id);
+
+    const userCell = p.assignedUser
+      ? `<div class="user-chip"><div class="user-av">${ini(p.assignedUser)}</div><div class="user-name">${esc(p.assignedUser)}</div></div>`
+      : `<div class="user-chip"><div class="user-av unassigned">?</div><div class="unassigned-txt">Unassigned</div></div>`;
+
+    const recvCell = p.ReceiverName
+      ? `<div class="recv-name">${esc(p.ReceiverName)}</div><div class="recv-phone">${esc(p.ReceiverPhone||'—')}</div>`
+      : `<span style="color:var(--dim);font-size:12px">—</span>`;
+
+    const retRow = isReturned && p.returnReason
+      ? `<div class="ret-info"><span>↩ ${esc(p.returnedByName||'Returned')}:</span> <i>${esc(p.returnReason)}</i>${p.returnNote ? ` &nbsp;·&nbsp; ${esc(p.returnNote)}` : ''}</div>`
+      : '';
+
+    const offBtn = `<button type="button" class="btn-disable-sm" onclick="openDisable([${p.Id}])">Disable</button>`;
+    let actionCell;
+    if(isOff){
+      actionCell = `<button type="button" class="btn-enable-sm" onclick="enablePkt(${p.Id})">Enable</button>
+        <div class="off-info">${esc(p.disabledReason||'')}${p.disabledByName ? ' — ' + esc(p.disabledByName) : ''}</div>`;
+    } else if(isDone){
+      const isVerified = p.Verified;
+      actionCell = isVerified
+        ? `<span class="status-pill sp-delivered"><span class="sp-dot"></span>Verified</span>`
+        : `<form method="POST" action="/packet/verifyPacket" style="display:inline">
+            <input type="hidden" name="packetId" value="${p.Id}">
+            <input type="hidden" name="month" value="${currentMonth}">
+            <button type="submit" class="btn-verify">✓ Verify</button>
+          </form>`;
+    } else if(isReturned){
+      actionCell = `
+        <form method="POST" action="/packet/assignPackets" class="assign-row">
+          <input type="hidden" name="month"    value="${currentMonth}">
+          <input type="hidden" name="packetId" value="${p.Id}">
+          <input type="hidden" class="inline-uid-hidden" name="userId" value="">
+          <div class="upick-wrap" id="inlinepick-wrap-${p.Id}">
+            <button type="button" class="upick-trigger" style="min-width:130px;font-size:11px;padding:5px 8px"
+                    id="inlinepick-trigger-${p.Id}"
+                    onclick="toggleInlinePick(${p.Id},event)">
+              <span class="upick-label" id="inlinepick-label-${p.Id}">Re-assign…</span>
+              <span class="upick-chevron">▾</span>
+            </button>
+            <div class="upick-drop" id="upick-drop-inline-${p.Id}">
+              <input type="text" class="upick-search" placeholder="Search…" oninput="filterInlinePick(${p.Id},this.value)">
+              <div class="upick-list" id="upick-list-inline-${p.Id}"></div>
+            </div>
+          </div>
+          <button type="submit" class="btn-assign" onclick="return checkInlinePick(${p.Id})">Assign</button>
+        </form>${retRow}${offBtn}`;
+    } else if(p.assignedUser){
+      actionCell = `<button type="button" class="btn-reassign-sm" onclick="openReassign(${p.Id})">⇄ Reassign</button> ${offBtn}`;
+    } else {
+      actionCell = `
+        <form method="POST" action="/packet/assignPackets" class="assign-row">
+          <input type="hidden" name="month"    value="${currentMonth}">
+          <input type="hidden" name="packetId" value="${p.Id}">
+          <input type="hidden" class="inline-uid-hidden" name="userId" value="">
+          <div class="upick-wrap" id="inlinepick-wrap-${p.Id}">
+            <button type="button" class="upick-trigger" style="min-width:130px;font-size:11px;padding:5px 8px"
+                    id="inlinepick-trigger-${p.Id}"
+                    onclick="toggleInlinePick(${p.Id},event)">
+              <span class="upick-label" id="inlinepick-label-${p.Id}">Select agent…</span>
+              <span class="upick-chevron">▾</span>
+            </button>
+            <div class="upick-drop" id="upick-drop-inline-${p.Id}">
+              <input type="text" class="upick-search" placeholder="Search…" oninput="filterInlinePick(${p.Id},this.value)">
+              <div class="upick-list" id="upick-list-inline-${p.Id}"></div>
+            </div>
+          </div>
+          <button type="submit" class="btn-assign" onclick="return checkInlinePick(${p.Id})">Assign</button>
+        </form>${offBtn}`;
+    }
+
+    return `<tr id="row-${p.Id}">
+      <td>${(!isDone&&!isOff) ? `<input class="form-check-input row-cb" type="checkbox" data-id="${p.Id}" ${isSel?'checked':''} onchange="toggleRow(this)">` : ''}</td>
+      <td><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">#${p.Id}</span></td>
+      <td><span class="pkt-code">${esc(p.PacketCode)}</span></td>
+      <td>
+        <div class="pkt-name">${esc(p.Name||'—')}</div>
+        ${p.Address?`<div class="pkt-addr">${esc(p.Address)}</div>`:''}
+      </td>
+      <td>
+        <div class="pkt-type">${esc(p.Type||'—')}</div>
+        <div class="pkt-addr">${esc(p.Month||currentMonth)}</div>
+      </td>
+      <td>${userCell}</td>
+      <td>${recvCell}</td>
+      <td><span class="status-pill ${pillMap[p.Status]||'sp-uploaded'}"><span class="sp-dot"></span>${esc(p.Status)}</span></td>
+      <td>${actionCell}</td>
+    </tr>`;
+  }).join(''));
+
+  rows.filter(p => p.Status==='UPLOADED' || p.Status==='RETURNED').forEach(p => {
+    renderInlinePickList(p.Id);
+  });
+}
+
+function filterTable(){ renderTable(); }
+
+/* ── Inline user pickers (per row) ──────────────────────────────────── */
+const inlinePickState = {};
+
+function renderInlinePickList(pid, search=''){
+  const list = document.getElementById('upick-list-inline-' + pid);
+  if(!list) return;
+  const q = (search||'').toLowerCase().trim();
+  const filtered = allUsers.filter(a => !q || a.name.toLowerCase().includes(q) || String(a.id).includes(q));
+  if(!filtered.length){ list.innerHTML='<div class="upick-empty">No agents</div>'; return; }
+  const cur = inlinePickState[pid];
+  list.innerHTML = filtered.map(a => `
+    <div class="upick-opt ${cur&&cur.id===a.id?'active':''}" onclick="pickInlineUser(${pid},${a.id},userName(${a.id}),event)">
+      <div class="upick-av">${ini(a.name)}</div>
+      <div>
+        <div class="upick-uname">${esc(a.name)}</div>
+        <div class="upick-uid">ID #${a.id}</div>
+      </div>
+    </div>`).join('');
+}
+
+function filterInlinePick(pid, val){
+  renderInlinePickList(pid, val);
+}
+
+function toggleInlinePick(pid, e){
+  e && e.stopPropagation();
+  const drop = document.getElementById('upick-drop-inline-' + pid);
+  const btn  = document.getElementById('inlinepick-trigger-' + pid);
+  const isOpen = drop.classList.contains('open');
+  closeAllDropdowns();
+  if(!isOpen){
+    drop.classList.add('open');
+    btn.classList.add('open');
+    drop.querySelector('.upick-search').value = '';
+    renderInlinePickList(pid);
+    const r = btn.getBoundingClientRect();
+    drop.style.top  = (r.bottom + 4) + 'px';
+    drop.style.left = r.left + 'px';
+    drop.style.width = Math.max(r.width, 200) + 'px';
+    setTimeout(() => drop.querySelector('.upick-search').focus(), 60);
+  }
+}
+
+function pickInlineUser(pid, id, name, e){
+  e && e.stopPropagation();
+  inlinePickState[pid] = { id, name };
+  document.getElementById('inlinepick-label-' + pid).textContent = name;
+  const trig = document.getElementById('inlinepick-trigger-' + pid);
+  trig.classList.add('selected');
+  const wrap = document.getElementById('inlinepick-wrap-' + pid);
+  const form = wrap.closest('form');
+  form.querySelector('.inline-uid-hidden').value = id;
+  document.getElementById('upick-drop-inline-' + pid).classList.remove('open');
+  trig.classList.remove('open');
+  renderInlinePickList(pid);
+}
+
+function checkInlinePick(pid){
+  if(!inlinePickState[pid]){
+    alert('Please select an agent first.');
+    return false;
+  }
+  return true;
+}
+
+/* ── Checkbox ─────────────────────────────────────────────────────────── */
+function toggleRow(cb){
+  const id = parseInt($(cb).data('id'));
+  cb.checked ? selected.add(id) : selected.delete(id);
+  updateBulkBar();
+}
+function toggleAll(cb){
+  lastRows.filter(p => p.Status!=='DELIVERED' && p.Status!=='DISABLED').forEach(p => {   /* only what the filter shows */
+    cb.checked ? selected.add(p.Id) : selected.delete(p.Id);
+  });
+  renderTable();
+  updateBulkBar();
+}
+function clearSel(){ selected.clear(); renderTable(); updateBulkBar(); }
+function updateBulkBar(){
+  const n = selected.size;
+  $('#bulkCount').text(`${n} selected`);
+  $('#bulkBar').toggleClass('show', n>0);
+}
+
+/* ── Disable / enable ─────────────────────────────────────────────────── */
+let disableIds = [];
+function postJson(url, body){
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(Object.assign({month:currentMonth},body))})
+    .then(r=>r.json().catch(()=>({success:false,error:'Please log in again.'})))
+    .then(j=>{ if(!j.success&&!j.error) j.error=j.message; return j; })
+    .catch(()=>({success:false,error:'No connection — nothing was changed.'}));
+}
+let disableBatchId = null;
+function openDisable(ids, batchId){
+  if(!ids.length && !batchId) return;
+  disableIds = ids; disableBatchId = batchId || null;
+  const codes = ids.map(id=>{const p=packets.find(x=>x.Id===id);return p?p.PacketCode:id;});
+  document.getElementById('disableWhat').textContent = batchId
+    ? `Every packet of upload #${batchId} that is not delivered yet.`
+    : `${ids.length} packet(s): ${codes.slice(0,4).join(', ')}${codes.length>4?' and '+(codes.length-4)+' more':''}`;
+  document.getElementById('disableReason').value='';
+  document.getElementById('disableErr').classList.add('d-none');
+  document.getElementById('disableGo').disabled=false;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('disableModal')).show();
+}
+function confirmDisable(){
+  const why=document.getElementById('disableReason').value.trim(), err=document.getElementById('disableErr'), btn=document.getElementById('disableGo');
+  if(why.length<3){err.textContent='Write why the packet is being disabled.';err.classList.remove('d-none');return;}
+  btn.disabled=true;
+  (disableBatchId ? postJson('/packet/disableBatch',{batchId:disableBatchId,reason:why}) : postJson('/packet/disablePackets',{packetIds:disableIds,reason:why})).then(r=>{
+    if(r.success){location.reload();return;}
+    btn.disabled=false;err.textContent=r.error||'Something went wrong.';err.classList.remove('d-none');
+  });
+}
+function enablePkt(id){
+  postJson('/packet/enablePackets',{packetIds:[id]}).then(r=>{ if(r.success) location.reload(); else alert(r.error||'Something went wrong.'); });
+}
+
+/* ── Bulk assign ─────────────────────────────────────────────────────── */
+function injectBulkIds(e){
+  if(selected.size===0){ e.preventDefault(); alert('Select at least one packet first.'); return; }
+  if(!document.getElementById('bulkUserId').value){ e.preventDefault(); alert('Please select an agent.'); return; }
+  const form = document.getElementById('bulkForm');
+  $(form).find('input[name="packetIds[]"]').remove();
+  selected.forEach(id => $('<input>').attr({type:'hidden',name:'packetIds[]',value:id}).appendTo(form));
+}
+
+/* ── Reassign modal ──────────────────────────────────────────────────── */
+function openReassign(id){
+  const p = packets.find(x => x.Id===id);
+  if(!p) return;
+  $('#m_code').text(p.PacketCode||'—');
+  $('#m_name').text(p.Name||'—');
+  $('#m_current').text(p.assignedUser||'Unassigned');
+  $('#m_packetId').val(id);
+  $('#m_newUserIdHidden').val('');
+  $('#m_reason').val('');
+  upickState['modal'] = null;
+  document.getElementById('modalPickLabel').textContent = 'Select agent…';
+  document.getElementById('modalPickTrigger').classList.remove('selected');
+  renderUpickList('modal');
+  reassignModalInstance.show();
+}
+
+function validateReassign(){
+  if(!document.getElementById('m_newUserIdHidden').value){
+    alert('Please select a new agent.');
+    return false;
+  }
+  return true;
+}
+
+/* ── Leaflet map ─────────────────────────────────────────────────────── */
+let leafletMap = null;
+function initMap(){
+  if(leafletMap){ leafletMap.invalidateSize(); return; }
+  leafletMap = L.map('leaflet-map').setView([25.5941,85.1376],11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors',maxZoom:18,
+  }).addTo(leafletMap);
+  const greenIcon = L.divIcon({
+    className:'',
+    html:`<div style="width:12px;height:12px;border-radius:50%;background:#1a6b3c;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
+    iconSize:[12,12],iconAnchor:[6,6],
+  });
+  const pins = packets.filter(p=>p.Status==='DELIVERED'&&p.Latitude&&p.Longitude);
+  if(pins.length){
+    const bounds=[];
+    pins.forEach(p=>{
+      const lat=parseFloat(p.Latitude),lng=parseFloat(p.Longitude);
+      if(isNaN(lat)||isNaN(lng))return;
+      bounds.push([lat,lng]);
+      L.marker([lat,lng],{icon:greenIcon})
+        .bindPopup(`<b style="font-family:monospace;color:#c8760a">${esc(p.PacketCode)}</b><br><b>${esc(p.Name||'')}</b><br><br>Receiver: ${esc(p.ReceiverName||'—')}<br>Phone: ${esc(p.ReceiverPhone||'—')}<br>At: ${fmtDate(p.DeliveredAt)}`,{maxWidth:220})
+        .addTo(leafletMap);
+    });
+    if(bounds.length) leafletMap.fitBounds(bounds,{padding:[50,50]});
+  }
+}
+
+/* ── CSV export ───────────────────────────────────────────────────────── */
+function exportCSV(){
+  const cols=['Id','PacketCode','Name','Address','Status','Month','assignedUser','ReceiverName','ReceiverPhone','DeliveredAt'];
+  const rows=[cols.join(',')];
+  const cell = v => { let t = String(v??''); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return `"${t.replace(/"/g,'""')}"`; };  /* ★ no Excel formulas from packet data */
+  lastRows.forEach(p=>rows.push(cols.map(c=>cell(p[c])).join(',')));   /* what is on screen */
+  $('<a>').attr({href:URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'})),download:`packets-${currentMonth}.csv`})[0].click();
+}
+
+/* ── Upload batches panel ────────────────────────────────────────────── */
+async function loadBatches(){
+  const month = currentMonth;
+  const el = document.getElementById('batchList');
+  let data;
+  try { data = await (await fetch(`/packet/uploadBatches?month=${encodeURIComponent(month)}`, {headers:{Accept:'application/json'}})).json(); }
+  catch { el.innerHTML = '<em>Could not load the uploads. Press Refresh.</em>'; return; }
+
+  if(!data.success || !data.batches.length){
+    el.innerHTML = '<em>No uploads recorded for this month yet.</em>';
+    return;
+  }
+
+  el.innerHTML = data.batches.map(b => {
+    const canDelete = (b.deliveredCount == 0 && b.returnedCount == 0);
+    return `
+      <div class="batch-row">
+        <span style="font-family:var(--mono)">#${b.Id}</span>
+        <span>${esc(b.FileName || 'upload')}</span>
+        <span>${Number(b.RowCount)||0} rows · ${Number(b.AutoAssignedCount)||0} auto-assigned</span>
+        <span>by ${esc(b.FirstName||'')} ${esc(b.LastName||'')}</span>
+        <span style="color:var(--dim)">${new Date(b.CreatedAt).toLocaleString('en-IN')}</span>
+        ${canDelete
+          ? `<button class="btn btn-sm btn-outline-danger ms-auto" style="font-size:11px" onclick="deleteBatchAction(${b.Id})">🗑 Delete</button>`
+          : `<span class="ms-auto" style="color:var(--red);font-size:11px">🔒 Has delivered/returned packets — cannot delete</span>`}
+        ${(Number(b.currentPacketCount)-Number(b.deliveredCount)-Number(b.disabledCount))>0 ? `<button class="btn btn-sm btn-outline-secondary" style="font-size:11px" onclick="openDisable([],${b.Id})">Disable undelivered</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function deleteBatchAction(batchId){
+  if(!confirm('Delete this entire upload batch? This removes all its packets and assignments. This cannot be undone.')) return;
+  const res = await fetch('/packet/deleteBatch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ batchId })
+  });
+  const data = await res.json();
+  if(data.success){
+    alert(`Deleted ${data.deletedPackets} packet(s).`);
+    location.reload();
+  } else {
+    alert('Delete failed: ' + (data.error || 'unknown error'));
+  }
+}
+
+function runAutoAssignNow(){
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/packet/runAutoAssign';
+  const inp = document.createElement('input');
+  inp.type = 'hidden'; inp.name = 'month'; inp.value = currentMonth;
+  form.appendChild(inp);
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/* ── Calendar (Flatpickr) ─────────────────────────────────────────────── */
+let calPicker = null;
+let calSummary = {};
+let calLoadedFor = '';
+async function loadCalMonth(fp){
+  const m = fp.currentYear + '-' + String(fp.currentMonth + 1).padStart(2,'0');
+  if(m === calLoadedFor) return;
+  calLoadedFor = m;
+  let summary = {};
+  try { const r = await (await fetch(`/packet/calendarSummary?month=${m}`,{headers:{Accept:'application/json'}})).json(); summary = r.summary || {}; }
+  catch { document.getElementById('calSum').textContent = 'Could not load this month.'; return; }
+  if(m !== calLoadedFor) return;                 /* user moved on while this was loading */
+  calSummary = summary;
+  fp.redraw();
+  const t = {uploaded:0,assigned:0,delivered:0};
+  Object.values(summary).forEach(s=>{t.uploaded+=s.uploaded;t.assigned+=s.assigned;t.delivered+=s.delivered;});
+  document.getElementById('calSum').textContent = `${m}: ${t.uploaded} uploaded · ${t.assigned} assigned · ${t.delivered} delivered`;
+}
+function initCalendar(){
+  if(calPicker) return;
+  calPicker = flatpickr('#calInput',{
+    inline:true, disableMobile:true, dateFormat:'Y-m-d',
+    onDayCreate:function(sel,str,fp,dayElem){
+      const s = calSummary[fp.formatDate(dayElem.dateObj,'Y-m-d')];
+      if(!s) return;
+      dayElem.title = `${s.uploaded} uploaded, ${s.assigned} assigned, ${s.delivered} delivered`;
+      const dots = document.createElement('span');
+      dots.className='cal-dots';
+      dots.innerHTML=(s.uploaded?'<i class="up"></i>':'')+(s.assigned?'<i class="as"></i>':'')+(s.delivered?'<i class="de"></i>':'');
+      dayElem.appendChild(dots);
+    },
+    onMonthChange:function(a,b,fp){loadCalMonth(fp);},
+    onYearChange:function(a,b,fp){loadCalMonth(fp);},
+    onChange:function(dates,str){ if(str) openDayPanel(str); }
+  });
+  calPicker.jumpToDate(currentMonth+'-01');
+  loadCalMonth(calPicker);
+}
+
+async function openDayPanel(day){
+  document.getElementById('dayPanelTitle').textContent = day;
+  const list = document.getElementById('dayPanelList');
+  list.innerHTML = 'Loading…';
+
+  const [up, as, de] = await Promise.all([
+    fetch(`/packet/calendarDay?day=${day}&type=uploaded`).then(r=>r.json()),
+    fetch(`/packet/calendarDay?day=${day}&type=assigned`).then(r=>r.json()),
+    fetch(`/packet/calendarDay?day=${day}&type=delivered`).then(r=>r.json()),
+  ]);
+
+  const section = (title, rows) => {
+    if(!rows || !rows.length) return '';
+    return `<div style="margin-bottom:12px">
+      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">${title} (${rows.length})</div>
+      ${rows.map(p => `<div class="day-pkt-row"><span class="pkt-code">${esc(p.PacketCode)}</span> ${esc(p.Name||'')}</div>`).join('')}
+    </div>`;
+  };
+
+  const html = section('Uploaded', up.packets) + section('Assigned', as.packets) + section('Delivered', de.packets);
+  list.innerHTML = html || '<em>No activity this day.</em>';
+}
+
+/* ── Tab switching ───────────────────────────────────────────────────── */
+const SECTIONS=['packets','map','stats','audit','calendar'];
+const TITLES={packets:'Packet Management',map:'Map View',stats:'Analytics',audit:'Audit Log',calendar:'Calendar'};
+function switchTab(tab,el){ el&&el.preventDefault&&el.preventDefault(); switchTabById(tab); }
+function switchTabById(tab){
+  SECTIONS.forEach(s=>$('#sec-'+s).hide());
+  $('.tab-item').removeClass('active');
+  $('#sec-'+tab).show();
+  $('#tab-'+tab).addClass('active');
+  $('#topbarTitle').text(TITLES[tab]||'');
+  if(tab==='map') setTimeout(initMap,60);
+  if(tab==='calendar') setTimeout(initCalendar,60);
+}
+
+/* ── Boot ─────────────────────────────────────────────────────────────── */
+renderTable();
+loadBatches();
+</script>
+</div>

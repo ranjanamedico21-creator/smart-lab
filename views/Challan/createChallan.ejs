@@ -1,0 +1,600 @@
+
+
+<style>
+  :root {
+    --ch-primary: #185FA5;
+    --ch-primary-light: #E6F1FB;
+    --ch-primary-mid: #378ADD;
+    --ch-success: #3B6D11;
+    --ch-success-light: #EAF3DE;
+    --ch-danger: #A32D2D;
+    --ch-danger-light: #FCEBEB;
+    --ch-warn: #854F0B;
+    --ch-warn-light: #FAEEDA;
+    --ch-surface: #ffffff;
+    --ch-surface2: #F8FAFC;
+    --ch-surface3: #F1F5F9;
+    --ch-border: rgba(0,0,0,0.08);
+    --ch-text: #1E293B;
+    --ch-text2: #64748B;
+    --ch-text3: #94A3B8;
+    --ch-radius: 12px;
+    --ch-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+    --ch-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    --ch-shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 10px -5px rgba(0,0,0,0.02);
+  }
+
+  .challan-page { font-family: 'Sora', sans-serif; color: var(--ch-text); }
+
+  /* ── Breadcrumb ── */
+  .ch-breadcrumb {
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    padding: 12px 20px;
+  }
+  .ch-breadcrumb .breadcrumb { margin: 0; }
+  .ch-breadcrumb .breadcrumb-item a {
+    color: var(--ch-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .ch-breadcrumb .breadcrumb-item.active {
+    color: var(--ch-text2);
+    font-size: 13px;
+  }
+
+  /* ── Card ── */
+  .ch-card {
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    overflow: hidden;
+    box-shadow: var(--ch-shadow-lg);
+  }
+  .ch-card-header {
+    background: linear-gradient(135deg, var(--ch-primary) 0%, var(--ch-primary-mid) 100%);
+    padding: 24px 28px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .ch-card-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .ch-card-header h4 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Form Controls ── */
+  .ch-form-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--ch-text2);
+    margin-bottom: 6px;
+  }
+  .ch-form-control {
+    height: 42px;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Sora', sans-serif;
+    color: var(--ch-text);
+    padding: 0 12px;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  .ch-form-control:focus {
+    border-color: var(--ch-primary);
+    box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+  }
+  .ch-form-control::placeholder {
+    color: var(--ch-text3);
+  }
+
+  /* ── Tom Select (Challan) ── */
+  #challanForm .ts-wrapper { padding: 0 !important; }
+  #challanForm .ts-wrapper.single .ts-control {
+    min-height: 42px !important;
+    height: 42px !important;
+    border: 1.5px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    padding: 0 32px 0 12px !important;
+    font-size: 13px !important;
+    font-family: 'Sora', sans-serif !important;
+    background: #fff !important;
+    color: var(--ch-text) !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    transition: all 0.15s !important;
+  }
+  /* Default state — NEVER red on load */
+  #challanForm .ts-wrapper.single .ts-control,
+  #challanForm .ts-wrapper.single:not(.is-invalid) .ts-control {
+    border-color: #E2E8F0 !important;
+  }
+  #challanForm .ts-wrapper.single:focus-within .ts-control,
+  #challanForm .ts-wrapper.single.focus .ts-control {
+    border-color: var(--ch-primary) !important;
+    box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1) !important;
+  }
+  /* Invalid state — only applied via JS on submit */
+  #challanForm .ts-wrapper.single.is-invalid .ts-control {
+    border-color: var(--ch-danger) !important;
+    background: var(--ch-danger-light) !important;
+  }
+  #challanForm .ts-wrapper.single.is-invalid:focus-within .ts-control {
+    box-shadow: 0 0 0 3px rgba(163, 45, 45, 0.1) !important;
+  }
+  #challanForm .invalid-feedback {
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+  }
+  #challanForm .ts-wrapper.is-invalid ~ .invalid-feedback,
+  #challanForm .form-control.is-invalid ~ .invalid-feedback {
+    display: block;
+  }
+
+  /* ── Stock Rows ── */
+  .ch-stock-row {
+    background: var(--ch-surface);
+    border: 1px solid var(--ch-border);
+    border-radius: var(--ch-radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .ch-stock-row:hover {
+    box-shadow: var(--ch-shadow-md);
+    border-color: rgba(24, 95, 165, 0.15);
+  }
+  .ch-stock-row .row { align-items: flex-end; }
+  .ch-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--ch-primary-light);
+    color: var(--ch-primary);
+    margin-top: 8px;
+  }
+  .ch-stock-badge i { font-size: 12px; }
+
+  /* ── Buttons ── */
+  .ch-btn {
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Sora', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+    border: none;
+    cursor: pointer;
+  }
+  .ch-btn-primary {
+    background: var(--ch-primary);
+    color: #fff;
+  }
+  .ch-btn-primary:hover {
+    background: var(--ch-primary-mid);
+    transform: translateY(-1px);
+    box-shadow: var(--ch-shadow-md);
+  }
+  .ch-btn-outline {
+    background: #fff;
+    color: var(--ch-primary);
+    border: 1.5px solid #BFDBFE;
+  }
+  .ch-btn-outline:hover {
+    background: var(--ch-primary-light);
+    border-color: var(--ch-primary);
+  }
+  .ch-btn-success {
+    background: var(--ch-success-light);
+    color: var(--ch-success);
+    border: 1.5px solid #C0DD97;
+  }
+  .ch-btn-success:hover {
+    background: #C0DD97;
+    color: #173404;
+  }
+  .ch-btn-danger {
+    background: #fff;
+    color: var(--ch-danger);
+    border: 1.5px solid #F7C1C1;
+    width: 42px;
+    padding: 0;
+  }
+  .ch-btn-danger:hover {
+    background: var(--ch-danger-light);
+    border-color: var(--ch-danger);
+  }
+
+  /* ── Section Title ── */
+  .ch-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ch-text2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ch-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--ch-border);
+    margin-left: 8px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .ch-stock-row { padding: 16px; }
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+
+
+<section class="pb-5 challan-page">
+  <div class="container-fluid">
+    <%- include("../partials/messages") %>
+
+    <div class="ch-card">
+      <div class="ch-card-header">
+        <h4><i class="bi bi-cart-plus"></i> Create New Challan</h4>
+      </div>
+
+      <div class="card-body p-4">
+        <form action="/billing/createChallan" method="POST" id="challanForm" novalidate>
+
+          <!-- Customer + Date -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="ch-form-label">Select Customer</label>
+              <select id="customerId" name="customerId">
+                <option value="">Choose a customer</option>
+                <% customers.forEach(function(c){ %>
+                <option value="<%= c.Id %>"><%= c.CustomerName %></option>
+                <% }) %>
+              </select>
+              <div class="invalid-feedback">Please select a customer.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="ch-form-label">Challan Date</label>
+              <input type="text" id="ChallanDate" name="ChallanDate"
+                class="form-control ch-form-control" placeholder="dd-mm-yyyy"
+                autocomplete="off" readonly
+                value="<%= typeof ChallanDate != 'undefined' ? ChallanDate : '' %>">
+              <div class="invalid-feedback">Please select a date.</div>
+            </div>
+          </div>
+
+          <!-- Stock rows -->
+          <div class="ch-section-title">
+            <i class="bi bi-box-seam"></i> Sale Items
+          </div>
+          <div id="stockRowsContainer" class="mb-3">
+            <!-- rows injected by JS -->
+          </div>
+
+          <div class="mb-4">
+            <button type="button" id="addRow" class="ch-btn ch-btn-success">
+              <i class="bi bi-plus-circle"></i>Add Another Item
+            </button>
+          </div>
+
+          <div class="text-center pt-2">
+            <button type="submit" class="ch-btn ch-btn-primary px-5">
+              <i class="bi bi-check2-circle"></i>Complete Challan
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%# Build stock list once on the server %>
+<script>
+var CHALLAN_STOCKS = [
+  <% stocks.forEach(function(s, idx){ %>
+  {
+    id:       "<%= s.Id %>",
+    label:    "<%= ((s.KnownAs || '') + ' ' + (s.ProductName || '')).trim().replace(/\\/g,'\\\\').replace(/"/g,'\\"') %> — Batch: <%= (s.BatchNumber||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"') %> (Qty: <%= s.Quantity %> | Exp: <%= s.ExpiryDate %> | IGST: <%= s.IGSTPercentage %>%)",
+    igst:     "<%= s.IGSTPercentage %>",
+    productId:"<%= s.ProductId %>"
+  }<%= idx < stocks.length - 1 ? ',' : '' %>
+  <% }) %>
+];
+
+var rowCounter = 0;
+
+// ── Build one stock row ───────────────────────────────────────────
+function buildStockRow(idx, isFirst) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ch-stock-row';
+    wrap.dataset.rowIdx = idx;
+
+    // Row grid
+    var row = document.createElement('div');
+    row.className = 'row g-3';
+
+    // --- Stock Select ---
+    var sel = document.createElement('select');
+    sel.id = 'stockId_' + idx;
+    sel.name = 'stockId[]';
+    var blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = 'Select stock item';
+    sel.appendChild(blank);
+    CHALLAN_STOCKS.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.label;
+        opt.dataset.igst = s.igst;
+        opt.dataset.productId = s.productId;
+        sel.appendChild(opt);
+    });
+
+    var colStock = document.createElement('div');
+    colStock.className = 'col-lg-4 col-md-4';
+    var lblStock = document.createElement('label');
+    lblStock.className = 'ch-form-label';
+    lblStock.textContent = 'Stock Item';
+    colStock.appendChild(lblStock);
+    colStock.appendChild(sel);
+    var fbStock = document.createElement('div');
+    fbStock.className = 'invalid-feedback';
+    fbStock.textContent = 'Please select a stock item.';
+    colStock.appendChild(fbStock);
+
+    // Selected label
+    var selectedLabel = document.createElement('div');
+    selectedLabel.className = 'ch-stock-badge';
+    selectedLabel.style.display = 'none';
+    selectedLabel.innerHTML = '<i class="bi bi-info-circle"></i><span class="label-text"></span>';
+    colStock.appendChild(selectedLabel);
+
+    // --- Quantity ---
+    var colQty = document.createElement('div');
+    colQty.className = 'col-lg-3 col-md-3';
+    colQty.innerHTML =
+        '<label class="ch-form-label">Quantity</label>' +
+        '<input type="number" id="quantitySold_' + idx + '" name="quantitySold[]" ' +
+        '       class="form-control ch-form-control" placeholder="Enter qty" min="1" step="1">' +
+        '<div class="invalid-feedback">Enter a valid quantity (min 1).</div>';
+
+    // --- CGST ---
+    var colCgst = document.createElement('div');
+    colCgst.className = 'col-lg-2 col-md-2';
+    colCgst.innerHTML =
+        '<label class="ch-form-label">CGST (%)</label>' +
+        '<input type="number" id="cgst_' + idx + '" name="cgst[]" ' +
+        '       class="form-control ch-form-control" placeholder="CGST" step="0.01">' +
+        '<div class="invalid-feedback">Enter CGST.</div>';
+
+    // --- SGST ---
+    var colSgst = document.createElement('div');
+    colSgst.className = 'col-lg-2 col-md-2';
+    colSgst.innerHTML =
+        '<label class="ch-form-label">SGST (%)</label>' +
+        '<input type="number" id="sgst_' + idx + '" name="sgst[]" ' +
+        '       class="form-control ch-form-control" placeholder="SGST" step="0.01">' +
+        '<div class="invalid-feedback">Enter SGST.</div>';
+
+    // --- Remove ---
+    var colDel = document.createElement('div');
+    colDel.className = 'col-lg-1 col-md-1 d-flex justify-content-end';
+    if (!isFirst) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ch-btn ch-btn-danger remove-row';
+        btn.title = 'Remove item';
+        btn.innerHTML = '<i class="bi bi-trash"></i>';
+        colDel.appendChild(btn);
+    }
+
+    row.appendChild(colStock);
+    row.appendChild(colQty);
+    row.appendChild(colCgst);
+    row.appendChild(colSgst);
+    row.appendChild(colDel);
+    wrap.appendChild(row);
+    return wrap;
+}
+
+// ── Init Tom Select on a stock select ────────────────────────────
+function initStockSelect(el) {
+    if (el.tomselect) return;
+    var ts = new TomSelect(el, {
+        allowEmptyOption: true,
+        minLength: 0,
+        maxOptions: 500,
+        dropdownParent: 'body',
+        onChange: function(val) {
+            var wrap = el.closest('.ch-stock-row');
+            if (!wrap) return;
+
+            var badge = wrap.querySelector('.ch-stock-badge');
+            var labelText = wrap.querySelector('.ch-stock-badge .label-text');
+            var opt = el.options[el.selectedIndex];
+
+            // Remove invalid state on change
+            var tsWrapper = wrap.querySelector('.ts-wrapper');
+            if (tsWrapper) tsWrapper.classList.remove('is-invalid');
+
+            if (val && opt) {
+                var igst = parseFloat(opt.dataset.igst) || 0;
+                var half = (igst / 2).toFixed(2);
+                var cgstEl = wrap.querySelector('input[name="cgst[]"]');
+                var sgstEl = wrap.querySelector('input[name="sgst[]"]');
+                if (cgstEl) { cgstEl.value = half; cgstEl.classList.remove('is-invalid'); }
+                if (sgstEl) { sgstEl.value = half; sgstEl.classList.remove('is-invalid'); }
+                if (badge) badge.style.display = 'inline-flex';
+                if (labelText) labelText.textContent = opt.textContent.trim();
+            } else {
+                if (badge) badge.style.display = 'none';
+                if (labelText) labelText.textContent = '';
+            }
+        }
+    });
+}
+
+// ── Add a row ─────────────────────────────────────────────────────
+function addStockRow(isFirst) {
+    var row = buildStockRow(rowCounter, isFirst);
+    document.getElementById('stockRowsContainer').appendChild(row);
+    initStockSelect(row.querySelector('select'));
+    rowCounter++;
+}
+
+// ── Remove row ────────────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.remove-row');
+    if (!btn) return;
+    var wrap = btn.closest('.ch-stock-row');
+    if (wrap) {
+        wrap.style.opacity = '0';
+        wrap.style.transform = 'translateX(20px)';
+        setTimeout(function() { wrap.remove(); }, 200);
+    }
+});
+
+// ── Form validation ───────────────────────────────────────────────
+document.getElementById('challanForm').addEventListener('submit', function(e) {
+    var valid = true;
+
+    // Customer
+    var custWrapper = document.querySelector('#customerId').closest('.ts-wrapper');
+    if (!document.getElementById('customerId').value) {
+        if (custWrapper) custWrapper.classList.add('is-invalid');
+        valid = false;
+    } else {
+        if (custWrapper) custWrapper.classList.remove('is-invalid');
+    }
+
+    // Date
+    var dateEl = document.getElementById('ChallanDate');
+    if (!dateEl.value) {
+        dateEl.classList.add('is-invalid');
+        valid = false;
+    } else {
+        dateEl.classList.remove('is-invalid');
+    }
+
+    // Stock rows
+    document.querySelectorAll('.ch-stock-row').forEach(function(row) {
+        var sel = row.querySelector('select[name="stockId[]"]');
+        var qty = row.querySelector('input[name="quantitySold[]"]');
+        var cgst = row.querySelector('input[name="cgst[]"]');
+        var sgst = row.querySelector('input[name="sgst[]"]');
+        var tsWrapper = row.querySelector('.ts-wrapper');
+
+        if (!sel.value) {
+            if (tsWrapper) tsWrapper.classList.add('is-invalid');
+            valid = false;
+        } else {
+            if (tsWrapper) tsWrapper.classList.remove('is-invalid');
+        }
+
+        if (!qty.value || Number(qty.value) < 1) {
+            qty.classList.add('is-invalid');
+            valid = false;
+        } else {
+            qty.classList.remove('is-invalid');
+        }
+
+        if (!cgst.value) {
+            cgst.classList.add('is-invalid');
+            valid = false;
+        } else {
+            cgst.classList.remove('is-invalid');
+        }
+
+        if (!sgst.value) {
+            sgst.classList.add('is-invalid');
+            valid = false;
+        } else {
+            sgst.classList.remove('is-invalid');
+        }
+    });
+
+    if (!valid) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+});
+
+// ── Clear invalid on input ────────────────────────────────────────
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('ch-form-control')) {
+        e.target.classList.remove('is-invalid');
+    }
+});
+
+// ── Init on load ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    // Flatpickr
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr('#ChallanDate', {
+            dateFormat: 'd-m-Y',
+            defaultDate: 'today',
+            disableMobile: true
+        });
+    }
+
+    // Customer Tom Select
+    var custEl = document.getElementById('customerId');
+    if (custEl) {
+        new TomSelect(custEl, {
+            allowEmptyOption: true,
+            minLength: 0,
+            dropdownParent: 'body'
+        });
+    }
+
+    // First stock row
+    addStockRow(true);
+
+    // Add row button
+    document.getElementById('addRow').addEventListener('click', function() {
+        addStockRow(false);
+    });
+});
+</script>

@@ -1,0 +1,195 @@
+<style>
+  :root {
+    --brand:#185FA5; --brand-soft:#E6F1FB; --brand-text:#0C447C;
+    --surface:#ffffff; --surface-alt:#F8F9FB;
+    --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+    --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+    --warning-bg:#FAEEDA; --warning-text:#854F0B;
+    --info-bg:#E6F1FB;    --info-text:#185FA5;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+    --shadow-card:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px rgba(0,0,0,0.08);
+  }
+
+  .cl-wrapper  { padding:16px 0 40px; }
+  .cl-card     { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); overflow:hidden; margin-bottom:16px; }
+
+  /* Header */
+  .cl-card-header  { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+  .cl-header-left  { display:flex; align-items:center; gap:12px; }
+  .cl-header-icon  { width:36px; height:36px; background:var(--brand-soft); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--brand); font-size:16px; flex-shrink:0; }
+  .cl-header-title { font-size:15px; font-weight:600; color:var(--text-primary); margin:0; line-height:1.2; }
+  .cl-header-sub   { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+  .cl-count-pill   { font-size:11px; font-weight:500; padding:2px 10px; border-radius:99px; background:var(--surface-alt); border:1px solid var(--border); color:var(--text-secondary); }
+
+  /* Add button */
+  .cl-btn-add { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:var(--brand); color:#fff; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; transition:background .15s; }
+  .cl-btn-add:hover { background:var(--brand-text); color:#fff; }
+
+  /* Section */
+  .cl-section      { padding:20px 24px; }
+  .cl-section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .cl-section-title{ font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:7px; }
+
+  /* Table */
+  .cl-table       { width:100%; border-collapse:collapse; }
+  .cl-table thead th { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary); padding:0 14px 10px; border-bottom:1px solid var(--border-strong); text-align:left; white-space:nowrap; }
+  .cl-table thead th:last-child { text-align:right; }
+  .cl-table tbody td { padding:12px 14px; font-size:13px; color:var(--text-primary); border-bottom:1px solid var(--border); vertical-align:middle; }
+  .cl-table tbody tr:last-child td { border-bottom:none; }
+  .cl-table tbody tr:hover { background:var(--surface-alt); }
+
+  /* Edit button */
+  .cl-btn-edit { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--surface); color:var(--brand); font-size:12px; font-weight:500; text-decoration:none; transition:all .15s; }
+  .cl-btn-edit:hover { background:var(--brand-soft); border-color:var(--brand); color:var(--brand); }
+
+  /* Index number */
+  .cl-idx { color:var(--text-hint); font-size:12px; }
+
+  /* No data */
+  .cl-no-data { display:flex; align-items:center; gap:8px; padding:12px 16px; background:var(--warning-bg); border:1px solid rgba(133,79,11,.15); border-radius:var(--radius-sm); font-size:13px; color:var(--warning-text); }
+
+  /* Pagination */
+  .cl-pagination { display:flex; align-items:center; justify-content:center; gap:6px; padding:16px 24px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .cl-page-btn   { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 10px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--surface); font-size:12.5px; color:var(--text-secondary); cursor:pointer; transition:all .15s; text-decoration:none; }
+  .cl-page-btn:hover     { border-color:var(--brand); color:var(--brand); background:var(--brand-soft); }
+  .cl-page-btn.active    { background:var(--brand); border-color:var(--brand); color:#fff; font-weight:600; }
+  .cl-page-btn.disabled  { opacity:.4; pointer-events:none; }
+</style>
+
+<div class="cl-wrapper">
+  <div class="cl-card">
+
+    <!-- Header -->
+    <div class="cl-card-header">
+      <div class="cl-header-left">
+        <div class="cl-header-icon"><i class="bi bi-tags"></i></div>
+        <div>
+          <p class="cl-header-title">Category List</p>
+          <p class="cl-header-sub">Manage all test / service categories</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="cl-count-pill"><%= categoryDetails.length %> categories</span>
+        <a href="/category/addCategory" class="cl-btn-add">
+          <i class="bi bi-plus-lg"></i> Add Category
+        </a>
+      </div>
+    </div>
+
+    <!-- Table section -->
+    <div class="cl-section">
+
+      <%- include("./partials/messages"); %>
+
+      <% if (!categoryDetails.length) { %>
+        <div class="cl-no-data">
+          <i class="bi bi-info-circle"></i> No categories found. Click <strong>Add Category</strong> to create one.
+        </div>
+      <% } else { %>
+
+        <div style="overflow-x:auto;">
+          <table class="cl-table">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Category Name</th>
+                <th>Created By</th>
+                <th>Created On</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody class="pagination-loop">
+              <% let i = 1; categoryDetails.forEach(function(category) { %>
+              <tr>
+                <td class="cl-idx"><%= i++ %></td>
+                <td>
+                  <span style="font-weight:500;display:flex;align-items:center;gap:7px;">
+                    <span style="width:7px;height:7px;border-radius:50%;background:var(--brand);flex-shrink:0;display:inline-block;"></span>
+                    <%= category.Name %>
+                  </span>
+                </td>
+                <td style="color:var(--text-secondary);">
+                  <i class="bi bi-person" style="color:var(--text-hint);margin-right:4px;"></i>
+                  <%= category.FirstName %> <%= category.LastName %>
+                </td>
+                <td style="color:var(--text-secondary);white-space:nowrap;">
+                  <i class="bi bi-calendar3" style="color:var(--text-hint);margin-right:4px;"></i>
+                  <%= category.CreatedOn %>
+                </td>
+                <td style="text-align:right;">
+                  <a href="/category/editCategory/<%= category.Id %>" class="cl-btn-edit">
+                    <i class="bi bi-pencil"></i> Edit
+                  </a>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+      <% } %>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="cl-pagination" aria-label="Category pagination">
+      <a class="cl-page-btn disabled" id="clPrevBtn" href="#">
+        <i class="bi bi-chevron-left"></i> Prev
+      </a>
+      <span id="clPageNumbers" style="display:flex;gap:6px;flex-wrap:wrap;"></span>
+      <a class="cl-page-btn" id="clNextBtn" href="#">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    </nav>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const ROWS_PER_PAGE = 15;
+    const tbody = document.querySelector('.pagination-loop');
+    if (!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length <= ROWS_PER_PAGE) {
+      document.querySelector('.cl-pagination').style.display = 'none';
+      return;
+    }
+
+    let currentPage = 1;
+    const totalPages = Math.ceil(rows.length / ROWS_PER_PAGE);
+
+    function showPage(p) {
+      currentPage = Math.min(Math.max(1, p), totalPages);
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      rows.forEach((r, i) => r.style.display = (i >= start && i < start + ROWS_PER_PAGE) ? '' : 'none');
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const prev    = document.getElementById('clPrevBtn');
+      const next    = document.getElementById('clNextBtn');
+      const numWrap = document.getElementById('clPageNumbers');
+
+      prev.classList.toggle('disabled', currentPage === 1);
+      next.classList.toggle('disabled', currentPage === totalPages);
+      prev.onclick = e => { e.preventDefault(); if (currentPage > 1) showPage(currentPage - 1); };
+      next.onclick = e => { e.preventDefault(); if (currentPage < totalPages) showPage(currentPage + 1); };
+
+      numWrap.innerHTML = '';
+      let start = Math.max(1, currentPage - 2);
+      let end   = Math.min(totalPages, start + 4);
+      if (end - start < 4) start = Math.max(1, end - 4);
+
+      for (let p = start; p <= end; p++) {
+        const a = document.createElement('a');
+        a.className   = 'cl-page-btn' + (p === currentPage ? ' active' : '');
+        a.textContent = p;
+        a.href = '#';
+        a.onclick = e => { e.preventDefault(); showPage(p); };
+        numWrap.appendChild(a);
+      }
+    }
+
+    showPage(1);
+  })();
+</script>

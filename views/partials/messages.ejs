@@ -1,0 +1,52 @@
+<% 
+// Function to normalize different error formats into an array of strings
+function normalizeErrors(errors) {
+    if (!errors) return [];
+
+    if (typeof errors === 'string') {
+        return [errors]; // Convert single string to array
+    }
+
+    if (Array.isArray(errors)) {
+        return errors.map(err => err.message || err.msg || JSON.stringify(err)); 
+        // Prioritize 'message', then 'msg', otherwise stringify the object
+    }
+
+    if (typeof errors === 'object' && errors.message) {
+        return [errors.message]; // Handle a single error object
+    }
+
+    return [JSON.stringify(errors)]; // Fallback for unknown structures
+}
+
+// Define alerts
+const alerts = typeof notifications !== 'undefined' ? notifications : [];
+
+// Render all alerts
+alerts.forEach(function(alert) {
+    renderAlert(alert.type, normalizeErrors(alert.messages), alert.icon,alert.alertDismissible);
+});
+
+// Handle validation errors separately
+if (typeof errors !== 'undefined' && errors.length > 0) {
+    renderAlert('danger', normalizeErrors(errors), 'bi-exclamation-triangle-fill',true);
+}
+%>
+
+<% function renderAlert(type, messages, icon , alertDismissible) { %>
+    <% if (messages && messages.length > 0) { %>
+        <div class="row mt-3">
+            <div class="col">
+                <% messages.forEach(error => { %>
+                    <div class="alert alert-<%= type %> <% if(alertDismissible){%>alert-dismissible <%}%> fade show d-flex align-items-center" role="alert">
+                        <i class="bi <%= icon %> flex-shrink-0 me-2"></i> 
+                        <div>
+                            <%- error %>
+                        </div>
+                       <%if(alertDismissible) {%> <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> <%}%>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    <% } %>
+<% } %>

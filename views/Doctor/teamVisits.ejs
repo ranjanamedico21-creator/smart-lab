@@ -1,0 +1,524 @@
+<%
+  var T = (typeof team !== 'undefined' && team) ? team : [];
+  var S = (typeof summary !== 'undefined' && summary) ? summary : {};
+  var P = (typeof pending !== 'undefined' && pending) ? pending : [];
+  var R = (typeof roi !== 'undefined' && roi) ? roi : { rows: [], from: '', to: '' };
+  var U = (typeof users !== 'undefined' && users) ? users : [];
+  var activeTab = (typeof tab !== 'undefined' && ['day','pins','roi','doctors','settings'].indexOf(tab) !== -1) ? tab : 'day';
+  var SET = (typeof settings !== 'undefined' && settings) ? settings : { photoMode: 'required' };
+  var map = function (lat, lng) { return 'https://www.google.com/maps?q=' + lat + ',' + lng; };
+  var km  = function (m) { m = Number(m) || 0; return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : m + ' m'; };
+  var ST  = { verified: ['✓ At clinic', 'ok'], far: ['Far from clinic', 'bad'], new_location: ['New clinic pin', 'info'], weak_gps: ['Weak GPS', 'warn'], no_gps: ['No GPS', 'gray'] };
+  var RV  = { approved: ['Verified', 'ok'], rejected: ['Rejected', 'bad'], pending: ['Needs review', 'warn'] };
+  var OC  = { met: 'Met', not_available: 'Not available', left_material: 'Left material', follow_up: 'Follow-up', other: 'Other' };
+  var FL  = {
+    gps_static:      ['Possible fake GPS — location did not move at all', 'bad'],
+    reused_location: ['Possible fake GPS — exact same point as an earlier visit', 'bad'],
+    fast_travel:     ['Too fast between visits', 'bad'],
+    checkout_far:    ['Punched out somewhere else', 'bad'],
+    old_photo:       ['Photo was not taken just now', 'bad'],
+    checkout_no_gps: ['No GPS at punch-out', 'warn'],
+    no_photo:        ['No photo', 'warn'],
+    photo_file:      ['Photo uploaded from files, not the live camera', 'warn'],
+    not_assigned:    ['Not his assigned doctor (covering)', 'info']
+  };
+  var BD = (typeof board !== 'undefined' && board) ? board : null;
+  var rupee = function (v) { return '₹' + (Number(v) || 0).toLocaleString('en-IN'); };
+  var qs = function (o) { return Object.keys(o).filter(function (k) { return o[k] !== '' && o[k] != null; }).map(function (k) { return k + '=' + encodeURIComponent(o[k]); }).join('&'); };
+%>
+<script>
+  (function () { if (!document.querySelector('meta[name="viewport"]')) { var m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width, initial-scale=1'; document.head.appendChild(m); } })();
+</script>
+<style>
+  .tv{--line:#e8ebf3;--ink:#101828;--ink2:#475467;--ink3:#98a2b3;--pri:#3056d3;--pris:#eef2ff;--ok:#0f7b55;--oks:#e7f6ef;--bad:#c0362c;--bads:#fdeeec;--warn:#b45309;--warns:#fff5e6;--info:#0e7490;--infos:#e7f6f9;
+      max-width:1320px;margin:0 auto;padding:6px 0 40px;color:var(--ink)}
+  .tv h1{font-size:1.35rem;font-weight:700;margin:0}
+  .tv-card{background:#fff;border:1px solid var(--line);border-radius:16px}
+  .tv-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}
+  .tv-stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .tv-stat b{font-size:1.25rem;display:block}.tv-stat span{font-size:.74rem;color:var(--ink3)}
+  .tv-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto}
+  .tv-tabs a{padding:9px 14px;font-weight:600;font-size:.88rem;color:var(--ink3);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+  .tv-tabs a.on{color:var(--pri);border-bottom-color:var(--pri)}
+  .tv-tabs .cnt{background:var(--bads);color:var(--bad);border-radius:99px;font-size:.68rem;padding:1px 7px;margin-left:4px}
+  .tv-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+  .tv-filter .form-control,.tv-filter .form-select{height:40px;border-radius:10px;border-color:var(--line);font-size:.9rem}
+  .mrb{margin-bottom:14px;overflow:hidden}
+  .mrb-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line);background:#fafbfe}
+  .mrb-av{width:40px;height:40px;border-radius:12px;background:var(--pris);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .tg{font-size:.7rem;font-weight:600;border-radius:99px;padding:3px 9px;background:#f2f4f7;color:var(--ink2);white-space:nowrap;display:inline-block}
+  .tg.ok{background:var(--oks);color:var(--ok)}.tg.bad{background:var(--bads);color:var(--bad)}.tg.warn{background:var(--warns);color:var(--warn)}.tg.info{background:var(--infos);color:var(--info)}
+  .vrow{display:grid;grid-template-columns:96px 1fr 1.2fr 1.3fr 170px;gap:12px;padding:12px 14px;border-bottom:1px solid #f0f2f8;align-items:start}
+  .vrow:last-child{border-bottom:0}
+  .vrow.sus{background:#fffafa}
+  .vrow.done-ok{background:#fbfdfc}
+  .vphoto{width:96px;height:96px;border-radius:12px;object-fit:cover;background:#f2f4f7;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:.7rem;text-align:center;cursor:zoom-in}
+  .vsmall{font-size:.78rem;color:var(--ink2)}
+  .vnote{white-space:pre-wrap;font-size:.82rem;color:var(--ink2);margin-top:4px}
+  .vact{display:flex;flex-direction:column;gap:6px}
+  .vact .btn{font-weight:600}
+  .tv-t{width:100%;border-collapse:collapse;font-size:.85rem}
+  .tv-t th{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;background:#fbfbfd}
+  .tv-t td{padding:10px 12px;border-bottom:1px solid #f0f2f8;vertical-align:top}
+  .tv-t tr.flag td{background:#fffafa}
+  .tv-empty{padding:36px;text-align:center;color:var(--ink2)}
+  @media (max-width:991.98px){ .tv-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .vrow{grid-template-columns:84px 1fr;gap:10px} .vphoto{width:84px;height:84px}
+    .vrow > .c-loc,.vrow > .c-note,.vrow > .vact{grid-column:1 / -1}
+    .vact{flex-direction:row} .vact .btn{flex:1}
+    .tv-t thead{display:none} .tv-t,.tv-t tbody,.tv-t tr,.tv-t td{display:block;width:100%}
+    .tv-t tr{padding:10px 14px;border-bottom:6px solid #f4f6fb} .tv-t td{border:0;padding:3px 0}
+    .tv-t td[data-l]::before{content:attr(data-l) ': ';font-size:.68rem;font-weight:700;color:var(--ink3);text-transform:uppercase} }
+</style>
+
+<div class="tv">
+  <%- include("../partials/messages") %>
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div><h1>Team visits</h1><div class="small text-secondary"><%= dateLabel %></div></div>
+    <a href="/schedule/getSchedule" class="btn btn-light border btn-sm"><i class="bi bi-phone"></i> My visits</a>
+  </div>
+
+  <div class="tv-tabs mt-3">
+    <a href="?<%= qs({ tab: 'day', date: date }) %>" class="<%= activeTab === 'day' ? 'on' : '' %>">Visit review<% if (S.pendingReview) { %><span class="cnt"><%= S.pendingReview %></span><% } %></a>
+    <a href="?<%= qs({ tab: 'pins', date: date }) %>" class="<%= activeTab === 'pins' ? 'on' : '' %>">Clinic pins<% if (P.length) { %><span class="cnt"><%= P.length %></span><% } %></a>
+    <a href="?<%= qs({ tab: 'roi', date: date }) %>" class="<%= activeTab === 'roi' ? 'on' : '' %>">Visits vs business</a>
+    <a href="?<%= qs({ tab: 'doctors', date: date }) %>" class="<%= activeTab === 'doctors' ? 'on' : '' %>"><i class="bi bi-person-badge"></i> Doctors</a>
+    <a href="?<%= qs({ tab: 'settings', date: date }) %>" class="<%= activeTab === 'settings' ? 'on' : '' %>"><i class="bi bi-gear"></i> Settings</a>
+  </div>
+
+  <% if (activeTab === 'day') { %>
+    <form class="tv-filter" method="get">
+      <input type="hidden" name="tab" value="day">
+      <div><label class="form-label small fw-semibold mb-1" for="tvDate">Date</label>
+        <input type="date" class="form-control" id="tvDate" name="date" value="<%= date %>" onchange="this.form.submit()"></div>
+      <div><label class="form-label small fw-semibold mb-1" for="tvUser">Marketing officer</label>
+        <select class="form-select ts-exclude" id="tvUser" name="userId" onchange="this.form.submit()" style="min-width:200px">
+          <option value="">Everyone</option>
+          <% U.forEach(function (u) { %><option value="<%= u.Id %>" <%= String(u.Id) === String(userId || '') ? 'selected' : '' %>><%= u.Name %></option><% }) %>
+        </select></div>
+      <div class="form-check form-switch mb-2 ms-1">
+        <input class="form-check-input" type="checkbox" role="switch" id="tvOnly" name="review" value="1" <%= onlyReview ? 'checked' : '' %> onchange="this.form.submit()">
+        <label class="form-check-label small fw-semibold" for="tvOnly">Only visits that need review</label>
+      </div>
+    </form>
+
+    <div class="tv-stats">
+      <div class="tv-stat"><b><%= S.visits || 0 %></b><span>Visits by <%= S.mrs || 0 %> officer<%= S.mrs === 1 ? '' : 's' %></span></div>
+      <div class="tv-stat"><b style="color:var(--ok)"><%= S.verified || 0 %></b><span>GPS at clinic</span></div>
+      <div class="tv-stat"><b style="color:<%= S.suspicious ? 'var(--bad)' : 'inherit' %>"><%= S.suspicious || 0 %></b><span>Suspicious</span></div>
+      <div class="tv-stat"><b style="color:<%= S.pendingReview ? 'var(--warn)' : 'inherit' %>"><%= S.pendingReview || 0 %></b><span>Waiting for your review</span></div>
+      <div class="tv-stat"><b><%= S.visitedDoctors || 0 %> / <%= S.planned || 0 %></b><span>Planned doctors covered (<%= weekday %>)</span></div>
+    </div>
+
+    <% if (!T.length) { %><div class="tv-card tv-empty"><%= onlyReview ? 'Nothing waiting for review on this day.' : 'No visits on this day.' %></div><% } %>
+    <% T.forEach(function (m) { %>
+      <div class="tv-card mrb">
+        <div class="mrb-head">
+          <div class="mrb-av"><%= String(m.name).split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase() %></div>
+          <div class="flex-grow-1">
+            <div class="fw-bold text-capitalize"><%= m.name %></div>
+            <div class="small text-secondary">First punch-in <%= m.firstIn || '—' %> · last punch-out <%= m.lastOut || 'not yet' %> · <%= m.minutes %> min with doctors</div>
+          </div>
+          <div class="d-flex gap-1 flex-wrap">
+            <span class="tg"><%= m.visits.length %> visits</span>
+            <span class="tg ok"><%= m.verified %> at clinic</span>
+            <% if (m.suspicious) { %><span class="tg bad"><%= m.suspicious %> suspicious</span><% } %>
+            <% if (m.pending) { %><span class="tg warn"><%= m.pending %> to review</span><% } %>
+          </div>
+        </div>
+        <% m.visits.forEach(function (v) { var st = ST[v.LocationStatus] || ['—', 'gray']; var rv = RV[v.ReviewStatus] || RV.pending; %>
+          <div class="vrow <%= v.ReviewStatus === 'approved' ? 'done-ok' : (v.suspicious ? 'sus' : '') %>" id="v<%= v.Id %>">
+            <div>
+              <% if (v.HasPhoto) { %>
+                <a href="/schedule/api/visit-photo/<%= v.Id %>" target="_blank" rel="noopener"><img class="vphoto" loading="lazy" src="/schedule/api/visit-photo/<%= v.Id %>" alt="Photo at Dr. <%= v.DoctorName %>"></a>
+              <% } else { %><div class="vphoto">No photo</div><% } %>
+            </div>
+            <div>
+              <div class="fw-semibold text-capitalize">Dr. <%= v.DoctorName %></div>
+              <div class="vsmall"><%= v.SpecialistIn || '' %></div>
+              <div class="vsmall mt-1"><i class="bi bi-box-arrow-in-right"></i> <%= v.InAt || '—' %> &nbsp; <i class="bi bi-box-arrow-right"></i> <%= v.OutAt || 'still inside' %></div>
+              <div class="vsmall"><%= v.Minutes != null ? v.Minutes + ' min' : '' %><%= v.Outcome ? ' · ' + OC[v.Outcome] : '' %><%= v.NextVisitOn ? ' · next ' + v.NextVisitOn : '' %></div>
+            </div>
+            <div class="c-loc">
+              <span class="tg <%= st[1] %>"><%= st[0] %></span>
+              <% if (v.DistanceM != null && v.LocationStatus !== 'no_gps') { %><span class="vsmall"> <%= km(v.DistanceM) %> from clinic</span><% } %>
+              <div class="vsmall mt-1">
+                <% if (v.CheckInLat != null) { %><a href="<%= map(v.CheckInLat, v.CheckInLng) %>" target="_blank" rel="noopener">Punch-in map</a><% } %>
+                <% if (v.CheckOutLat != null) { %> · <a href="<%= map(v.CheckOutLat, v.CheckOutLng) %>" target="_blank" rel="noopener">Punch-out map</a><% } %>
+                <% if (v.CheckInAcc) { %> · ±<%= v.CheckInAcc %> m<% } %>
+                <% if (v.GpsSamples) { %> · <%= v.GpsSamples %> readings, moved <%= v.GpsSpreadM || 0 %> m<% } %>
+              </div>
+              <% v.flagList.forEach(function (f) { var fl = FL[f] || [f, 'warn']; %><div><span class="tg <%= fl[1] %> mt-1"><%= fl[0] %></span></div><% }) %>
+            </div>
+            <div class="c-note"><div class="vnote"><%= v.Notes || '' %></div></div>
+            <div class="vact">
+              <span class="tg <%= rv[1] %> align-self-start" data-rv-label><%= rv[0] %><%= v.ReviewedByName && v.ReviewStatus !== 'pending' ? ' · ' + v.ReviewedByName : '' %></span>
+              <% if (v.ReviewNote) { %><div class="vsmall"><%= v.ReviewNote %></div><% } %>
+              <button type="button" class="btn btn-success btn-sm" data-review="<%= v.Id %>" data-decision="approved" <%= v.ReviewStatus === 'approved' ? 'disabled' : '' %>><i class="bi bi-check2"></i> Verify</button>
+              <button type="button" class="btn btn-outline-danger btn-sm" data-review="<%= v.Id %>" data-decision="rejected" <%= v.ReviewStatus === 'rejected' ? 'disabled' : '' %>><i class="bi bi-x"></i> Reject</button>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% }) %>
+  <% } %>
+
+  <% if (activeTab === 'pins') { %>
+    <p class="small text-secondary">The first punch-in at a doctor saves the clinic location here, with the photo taken there. Open the map, check it is in the doctor's area, and approve it once. Every later visit is checked against it. Reject pins that are wrong (a home, a tea stall…).</p>
+    <% if (!P.length) { %><div class="tv-card tv-empty">No clinic locations waiting for approval.</div><% } else { %>
+      <div class="tv-card"><div class="table-responsive"><table class="tv-t">
+        <thead><tr><th>Photo</th><th>Doctor</th><th>Area on record</th><th>Pinned by</th><th>Location</th><th></th></tr></thead>
+        <tbody>
+          <% P.forEach(function (l) { %>
+            <tr id="pin<%= l.Id %>">
+              <td data-l="Photo"><% if (l.PhotoVisitId) { %><a href="/schedule/api/visit-photo/<%= l.PhotoVisitId %>" target="_blank" rel="noopener"><img class="vphoto" style="width:64px;height:64px" loading="lazy" src="/schedule/api/visit-photo/<%= l.PhotoVisitId %>" alt=""></a><% } else { %>—<% } %></td>
+              <td data-l="Doctor" class="fw-semibold text-capitalize">Dr. <%= l.DoctorName %></td>
+              <td data-l="Area"><%= l.Areas || '—' %></td>
+              <td data-l="Pinned by" class="text-capitalize"><%= l.ByName %> <div class="small text-secondary"><%= l.CreatedAt %></div></td>
+              <td data-l="Location"><a href="<%= map(l.Lat, l.Lng) %>" target="_blank" rel="noopener"><i class="bi bi-map"></i> Open map</a></td>
+              <td class="text-nowrap">
+                <button type="button" class="btn btn-success btn-sm" data-pin="<%= l.Id %>" data-ok="1">Approve</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-pin="<%= l.Id %>" data-ok="0">Reject</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table></div></div>
+    <% } %>
+  <% } %>
+
+  <% if (activeTab === 'roi') { %>
+    <form class="tv-filter" method="get">
+      <input type="hidden" name="tab" value="roi">
+      <div><label class="form-label small fw-semibold mb-1">From</label><input type="date" class="form-control" name="from" value="<%= R.from %>"></div>
+      <div><label class="form-label small fw-semibold mb-1">To</label><input type="date" class="form-control" name="to" value="<%= R.to %>"></div>
+      <button class="btn btn-primary" style="height:40px">Show</button>
+    </form>
+    <p class="small text-secondary">Which doctors are worth the visits? Red rows: visited, but no patients referred in this period.</p>
+    <div class="tv-card"><div class="table-responsive"><table class="tv-t">
+      <thead><tr><th>Doctor</th><th>Visits</th><th>Last visit</th><th>Patients referred</th><th>Business</th><th>Per visit</th></tr></thead>
+      <tbody>
+        <% if (!R.rows.length) { %><tr><td colspan="6" class="tv-empty">No visits or referrals in this period.</td></tr><% } %>
+        <% R.rows.forEach(function (r) { var v = Number(r.Visits) || 0, p = Number(r.Patients) || 0; %>
+          <tr class="<%= v > 0 && p === 0 ? 'flag' : '' %>">
+            <td data-l="Doctor"><div class="fw-semibold text-capitalize">Dr. <%= r.DoctorName %></div><div class="small text-secondary"><%= r.SpecialistIn || '' %></div></td>
+            <td data-l="Visits"><%= v %><% if (v) { %> <span class="small text-secondary">(<%= r.Verified %> verified)</span><% } %></td>
+            <td data-l="Last visit"><%= r.LastVisit || '—' %></td>
+            <td data-l="Patients"><%= p %><% if (v === 0 && p > 0) { %> <span class="tg warn">not visited</span><% } %></td>
+            <td data-l="Business" class="fw-semibold"><%= rupee(r.Billed) %></td>
+            <td data-l="Per visit"><%= v ? rupee(Math.round(r.Billed / v)) : '—' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table></div></div>
+  <% } %>
+</div>
+
+<% if (activeTab === 'doctors' && BD) { %>
+  <div class="tv" style="padding-top:0">
+    <% if (!BD.ready) { %>
+      <div class="tv-card p-3 p-md-4" style="max-width:720px">
+        <h2 class="fw-bold mb-1" style="font-size:1.05rem"><i class="bi bi-database-gear me-1"></i> Set up doctor assignment</h2>
+        <p class="small text-secondary mb-2">SmartLab did not find a column that links a doctor to a marketing officer. Run this once in MySQL, then reload this page:</p>
+        <pre class="bg-light border rounded-3 p-3 small mb-2">ALTER TABLE DoctorDetails ADD COLUMN AssignedTo INT NULL;
+ALTER TABLE DoctorDetails ADD INDEX idx_dd_assigned (AssignedTo);</pre>
+        <p class="small text-secondary mb-0">Already have such a column with another name? Add it to <code>.env</code>, e.g. <code>FIELD_DOCTOR_ASSIGN_COLUMN=DoctorDetails.YourColumn</code>, and restart.</p>
+      </div>
+    <% } else { %>
+      <div class="d-flex flex-wrap gap-2 mb-3" id="tdChips">
+        <button type="button" class="btn btn-sm btn-primary rounded-pill" data-td-filter="">All <span class="opacity-75"><%= BD.doctors.length %></span></button>
+        <button type="button" class="btn btn-sm btn-light border rounded-pill" data-td-filter="none">Unassigned <span class="badge text-bg-danger rounded-pill"><%= BD.unassigned %></span></button>
+        <% BD.users.filter(function (u) { return u.count; }).forEach(function (u) { %>
+          <button type="button" class="btn btn-sm btn-light border rounded-pill text-capitalize" data-td-filter="<%= u.Id %>"><%= u.Name %> <span class="text-secondary"><%= u.count %></span></button>
+        <% }) %>
+      </div>
+      <div class="tv-card">
+        <div class="d-flex flex-wrap gap-2 align-items-center p-3 border-bottom">
+          <div class="position-relative flex-grow-1" style="min-width:200px">
+            <i class="bi bi-search position-absolute text-secondary" style="left:12px;top:50%;transform:translateY(-50%)"></i>
+            <input type="search" class="form-control" id="tdQ" placeholder="Search doctor, area or day" style="padding-left:34px;height:40px;border-radius:10px">
+          </div>
+          <div class="d-flex gap-2 align-items-center flex-wrap" id="tdBulk">
+            <span class="small text-secondary" id="tdSelN">0 selected</span>
+            <select class="form-select form-select-sm ts-exclude" id="tdBulkMr" style="width:auto;min-width:170px" aria-label="Assign selected to">
+              <option value="">Assign selected to…</option>
+              <% BD.users.forEach(function (u) { %><option value="<%= u.Id %>" class="text-capitalize"><%= u.Name %></option><% }) %>
+              <option value="none">— Nobody (un-assign)</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-primary" id="tdBulkGo" disabled>Apply</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0 td-table">
+            <thead class="small text-secondary"><tr>
+              <th style="width:36px"><input type="checkbox" class="form-check-input" id="tdAll" aria-label="Select all shown"></th>
+              <th>Doctor</th><th class="d-none d-md-table-cell">Visiting days</th><th class="d-none d-lg-table-cell">Area</th><th style="min-width:180px">Marketing officer</th>
+            </tr></thead>
+            <tbody>
+            <% BD.doctors.forEach(function (d) { %>
+              <tr data-td="<%= d.id %>" data-mr="<%= d.assignedTo || 'none' %>" data-q="<%= (d.name + ' ' + d.spec + ' ' + d.areas.join(' ') + ' ' + d.days.join(' ')).toLowerCase() %>">
+                <td><input type="checkbox" class="form-check-input" data-td-pick="<%= d.id %>" aria-label="Select Dr. <%= d.name %>"></td>
+                <td><div class="fw-semibold text-capitalize">Dr. <%= d.name %></div>
+                    <div class="small text-secondary"><%= d.spec %><span class="d-md-none"><%= d.days.length ? ' · ' + d.days.join(', ') : '' %><%= d.areas.length ? ' · ' + d.areas.join(', ') : '' %></span></div></td>
+                <td class="d-none d-md-table-cell small"><%= d.days.join(', ') || '—' %></td>
+                <td class="d-none d-lg-table-cell small"><%= d.areas.join(', ') || '—' %></td>
+                <td>
+                  <select class="form-select form-select-sm ts-exclude <%= d.assignedTo ? '' : 'border-danger-subtle text-danger' %>" data-td-mr="<%= d.id %>" aria-label="Marketing officer for Dr. <%= d.name %>">
+                    <option value="none" <%= d.assignedTo ? '' : 'selected' %>>Not assigned</option>
+                    <% BD.users.forEach(function (u) { %><option value="<%= u.Id %>" <%= Number(d.assignedTo) === Number(u.Id) ? 'selected' : '' %>><%= u.Name %></option><% }) %>
+                  </select>
+                </td>
+              </tr>
+            <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-center text-secondary small p-4 d-none" id="tdNone">No doctor matches.</div>
+      </div>
+      <p class="small text-secondary mt-2 mb-0">Saved in <code><%= BD.column %></code>. An officer only sees his own doctors on <i>My visits</i>. If he punches in at someone else's doctor (covering), the visit is marked "Not his assigned doctor".</p>
+    <% } %>
+  </div>
+<% } %>
+
+<% if (activeTab === 'settings') { %>
+  <div class="tv" style="padding-top:0">
+    <div class="tv-card p-3 p-md-4" style="max-width:640px">
+      <h2 class="fw-bold mb-1" style="font-size:1.05rem"><i class="bi bi-camera me-1"></i> Photo at punch-in</h2>
+      <p class="small text-secondary mb-3">This is the <b>default</b> for all marketing officers. Officers given their own setting below are not affected. Changes apply within 30 seconds.</p>
+      <form id="tvSet">
+        <% [['required','Required','Officer must take a live photo at the clinic to punch in. Best proof against fake GPS.'],
+            ['optional','Optional','Officer is asked for a photo but can skip it. Visits without a photo are marked "No photo" for review.'],
+            ['off','Off','No photo is asked. Punch-in uses GPS checks only.']].forEach(function (o) { %>
+          <label class="d-flex gap-3 p-3 mb-2 rounded-3 border tv-opt" style="cursor:pointer;<%= SET.photoMode === o[0] ? 'border-color:var(--pri)!important;background:var(--pris)' : '' %>">
+            <input class="form-check-input mt-1" type="radio" name="photoMode" value="<%= o[0] %>" <%= SET.photoMode === o[0] ? 'checked' : '' %>>
+            <span><span class="fw-semibold d-block"><%= o[1] %><%= o[0] === 'required' ? ' (recommended)' : '' %></span><span class="small text-secondary"><%= o[2] %></span></span>
+          </label>
+        <% }) %>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3">
+          <span class="small text-secondary"><% if (SET.photoModeUpdated) { %>Last changed <%= SET.photoModeUpdated.UpdatedAt %> by <span class="text-capitalize"><%= SET.photoModeUpdated.ByName %></span><% } %></span>
+          <button type="submit" class="btn btn-primary" id="tvSetBtn">Save</button>
+        </div>
+      </form>
+    </div>
+
+    <% var MODE_LBL = { required: 'Required', optional: 'Optional', off: 'Off' }; var OFF = SET.officers || []; var OTHERS = SET.otherUsers || []; %>
+    <div class="tv-card p-3 p-md-4 mt-3" style="max-width:640px" id="tvOfficers">
+      <h2 class="fw-bold mb-1" style="font-size:1.05rem"><i class="bi bi-person-gear me-1"></i> Per officer</h2>
+      <p class="small text-secondary mb-3">Give one officer his own photo rule, e.g. Optional for a senior officer and Required for a new one. Changes save straight away.</p>
+      <% if (!OFF.length) { %><p class="small text-secondary mb-3" id="tvOffEmpty">No officers yet. Officers appear here after their first visit, or add one below.</p><% } %>
+      <div class="d-flex flex-column gap-2">
+        <% OFF.forEach(function (o) { %>
+          <div class="d-flex align-items-center gap-2 p-2 rounded-3 border" data-officer-row="<%= o.Id %>">
+            <div class="flex-grow-1 min-w-0">
+              <div class="fw-semibold text-capitalize text-truncate"><%= o.Name %></div>
+              <div class="small text-secondary" data-officer-note><% if (o.mode !== 'default') { %>Own setting<%= o.UpdatedAt ? ' · ' + o.UpdatedAt : '' %><% } else { %>Follows default<% } %></div>
+            </div>
+            <select class="form-select form-select-sm" style="width:auto;min-width:150px" data-officer="<%= o.Id %>" aria-label="Photo rule for <%= o.Name %>">
+              <option value="default" <%= o.mode === 'default' ? 'selected' : '' %> data-default-opt>Default (<%= MODE_LBL[SET.photoMode] %>)</option>
+              <% ['required','optional','off'].forEach(function (m) { %><option value="<%= m %>" <%= o.mode === m ? 'selected' : '' %>><%= MODE_LBL[m] %></option><% }) %>
+            </select>
+          </div>
+        <% }) %>
+      </div>
+      <% if (OTHERS.length) { %>
+        <form class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top" id="tvAddOfficer">
+          <select class="form-select form-select-sm flex-grow-1" style="min-width:180px;width:auto" name="userId" aria-label="Officer" required>
+            <option value="">Add an officer…</option>
+            <% OTHERS.forEach(function (u) { %><option value="<%= u.Id %>" class="text-capitalize"><%= u.Name %></option><% }) %>
+          </select>
+          <select class="form-select form-select-sm" style="width:auto" name="photoMode" aria-label="Photo rule">
+            <option value="required">Required</option><option value="optional">Optional</option><option value="off">Off</option>
+          </select>
+          <button class="btn btn-sm btn-primary" type="submit">Add</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Reject reason -->
+<div class="modal fade" id="tvReject" tabindex="-1" aria-labelledby="tvRejTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px"><div class="modal-content" style="border:0;border-radius:16px"><div class="modal-body p-4">
+    <h5 class="fw-bold mb-1" id="tvRejTitle" style="font-size:1rem">Reject this visit?</h5>
+    <p class="small text-secondary mb-3">The officer will see "Rejected" on this visit.</p>
+    <textarea class="form-control mb-1" id="tvRejNote" rows="3" maxlength="250" placeholder="Reason, e.g. location does not match the clinic, photo is not at the clinic…"></textarea>
+    <div class="text-danger small d-none mb-2" id="tvRejErr">Write the reason (at least 3 characters).</div>
+    <div class="d-flex justify-content-end gap-2 mt-3">
+      <button type="button" class="btn btn-light border btn-sm" data-bs-dismiss="modal">Cancel</button>
+      <button type="button" class="btn btn-danger btn-sm" id="tvRejGo">Reject visit</button>
+    </div>
+  </div></div></div>
+</div>
+
+<%- include("../partials/uiNotify") %>
+<script>
+(function () {
+  var toast = function (t, m) { if (window.ui) ui.toast(t, null, m); };
+  var post = function (url, body) {
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); }).then(function (d) { if (!d.success) throw new Error(d.message || 'Failed.'); return d; });
+  };
+
+  /* Visit review */
+  var pendingReject = null;
+  function sendReview(id, decision, note, btn) {
+    var row = document.getElementById('v' + id);
+    row.querySelectorAll('[data-review]').forEach(function (b) { b.disabled = true; });
+    return post('/schedule/api/review/' + id, { decision: decision, note: note || '' })
+      .then(function (d) {
+        toast('success', d.message);
+        var lbl = row.querySelector('[data-rv-label]');
+        lbl.className = 'tg align-self-start ' + (decision === 'approved' ? 'ok' : 'bad');
+        lbl.textContent = decision === 'approved' ? 'Verified · just now' : 'Rejected · just now';
+        row.classList.toggle('done-ok', decision === 'approved');
+        row.querySelectorAll('[data-review]').forEach(function (b) { b.disabled = b.dataset.decision === decision; });
+      })
+      .catch(function (e) { toast('danger', e.message); row.querySelectorAll('[data-review]').forEach(function (b) { b.disabled = false; }); });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-review]');
+    if (b) {
+      if (b.dataset.decision === 'approved') return sendReview(b.dataset.review, 'approved', '', b);
+      pendingReject = b.dataset.review;
+      document.getElementById('tvRejNote').value = '';
+      document.getElementById('tvRejErr').classList.add('d-none');
+      if (window.bootstrap) bootstrap.Modal.getOrCreateInstance(document.getElementById('tvReject')).show();
+      return;
+    }
+    var p = e.target.closest('[data-pin]');
+    if (p) {
+      var ok = p.dataset.ok === '1';
+      var go = function () {
+        p.disabled = true;
+        post('/schedule/api/location/' + p.dataset.pin, { approve: ok ? 1 : 0 })
+          .then(function (d) { toast('success', d.message); var row = document.getElementById('pin' + p.dataset.pin); if (row) row.remove(); })
+          .catch(function (err) { p.disabled = false; toast('danger', err.message); });
+      };
+      if (ok || !window.ui) return go();
+      ui.confirm({ title: 'Reject this pin?', message: 'Visits made at this location will be marked for review.', okText: 'Reject', okClass: 'btn-danger' }).then(function (y) { if (y) go(); });
+    }
+  });
+  var setForm = document.getElementById('tvSet');
+  if (setForm) {
+    setForm.addEventListener('change', function (e) {
+      setForm.querySelectorAll('.tv-opt').forEach(function (l) {
+        var on = l.querySelector('input').checked;
+        l.style.borderColor = on ? 'var(--pri)' : ''; l.style.background = on ? 'var(--pris)' : '';
+      });
+    });
+    setForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = (setForm.querySelector('input[name=photoMode]:checked') || {}).value;
+      var btn = document.getElementById('tvSetBtn'); btn.disabled = true;
+      post('/schedule/api/settings', { photoMode: v })
+        .then(function (d) {
+          toast('success', d.message);
+          var lbl = { required: 'Required', optional: 'Optional', off: 'Off' }[v];
+          document.querySelectorAll('[data-default-opt]').forEach(function (o) { o.textContent = 'Default (' + lbl + ')'; });
+        })
+        .catch(function (err) { toast('danger', err.message); })
+        .then(function () { btn.disabled = false; });
+    });
+  }
+
+  /* Doctors → MR */
+  var tdRows = [].slice.call(document.querySelectorAll('[data-td]'));
+  if (tdRows.length) {
+    var tdFilter = '', tdQ = document.getElementById('tdQ');
+    var visible = function () { return tdRows.filter(function (r) { return !r.classList.contains('d-none'); }); };
+    var refreshSel = function () {
+      var n = document.querySelectorAll('[data-td-pick]:checked').length;
+      document.getElementById('tdSelN').textContent = n + ' selected';
+      document.getElementById('tdBulkGo').disabled = !n || !document.getElementById('tdBulkMr').value;
+    };
+    var applyFilter = function () {
+      var q = (tdQ.value || '').trim().toLowerCase(), shown = 0;
+      tdRows.forEach(function (r) {
+        var ok = (!tdFilter || r.dataset.mr === tdFilter) && (!q || r.dataset.q.indexOf(q) !== -1);
+        r.classList.toggle('d-none', !ok); if (ok) shown++;
+        if (!ok) { var c = r.querySelector('[data-td-pick]'); c.checked = false; }
+      });
+      document.getElementById('tdNone').classList.toggle('d-none', shown > 0);
+      document.getElementById('tdAll').checked = false; refreshSel();
+    };
+    tdQ.addEventListener('input', applyFilter);
+    document.getElementById('tdChips').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-td-filter]'); if (!b) return;
+      tdFilter = b.dataset.tdFilter;
+      document.querySelectorAll('[data-td-filter]').forEach(function (x) { x.classList.toggle('btn-primary', x === b); x.classList.toggle('btn-light', x !== b); x.classList.toggle('border', x !== b); });
+      applyFilter();
+    });
+    document.getElementById('tdAll').addEventListener('change', function () {
+      var on = this.checked; visible().forEach(function (r) { r.querySelector('[data-td-pick]').checked = on; }); refreshSel();
+    });
+    document.addEventListener('change', function (e) { if (e.target.matches('[data-td-pick], #tdBulkMr')) refreshSel(); });
+    var markRow = function (id, mr) {
+      var r = document.querySelector('[data-td="' + id + '"]'); if (!r) return;
+      r.dataset.mr = mr || 'none';
+      var sel = r.querySelector('[data-td-mr]'); sel.value = mr || 'none';
+      sel.classList.toggle('text-danger', !mr || mr === 'none'); sel.classList.toggle('border-danger-subtle', !mr || mr === 'none');
+    };
+    var recount = function () {
+      document.querySelectorAll('[data-td-filter]').forEach(function (b) {
+        var f = b.dataset.tdFilter, n = tdRows.filter(function (r) { return !f || r.dataset.mr === f; }).length;
+        var el = b.querySelector('span'); if (el) el.textContent = n;
+      });
+    };
+    var assign = function (ids, mr) {
+      return post('/schedule/api/assign', { doctorIds: ids, mrId: mr === 'none' ? '' : mr })
+        .then(function (d) { ids.forEach(function (id) { markRow(id, mr); }); recount(); toast('success', d.message); });
+    };
+    document.querySelectorAll('[data-td-mr]').forEach(function (sel) {
+      sel.dataset.prev = sel.value;
+      sel.addEventListener('change', function () {
+        sel.disabled = true;
+        assign([sel.dataset.tdMr], sel.value)
+          .then(function () { sel.dataset.prev = sel.value; })
+          .catch(function (err) { sel.value = sel.dataset.prev; toast('danger', err.message); })
+          .then(function () { sel.disabled = false; });
+      });
+    });
+    document.getElementById('tdBulkGo').addEventListener('click', function () {
+      var ids = [].map.call(document.querySelectorAll('[data-td-pick]:checked'), function (c) { return c.dataset.tdPick; });
+      var mr = document.getElementById('tdBulkMr').value, btn = this; if (!ids.length || !mr) return;
+      btn.disabled = true;
+      assign(ids, mr)
+        .then(function () { document.querySelectorAll('[data-td-pick]:checked').forEach(function (c) { c.checked = false; }); document.getElementById('tdAll').checked = false; applyFilter(); })
+        .catch(function (err) { toast('danger', err.message); })
+        .then(refreshSel);
+    });
+  }
+
+  /* Per-officer photo rule */
+  document.querySelectorAll('[data-officer]').forEach(function (sel) {
+    sel.dataset.prev = sel.value;
+    sel.addEventListener('change', function () {
+      sel.disabled = true;
+      post('/schedule/api/settings/user/' + sel.dataset.officer, { photoMode: sel.value })
+        .then(function (d) {
+          toast('success', d.message); sel.dataset.prev = sel.value;
+          var note = sel.closest('[data-officer-row]').querySelector('[data-officer-note]');
+          if (note) note.textContent = sel.value === 'default' ? 'Follows default' : 'Own setting · just now';
+        })
+        .catch(function (err) { toast('danger', err.message); sel.value = sel.dataset.prev; })
+        .then(function () { sel.disabled = false; });
+    });
+  });
+  var addForm = document.getElementById('tvAddOfficer');
+  if (addForm) addForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var uid = addForm.userId.value; if (!uid) return;
+    var btn = addForm.querySelector('button'); btn.disabled = true;
+    post('/schedule/api/settings/user/' + uid, { photoMode: addForm.photoMode.value })
+      .then(function () { location.reload(); })
+      .catch(function (err) { toast('danger', err.message); btn.disabled = false; });
+  });
+
+  document.getElementById('tvRejGo').addEventListener('click', function () {
+    var note = document.getElementById('tvRejNote').value.trim();
+    if (note.length < 3) { document.getElementById('tvRejErr').classList.remove('d-none'); return; }
+    if (window.bootstrap) bootstrap.Modal.getInstance(document.getElementById('tvReject')).hide();
+    sendReview(pendingReject, 'rejected', note);
+  });
+})();
+</script>

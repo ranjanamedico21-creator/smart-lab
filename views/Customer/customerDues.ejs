@@ -1,0 +1,366 @@
+<%
+  const fmt = n => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const today = moment();
+  const list = customersWithDues || [];
+%>
+
+<style>
+  .ld { color: var(--bs-body-color); }
+  .ld .ld-card { border: 1px solid var(--bs-border-color); border-radius: 10px; background: var(--bs-body-bg); }
+  .ld .ld-muted { color: var(--bs-secondary-color); }
+  .ld .ld-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ld .ld-hide { display: none !important; }
+
+  /* summary strip */
+  .ld .ld-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .ld .ld-stat { padding: 14px 18px; border-left: 1px solid var(--bs-border-color); min-width: 0; }
+  .ld .ld-stat:first-child { border-left: 0; }
+  .ld .ld-stat-label { font-size: .75rem; color: var(--bs-secondary-color); margin-bottom: 2px; }
+  .ld .ld-stat-value { font-size: 1.15rem; font-weight: 600; }
+  @media (max-width: 767.98px) {
+    .ld .ld-stats { grid-template-columns: repeat(2, 1fr); }
+    .ld .ld-stat:nth-child(3) { border-left: 0; }
+    .ld .ld-stat:nth-child(n+3) { border-top: 1px solid var(--bs-border-color); }
+  }
+
+  /* toolbar */
+  .ld .ld-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--bs-border-color); }
+  .ld .ld-toolbar .form-control, .ld .ld-toolbar .form-select { max-width: 100%; }
+  .ld .ld-search { flex: 1 1 200px; max-width: 320px; }
+
+  /* table */
+  .ld .ld-table-wrap { overflow-x: auto; }
+  .ld table { margin: 0; width: 100%; }
+  .ld thead th {
+    font-size: .75rem; font-weight: 600; color: var(--bs-secondary-color);
+    background: var(--bs-tertiary-bg); border-bottom: 1px solid var(--bs-border-color);
+    white-space: nowrap; padding: 10px 12px;
+  }
+  .ld tbody td, .ld tfoot td { padding: 10px 12px; }
+  .ld th.ld-sort { cursor: pointer; user-select: none; }
+  .ld th.ld-sort:hover { color: var(--bs-body-color); }
+  .ld th .ld-arrow { font-size: .7rem; opacity: .4; margin-left: 2px; }
+  .ld th.ld-active .ld-arrow { opacity: 1; }
+  .ld tr.ld-off td { opacity: .4; }
+  .ld tr.ld-off td:last-child { opacity: 1; }
+  .ld tfoot td { font-weight: 600; background: var(--bs-tertiary-bg); border-top: 1px solid var(--bs-border-color); }
+  .ld .ld-due { color: var(--bs-danger); font-weight: 600; }
+  .ld .ld-clear { color: var(--bs-success); font-weight: 500; white-space: nowrap; }
+  .ld .ld-tick {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%; margin-right: 4px;
+    background: var(--bs-success); color: #fff; font-size: .7rem; font-weight: 700; line-height: 1;
+  }
+  .ld .ld-sub { font-size: .75rem; color: var(--bs-secondary-color); }
+  .ld .ld-sub.ld-late { color: var(--bs-danger); }
+
+  @media print {
+    .ld .ld-noprint { display: none !important; }
+    .ld tr.ld-off { display: none; }
+    .ld .ld-table-wrap { overflow: visible; }
+  }
+</style>
+
+<div class="container my-4 ld">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h5 class="mb-0 fw-semibold">Customer Ledger</h5>
+      <div class="ld-muted small">As of <%= today.format('DD MMM YYYY') %></div>
+    </div>
+    <div class="d-flex gap-2 ld-noprint">
+      <button type="button" id="ldExport" class="btn btn-sm btn-outline-secondary">Export CSV</button>
+      <button type="button" id="ldPrint" class="btn btn-sm btn-outline-secondary">Print</button>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="ld-card ld-stats mb-3">
+    <div class="ld-stat">
+      <div class="ld-stat-label">Total Sales</div>
+      <div class="ld-stat-value ld-num" id="ldSales">₹ 0.00</div>
+    </div>
+    <div class="ld-stat">
+      <div class="ld-stat-label">Collected</div>
+      <div class="ld-stat-value ld-num" id="ldPaid">₹ 0.00</div>
+      <div class="ld-sub"><span id="ldPct">0</span>% of sales</div>
+    </div>
+    <div class="ld-stat">
+      <div class="ld-stat-label">Outstanding</div>
+      <div class="ld-stat-value ld-num ld-due" id="ldPending">₹ 0.00</div>
+    </div>
+    <div class="ld-stat">
+      <div class="ld-stat-label">Customers with dues</div>
+      <div class="ld-stat-value"><span id="ldDueCount">0</span></div>
+      <div class="ld-sub"><span id="ldLate">0</span> unpaid for 60+ days</div>
+    </div>
+  </div>
+
+  <!-- Table card -->
+  <div class="ld-card">
+    <div class="ld-toolbar ld-noprint">
+      <input type="search" id="ldSearch" class="form-control form-control-sm ld-search" placeholder="Search customer" autocomplete="off">
+      <select id="ldStatus" class="form-select form-select-sm w-auto">
+        <option value="all">All customers</option>
+        <option value="due">Pending only</option>
+        <option value="clear">Cleared</option>
+        <option value="advance">Advance</option>
+      </select>
+      <select id="ldAging" class="form-select form-select-sm w-auto">
+        <option value="all">Any last payment</option>
+        <option value="30">No payment in 30+ days</option>
+        <option value="60">No payment in 60+ days</option>
+        <option value="90">No payment in 90+ days</option>
+        <option value="never">Never paid</option>
+      </select>
+      <span class="ms-auto small ld-muted">Showing <span id="ldShown">0</span> of <%= list.length %></span>
+    </div>
+
+    <div class="ld-table-wrap">
+      <table id="customerLedgerTable" class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th class="text-center d-none d-sm-table-cell" style="width:48px">#</th>
+            <th class="ld-sort" data-key="name" data-type="str">Customer<span class="ld-arrow">↕</span></th>
+            <th class="ld-sort text-end d-none d-md-table-cell" data-key="sales" data-type="num">Sales<span class="ld-arrow">↕</span></th>
+            <th class="ld-sort text-end d-none d-md-table-cell" data-key="payments" data-type="num">Paid<span class="ld-arrow">↕</span></th>
+            <th class="ld-sort text-end" data-key="pending" data-type="num">Pending<span class="ld-arrow">↕</span></th>
+            <th class="ld-sort text-end d-none d-sm-table-cell" data-key="days" data-type="num">Last Payment<span class="ld-arrow">↕</span></th>
+            <th class="text-center ld-noprint" style="width:56px">
+              <input type="checkbox" class="form-check-input" id="ldCheckAll" checked title="Include all in total">
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (list.length === 0) { %>
+            <tr><td colspan="7" class="text-center ld-muted py-5">No customers found.</td></tr>
+          <% } else { %>
+            <% list.forEach((cust, index) => {
+                 const sales    = Number(cust.TotalSales) || 0;
+                 const payments = Number(cust.TotalPayments) || 0;
+                 const pending  = Number(cust.PendingAmount) || 0;
+                 const status   = pending > 0.009 ? 'due' : (pending < -0.009 ? 'advance' : 'clear');
+                 const lastPay  = cust.LastPaymentDate ? moment(cust.LastPaymentDate) : null;
+                 const days     = lastPay ? today.diff(lastPay, 'days') : null;
+                 const name     = (cust.CustomerName || '').toString().trim().replace(/\s+/g, ' ')
+                                    .toLowerCase().replace(/(^|[\s.(\-\/])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+                 const late     = status === 'due' && (days === null || days > 60);
+                 const ago      = days === null ? 'Never paid' : (days === 0 ? 'Today' : days + ' days ago');
+            %>
+              <tr class="ld-row"
+                  data-name="<%= name.toLowerCase() %>"
+                  data-label="<%= name %>"
+                  data-status="<%= status %>"
+                  data-sales="<%= sales %>"
+                  data-payments="<%= payments %>"
+                  data-pending="<%= pending %>"
+                  data-days="<%= days === null ? 999999 : days %>"
+                  data-never="<%= days === null ? 1 : 0 %>"
+                  data-lastpay="<%= lastPay ? lastPay.format('DD-MM-YYYY') : '' %>">
+                <td class="text-center ld-muted ld-idx d-none d-sm-table-cell"><%= index + 1 %></td>
+                <td>
+                  <div class="fw-medium"><%= name %></div>
+                  <div class="ld-sub d-md-none ld-num">Sales ₹ <%= fmt(sales) %> · Paid ₹ <%= fmt(payments) %></div>
+                </td>
+                <td class="text-end ld-num d-none d-md-table-cell">₹ <%= fmt(sales) %></td>
+                <td class="text-end ld-num d-none d-md-table-cell">₹ <%= fmt(payments) %></td>
+                <td class="text-end ld-num">
+                  <% if (status === 'due') { %>
+                    <span class="ld-due">₹ <%= fmt(pending) %></span>
+                  <% } else if (status === 'advance') { %>
+                    <span>₹ <%= fmt(pending) %></span><div class="ld-sub">Advance</div>
+                  <% } else { %>
+                    <span class="ld-clear"><span class="ld-tick">✓</span> Cleared</span>
+                  <% } %>
+                </td>
+                <td class="text-end d-none d-sm-table-cell">
+                  <div class="ld-num"><%= lastPay ? lastPay.format('DD-MM-YYYY') : '—' %></div>
+                  <div class="ld-sub <%= late ? 'ld-late' : '' %>"><%= ago %></div>
+                </td>
+                <td class="text-center ld-noprint">
+                  <input type="checkbox" class="form-check-input include-total" checked>
+                </td>
+              </tr>
+            <% }) %>
+            <tr id="ldNoMatch" class="ld-hide">
+              <td colspan="7" class="text-center ld-muted py-4">No customers match your filters.</td>
+            </tr>
+          <% } %>
+        </tbody>
+
+        <tfoot>
+          <tr>
+            <td class="d-none d-sm-table-cell"></td>
+            <td>Total <span class="fw-normal small ld-muted">(<span id="ldIncluded">0</span> included)</span></td>
+            <td class="text-end ld-num d-none d-md-table-cell" id="ldTotSales">₹ 0.00</td>
+            <td class="text-end ld-num d-none d-md-table-cell" id="ldTotPaid">₹ 0.00</td>
+            <td class="text-end ld-num ld-due" id="ldTotPending">₹ 0.00</td>
+            <td class="d-none d-sm-table-cell"></td>
+            <td class="ld-noprint"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Plain JavaScript: works whether jQuery is loaded before or after this view. */
+(function () {
+  function init() {
+    var table = document.getElementById('customerLedgerTable');
+    if (!table) return;
+    var tbody = table.tBodies[0];
+    var allRows = Array.prototype.slice.call(tbody.querySelectorAll('tr.ld-row'));
+    var noMatch = document.getElementById('ldNoMatch');
+    var $ = function (id) { return document.getElementById(id); };
+    var num = function (r, k) { return parseFloat(r.getAttribute('data-' + k)) || 0; };
+    var inr = function (n) {
+      return '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    var isShown = function (r) { return !r.classList.contains('ld-hide'); };
+    var isOn = function (r) { return r.querySelector('.include-total').checked; };
+
+    function applyFilters() {
+      var q = $('ldSearch').value.trim().toLowerCase();
+      var status = $('ldStatus').value;
+      var aging = $('ldAging').value;
+      var shown = 0;
+
+      allRows.forEach(function (r) {
+        var ok = (!q || r.getAttribute('data-name').indexOf(q) !== -1) &&
+                 (status === 'all' || r.getAttribute('data-status') === status);
+        if (ok && aging !== 'all') {
+          ok = aging === 'never'
+            ? r.getAttribute('data-never') === '1'
+            : num(r, 'days') >= parseInt(aging, 10);
+        }
+        r.classList.toggle('ld-hide', !ok);
+        if (ok) shown++;
+      });
+
+      if (noMatch) noMatch.classList.toggle('ld-hide', shown > 0 || allRows.length === 0);
+      $('ldShown').textContent = shown;
+      renumber();
+      recalc();
+    }
+
+    function renumber() {
+      var i = 0;
+      allRows.forEach(function (r) {
+        if (isShown(r)) r.querySelector('.ld-idx').textContent = ++i;
+      });
+    }
+
+    function recalc() {
+      var s = 0, p = 0, d = 0, inc = 0, due = 0, late = 0, vis = 0, visOn = 0;
+      allRows.forEach(function (r) {
+        var on = isOn(r);
+        r.classList.toggle('ld-off', !on);
+        if (!isShown(r)) return;
+        vis++;
+        if (!on) return;
+        visOn++;
+        var pend = num(r, 'pending');
+        s += num(r, 'sales'); p += num(r, 'payments'); d += pend; inc++;
+        if (pend > 0.009) {
+          due++;
+          if (r.getAttribute('data-never') === '1' || num(r, 'days') > 60) late++;
+        }
+      });
+
+      $('ldTotSales').textContent = inr(s);
+      $('ldTotPaid').textContent = inr(p);
+      $('ldTotPending').textContent = inr(d);
+      $('ldIncluded').textContent = inc;
+
+      $('ldSales').textContent = inr(s);
+      $('ldPaid').textContent = inr(p);
+      $('ldPending').textContent = inr(d);
+      $('ldPct').textContent = s > 0 ? Math.min(100, p / s * 100).toFixed(1) : '0';
+      $('ldDueCount').textContent = due;
+      $('ldLate').textContent = late;
+
+      var all = $('ldCheckAll');
+      all.checked = vis > 0 && visOn === vis;
+      all.indeterminate = visOn > 0 && visOn < vis;
+    }
+
+    /* Sorting */
+    var sortKey = null, sortDir = 1;
+    Array.prototype.forEach.call(table.querySelectorAll('th.ld-sort'), function (th) {
+      th.addEventListener('click', function () {
+        var key = th.getAttribute('data-key');
+        var type = th.getAttribute('data-type');
+        sortDir = sortKey === key ? -sortDir : (type === 'num' ? -1 : 1);
+        sortKey = key;
+
+        allRows.sort(function (a, b) {
+          if (type === 'num') return (num(a, key) - num(b, key)) * sortDir;
+          return a.getAttribute('data-' + key).localeCompare(b.getAttribute('data-' + key)) * sortDir;
+        });
+        allRows.forEach(function (r) { tbody.insertBefore(r, noMatch); });
+
+        Array.prototype.forEach.call(table.querySelectorAll('th.ld-sort'), function (h) {
+          h.classList.remove('ld-active');
+          h.querySelector('.ld-arrow').textContent = '↕';
+        });
+        th.classList.add('ld-active');
+        th.querySelector('.ld-arrow').textContent = sortDir === 1 ? '↑' : '↓';
+        renumber();
+      });
+    });
+
+    /* Events */
+    var timer;
+    $('ldSearch').addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(applyFilters, 120);
+    });
+    $('ldStatus').addEventListener('change', applyFilters);
+    $('ldAging').addEventListener('change', applyFilters);
+    tbody.addEventListener('change', function (e) {
+      if (e.target.classList.contains('include-total')) recalc();
+    });
+    $('ldCheckAll').addEventListener('change', function () {
+      var c = this.checked;
+      allRows.forEach(function (r) {
+        if (isShown(r)) r.querySelector('.include-total').checked = c;
+      });
+      recalc();
+    });
+    $('ldPrint').addEventListener('click', function () { window.print(); });
+
+    /* CSV export of visible, included rows */
+    $('ldExport').addEventListener('click', function () {
+      var esc = function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
+      var lines = [['#', 'Customer', 'Total Sales', 'Total Payments', 'Pending', 'Last Payment', 'Days Since'].map(esc).join(',')];
+      var i = 0, s = 0, p = 0, d = 0;
+      allRows.forEach(function (r) {
+        if (!isShown(r) || !isOn(r)) return;
+        s += num(r, 'sales'); p += num(r, 'payments'); d += num(r, 'pending');
+        lines.push([++i, r.getAttribute('data-label'),
+          num(r, 'sales').toFixed(2), num(r, 'payments').toFixed(2), num(r, 'pending').toFixed(2),
+          r.getAttribute('data-lastpay') || '-',
+          r.getAttribute('data-never') === '1' ? 'Never' : r.getAttribute('data-days')
+        ].map(esc).join(','));
+      });
+      lines.push(['', 'TOTAL', s.toFixed(2), p.toFixed(2), d.toFixed(2), '', ''].map(esc).join(','));
+
+      var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'customer-ledger-<%= today.format("YYYY-MM-DD") %>.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    applyFilters();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>

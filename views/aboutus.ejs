@@ -1,0 +1,400 @@
+<style>
+  .about-hero {
+    background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+    color: white;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .about-card {
+    border: none;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .about-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .stats-card {
+    border: none;
+    border-radius: 20px;
+    transition: 0.3s ease;
+  }
+
+  .stats-card:hover {
+    transform: scale(1.03);
+  }
+
+  .icon-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(13, 110, 253, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-weight: 700;
+    color: #0d6efd;
+  }
+
+  .about-text {
+    color: #6c757d;
+    line-height: 1.9;
+    font-size: 1.05rem;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 25px;
+  }
+
+  .feature-icon {
+    font-size: 28px;
+    margin-right: 15px;
+  }
+
+  .illustration-img {
+    max-height: 360px;
+  }
+
+  @media(max-width:768px) {
+    .illustration-img {
+      max-height: 250px;
+    }
+  }
+</style>
+
+<!-- BREADCRUMB -->
+<section class="mb-4">
+  <nav aria-label="breadcrumb" class="breadcrumb-nav p-3 bg-white rounded-4 shadow-sm">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item">
+        <a href="/user/home" class="text-decoration-none">Home</a>
+      </li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">
+        About Us
+      </li>
+    </ol>
+  </nav>
+</section>
+
+<!-- HERO SECTION -->
+<section class="container-fluid about-hero shadow-lg p-5 mb-5">
+
+  <div class="row align-items-center">
+
+    <div class="col-lg-7">
+
+      <h1 class="display-4 fw-bold mb-4">
+        About <%= BRAND_NAME %>
+      </h1>
+
+      <p class="lead mb-4" style="line-height:1.9;">
+        J.P Diagnostic and Imaging Clinic is one of the trusted and renowned
+        diagnostic centers in Patna, offering complete Pathology and Radiology
+        services under one roof with accuracy, transparency, and compassionate care.
+      </p>
+
+      <div class="d-flex flex-wrap gap-3">
+        <a href="/contact-us" class="btn btn-light btn-lg rounded-pill px-4 shadow-sm">
+          Contact Us
+        </a>
+
+        <a href="/user/home" class="btn btn-outline-light btn-lg rounded-pill px-4">
+          Explore Services
+        </a>
+      </div>
+
+    </div>
+
+    <div class="col-lg-5 text-center mt-5 mt-lg-0">
+
+      <!-- Replace with your image -->
+      <img
+        src="/images/about-healthcare-cartoon.png"
+        alt="Healthcare Illustration"
+        class="img-fluid illustration-img">
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ABOUT SECTION -->
+<section class="container-fluid mb-5">
+
+  <div class="row g-4">
+
+    <!-- WHO WE ARE -->
+    <div class="col-lg-6">
+
+      <div class="card shadow-sm about-card h-100">
+
+        <div class="card-body p-5">
+
+          <h2 class="section-title mb-4">
+            Who We Are
+          </h2>
+
+          <p class="about-text">
+            For more than 6 years, J.P Diagnostic and Imaging Clinic has been
+            dedicated to delivering high-quality diagnostic healthcare services
+            to patients with trust, precision, and professionalism.
+          </p>
+
+          <p class="about-text">
+            Our center combines modern diagnostic technology with experienced
+            healthcare professionals to provide accurate and timely reports
+            that support effective patient treatment and care.
+          </p>
+
+          <p class="about-text">
+            We continuously focus on improving patient experience, maintaining
+            international-quality standards, and ensuring affordable healthcare
+            for everyone.
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- WHY TRUST US -->
+    <div class="col-lg-6">
+
+      <div class="card shadow-sm about-card h-100">
+
+        <div class="card-body p-5">
+
+          <h2 class="section-title mb-4">
+            Why Patients Trust Us
+          </h2>
+
+          <div class="feature-item">
+            <div class="feature-icon">✔️</div>
+            <div>
+              <h5 class="fw-bold">Accurate Diagnostics</h5>
+              <p class="text-muted mb-0">
+                Advanced pathology and imaging services with precise reporting.
+              </p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">⚡</div>
+            <div>
+              <h5 class="fw-bold">Fast Report Delivery</h5>
+              <p class="text-muted mb-0">
+                Timely reports for faster diagnosis and treatment decisions.
+              </p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">🏥</div>
+            <div>
+              <h5 class="fw-bold">Modern Technology</h5>
+              <p class="text-muted mb-0">
+                Equipped with advanced diagnostic and imaging infrastructure.
+              </p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">❤️</div>
+            <div>
+              <h5 class="fw-bold">Compassionate Care</h5>
+              <p class="text-muted mb-0">
+                Dedicated patient-focused healthcare with empathy and respect.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- STATS SECTION -->
+<section class="container-fluid mb-5">
+
+  <div class="row g-4 text-center">
+
+    <div class="col-md-3 col-6">
+
+      <div class="card stats-card shadow-sm p-4">
+
+        <h1 class="fw-bold text-primary">
+          6+
+        </h1>
+
+        <p class="text-muted mb-0">
+          Years Experience
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="col-md-3 col-6">
+
+      <div class="card stats-card shadow-sm p-4">
+
+        <h1 class="fw-bold text-primary">
+          10K+
+        </h1>
+
+        <p class="text-muted mb-0">
+          Patients Served
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="col-md-3 col-6">
+
+      <div class="card stats-card shadow-sm p-4">
+
+        <h1 class="fw-bold text-primary">
+          24/7
+        </h1>
+
+        <p class="text-muted mb-0">
+          Patient Support
+        </p>
+
+      </div>
+
+    </div>
+
+    <div class="col-md-3 col-6">
+
+      <div class="card stats-card shadow-sm p-4">
+
+        <h1 class="fw-bold text-primary">
+          100%
+        </h1>
+
+        <p class="text-muted mb-0">
+          Commitment to Quality
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- VISION & MISSION -->
+<section class="container-fluid mb-5">
+
+  <div class="row g-4">
+
+    <!-- VISION -->
+    <div class="col-lg-6">
+
+      <div class="card about-card shadow-sm h-100">
+
+        <div class="card-body p-5 text-center">
+
+          <div class="icon-circle mx-auto">
+            🎯
+          </div>
+
+          <h2 class="section-title mb-4">
+            Our Vision
+          </h2>
+
+          <p class="about-text">
+            Our vision is to become a leading healthcare diagnostic provider
+            known for service excellence, advanced technology, and trusted
+            patient care in the community.
+          </p>
+
+          <p class="about-text">
+            We strive to continuously improve healthcare outcomes by delivering
+            accurate diagnostics that empower better medical decisions.
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- MISSION -->
+    <div class="col-lg-6">
+
+      <div class="card about-card shadow-sm h-100">
+
+        <div class="card-body p-5 text-center">
+
+          <div class="icon-circle mx-auto">
+            ❤️
+          </div>
+
+          <h2 class="section-title mb-4">
+            Our Mission
+          </h2>
+
+          <p class="about-text">
+            To provide high-quality, affordable, timely, and innovative
+            diagnostic healthcare services with compassion, transparency,
+            and professionalism.
+          </p>
+
+          <p class="about-text">
+            We are committed to earning the trust of our patients through
+            reliable reports, ethical practices, and exceptional care.
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- FINAL QUOTE -->
+<section class="container-fluid mb-5">
+
+  <div class="card border-0 shadow-lg rounded-4 bg-primary text-white">
+
+    <div class="card-body p-5 text-center">
+
+      <h2 class="fw-bold mb-4">
+        <%= BRAND_NAME %> — The Diagnosis Specialist
+      </h2>
+
+      <p class="lead mb-0" style="line-height:1.8;">
+        From science to compassion, we continue our journey toward improving
+        healthcare and enhancing lives through trusted diagnostics and
+        patient-centered care.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>

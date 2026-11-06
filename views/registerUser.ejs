@@ -1,0 +1,101 @@
+<div class="container-fluid bg-white py-5 min-vh-100">
+  <%- include ("./partials/messages"); %>
+  <div class="row align-items-center">
+    <!-- Left Side Image -->
+    <div class="col-md-6 d-flex justify-content-center">
+      <img src="/userRegistration.jpg" class="img-fluid rounded" style="max-width: 100%; height: auto;" alt="Register Image">
+    </div>
+
+    <!-- Right Side Form -->
+    <div class="col-md-6">
+      <form action="/user/userRegistration" class="needs-validation" novalidate method="post">
+        <p class="fs-5 font-monospace text-center">Register With Us</p>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+              <div class="form-floating">
+                  <input type="text" class="form-control" id="firstName" name="FirstName" placeholder="First Name" value="<%= typeof FirstName != 'undefined' ? FirstName : '' %>" required>
+                  <label for="firstName">First Name</label>
+                  <div class="invalid-feedback">First Name is required.</div>
+              </div>
+          </div>
+          <div class="col-md-6">
+              <div class="form-floating">
+                  <input type="text" class="form-control" id="lastName" name="LastName" placeholder="Last Name" value="<%= typeof LastName != 'undefined' ? LastName : '' %>" required>
+                  <label for="lastName">Last Name</label>
+                  <div class="invalid-feedback">Last Name is required.</div>
+              </div>
+          </div>
+      </div>
+
+
+        <!-- Email -->
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+              <div class="form-floating">
+                  <input type="email" class="form-control" id="email" name="Email" placeholder="Email" value="<%= typeof Email != 'undefined' ? Email : '' %>" required>
+                  <label for="email">Email</label>
+                  <div class="invalid-feedback">Valid Email is required.</div>
+              </div>
+          </div>
+          <div class="col-md-6">
+              <div class="form-floating">
+                  <input type="text" class="form-control" id="joiningDate" name="JoiningDate" value="<%= typeof JoiningDate != 'undefined' ? JoiningDate : '' %>" autocomplete="off" required>
+                  <label for="joiningDate">Joining Date</label>
+                  <div class="invalid-feedback">Joining Date is required.</div>
+              </div>
+          </div>
+      </div>
+
+        <!-- Password & Confirm Password -->
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+              <div class="form-floating">
+                  <input type="password" class="form-control" id="password" name="Password" placeholder="Password" required>
+                  <label for="password">Password</label>
+                  <div class="invalid-feedback">Password is required.</div>
+              </div>
+          </div>
+          <div class="col-md-6">
+              <div class="form-floating">
+                  <input type="password" class="form-control" id="confirmPassword" name="ConfirmPassword" placeholder="Confirm Password" required>
+                  <label for="confirmPassword">Confirm Password</label>
+                  <div class="invalid-feedback">Confirm Password is required.</div>
+              </div>
+          </div>
+      </div>
+        <!-- Phone Number & Gender -->
+
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input type="number" class="form-control" name="PhoneNumber" id="phoneNumber" placeholder="Phone Number" value="<%= typeof PhoneNumber != 'undefined' ? PhoneNumber : '' %>"required>
+              <label for="phoneNumber">Phone Number</label>
+              <div class="invalid-feedback">Confirm Password is required.</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+              <label class="form-label">Gender</label>
+              <div class="d-flex">
+                  <div class="form-check me-3">
+                      <input class="form-check-input" type="radio" name="Gender" id="male" value="Male"  <%= typeof Gender !== 'undefined' && Gender === 'Male' ? 'checked' : '' %> required>
+                      <label class="form-check-label" for="male">Male</label>
+                  </div>
+                  <div class="form-check">
+                      <input class="form-check-input" type="radio" name="Gender" id="female" value="Female"  <%= typeof Gender !== 'undefined' && Gender === 'Female' ? 'checked' : '' %> required>
+                      <label class="form-check-label" for="female">Female</label>
+                      <div class="invalid-feedback">Please select your gender.</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+        <!-- Register Button -->
+        <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
+          <button type="submit" class="btn btn-primary">Register</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

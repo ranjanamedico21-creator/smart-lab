@@ -1,0 +1,1173 @@
+<%# Partial view: rendered inside loggedInLayout. Its CSS is scoped to .pkv-user so it cannot change the layout navbar / sidebar. Bootstrap CSS+JS come from the layout. %>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  .pkv.pkv-user {
+    --brand:          #1a56db;
+    --brand-light:    #eff4ff;
+    --brand-mid:      #3b6ef0;
+    --success:        #057a55;
+    --success-bg:     #def7ec;
+    --success-border: #84e1bc;
+    --warning:        #92400e;
+    --warning-bg:     #fef3c7;
+    --warning-border: #fcd34d;
+    --danger:         #9b1c1c;
+    --danger-bg:      #fde8e8;
+    --returned:       #7c3aed;
+    --returned-bg:    #fdf4ff;
+    --returned-border:rgba(124,58,237,0.25);
+    --surface:        #ffffff;
+    --bg:             #f3f6fc;
+    --border:         #e5e9f2;
+    --border2:        #d1d9ee;
+    --text:           #111827;
+    --text2:          #374151;
+    --muted:          #6b7280;
+    --dim:            #9ca3af;
+    --mono:           'JetBrains Mono', monospace;
+    --jakarta:        'Plus Jakarta Sans', sans-serif;
+  }
+
+  .pkv.pkv-user *, .pkv.pkv-user *::before, .pkv.pkv-user *::after { box-sizing: border-box; }
+  .pkv.pkv-user { -webkit-text-size-adjust: 100%; }
+  .pkv.pkv-user {
+    font-family: var(--jakarta); background: var(--bg); color: var(--text);
+      margin: 0;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  .pkv.pkv-user button, .pkv.pkv-user input, .pkv.pkv-user textarea { font: inherit; }
+  .pkv.pkv-user button { -webkit-tap-highlight-color: transparent; }
+  .pkv.pkv-user button:focus-visible, .pkv.pkv-user input:focus-visible, .pkv.pkv-user textarea:focus-visible { outline: 3px solid rgba(26,86,219,.18); outline-offset: 2px; }
+
+  /* ── TOPBAR ── */
+  .pkv.pkv-user .topbar { background: var(--surface); border-bottom: 1px solid var(--border); height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px rgba(17,24,39,0.06); }
+  .pkv.pkv-user .topbar-inner { max-width: 100%;
+    max-width: 1100px; margin: 0 auto; height: 100%; display: flex; align-items: center; gap: 14px; padding: 0 20px; }
+  .pkv.pkv-user .brand { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.4px; }
+  .pkv.pkv-user .brand-icon { width: 32px; height: 32px; background: var(--brand); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; }
+  .pkv.pkv-user .topbar-divider { width: 1px; height: 22px; background: var(--border2); flex-shrink: 0; }
+  .pkv.pkv-user .user-chip { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 24px; }
+  .pkv.pkv-user .user-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; font-family: var(--mono); }
+  .pkv.pkv-user .user-name { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .pkv.pkv-user .ms-auto-flex { margin-left: auto; }
+  .pkv.pkv-user .net-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; font-family: var(--mono); padding: 4px 10px; border-radius: 20px; border: 1px solid; }
+  .pkv.pkv-user .net-badge.online { color: var(--success); background: var(--success-bg); border-color: var(--success-border); }
+  .pkv.pkv-user .net-badge.offline { color: #92400e; background: var(--warning-bg); border-color: var(--warning-border); }
+  .pkv.pkv-user .net-badge .led { width: 7px; height: 7px; border-radius: 50%; }
+  .pkv.pkv-user .net-badge.online  .led { background: var(--success); animation: blink 2s infinite; }
+  .pkv.pkv-user .net-badge.offline .led { background: #d97706; }
+  .pkv.pkv-user .sync-btn { font-size: 11px; font-family: var(--mono); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--warning-border); background: var(--warning-bg); color: #92400e; cursor: pointer; display: none; align-items: center; gap: 5px; font-weight: 500; }
+  .pkv.pkv-user .sync-btn.visible { display: flex; }
+
+  /* ── CONTROL BAR ── */
+  .pkv.pkv-user .control-bar { background: var(--surface); border-bottom: 1px solid var(--border); }
+  .pkv.pkv-user .control-inner { max-width: 100%;
+    max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .pkv.pkv-user .control-row { display: flex; align-items: center; gap: 12px; height: 56px; flex-wrap: wrap; }
+  .pkv.pkv-user .month-form { display: flex; align-items: center; gap: 8px; }
+  .pkv.pkv-user .month-form label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); white-space: nowrap; }
+  .pkv.pkv-user .month-inp { border: 1px solid var(--border2); border-radius: 8px; padding: 6px 10px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; background: var(--bg); transition: border-color 0.15s; }
+  .pkv.pkv-user .month-inp:focus { border-color: var(--brand); }
+  .pkv.pkv-user .load-btn { background: var(--brand); color: #fff; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; font-family: var(--jakarta); display: flex; align-items: center; gap: 6px; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .pkv.pkv-user .load-btn:hover { background: #1347c0; }
+  .pkv.pkv-user .ctrl-sep { width: 1px; height: 22px; background: var(--border2); flex-shrink: 0; }
+  .pkv.pkv-user .filter-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pkv.pkv-user .fpill { padding: 5px 13px; font-size: 12px; font-weight: 500; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.14s; white-space: nowrap; font-family: var(--jakarta); }
+  .pkv.pkv-user .fpill:hover { border-color: var(--brand-mid); color: var(--brand); }
+  .pkv.pkv-user .fpill.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .pkv.pkv-user .search-wrap { margin-left: auto; position: relative; }
+  .pkv.pkv-user .search-wrap input { background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; padding: 6px 10px 6px 32px; font-size: 13px; font-family: var(--jakarta); color: var(--text); outline: none; width: 200px; transition: all 0.15s; }
+  .pkv.pkv-user .search-wrap input:focus { border-color: var(--brand); background: #fff; width: 240px; }
+  .pkv.pkv-user .search-wrap input::placeholder { color: var(--dim); }
+  .pkv.pkv-user .search-wrap .si { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--dim); pointer-events: none; font-size: 14px; }
+
+  /* ── MAIN ── */
+  .pkv.pkv-user .main { width: 100%; max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ── STATS ── */
+  .pkv.pkv-user .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .pkv.pkv-user .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; animation: fadeUp 0.3s ease both; }
+  .pkv.pkv-user .stat-card:nth-child(1) {animation-delay:0s} .pkv.pkv-user .stat-card:nth-child(2) {animation-delay:.06s} .pkv.pkv-user .stat-card:nth-child(3) {animation-delay:.12s}
+  .pkv.pkv-user .stat-label { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .pkv.pkv-user .stat-num { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+  .pkv.pkv-user .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .pkv.pkv-user .stat-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+  .pkv.pkv-user .stat-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+  /* ── SECTION HEAD ── */
+  .pkv.pkv-user .sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .pkv.pkv-user .sec-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .pkv.pkv-user .sec-count { font-family: var(--mono); font-size: 10px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px; }
+  .pkv.pkv-user .bulk-mode-btn { margin-left: auto; background: transparent; border: 1px solid var(--border2); border-radius: 8px; padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; font-family: var(--jakarta); display: flex; align-items: center; gap: 6px; transition: all 0.12s; font-weight: 500; }
+  .pkv.pkv-user .bulk-mode-btn:hover { border-color: var(--brand); color: var(--brand); }
+  .pkv.pkv-user .bulk-mode-btn.active { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+
+  /* ── PACKET CARDS ── */
+  .pkv.pkv-user .packet-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 100px; }
+  .pkv.pkv-user .pkt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; animation: fadeUp 0.24s ease both; }
+  .pkv.pkv-user .pkt-card:hover { border-color: var(--border2); box-shadow: 0 2px 16px rgba(17,24,39,0.07); }
+  .pkv.pkv-user .pkt-card.selected { border-color: var(--brand); background: #fafcff; }
+  .pkv.pkv-user .pkt-card.is-delivered { opacity: 0.75; }
+  .pkv.pkv-user .pkt-card.is-returned { opacity: 0.8; }
+  .pkv.pkv-user .pkt-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  .pkv.pkv-user .pkt-cb { appearance: none; width: 17px; height: 17px; border: 1.5px solid var(--border2); border-radius: 5px; background: #fff; cursor: pointer; position: relative; transition: all 0.12s; flex-shrink: 0; }
+  .pkv.pkv-user .pkt-cb:checked { background: var(--brand); border-color: var(--brand); }
+  .pkv.pkv-user .pkt-cb:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 6px; height: 10px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg); }
+  .pkv.pkv-user .code-badge { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--brand); background: var(--brand-light); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(26,86,219,0.15); white-space: nowrap; flex-shrink: 0; }
+  .pkv.pkv-user .pkt-info { flex: 1; min-width: 0; }
+  .pkv.pkv-user .pkt-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pkv.pkv-user .pkt-addr { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Status pills */
+  .pkv.pkv-user .status-pill { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; border: 1px solid; }
+  .pkv.pkv-user .pill-pending { background: var(--warning-bg);  color: var(--warning);  border-color: var(--warning-border); }
+  .pkv.pkv-user .pill-delivered { background: var(--success-bg);  color: var(--success);  border-color: var(--success-border); }
+  .pkv.pkv-user .pill-returned { background: var(--returned-bg); color: var(--returned); border-color: var(--returned-border); }
+  .pkv.pkv-user .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* Delivered / returned info row */
+  .pkv.pkv-user .delivered-row { display: flex; align-items: center; gap: 20px; padding: 0 16px 14px 54px; flex-wrap: wrap; }
+  .pkv.pkv-user .del-item { display: flex; align-items: center; gap: 6px; }
+  .pkv.pkv-user .del-item i { font-size: 14px; color: var(--muted); }
+  .pkv.pkv-user .del-item span { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .pkv.pkv-user .del-ts { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-left: auto; }
+
+  /* Pending delivery form */
+  .pkv.pkv-user .pkt-form { border-top: 1px solid var(--border); padding: 14px 16px; background: #fafbfe; display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .pkv.pkv-user .form-grp { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+  .pkv.pkv-user .form-grp-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .pkv.pkv-user .form-grp-wrap { position: relative; }
+  .pkv.pkv-user .form-grp-wrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--dim); font-size: 14px; pointer-events: none; }
+  .pkv.pkv-user .form-ctrl { width: 100%; background: #fff; border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px 8px 30px; font-size: 13px; font-family: var(--jakarta); color: var(--text); outline: none; transition: border-color 0.15s, color 0.15s, font-style 0.15s; }
+  .pkv.pkv-user .form-ctrl:focus { border-color: var(--brand); }
+  .pkv.pkv-user .form-ctrl.is-invalid { border-color: #dc2626; }
+
+  /* Suggested (auto-filled, not yet confirmed) vs user-typed value */
+  .pkv.pkv-user .form-ctrl.is-suggested { color: var(--muted); font-style: italic; border-style: dashed; background: var(--brand-light); }
+  .pkv.pkv-user .form-ctrl.is-suggested:focus { font-style: normal; }
+
+  /* Candidate chips — pick which past receiver to use */
+  .pkv.pkv-user .candidate-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; order: 3; margin-top: -2px; }
+  .pkv.pkv-user .candidate-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+  .pkv.pkv-user .candidate-chip {
+    font-family: var(--jakarta); font-size: 11px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; border: 1px solid var(--border2); background: #fff; color: var(--muted);
+    cursor: pointer; transition: all 0.12s; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .pkv.pkv-user .candidate-chip:hover { border-color: var(--brand); color: var(--brand); }
+  .pkv.pkv-user .candidate-chip.active { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+  .pkv.pkv-user .candidate-chip .chip-count { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  .pkv.pkv-user .candidate-chip.active .chip-count { color: var(--brand); }
+
+  /* Action buttons row */
+  .pkv.pkv-user .action-row { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .pkv.pkv-user .deliver-btn { background: var(--brand); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 700; font-family: var(--jakarta); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.15s; white-space: nowrap; height: 38px; }
+  .pkv.pkv-user .deliver-btn:hover { background: #1347c0; transform: translateY(-1px); }
+  .pkv.pkv-user .deliver-btn:disabled { background: var(--dim); cursor: not-allowed; transform: none; }
+  .pkv.pkv-user .return-btn { background: transparent; color: var(--danger); border: 1px solid #fca5a5; border-radius: 8px; padding: 9px 14px; font-size: 12px; font-weight: 600; font-family: var(--jakarta); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.14s; white-space: nowrap; height: 38px; }
+  .pkv.pkv-user .return-btn:hover { background: var(--danger-bg); border-color: #f87171; }
+
+  .pkv.pkv-user .gps-strip { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); width: 100%; margin-top: -2px; order: 4; }
+  .pkv.pkv-user .gps-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex-shrink: 0; transition: background 0.3s; }
+  .pkv.pkv-user .gps-dot.ok { background: var(--success); }
+
+  /* ── BULK BAR ── */
+  .pkv.pkv-user .bulk-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111827; border-top: 1px solid #1f2937; height: 62px; display: flex; align-items: center; gap: 14px; padding: 0 24px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.34,1.4,0.64,1); z-index: 80; box-shadow: 0 -4px 20px rgba(0,0,0,0.2); }
+  .pkv.pkv-user .bulk-bar.show { transform: translateY(0); }
+  .pkv.pkv-user .bulk-count-badge { font-family: var(--mono); font-size: 11px; color: #93c5fd; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); border-radius: 20px; padding: 3px 10px; }
+  .pkv.pkv-user .bulk-divider { width: 1px; height: 24px; background: #374151; }
+  .pkv.pkv-user .bulk-deliver-btn { background: var(--brand); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-family: var(--jakarta); font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: background 0.15s; }
+  .pkv.pkv-user .bulk-deliver-btn:hover { background: #1347c0; }
+  .pkv.pkv-user .bulk-cancel-btn { background: transparent; border: 1px solid #374151; color: #9ca3af; border-radius: 8px; padding: 8px 12px; font-size: 12px; cursor: pointer; font-family: var(--jakarta); transition: all 0.12s; margin-left: auto; }
+  .pkv.pkv-user .bulk-cancel-btn:hover { color: #e5e7eb; border-color: #6b7280; }
+
+  /* ── SHEET OVERLAY ──
+     FIX: .sheet uses opacity + margin-top for animation instead of transform.
+     CSS transform creates a new stacking context which traps native <select>
+     dropdowns — they can't escape a transformed ancestor on most browsers/WebViews.
+     Using margin-top avoids creating a stacking context entirely.
+  ── */
+  .pkv.pkv-user .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .pkv.pkv-user .sheet-overlay.open { opacity: 1; pointer-events: all; }
+  .pkv.pkv-user .sheet {
+    background: var(--surface);
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-width: 680px;
+    /* FIX: was transform:translateY(40px) — replaced with margin-top + opacity */
+    opacity: 0;
+    margin-top: 40px;
+    transition: opacity 0.28s cubic-bezier(0.34,1.2,0.64,1), margin-top 0.28s cubic-bezier(0.34,1.2,0.64,1);
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+  }
+  .pkv.pkv-user .sheet-overlay.open .sheet { opacity: 1; margin-top: 0; }
+  .pkv.pkv-user .sheet-drag { width: 40px; height: 4px; background: var(--border2); border-radius: 2px; margin: 12px auto 0; }
+  .pkv.pkv-user .sheet-head { padding: 16px 22px 14px; border-bottom: 1px solid var(--border); }
+  .pkv.pkv-user .sheet-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .pkv.pkv-user .sheet-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .pkv.pkv-user .sheet-body { flex: 1; overflow-y: auto; }
+  .pkv.pkv-user .sheet-gps { padding: 10px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; color: var(--muted); flex-shrink: 0; }
+  .pkv.pkv-user .sheet-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
+
+  .pkv.pkv-user .bulk-table { width: 100%; border-collapse: collapse; }
+  .pkv.pkv-user .bulk-table thead tr { background: var(--bg); border-bottom: 1px solid var(--border); }
+  .pkv.pkv-user .bulk-table th { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 10px 16px; text-align: left; font-weight: 400; }
+  .pkv.pkv-user .bulk-table tbody tr { border-bottom: 1px solid var(--border); }
+  .pkv.pkv-user .bulk-table tbody tr:last-child { border-bottom: none; }
+  .pkv.pkv-user .bulk-table td { padding: 10px 16px; vertical-align: middle; }
+  .pkv.pkv-user .b-code { font-family: var(--mono); font-size: 11px; color: var(--brand); }
+  .pkv.pkv-user .b-name { font-size: 12px; font-weight: 600; color: var(--text2); margin-top: 2px; }
+  .pkv.pkv-user .bulk-inp { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: var(--jakarta); color: var(--text); outline: none; transition: border-color 0.15s, color 0.15s, font-style 0.15s; }
+  .pkv.pkv-user .bulk-inp:focus { border-color: var(--brand); background: #fff; }
+  .pkv.pkv-user .bulk-inp.is-invalid { border-color: #dc2626; background: var(--danger-bg); }
+  .pkv.pkv-user .bulk-inp.is-suggested { color: var(--muted); font-style: italic; border-style: dashed; }
+  .pkv.pkv-user .bulk-inp.is-suggested:focus { font-style: normal; }
+  .pkv.pkv-user .bulk-candidates { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+
+  /* ── RETURN MODAL ── */
+  .pkv.pkv-user .return-pkt-chip { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; }
+  .pkv.pkv-user .return-pkt-code { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--brand); background: var(--brand-light); padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(26,86,219,0.15); white-space: nowrap; }
+  .pkv.pkv-user .return-pkt-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pkv.pkv-user .ret-field { margin-bottom: 14px; }
+  .pkv.pkv-user .ret-field:last-child { margin-bottom: 0; }
+  .pkv.pkv-user .ret-label { display: block; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; }
+  .pkv.pkv-user .ret-note { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: var(--jakarta); color: var(--text); outline: none; transition: border-color 0.15s; resize: vertical; min-height: 72px; }
+  .pkv.pkv-user .ret-note:focus { border-color: var(--brand); background: #fff; }
+  .pkv.pkv-user .btn-ret-confirm { background: var(--danger); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 700; font-family: var(--jakarta); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: background 0.14s; }
+  .pkv.pkv-user .btn-ret-confirm:hover { background: #7f1d1d; }
+  .pkv.pkv-user .btn-ret-cancel { background: transparent; border: 1px solid var(--border2); border-radius: 8px; padding: 8px 16px; font-size: 13px; color: var(--muted); cursor: pointer; font-family: var(--jakarta); transition: all 0.12s; }
+  .pkv.pkv-user .btn-ret-cancel:hover { border-color: var(--border); color: var(--text); }
+
+  /* ── CUSTOM REASON DROPDOWN (replaces native <select> to fix stacking context) ── */
+  .pkv.pkv-user .custom-select-wrap { position: relative; }
+  .pkv.pkv-user .reason-trigger {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: var(--jakarta);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: border-color 0.15s;
+    text-align: left;
+  }
+  .pkv.pkv-user .reason-trigger:hover { border-color: var(--border); }
+  .pkv.pkv-user .reason-trigger:focus { border-color: var(--brand); background: #fff; }
+  .pkv.pkv-user .reason-trigger.is-invalid { border-color: #dc2626; background: var(--danger-bg); }
+  .pkv.pkv-user .reason-trigger.has-value { background: #fff; }
+  .pkv.pkv-user .reason-trigger-label { flex: 1; color: var(--dim); }
+  .pkv.pkv-user .reason-trigger.has-value .reason-trigger-label { color: var(--text); }
+  .pkv.pkv-user .reason-trigger-chevron { font-size: 11px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+  .pkv.pkv-user .reason-trigger.open .reason-trigger-chevron { transform: rotate(180deg); }
+  .pkv.pkv-user .reason-drop {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    z-index: 9999;
+    box-shadow: 0 6px 24px rgba(17,24,39,0.13);
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .pkv.pkv-user .reason-drop.open { display: block; }
+  .pkv.pkv-user .reason-opt {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: var(--jakarta);
+    color: var(--text2);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+  }
+  .pkv.pkv-user .reason-opt:hover { background: var(--brand-light); color: var(--brand); }
+  .pkv.pkv-user .reason-opt.placeholder-opt { color: var(--dim); }
+  .pkv.pkv-user .reason-opt + .reason-opt { border-top: 1px solid var(--border); }
+
+  /* ── OFFLINE BANNER ── */
+  .pkv.pkv-user .offline-banner { display: none; background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 13px; color: var(--warning); align-items: center; gap: 8px; }
+  .pkv.pkv-user .offline-banner.show { display: flex; }
+
+  /* ── EMPTY ── */
+  .pkv.pkv-user .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .pkv.pkv-user .empty-icon { font-size: 42px; margin-bottom: 10px; opacity: 0.35; }
+
+  /* ── TOAST ── */
+  .pkv.pkv-user #toastZone { position: fixed; bottom: 80px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 999; }
+  .pkv.pkv-user .toast-msg { display: flex; align-items: center; gap: 10px; background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #e5e7eb; min-width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.18); animation: slideIn 0.2s ease; }
+  .pkv.pkv-user .toast-msg.t-success { border-left: 3px solid var(--success); }
+  .pkv.pkv-user .toast-msg.t-error { border-left: 3px solid #dc2626; }
+  .pkv.pkv-user .toast-msg.t-info { border-left: 3px solid var(--brand); }
+
+  .pkv.pkv-user .spinner-sm { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+
+  @keyframes fadeUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:none; } }
+  @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0.45} }
+  @keyframes spin    { to { transform:rotate(360deg); } }
+
+  /* ── MOBILE-FIRST DELIVERY UX ── */
+  @media (max-width: 700px) {
+    .pkv.pkv-user .topbar { height: 58px; padding-top: env(safe-area-inset-top); }
+    .pkv.pkv-user .topbar-inner { padding: 0 14px; gap: 9px; }
+    .pkv.pkv-user .brand { font-size: 0; gap: 0; }
+    .pkv.pkv-user .brand-icon { width: 36px; height: 36px; border-radius: 10px; font-size: 17px; }
+    .pkv.pkv-user .topbar-divider { display: none; }
+    .pkv.pkv-user .user-chip { min-width: 0; padding-right: 8px; }
+    .pkv.pkv-user .user-name { max-width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pkv.pkv-user .net-badge { padding: 5px 8px; }
+    .pkv.pkv-user .net-badge #netText { display: none; }
+    .pkv.pkv-user .sync-btn { padding: 6px 9px; min-height: 36px; }
+
+    .pkv.pkv-user .control-inner { padding: 10px 14px 12px; }
+    .pkv.pkv-user .control-row { height: auto; display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .pkv.pkv-user .month-form { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; width: 100%; }
+    .pkv.pkv-user .month-form label { display: flex; align-items: center; }
+    .pkv.pkv-user .month-inp, .pkv.pkv-user .load-btn { min-height: 44px; font-size: 16px; }
+    .pkv.pkv-user .load-btn { justify-content: center; padding: 8px 14px; }
+    .pkv.pkv-user .ctrl-sep { display: none; }
+    .pkv.pkv-user .filter-pills { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
+    .pkv.pkv-user .fpill { min-height: 42px; padding: 7px 5px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .pkv.pkv-user .search-wrap { grid-column: 1 / -1; margin-left: 0; width: 100%; }
+    .pkv.pkv-user .search-wrap input, .pkv.pkv-user .search-wrap input:focus { width: 100%; min-height: 46px; font-size: 16px; }
+
+    .pkv.pkv-user .main { padding: 16px 12px calc(120px + env(safe-area-inset-bottom)); }
+    .pkv.pkv-user .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+    .pkv.pkv-user .stats-grid .stat-card:last-child { grid-column: 1 / -1; }
+    .pkv.pkv-user .stat-card { padding: 14px; border-radius: 12px; }
+    .pkv.pkv-user .stat-num { font-size: 28px; }
+    .pkv.pkv-user .stat-label { letter-spacing: 1.2px; }
+    .pkv.pkv-user .sec-head { position: sticky; top: 58px; z-index: 20; background: var(--bg); padding: 8px 0 10px; margin-bottom: 4px; }
+    .pkv.pkv-user .bulk-mode-btn { min-height: 44px; padding: 7px 12px; }
+
+    .pkv.pkv-user .packet-list { gap: 10px; margin-bottom: 0; }
+    .pkv.pkv-user .pkt-card { border-radius: 14px; }
+    .pkv.pkv-user .pkt-card:hover { box-shadow: none; }
+    .pkv.pkv-user .pkt-top { align-items: flex-start; gap: 9px; padding: 13px 12px; }
+    .pkv.pkv-user .pkt-cb { width: 22px; height: 22px; margin: 2px 2px 0 0; border-radius: 6px; }
+    .pkv.pkv-user .pkt-cb:checked::after { left: 6px; top: 2px; width: 7px; height: 12px; }
+    .pkv.pkv-user .code-badge { font-size: 10px; padding: 4px 7px; }
+    .pkv.pkv-user .pkt-name { font-size: 14px; white-space: normal; line-height: 1.25; }
+    .pkv.pkv-user .pkt-addr { white-space: normal; line-height: 1.35; }
+    .pkv.pkv-user .status-pill { font-size: 9px; padding: 4px 7px; }
+
+    .pkv.pkv-user .delivered-row { padding: 0 12px 13px; gap: 8px 14px; }
+    .pkv.pkv-user .del-ts { width: 100%; margin-left: 0; }
+
+    .pkv.pkv-user .pkt-form { padding: 14px 12px 12px; flex-direction: column; align-items: stretch; gap: 11px; }
+    .pkv.pkv-user .form-grp { min-width: 0; width: 100%; gap: 6px; }
+    .pkv.pkv-user .form-grp-label { font-size: 10px; }
+    .pkv.pkv-user .form-ctrl { min-height: 48px; padding: 10px 12px 10px 34px; font-size: 16px; border-radius: 10px; }
+    .pkv.pkv-user .candidate-row { margin-top: 0; gap: 7px; }
+    .pkv.pkv-user .candidate-label { width: 100%; font-size: 9px; }
+    .pkv.pkv-user .candidate-chip { min-height: 38px; padding: 7px 11px; font-size: 12px; }
+    .pkv.pkv-user .action-row { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .pkv.pkv-user .deliver-btn, .pkv.pkv-user .return-btn { width: 100%; min-height: 48px; height: 48px; justify-content: center; padding: 10px 12px; font-size: 14px; }
+    .pkv.pkv-user .gps-strip { margin-top: 0; padding-top: 2px; }
+
+    .pkv.pkv-user .bulk-bar {
+      height: auto; min-height: 66px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      gap: 8px; align-items: center;
+    }
+    .pkv.pkv-user .bulk-divider { display: none; }
+    .pkv.pkv-user .bulk-count-badge { white-space: nowrap; }
+    .pkv.pkv-user .bulk-deliver-btn { flex: 1; min-height: 46px; justify-content: center; padding: 8px 12px; }
+    .pkv.pkv-user .bulk-cancel-btn { min-height: 46px; margin-left: 0; padding: 8px 12px; }
+
+    .pkv.pkv-user .sheet-overlay { align-items: flex-end; }
+    .pkv.pkv-user .sheet { max-height: 92dvh; border-radius: 18px 18px 0 0; }
+    .pkv.pkv-user .sheet-drag { width: 44px; margin-top: 10px; }
+    .pkv.pkv-user .sheet-head { padding: 14px 16px 12px; }
+    .pkv.pkv-user .sheet-title { font-size: 17px; }
+    .pkv.pkv-user .sheet-sub { line-height: 1.4; }
+    .pkv.pkv-user .sheet-body { overscroll-behavior: contain; }
+    .pkv.pkv-user .sheet-gps { padding: 10px 14px; }
+    .pkv.pkv-user .sheet-foot {
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      justify-content: stretch; background: var(--surface);
+    }
+    .pkv.pkv-user .sheet-foot button { flex: 1; min-height: 48px; font-size: 14px; justify-content: center; }
+
+    /* Bulk table becomes one easy-to-fill card per packet */
+    .pkv.pkv-user .bulk-table, .pkv.pkv-user .bulk-table tbody, .pkv.pkv-user .bulk-table tr, .pkv.pkv-user .bulk-table td { display: block; width: 100%; }
+    .pkv.pkv-user .bulk-table thead { display: none; }
+    .pkv.pkv-user .bulk-table { border-collapse: separate; border-spacing: 0; padding: 10px 12px 14px; }
+    .pkv.pkv-user .bulk-table tbody { display: flex; flex-direction: column; gap: 10px; }
+    .pkv.pkv-user .bulk-table tbody tr {
+      border: 1px solid var(--border); border-radius: 12px; background: #fff;
+      padding: 12px; box-shadow: 0 1px 2px rgba(17,24,39,.03);
+    }
+    .pkv.pkv-user .bulk-table td { padding: 0; border: 0; }
+    .pkv.pkv-user .bulk-table td + td { margin-top: 10px; }
+    .pkv.pkv-user .bulk-table td[data-label]::before {
+      content: attr(data-label); display: block; margin-bottom: 5px;
+      font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--muted);
+    }
+    .pkv.pkv-user .bulk-table td:first-child { padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .pkv.pkv-user .b-code { font-size: 12px; }
+    .pkv.pkv-user .b-name { font-size: 13px; margin-top: 3px; }
+    .pkv.pkv-user .bulk-inp { min-height: 48px; font-size: 16px; border-radius: 10px; padding: 10px 12px; }
+    .pkv.pkv-user .bulk-candidates { gap: 6px; margin-top: 8px; }
+
+    .pkv.pkv-user .return-pkt-chip { margin-bottom: 16px; }
+    .pkv.pkv-user .reason-trigger { min-height: 48px; font-size: 16px; }
+    .pkv.pkv-user .reason-opt { min-height: 48px; display: flex; align-items: center; padding: 10px 14px; font-size: 15px; }
+    .pkv.pkv-user .ret-note { min-height: 96px; font-size: 16px; }
+    .pkv.pkv-user #toastZone { left: 12px; right: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); }
+    .pkv.pkv-user .toast-msg { min-width: 0; width: 100%; }
+  }
+
+  @media (max-width: 390px) {
+    .pkv.pkv-user .user-name { max-width: 64px; }
+    .pkv.pkv-user .filter-pills { grid-template-columns: 1fr 1fr; }
+    .pkv.pkv-user .fpill { font-size: 12px; }
+    .pkv.pkv-user .status-pill { font-size: 8px; }
+  }
+</style>
+
+<style>
+  /* Inside loggedInLayout: the layout navbar is the only sticky bar (page header scrolls away) */
+  .pkv.pkv-user .topbar{position:relative;top:auto;z-index:20}
+  .pkv.pkv-user .sec-head{position:static}
+</style>
+<%- include("pickers") %>
+<div class="pkv pkv-user">
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+<div class="topbar-inner">
+  <div class="brand">
+    <div class="brand-icon"><i class="bi bi-box-seam-fill"></i></div>
+    Field App
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="user-chip">
+    <div class="user-avatar" id="userInitials">?</div>
+    <div class="user-name" id="userName"><%= userName %></div>
+  </div>
+  <div class="ms-auto-flex d-flex align-items-center gap-2">
+    <div class="net-badge online" id="netBadge">
+      <span class="led"></span>
+      <span id="netText">Online</span>
+    </div>
+    <div class="sync-btn" id="syncBtn" onclick="syncOffline()">
+      <i class="bi bi-arrow-up-circle"></i>
+      <span id="queueCount">0</span> queued
+    </div>
+  </div>
+</div>
+</div>
+<%- include ("../partials/messages"); %>
+<!-- ── CONTROL BAR ── -->
+<div class="control-bar">
+<div class="control-inner">
+  <div class="control-row">
+    <form class="month-form" method="GET" action="/packet/myPackets" id="monthForm">
+      <label for="monthInp">Month</label>
+      <input type="text" class="month-inp" name="month" id="monthInp" value="<%= month %>">
+    </form>
+    <div class="ctrl-sep"></div>
+    <div class="filter-pills">
+      <button class="fpill active" onclick="setFilter('all',this)">All</button>
+      <button class="fpill" onclick="setFilter('pending',this)"><i class="bi bi-clock"></i> Pending</button>
+      <button class="fpill" onclick="setFilter('delivered',this)"><i class="bi bi-check-circle"></i> Done</button>
+      <button class="fpill" onclick="setFilter('returned',this)"><i class="bi bi-arrow-return-left"></i> Returned</button>
+    </div>
+    <div class="search-wrap">
+      <i class="bi bi-search si"></i>
+      <input type="text" id="searchIn" placeholder="Search packets…">
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+<div class="offline-banner" id="offlineBanner">
+  <i class="bi bi-wifi-off"></i> You're offline — deliveries will sync when reconnected
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label"><i class="bi bi-collection"></i> Assigned</div>
+    <div class="stat-num" id="sumTotal">—</div>
+    <div class="stat-sub">This month</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:100%;background:var(--border2)"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label"><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Delivered</div>
+    <div class="stat-num" id="sumDone" style="color:var(--success)">—</div>
+    <div class="stat-sub" id="sumRate">—% completion</div>
+    <div class="stat-bar"><div class="stat-bar-fill" id="barDone" style="background:var(--success)"></div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label"><i class="bi bi-hourglass-split" style="color:#d97706"></i> Pending</div>
+    <div class="stat-num" id="sumPending" style="color:#d97706">—</div>
+    <div class="stat-sub">Remaining</div>
+    <div class="stat-bar"><div class="stat-bar-fill" id="barPending" style="background:#d97706"></div></div>
+  </div>
+</div>
+
+<div class="sec-head">
+  <div class="sec-title">My Packets</div>
+  <a class="bulk-mode-btn" style="text-decoration:none" href="/packet/report?month=<%= encodeURIComponent(month) %>"><i class="bi bi-file-earmark-text"></i> Report</a>
+  <% if (typeof perms !== 'undefined' && perms.manage) { %><a class="bulk-mode-btn" style="text-decoration:none" href="/packet/packets?month=<%= encodeURIComponent(month) %>"><i class="bi bi-people"></i> Assign</a><% } %>
+  <div class="sec-count" id="cardCount">—</div>
+  <button class="bulk-mode-btn" id="bulkModeBtn" onclick="toggleBulkMode()">
+    <i class="bi bi-ui-checks"></i> Select Multiple
+  </button>
+</div>
+
+<div class="packet-list" id="packetList"></div>
+</div>
+
+<!-- ── BULK BAR ── -->
+<div class="bulk-bar" id="bulkBar">
+<span class="bulk-count-badge" id="bulkCount">0 selected</span>
+<div class="bulk-divider"></div>
+<button class="bulk-deliver-btn" onclick="openBulkModal()">
+  <i class="bi bi-send-fill"></i> Deliver
+</button>
+<button class="bulk-cancel-btn" onclick="openReturnModal([...selected])">
+  <i class="bi bi-arrow-return-left"></i> Return
+</button>
+<button class="bulk-cancel-btn" onclick="exitBulkMode()">
+  <i class="bi bi-x"></i> Cancel
+</button>
+</div>
+
+<!-- ── BULK DELIVER SHEET ── -->
+<div class="sheet-overlay" id="bulkOverlay">
+<div class="sheet">
+  <div class="sheet-drag"></div>
+  <div class="sheet-head">
+    <div class="sheet-title" id="modalTitle">Bulk Delivery</div>
+    <div class="sheet-sub">Fill receiver details for each selected packet</div>
+  </div>
+  <div class="sheet-body">
+    <table class="bulk-table">
+      <thead>
+        <tr>
+          <th style="width:170px">Packet</th>
+          <th>Receiver Name</th>
+          <th>Phone Number</th>
+        </tr>
+      </thead>
+      <tbody id="bulkRows"></tbody>
+    </table>
+  </div>
+  <div class="sheet-gps">
+    <span class="gps-dot" id="bulkGpsDot"></span>
+    <span id="bulkGpsTxt">Acquiring GPS…</span>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-light btn-sm" onclick="closeBulkModal()">Cancel</button>
+    <button class="btn btn-success btn-sm d-flex align-items-center gap-2" id="confirmBtn" onclick="confirmBulk()">
+      <i class="bi bi-check-all"></i> Confirm All
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ── RETURN PACKET SHEET ── -->
+<div class="sheet-overlay" id="returnOverlay">
+<div class="sheet" style="max-width:520px">
+  <div class="sheet-drag"></div>
+  <div class="sheet-head">
+    <div class="sheet-title">Return Packet</div>
+    <div class="sheet-sub">Packet will be sent back to admin for reassignment</div>
+  </div>
+  <div class="sheet-body" style="padding:18px 22px">
+
+    <!-- Packet info chip -->
+    <div class="return-pkt-chip">
+      <div class="return-pkt-code" id="ret_code">—</div>
+      <div class="return-pkt-name" id="ret_name">—</div>
+    </div>
+
+    <!-- Reason (required) — custom dropdown replaces native <select>
+         to avoid CSS transform stacking context trapping the native dropdown -->
+    <div class="ret-field">
+      <label class="ret-label">Reason for return *</label>
+      <div class="custom-select-wrap" id="reasonDropWrap">
+        <button type="button" class="reason-trigger" id="ret_reason_btn" onclick="toggleReasonDrop()">
+          <span class="reason-trigger-label" id="ret_reason_label">— Select a reason —</span>
+          <i class="bi bi-chevron-down reason-trigger-chevron" id="ret_reason_chevron"></i>
+        </button>
+        <div class="reason-drop" id="reason_drop">
+          <div class="reason-opt placeholder-opt" onclick="pickReason('')">— Select a reason —</div>
+          <div class="reason-opt" onclick="pickReason('Address not found')">Address not found</div>
+          <div class="reason-opt" onclick="pickReason('Customer not available')">Customer not available</div>
+          <div class="reason-opt" onclick="pickReason('Customer refused delivery')">Customer refused delivery</div>
+          <div class="reason-opt" onclick="pickReason('Incorrect address')">Incorrect address</div>
+          <div class="reason-opt" onclick="pickReason('Packet damaged')">Packet damaged</div>
+          <div class="reason-opt" onclick="pickReason('Access denied to location')">Access denied to location</div>
+          <div class="reason-opt" onclick="pickReason('Other')">Other</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note (optional) -->
+    <div class="ret-field">
+      <label class="ret-label" for="ret_note">Additional note (optional)</label>
+      <textarea class="ret-note" id="ret_note" placeholder="Any extra details for the admin…"></textarea>
+    </div>
+
+  </div>
+
+  <!--
+    Return form — real POST, no fetch.
+    ret_reason hidden input holds the selected reason value.
+    packetId, reason, note, month are posted to /packet/returnPacket
+  -->
+  <form method="POST" action="/packet/returnPacket" id="returnForm">
+    <span id="ret_ids"></span>
+    <input type="hidden" name="reason"   id="ret_reason">
+    <input type="hidden" name="note"     id="ret_noteHidden">
+    <input type="hidden" name="month"    value="<%= month %>">
+    <div class="sheet-foot">
+      <button type="button" class="btn-ret-cancel" onclick="closeReturnModal()">Cancel</button>
+      <button type="button" class="btn-ret-confirm" id="ret_confirmBtn" onclick="submitReturn()">
+        <i class="bi bi-arrow-return-left"></i> Return Packet
+      </button>
+    </div>
+  </form>
+
+</div>
+</div>
+
+<div id="toastZone"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+
+<script>
+const packets    = <%- (typeof safeJson === 'function' ? safeJson(packets || []) : JSON.stringify(packets || []).replace(/</g, '\\u003c')) %>;   /* ★ safeJson */
+let activeFilter = 'all';
+let bulkMode     = false;
+let selected     = new Set();
+let capturedGPS  = null;
+const initialMonth = <%- safeJson(month) %>;
+const drafts = {};      // what was typed stays when the list is filtered or searched
+let pageGPS = null;     // asked once per page, not once per card on every key press
+
+/* ── Helpers ─────────────────────────────────────────────────────────── */
+function initials(n) { if(!n) return '?'; return n.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function addHidden(form, name, value) {
+  if (value === null || value === undefined) return;
+  const i = document.createElement('input');
+  i.type = 'hidden'; i.name = name; i.value = String(value);
+  form.appendChild(i);
+}
+function toast(msg, type='info') {
+  const el = $(`<div class="toast-msg t-${type}"></div>`).text(msg);   /* ★ text, not HTML */
+  $('#toastZone').append(el);
+  setTimeout(() => el.fadeOut(300, ()=>el.remove()), 3500);
+}
+
+$(function() {
+  pkvMonthPicker('#monthInp', function (m) { if (m !== initialMonth) document.getElementById('monthForm').submit(); });
+  $('#userInitials').text(initials($('#userName').text().trim()));
+  updateNetworkUI();
+  updateSyncBadge();
+  renderCards();
+  $('#searchIn').on('input', renderCards);
+  $(window).on('online',  ()=>{ updateNetworkUI(); syncOffline(); });
+  $(window).on('offline', updateNetworkUI);
+  if (navigator.onLine) syncOffline();          // deliveries saved earlier go up as soon as the page opens
+  startPageGPS();
+});
+
+/* ── GPS ─────────────────────────────────────────────────────────────── */
+function getGPS() {
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => res(null), { timeout: 7000 }
+    );
+  });
+}
+function startGPSIndicator(dotId, txtId) {
+  capturedGPS = null;
+  $(`#${dotId}`).removeClass('ok');
+  $(`#${txtId}`).text('Acquiring GPS…');
+  getGPS().then(gps => {
+    capturedGPS = gps;
+    $(`#${dotId}`).toggleClass('ok', !!gps);
+    $(`#${txtId}`).text(gps ? `📍 ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}` : '📍 GPS unavailable');
+  });
+}
+function showPageGPS() {
+  $('.gps-strip .gps-dot').toggleClass('ok', !!(pageGPS && pageGPS.fix));
+  $('.gps-strip span').text(!pageGPS ? 'Locating…' : pageGPS.fix ? `📍 ${pageGPS.fix.lat.toFixed(4)}, ${pageGPS.fix.lng.toFixed(4)}` : 'GPS unavailable');
+}
+function startPageGPS() {
+  if (!packets.some(p => (p.Status||'').trim() === 'ASSIGNED')) return;
+  getGPS().then(fix => { pageGPS = { fix }; showPageGPS(); });
+}
+
+/* ── Suggestion helpers ─────────────────────────────────────────────── */
+// Called when the user types into a field that was pre-filled from history —
+// once they touch it, it's their input, not just a guess.
+function onFieldEdit(input) {
+  $(input).removeClass('is-suggested');
+}
+
+// User picked one of the "previously received by" chips for a pending card.
+function selectCandidate(id, idx) {
+  const p = packets.find(x => x.Id === id);
+  const c = p?.suggestedCandidates?.[idx];
+  if (!c) return;
+  $(`#n_${id}`).val(c.name).addClass('is-suggested');
+  $(`#ph_${id}`).val(c.phone).addClass('is-suggested');
+  $(`.candidate-chip[data-pid="${id}"]`).removeClass('active');
+  $(`.candidate-chip[data-pid="${id}"][data-idx="${idx}"]`).addClass('active');
+}
+
+function candidateChipsHtml(p) {
+  const candidates = Array.isArray(p.suggestedCandidates) ? p.suggestedCandidates : [];
+  if (!candidates.length) return '';
+  return `<div class="candidate-row">
+    <span class="candidate-label">Previously:</span>
+    ${candidates.map((c, i) => `
+      <button type="button" class="candidate-chip${i===0?' active':''}" data-pid="${p.Id}" data-idx="${i}" onclick="selectCandidate(${p.Id}, ${i})">
+        ${esc(c.name)} <span class="chip-count">×${Number(c.count)||0}</span>
+      </button>
+    `).join('')}
+  </div>`;
+}
+
+/* ── Render cards ────────────────────────────────────────────────────── */
+function saveDrafts() {
+  $('#packetList input.form-ctrl').each(function () {
+    const m = this.id.match(/^(n|ph)_(\d+)$/); if (!m) return;
+    const d = drafts[m[2]] || (drafts[m[2]] = {});
+    d[m[1]] = this.value; d.suggested = d.suggested || $(this).hasClass('is-suggested');
+  });
+}
+function renderCards() {
+  saveDrafts();
+  const search = ($('#searchIn').val() || '').toLowerCase().trim();
+
+  const rows = packets.filter(p => {
+    const st = (p.Status || p.status || '').trim();
+    const isDone     = st === 'DELIVERED';
+    const isReturned = st === 'RETURNED';
+    const isPending  = !isDone && !isReturned;
+
+    const mf =
+      activeFilter === 'all'       ||
+      (activeFilter === 'pending'   && isPending)  ||
+      (activeFilter === 'delivered' && isDone)     ||
+      (activeFilter === 'returned'  && isReturned);
+
+    const ms = !search ||
+      [p.PacketCode, p.Name, p.Address, p.receiverName, p.ReceiverName]
+        .filter(Boolean).join(' ').toLowerCase().includes(search);
+    return mf && ms;
+  });
+
+  // Stats from full dataset
+  const total    = packets.length;
+  const done     = packets.filter(p => (p.Status||p.status||'').trim() === 'DELIVERED').length;
+  const returned = packets.filter(p => (p.Status||p.status||'').trim() === 'RETURNED').length;
+  const pending  = total - done - returned;
+  const rate     = total ? Math.round(done/total*100) : 0;
+
+  $('#sumTotal').text(total);
+  $('#sumDone').text(done);
+  $('#sumPending').text(pending);
+  $('#sumRate').text(rate + '% completion');
+  $('#barDone').css('width', rate + '%');
+  $('#barPending').css('width', (total ? Math.round(pending/total*100) : 0) + '%');
+  $('#cardCount').text(`${rows.length} packet${rows.length!==1?'s':''}`);
+
+  if (!rows.length) {
+    $('#packetList').html(`<div class="empty-state"><div class="empty-icon"><i class="bi bi-inbox"></i></div><p>No packets match your filter</p></div>`);
+    return;
+  }
+
+  $('#packetList').html(rows.map((p, i) => {
+    const id         = p.Id;
+    const st         = (p.Status || p.status || '').trim();
+    const isDone     = st === 'DELIVERED';
+    const isReturned = st === 'RETURNED';
+    const isSel      = selected.has(id);
+
+    const cbHtml = bulkMode && !isDone && !isReturned
+      ? `<input type="checkbox" class="pkt-cb" data-id="${id}" ${isSel?'checked':''} onchange="toggleSelect(${id},this)">`
+      : `<span style="width:4px;display:inline-block"></span>`;
+
+    const pill = isDone
+      ? `<span class="status-pill pill-delivered"><span class="pill-dot"></span>Done</span>`
+      : isReturned
+        ? `<span class="status-pill pill-returned"><span class="pill-dot"></span>Returned</span>`
+        : `<span class="status-pill pill-pending"><span class="pill-dot"></span>Pending</span>`;
+
+    let bottom;
+    if (isDone) {
+      bottom = `<div class="delivered-row">
+        <div class="del-item"><i class="bi bi-person-fill"></i><span>${esc(p.ReceiverName||p.receiverName||'—')}</span></div>
+        <div class="del-item"><i class="bi bi-telephone-fill"></i><span style="font-family:var(--mono);font-size:12px">${esc(p.ReceiverPhone||p.receiverPhone||'—')}</span></div>
+        <div class="del-ts"><i class="bi bi-clock-history"></i> ${esc(p.DeliveredAt||p.deliveredAt||'')}</div>
+      </div>`;
+    } else if (isReturned) {
+      bottom = `<div class="delivered-row">
+        <div class="del-item" style="color:var(--returned)">
+          <i class="bi bi-arrow-return-left"></i>
+          <span style="font-size:12px;font-weight:600">Returned to admin</span>
+        </div>
+        ${p.returnReason
+          ? `<div class="del-item"><i class="bi bi-chat-left-text" style="color:var(--muted)"></i><span style="font-size:12px;color:var(--muted)">${esc(p.returnReason)}</span></div>`
+          : ''}
+      </div>`;
+    } else {
+      const candidates = Array.isArray(p.suggestedCandidates) ? p.suggestedCandidates : [];
+      const top = candidates[0];
+      const draft = drafts[id];
+      const suggestClass = (draft ? draft.suggested : top) ? ' is-suggested' : '';
+      const nameVal  = draft ? draft.n  : (top ? top.name  : '');
+      const phoneVal = draft ? draft.ph : (top ? top.phone : '');
+
+      bottom = `<div class="pkt-form" id="form_${id}">
+        <div class="form-grp">
+          <div class="form-grp-label">Receiver Name</div>
+          <div class="form-grp-wrap">
+            <i class="bi bi-person"></i>
+            <input type="text" autocomplete="name" class="form-ctrl${suggestClass}" id="n_${id}" placeholder="Full name" value="${esc(nameVal)}" oninput="onFieldEdit(this)">
+          </div>
+        </div>
+        <div class="form-grp">
+          <div class="form-grp-label">Phone Number</div>
+          <div class="form-grp-wrap">
+            <i class="bi bi-telephone"></i>
+            <input type="tel" inputmode="numeric" autocomplete="tel" class="form-ctrl${suggestClass}" id="ph_${id}" placeholder="Mobile number" value="${esc(phoneVal)}" oninput="onFieldEdit(this)">
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="deliver-btn" onclick="deliverSingle(${id},this)">
+            <i class="bi bi-send-fill"></i> Deliver
+          </button>
+          <button type="button" class="return-btn" onclick="openReturnModal([${id}])">
+            <i class="bi bi-arrow-return-left"></i> Return
+          </button>
+        </div>
+        ${candidateChipsHtml(p)}
+        <div class="gps-strip">
+          <div class="gps-dot" id="gdot_${id}"></div>
+          <span id="gtxt_${id}" style="font-size:10px">Locating…</span>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="pkt-card ${isSel?'selected':''} ${isDone?'is-delivered':''} ${isReturned?'is-returned':''}"
+                 id="card_${id}" style="animation-delay:${Math.min(i*0.04,0.3)}s">
+      <div class="pkt-top">
+        ${cbHtml}
+        <div class="code-badge">${esc(p.PacketCode||'—')}</div>
+        <div class="pkt-info">
+          <div class="pkt-name">${esc(p.Name||'—')}</div>
+          <div class="pkt-addr"><i class="bi bi-geo-alt" style="font-size:10px"></i> ${esc(p.Address||'—')}</div>
+        </div>
+        <div>${pill}</div>
+      </div>
+      ${bottom}
+    </div>`;
+  }).join(''));
+
+  if (pageGPS) showPageGPS();
+}
+
+/* ── Single deliver — form POST ──────────────────────────────────────── */
+function deliverSingle(id, btn) {
+  const name = $(`#n_${id}`).val().trim();
+  const phone = $(`#ph_${id}`).val().trim();
+
+  $(`#n_${id},#ph_${id}`).removeClass('is-invalid');
+
+  if (!name) {
+    toast('Receiver name required', 'error');
+    $(`#n_${id}`).addClass('is-invalid').focus();
+    return;
+  }
+
+  if (!phone) {
+    toast('Phone number required', 'error');
+    $(`#ph_${id}`).addClass('is-invalid').focus();
+    return;
+  }
+
+  const gps = pageGPS && pageGPS.fix;
+
+  const delivery = [{
+    packetId: id,
+    receiverName: name,
+    receiverPhone: phone,
+    gps: gps ? { lat: gps.lat, lng: gps.lng } : null,
+    timestamp: new Date().toISOString()
+  }];
+
+  if (!navigator.onLine) {
+    storeOffline(delivery);
+    toast('Saved offline — page will reload', 'info');
+    setTimeout(() => location.reload(), 800);
+    return;
+  }
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/packet/deliverPacket';
+
+  addHidden(form, 'isBulk', 'false');
+  addHidden(form, 'deliveries', JSON.stringify(delivery));
+  addHidden(form, 'month', $('#monthInp').val());
+
+  $(btn).html('<span class="spinner-sm"></span>').prop('disabled', true);
+  toast('Submitting…', 'info');
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/* ── Bulk mode ───────────────────────────────────────────────────────── */
+function toggleBulkMode() { bulkMode=!bulkMode; selected.clear(); $('#bulkModeBtn').toggleClass('active',bulkMode); renderCards(); updateBulkBar(); }
+function exitBulkMode()   { bulkMode=false; selected.clear(); $('#bulkModeBtn').removeClass('active'); renderCards(); updateBulkBar(); }
+function toggleSelect(id, cb) { cb.checked ? selected.add(id) : selected.delete(id); $(`#card_${id}`).toggleClass('selected',cb.checked); updateBulkBar(); }
+function updateBulkBar() { const n=selected.size; $('#bulkCount').text(`${n} selected`); $('#bulkBar').toggleClass('show',bulkMode&&n>0); }
+
+/* ── Bulk modal ──────────────────────────────────────────────────────── */
+function openBulkModal() {
+  if (!selected.size) return;
+  const ids = [...selected];
+  $('#modalTitle').text(`Deliver ${ids.length} Packet${ids.length>1?'s':''}`);
+  $('#bulkRows').html(ids.map(id => {
+    const p = packets.find(x => x.Id === id);
+    const nameField  = $(`#n_${id}`);
+    const wasSuggested = nameField.hasClass('is-suggested');
+    const suggestClass = wasSuggested ? ' is-suggested' : '';
+    const candidates = Array.isArray(p?.suggestedCandidates) ? p.suggestedCandidates : [];
+
+    const chipsHtml = candidates.length ? `<div class="bulk-candidates">
+      ${candidates.map((c, i) => `
+        <button type="button" class="candidate-chip" onclick="selectBulkCandidate(${id}, ${i})">
+          ${esc(c.name)} <span class="chip-count">×${Number(c.count)||0}</span>
+        </button>
+      `).join('')}
+    </div>` : '';
+
+    return `<tr id="brow_${id}">
+      <td data-label="Packet"><div class="b-code">${esc(p?p.PacketCode:id)}</div><div class="b-name">${esc(p?p.Name:'—')}</div></td>
+      <td data-label="Receiver Name">
+        <input class="bulk-inp${suggestClass}" type="text" autocomplete="name" id="bn_${id}" placeholder="Receiver name" value="${esc(nameField.val()||'')}" oninput="onFieldEdit(this)">
+      </td>
+      <td data-label="Phone Number">
+        <input class="bulk-inp${suggestClass}" type="tel" inputmode="numeric" autocomplete="tel" id="bph_${id}" placeholder="Phone number" value="${esc($(`#ph_${id}`).val()||'')}" oninput="onFieldEdit(this)">
+        ${chipsHtml}
+      </td>
+    </tr>`;
+  }).join(''));
+  $('#bulkOverlay').addClass('open');
+  startGPSIndicator('bulkGpsDot','bulkGpsTxt');
+}
+function closeBulkModal() { $('#bulkOverlay').removeClass('open'); }
+
+function selectBulkCandidate(id, idx) {
+  const p = packets.find(x => x.Id === id);
+  const c = p?.suggestedCandidates?.[idx];
+  if (!c) return;
+  $(`#bn_${id}`).val(c.name).addClass('is-suggested');
+  $(`#bph_${id}`).val(c.phone).addClass('is-suggested');
+}
+
+/* ── Confirm bulk — form POST ────────────────────────────────────────── */
+function confirmBulk() {
+  const ids = [...selected];
+  ids.forEach(id => $(`#bn_${id},#bph_${id}`).removeClass('is-invalid'));
+
+  const deliveries = [];
+  let hasError = false;
+  for (const id of ids) {
+    const name  = ($(`#bn_${id}`).val()||'').trim();
+    const phone = ($(`#bph_${id}`).val()||'').trim();
+    if (!name)  { $(`#bn_${id}`).addClass('is-invalid');  hasError=true; }
+    if (!phone) { $(`#bph_${id}`).addClass('is-invalid'); hasError=true; }
+    if (name && phone) deliveries.push({ packetId:id, receiverName:name, receiverPhone:phone, gps:capturedGPS, timestamp:new Date().toISOString() });
+  }
+  if (hasError) { toast('Fill receiver name & phone for every packet','error'); return; }
+
+  if (!navigator.onLine) {
+    storeOffline(deliveries);
+    toast('Saved offline — page will reload','info');
+    closeBulkModal(); exitBulkMode();
+    setTimeout(() => location.reload(), 800);
+    return;
+  }
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/packet/deliverPacket';
+  addHidden(form,'isBulk',    'true');
+  addHidden(form,'deliveries', JSON.stringify(deliveries));
+  addHidden(form,'month',      $('#monthInp').val());
+
+  $('#confirmBtn').html('<span class="spinner-sm"></span> Submitting…').prop('disabled',true);
+  toast(`Submitting ${deliveries.length} deliveries…`,'info');
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/* ── Custom reason dropdown ──────────────────────────────────────────── */
+function toggleReasonDrop() {
+  const drop = document.getElementById('reason_drop');
+  const btn  = document.getElementById('ret_reason_btn');
+  const isOpen = drop.classList.contains('open');
+  if (isOpen) {
+    drop.classList.remove('open');
+    btn.classList.remove('open');
+  } else {
+    drop.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+function pickReason(val) {
+  // Write value into hidden form field
+  document.getElementById('ret_reason').value = val;
+  // Update trigger label
+  const label = document.getElementById('ret_reason_label');
+  const btn   = document.getElementById('ret_reason_btn');
+  label.textContent = val || '— Select a reason —';
+  btn.classList.toggle('has-value', !!val);
+  btn.classList.remove('is-invalid');
+  // Close dropdown
+  document.getElementById('reason_drop').classList.remove('open');
+  btn.classList.remove('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('reasonDropWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('reason_drop').classList.remove('open');
+    const btn = document.getElementById('ret_reason_btn');
+    if (btn) btn.classList.remove('open');
+  }
+});
+
+/* ── Return modal ────────────────────────────────────────────────────── */
+function openReturnModal(ids) {
+  const list = ids.map(id => packets.find(x => x.Id === id)).filter(Boolean);
+  if (!list.length) return;
+  document.getElementById('ret_code').textContent = list.length === 1 ? (list[0].PacketCode || '—') : `${list.length} packets`;
+  document.getElementById('ret_name').textContent = list.length === 1 ? (list[0].Name || '—') : list.slice(0, 4).map(p => p.PacketCode).join(', ') + (list.length > 4 ? ' and more' : '');
+  const box = document.getElementById('ret_ids');
+  box.innerHTML = '';
+  list.forEach(p => { const i = document.createElement('input'); i.type = 'hidden'; i.name = 'packetIds[]'; i.value = p.Id; box.appendChild(i); });
+  // Reset custom dropdown
+  pickReason('');
+  document.getElementById('ret_note').value          = '';
+  document.getElementById('ret_reason_btn').classList.remove('is-invalid');
+  document.getElementById('returnOverlay').classList.add('open');
+}
+
+function closeReturnModal() {
+  document.getElementById('returnOverlay').classList.remove('open');
+  // Also close dropdown if open
+  document.getElementById('reason_drop').classList.remove('open');
+  const btn = document.getElementById('ret_reason_btn');
+  if (btn) btn.classList.remove('open');
+}
+
+function submitReturn() {
+  const reason = (document.getElementById('ret_reason').value || '').trim();
+  const note   = (document.getElementById('ret_note').value   || '').trim();
+
+  document.getElementById('ret_reason_btn').classList.remove('is-invalid');
+
+  if (!reason) {
+    document.getElementById('ret_reason_btn').classList.add('is-invalid');
+    toast('Please select a return reason','error');
+    return;
+  }
+
+  // note goes into hidden field
+  document.getElementById('ret_noteHidden').value = note;
+
+  const btn = document.getElementById('ret_confirmBtn');
+  btn.innerHTML = '<span class="spinner-sm"></span> Returning…';
+  btn.disabled  = true;
+
+  toast('Returning packet…','info');
+  document.getElementById('returnForm').submit();
+}
+
+// Backdrop + Escape close both modals
+document.getElementById('bulkOverlay').addEventListener('click', function(e)   { if(e.target===this) closeBulkModal(); });
+document.getElementById('returnOverlay').addEventListener('click', function(e) { if(e.target===this) closeReturnModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeBulkModal(); closeReturnModal(); } });
+
+/* ── Offline store / sync ────────────────────────────────────────────── */
+function readQueue() {
+  try { const q = JSON.parse(localStorage.getItem('deliveryQueue')||'[]'); return Array.isArray(q) ? q.flat() : []; }
+  catch { return []; }
+}
+function storeOffline(d) {
+  const q = readQueue();
+  q.push(...d);
+  localStorage.setItem('deliveryQueue', JSON.stringify(q));
+  updateSyncBadge();
+}
+function updateSyncBadge() {
+  const q = readQueue();
+  $('#queueCount').text(q.length);
+  $('#syncBtn').toggleClass('visible', q.length>0);
+}
+async function syncOffline() {
+  const q = readQueue();
+  if (!q.length) return;
+  toast('Syncing offline deliveries…','info');
+  /* ★ the server answers JSON; only what it saved leaves the queue
+       (was: the whole queue deleted although the server had saved nothing) */
+  const keep = [];
+  let saved = 0;
+  for (let i = 0; i < q.length; i += 100) {
+    const chunk = q.slice(i, i + 100);
+    try {
+      const res = await fetch('/packet/deliverPacket', { method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body: JSON.stringify(chunk) });
+      if (res.status >= 500) throw new Error('server');
+      const data = await res.json();
+      if (data.error && !(data.rejected||[]).length && !(data.deliveredNow||[]).length) throw new Error(data.error);
+      saved += (data.deliveredNow || []).length;
+      (data.rejected || []).forEach(r => toast(r.reason || 'Refused', 'error'));   // refused (e.g. re-assigned) → dropped with a message
+    } catch { keep.push(...chunk); }               // network / server trouble → stays queued
+  }
+  if (keep.length) localStorage.setItem('deliveryQueue', JSON.stringify(keep)); else localStorage.removeItem('deliveryQueue');
+  updateSyncBadge();
+  toast(keep.length ? `${saved} synced, ${keep.length} still waiting — will retry` : `${saved} delivery(s) synced ✅`, keep.length ? 'error' : 'success');
+  if (saved) setTimeout(() => location.reload(), 1200);
+}
+
+function setFilter(f, btn) { activeFilter=f; $('.fpill').removeClass('active'); $(btn).addClass('active'); renderCards(); }
+function updateNetworkUI() {
+  const on = navigator.onLine;
+  $('#netBadge').removeClass('online offline').addClass(on?'online':'offline');
+  $('#netText').text(on?'Online':'Offline');
+  $('#offlineBanner').toggleClass('show',!on);
+}
+</script>
+</div>

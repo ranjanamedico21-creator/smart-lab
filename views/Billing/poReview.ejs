@@ -1,0 +1,80 @@
+<form action="/po/save" method="POST">
+
+    <input type="hidden" name="uploadId" value="<%= uploadId %>">
+    <input type="hidden" name="supplierId" value="<%= supplierId %>">
+  
+    <table class="table table-bordered align-middle">
+      <thead>
+        <tr>
+          <th>Select Product</th>
+          <th>Description</th>
+          <th>Batch</th>
+          <th>Qty</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+  
+      <tbody>
+        <% items.forEach((item, i) => { %>
+          <tr>
+  
+            <!-- PRODUCT SELECT -->
+            <td>
+              <select class="form-select mb-1"
+                      name="items[<%= i %>][productId]"
+                      required>
+                <option value="">Select product</option>
+                <% supplierProducts.forEach(p => { %>
+                  <option value="<%= p.id %>">
+                    <%= p.name %> (HSN: <%= p.hsn %>)
+                  </option>
+                <% }) %>
+              </select>
+  
+              <!-- Checkbox fix -->
+              <input type="hidden" name="items[<%= i %>][import]" value="0">
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="items[<%= i %>][import]"
+                       value="1"
+                       checked>
+                <label class="form-check-label">Import</label>
+              </div>
+            </td>
+  
+            <!-- DESCRIPTION -->
+            <td>
+              <%= item.description %>
+              <input type="hidden" name="items[<%= i %>][description]" value="<%- item.description %>">
+            </td>
+  
+            <!-- BATCH -->
+            <td>
+              <%= item.batchNo %>
+              <input type="hidden" name="items[<%= i %>][batchNo]" value="<%- item.batchNo %>">
+            </td>
+  
+            <!-- QTY -->
+            <td>
+              <%= item.qty %>
+              <input type="hidden" name="items[<%= i %>][qty]" value="<%= item.qty %>">
+            </td>
+  
+            <!-- AMOUNT -->
+            <td>
+              <%= item.amount %>
+              <input type="hidden" name="items[<%= i %>][amount]" value="<%= item.amount %>">
+              <input type="hidden" name="items[<%= i %>][hsn]" value="<%= item.hsn %>">
+            </td>
+  
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  
+    <button class="btn btn-success" type="submit">
+      Save to Database
+    </button>
+  </form>
+  

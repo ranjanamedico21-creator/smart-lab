@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %> - SmartLab</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; color: #1a202c; }
+  .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+  .page-header { margin-bottom: 25px; }
+  .page-header h1 { font-size: 28px; color: #2c5282; margin-bottom: 8px; }
+  .page-header p { color: #718096; font-size: 14px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+  .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid; }
+  .stat-card.draft { border-color: #d69e2e; }
+  .stat-card.completed { border-color: #4299e1; }
+  .stat-card.verified { border-color: #38a169; }
+  .stat-card.approved { border-color: #2c5282; }
+  .stat-card.urgent { border-color: #c53030; }
+  .stat-card h3 { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+  .stat-card label { font-size: 13px; color: #718096; text-transform: uppercase; }
+  .queues-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; }
+  .queue-card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+  .queue-header { background: #2c5282; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .queue-header h3 { font-size: 16px; font-weight: 600; }
+  .queue-header .count { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+  .queue-item { padding: 12px 20px; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; }
+  .queue-item:hover { background: #f7fafc; }
+  .patient-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .patient-info p { font-size: 12px; color: #718096; }
+  .status-pill { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .pill-draft { background: #fef3c7; color: #92400e; }
+  .pill-completed { background: #dbeafe; color: #1e40af; }
+  .pill-verified { background: #d1fae5; color: #065f46; }
+  .pill-urgent { background: #fee2e2; color: #991b1b; }
+  .pill-critical { background: #fecaca; color: #7f1d1d; border: 1px solid #f87171; }
+  .view-all { display: block; text-align: center; padding: 12px; color: #2c5282; font-size: 13px; font-weight: 600; text-decoration: none; border-top: 1px solid #edf2f7; }
+  .view-all:hover { background: #f7fafc; }
+  .urgent-indicator { display: inline-block; width: 8px; height: 8px; background: #c53030; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>📊 Pathology Department Queues</h1>
+    <p>Real-time overview of all department workloads</p>
+  </div>
+  <div class="stats-grid">
+    <% /* FIX: totals come from all reports; they used to count only the 5 recent rows per department */
+       var t = (typeof totals !== 'undefined' && totals) ? totals : {};
+       var totalDraft = t.draft || 0, totalCompleted = t.completed || 0, totalVerified = t.verified || 0,
+           totalApproved = t.approved || 0, totalUrgent = t.urgent || 0; %>
+    <div class="stat-card draft"><h3><%= totalDraft %></h3><label>Draft</label></div>
+    <div class="stat-card completed"><h3><%= totalCompleted %></h3><label>Pending Verification</label></div>
+    <div class="stat-card verified"><h3><%= totalVerified %></h3><label>Pending Approval</label></div>
+    <div class="stat-card approved"><h3><%= totalApproved %></h3><label>Approved</label></div>
+    <div class="stat-card urgent"><h3><%= totalUrgent %></h3><label>STAT / Urgent</label></div>
+  </div>
+  <div class="queues-grid">
+    <% queues.forEach(dept => { %>
+      <div class="queue-card">
+        <div class="queue-header">
+          <h3><%= dept.DepartmentName %></h3>
+          <span class="count"><%= dept.pending_count %> pending</span>
+        </div>
+        <div>
+          <% if (!dept.recent.length) { %><div class="queue-item" style="color:#a0aec0;">No reports yet</div><% } %>
+          <% dept.recent.forEach(item => {
+               var href = item.Status === 'draft' ? '/pathology/view/entry/' + item.Id : '/pathology/view/verify/' + item.Id; %>
+            <a class="queue-item" href="<%= href %>" style="text-decoration:none;color:inherit;">
+              <div class="patient-info">
+                <h4><% if (item.Urgency === 'urgent') { %><span class="urgent-indicator"></span><% } %><%= item.PatientName || 'Unknown' %></h4>
+                <p><%= item.TestName || 'Test' %> | <%= item.Status.toUpperCase() %></p>
+              </div>
+              <span class="status-pill pill-<%= item.Urgency === 'urgent' ? 'urgent' : item.Status %>"><%= item.Urgency === 'urgent' ? 'URGENT' : item.Status.toUpperCase() %></span>
+            </a>
+          <% }); %>
+          <a href="/pathology/specimens" class="view-all">Open Specimen Dashboard →</a>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+</div>
+</body>
+</html>

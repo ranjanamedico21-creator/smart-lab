@@ -1,0 +1,740 @@
+<%# views/Technician/dashboard.ejs %>
+
+<style>
+:root {
+  --brand:#185FA5; --brand-dark:#0C447C;
+  --surface:#fff; --surface-alt:#F8F9FB;
+  --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.13);
+  --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+  --success-bg:#EAF3DE; --success-text:#3B6D11;
+  --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+  --warning-bg:#FAEEDA; --warning-text:#854F0B;
+  --info-bg:#E6F1FB;    --info-text:#185FA5;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+  --shadow:0 1px 6px rgba(0,0,0,.07), 0 0 0 1px rgba(0,0,0,.05);
+}
+
+.td-page { padding:12px 0 48px; }
+
+.td-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+.td-header-left { display:flex; align-items:center; gap:12px; }
+.td-header-icon { width:44px; height:44px; border-radius:var(--radius-md); background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; }
+.td-header-title { font-size:16px; font-weight:800; color:var(--text-primary); margin:0; }
+.td-header-sub   { font-size:12px; color:var(--text-secondary); margin:2px 0 0; }
+.td-refresh-btn  { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--surface); color:var(--text-secondary); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; text-decoration:none; transition:border-color .15s; }
+.td-refresh-btn:hover { border-color:var(--brand); color:var(--brand); }
+
+.td-error { display:flex; align-items:center; gap:10px; padding:16px 20px; background:var(--warning-bg); border:1px solid rgba(133,79,11,.15); border-radius:var(--radius-lg); font-size:13px; color:var(--warning-text); }
+
+.td-room-section { margin-bottom:24px; }
+.td-room-head    { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.td-room-badge   { display:inline-flex; align-items:center; gap:6px; padding:4px 14px; border-radius:99px; background:var(--brand); color:#fff; font-size:12px; font-weight:700; letter-spacing:.04em; }
+.td-room-count   { font-size:12px; color:var(--text-secondary); font-weight:500; }
+.td-room-hint    { font-size:11px; color:var(--text-hint); margin-left:auto; }
+
+/* Sortable list — vertical stack */
+.td-queue-list  { display:flex; flex-direction:column; gap:10px; }
+
+/* Card */
+.td-card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden; border-left:4px solid var(--border-strong); transition:box-shadow .15s, opacity .2s; cursor:default; }
+.td-card:hover            { box-shadow:0 4px 16px rgba(0,0,0,.1); }
+.td-card.status-waiting   { border-left-color:#F59E0B; }
+.td-card.status-inprogress{ border-left-color:#16a34a; }
+.td-card.status-aborted   { border-left-color:#dc2626; }
+.td-card.status-priority  { border-left-color:#C2410C; background:#FFFBF7; }
+.td-card.emergency        { border-left-color:#dc2626; }
+.td-card.dragging         { opacity:.4; }
+.td-card.drag-over        { box-shadow:0 0 0 2px var(--brand); }
+
+/* Card header */
+.td-card-header  { padding:10px 14px 8px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.td-card-left    { display:flex; align-items:flex-start; gap:10px; flex:1; min-width:0; }
+
+/* Drag handle + position */
+.td-drag-handle {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:2px 4px; cursor:grab; flex-shrink:0; margin-top:2px;
+  color:var(--text-hint);
+}
+.td-drag-handle:active { cursor:grabbing; }
+.td-drag-handle i { font-size:14px; }
+.td-pos-badge {
+  font-size:10px; font-weight:800; color:var(--brand);
+  background:var(--info-bg); border-radius:99px;
+  padding:1px 6px; white-space:nowrap;
+}
+
+.td-patient-name { font-size:13.5px; font-weight:700; color:var(--text-primary); text-transform:capitalize; margin:0 0 3px; }
+.td-patient-meta { font-size:11.5px; color:var(--text-secondary); }
+.td-emergency-tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:99px; background:var(--danger-bg); color:var(--danger-text); font-size:10.5px; font-weight:700; white-space:nowrap; flex-shrink:0; }
+
+.td-status-tag  { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600; }
+.tag-waiting    { background:#FEF9C3; color:#854d0e; border:1px solid #FDE68A; }
+.tag-inprogress { background:#DCFCE7; color:#15803d; border:1px solid #BBF7D0; }
+.tag-aborted    { background:var(--danger-bg); color:var(--danger-text); border:1px solid rgba(220,38,38,.2); }
+
+/* Move up button */
+.td-move-up-btn {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; border-radius:var(--radius-sm);
+  font-size:11px; font-weight:600; border:1.5px solid #FDE68A;
+  background:#FEF9C3; color:#854d0e; cursor:pointer; font-family:inherit;
+  white-space:nowrap; transition:background .12s;
+}
+.td-move-up-btn:hover { background:#FDE68A; }
+.td-move-up-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+.td-test-strip { padding:8px 14px; background:var(--surface-alt); border-bottom:1px solid var(--border); }
+.td-test-name  { font-size:13px; font-weight:700; color:var(--text-primary); text-transform:uppercase; margin-bottom:2px; }
+.td-test-meta  { font-size:11px; color:var(--text-secondary); }
+
+.td-abort-strip { padding:8px 14px; background:#fff5f5; border-bottom:1px solid rgba(220,38,38,.12); }
+.td-abort-reason-label { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--danger-text); margin-bottom:3px; }
+.td-abort-reason-text  { font-size:12.5px; color:#7f1d1d; font-weight:500; display:flex; align-items:center; gap:6px; }
+
+.td-all-tests       { padding:6px 14px; border-bottom:1px solid var(--border); }
+.td-all-tests-label { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-hint); margin-bottom:4px; }
+.td-test-row        { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-secondary); padding:2px 0; }
+.td-test-row.current-room { color:var(--text-primary); font-weight:600; }
+.td-test-row i      { font-size:11px; flex-shrink:0; }
+
+.ts-incomplete { color:var(--text-hint); }
+.ts-waiting    { color:#F59E0B; }
+.ts-inprogress { color:#16a34a; }
+.ts-completed  { color:var(--brand); }
+.ts-aborted    { color:var(--danger-text); }
+
+.td-actions  { padding:8px 14px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.td-btn      { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; border:none; cursor:pointer; font-family:inherit; transition:opacity .12s; }
+.td-btn:disabled   { opacity:.45; cursor:not-allowed; }
+.td-btn-start    { background:var(--success-bg); color:var(--success-text); }
+.td-btn-complete { background:var(--info-bg);    color:var(--info-text); }
+.td-btn-abort    { background:var(--danger-bg);  color:var(--danger-text); }
+.td-btn-restart  { background:#FEF9C3; color:#854d0e; border:1px solid #FDE68A; }
+
+.td-empty { display:flex; flex-direction:column; align-items:center; padding:48px 24px; color:var(--text-hint); gap:8px; text-align:center; }
+.td-empty i { font-size:40px; }
+
+/* ── Toast ── */
+#tdToastContainer { position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+.td-toast { display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-radius:10px; min-width:280px; max-width:380px; box-shadow:0 4px 20px rgba(0,0,0,.15); pointer-events:all; animation:tdToastIn .2s ease; background:#fff; }
+@keyframes tdToastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+.td-toast.toast-success { border-left:4px solid #16a34a; }
+.td-toast.toast-danger  { border-left:4px solid #dc2626; }
+.td-toast.toast-warning { border-left:4px solid #F59E0B; }
+.td-toast.toast-info    { border-left:4px solid var(--brand); }
+.td-toast-icon  { font-size:16px; flex-shrink:0; margin-top:1px; }
+.td-toast-body  { flex:1; font-size:13px; color:var(--text-primary); font-weight:500; line-height:1.4; }
+.td-toast-close { background:none; border:none; cursor:pointer; color:var(--text-hint); font-size:14px; padding:0; flex-shrink:0; }
+
+/* ── Centered confirm ── */
+#tdConfirmOverlay { display:none; position:fixed; inset:0; z-index:99998; background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:16px; }
+.td-confirm-box   { background:#fff; border-radius:14px; max-width:400px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,.22); overflow:hidden; animation:tdConfirmIn .2s ease; }
+@keyframes tdConfirmIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+.td-confirm-body  { padding:22px 22px 16px; }
+.td-confirm-title { font-size:15px; font-weight:700; color:var(--text-primary); margin-bottom:6px; }
+.td-confirm-sub   { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+.td-confirm-foot  { padding:12px 22px 16px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--border); }
+.td-confirm-cancel { padding:8px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; background:var(--surface-alt); color:var(--text-secondary); border:1px solid var(--border-strong); cursor:pointer; font-family:inherit; }
+.td-confirm-ok     { padding:8px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:#fff; border:none; cursor:pointer; font-family:inherit; }
+.td-confirm-ok.ok-success { background:#16a34a; }
+.td-confirm-ok.ok-danger  { background:#dc2626; }
+.td-confirm-ok.ok-warning { background:#F59E0B; }
+
+/* ── Abort modal ── */
+.td-modal-backdrop { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:16px; }
+.td-modal-backdrop.open { display:flex; }
+.td-modal       { background:var(--surface); border-radius:var(--radius-lg); max-width:460px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,.2); overflow:hidden; }
+.td-modal-head  { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.td-modal-head-icon { width:36px; height:36px; border-radius:50%; background:var(--danger-bg); color:var(--danger-text); display:flex; align-items:center; justify-content:center; font-size:16px; }
+.td-modal-title { font-size:14px; font-weight:700; color:var(--text-primary); }
+.td-modal-body  { padding:18px 20px; }
+.td-modal-info  { background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; }
+.td-modal-label { font-size:11.5px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+.td-modal-select { width:100%; border:1.5px solid var(--border-strong); border-radius:var(--radius-sm); padding:8px 12px; font-size:13px; font-family:inherit; color:var(--text-primary); background:var(--surface); outline:none; appearance:none; cursor:pointer; }
+.td-modal-select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(24,95,165,.1); }
+.td-modal-select.is-err { border-color:#dc2626; }
+.td-modal-other { display:none; margin-top:8px; }
+.td-modal-other.show { display:block; }
+.td-modal-other-input { width:100%; border:1.5px solid var(--border-strong); border-radius:var(--radius-sm); padding:8px 12px; font-size:13px; font-family:inherit; color:var(--text-primary); outline:none; }
+.td-modal-other-input:focus { border-color:var(--brand); }
+.td-modal-err { font-size:11.5px; color:#dc2626; margin-top:4px; display:none; }
+.td-modal-err.show { display:block; }
+.td-modal-foot { padding:12px 20px; border-top:1px solid var(--border); background:var(--surface-alt); display:flex; gap:8px; justify-content:flex-end; }
+.td-modal-cancel  { padding:8px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; background:var(--surface); color:var(--text-secondary); border:1px solid var(--border-strong); cursor:pointer; font-family:inherit; }
+.td-modal-confirm { padding:8px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; background:#dc2626; color:#fff; border:none; cursor:pointer; font-family:inherit; }
+
+@media(max-width:640px) { .td-queue-list { gap:8px; } }
+</style>
+
+<!-- Toast container -->
+<div id="tdToastContainer"></div>
+
+<!-- Centered confirm overlay -->
+<div id="tdConfirmOverlay">
+  <div class="td-confirm-box">
+    <div class="td-confirm-body">
+      <div class="td-confirm-title" id="tdConfirmTitle">Confirm</div>
+      <div class="td-confirm-sub"   id="tdConfirmSub"></div>
+    </div>
+    <div class="td-confirm-foot">
+      <button class="td-confirm-cancel" id="tdConfirmCancelBtn">Cancel</button>
+      <button class="td-confirm-ok"     id="tdConfirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="td-page">
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="td-header">
+    <div class="td-header-left">
+      <div class="td-header-icon"><i class="bi bi-display"></i></div>
+      <div>
+        <p class="td-header-title">Room Dashboard</p>
+        <p class="td-header-sub">
+          Today's queue &nbsp;·&nbsp;
+          <%= new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric'}) %>
+        </p>
+      </div>
+    </div>
+    <a href="/technician/dashboard" class="td-refresh-btn">
+      <i class="bi bi-arrow-clockwise"></i> Refresh
+      <span id="tdRefreshCountdown"
+        style="padding:1px 7px;border-radius:99px;background:rgba(0,0,0,.06);
+               font-size:11px;font-weight:700;color:var(--text-secondary)">
+        30s
+      </span>
+    </a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="td-error">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size:18px;flex-shrink:0"></i>
+    <span><%= error %></span>
+  </div>
+
+  <% } else if (!queue || queue.length === 0) { %>
+  <div class="td-empty">
+    <i class="bi bi-inbox"></i>
+    <p style="font-size:15px;font-weight:600;color:var(--text-secondary)">No patients in queue</p>
+    <p style="font-size:13px">Your room has no waiting, in-progress or aborted patients today.</p>
+    <a href="/technician/dashboard" class="td-refresh-btn" style="margin-top:8px">
+      <i class="bi bi-arrow-clockwise"></i> Refresh
+    </a>
+  </div>
+
+  <% } else { %>
+
+  <%
+    var roomGroups = {};
+    queue.forEach(function(q) {
+      if (!roomGroups[q.RoomCode]) roomGroups[q.RoomCode] = [];
+      roomGroups[q.RoomCode].push(q);
+    });
+    var roomLabels = { USG:'USG Room', CT:'CT Room', MRI:'MRI Room', XRAY:'X-Ray Room', PATH:'Pathology' };
+    var tsIconMap  = {
+      Incomplete:'bi-clock ts-incomplete', Waiting:'bi-hourglass ts-waiting',
+      InProgress:'bi-play-circle ts-inprogress', Completed:'bi-check-circle ts-completed',
+      Aborted:'bi-x-circle ts-aborted'
+    };
+  %>
+
+  <% Object.keys(roomGroups).forEach(function(roomCode) { %>
+  <% var roomQueue = roomGroups[roomCode]; %>
+
+  <div class="td-room-section">
+    <div class="td-room-head">
+      <span class="td-room-badge">
+        <i class="bi bi-display" style="font-size:11px"></i>
+        <%= roomLabels[roomCode] || roomCode %>
+      </span>
+      <span class="td-room-count">
+        <%= roomQueue.length %> patient<%= roomQueue.length !== 1 ? 's' : '' %>
+      </span>
+      <span class="td-room-hint">
+        <i class="bi bi-grip-vertical" style="font-size:10px"></i>
+        Drag cards or use ↑ to reorder
+      </span>
+    </div>
+
+    <div class="td-queue-list" id="queue-<%= roomCode %>" data-room="<%= roomCode %>">
+      <% roomQueue.forEach(function(q, i) { %>
+      <%
+        var allTests     = [];
+        try { allTests = JSON.parse(q.AllTests || '[]'); } catch(e) {}
+        var isEmergency  = q.IsEmergency == 1;
+        var isInProgress = q.QueueStatus === 'InProgress';
+        var isWaiting    = q.QueueStatus === 'Waiting';
+        var isAborted    = q.QueueStatus === 'Aborted';
+        var arrivalTime  = new Date(q.ArrivalTime).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        var isPriority   = !!q.PriorityNote;
+        var cardClass    = isInProgress ? 'status-inprogress' : isAborted ? 'status-aborted' : isPriority ? 'status-priority' : 'status-waiting';
+        var isFirst      = i === 0;
+      %>
+
+      <div class="td-card <%= cardClass %> <%= isEmergency ? 'emergency' : '' %>"
+           data-queue-id="<%= q.QueueId %>"
+           data-room="<%= roomCode %>"
+           draggable="<%= isWaiting ? 'true' : 'false' %>">
+
+        <!-- Card header -->
+        <div class="td-card-header">
+          <div class="td-card-left">
+            <!-- Drag handle — only for waiting patients -->
+            <% if (isWaiting) { %>
+            <div class="td-drag-handle" title="Drag to reorder">
+              <i class="bi bi-grip-vertical"></i>
+              <span class="td-pos-badge">#<%= i + 1 %></span>
+            </div>
+            <% } else { %>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 4px;flex-shrink:0;margin-top:2px">
+              <i class="bi bi-dash" style="font-size:14px;color:var(--text-hint)"></i>
+              <span class="td-pos-badge" style="background:var(--surface-alt);color:var(--text-hint)">#<%= i + 1 %></span>
+            </div>
+            <% } %>
+
+            <div style="flex:1;min-width:0">
+              <p class="td-patient-name"><%= q.PatientName %></p>
+              <p class="td-patient-meta">
+                <%= q.Age %> <%= q.Ymd %> &nbsp;·&nbsp;
+                <%= q.Gender == 1 ? 'Male' : 'Female' %> &nbsp;·&nbsp;
+                <i class="bi bi-phone" style="font-size:10px"></i> <%= q.PhoneNumber %>
+              </p>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+            <% if (isEmergency) { %>
+              <span class="td-emergency-tag"><i class="bi bi-exclamation-circle-fill" style="font-size:9px"></i> Emergency</span>
+            <% } %>
+            <% if (isInProgress) { %>
+              <span class="td-status-tag tag-inprogress"><i class="bi bi-activity" style="font-size:10px"></i> In Progress</span>
+            <% } else if (isAborted) { %>
+              <span class="td-status-tag tag-aborted"><i class="bi bi-x-circle" style="font-size:10px"></i> Aborted</span>
+            <% } else { %>
+              <span class="td-status-tag tag-waiting"><i class="bi bi-hourglass" style="font-size:10px"></i> Waiting · <%= arrivalTime %></span>
+            <% } %>
+
+            <!-- Move up button — only for waiting, not first -->
+            <% if (isWaiting && !isFirst) { %>
+            <button class="td-move-up-btn"
+              data-queue-id="<%= q.QueueId %>"
+              data-room="<%= roomCode %>"
+              onclick="movePatientUp(this)">
+              <i class="bi bi-arrow-up"></i> Move Up
+            </button>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Test strip -->
+        <div class="td-test-strip">
+          <div class="td-test-name"><%= q.TestName %></div>
+          <div class="td-test-meta">
+            <i class="bi bi-person-badge" style="font-size:10px"></i>
+            Ref: <%= q.DoctorName || '—' %>
+          </div>
+        </div>
+
+        <!-- Priority note — shown when someone prioritised this patient -->
+        <% if (q.PriorityNote) { %>
+        <div style="padding:7px 14px;background:#FFF7ED;border-bottom:1px solid rgba(194,65,12,.1);font-size:11.5px;color:#C2410C;display:flex;align-items:flex-start;gap:6px;">
+          <i class="bi bi-lightning-charge-fill" style="font-size:11px;flex-shrink:0;margin-top:1px"></i>
+          <span><strong>Prioritised:</strong> <%= q.PriorityNote %></span>
+        </div>
+        <% } %>
+
+        <!-- Abort reason -->
+        <% if (isAborted) { %>
+        <div class="td-abort-strip">
+          <div class="td-abort-reason-label"><i class="bi bi-exclamation-circle-fill me-1"></i>Abort Reason</div>
+          <div class="td-abort-reason-text">
+            <i class="bi bi-chat-right-text" style="font-size:11px;color:#dc2626"></i>
+            <%= q.StatusNote || 'No reason recorded' %>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- All tests today -->
+        <% if (allTests.length > 1) { %>
+        <div class="td-all-tests">
+          <div class="td-all-tests-label">All tests today</div>
+          <% allTests.forEach(function(t) { %>
+          <%
+            var isCurrent = t.roomCode === roomCode && t.testName === q.TestName;
+            var iconClass = tsIconMap[t.testStatus] || 'bi-circle ts-incomplete';
+          %>
+          <div class="td-test-row <%= isCurrent ? 'current-room' : '' %>">
+            <i class="bi <%= iconClass %>"></i>
+            <span style="flex:1"><%= t.testName %></span>
+            <span style="font-size:10.5px;color:var(--text-hint)"><%= t.roomCode %></span>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+
+        <!-- Actions -->
+        <div class="td-actions">
+          <% if (isWaiting) { %>
+            <button class="td-btn td-btn-start"
+              data-test-id="<%= q.PatientTestId %>"
+              data-patient-name="<%= q.PatientName %>"
+              data-test-name="<%= q.TestName %>"
+              onclick="confirmStartTest(this)">
+              <i class="bi bi-play-fill"></i> Start
+            </button>
+          <% } %>
+          <% if (isInProgress) { %>
+            <button class="td-btn td-btn-complete"
+              data-test-id="<%= q.PatientTestId %>"
+              data-patient-name="<%= q.PatientName %>"
+              data-test-name="<%= q.TestName %>"
+              onclick="confirmCompleteTest(this)">
+              <i class="bi bi-check-lg"></i> Complete
+            </button>
+            <button class="td-btn td-btn-abort"
+              data-test-id="<%= q.PatientTestId %>"
+              data-patient-name="<%= q.PatientName %>"
+              data-test-name="<%= q.TestName %>"
+              onclick="openAbortModal(this)">
+              <i class="bi bi-x-lg"></i> Abort
+            </button>
+          <% } %>
+          <% if (isAborted) { %>
+            <button class="td-btn td-btn-restart"
+              data-test-id="<%= q.PatientTestId %>"
+              data-patient-name="<%= q.PatientName %>"
+              data-test-name="<%= q.TestName %>"
+              onclick="confirmRestartTest(this)">
+              <i class="bi bi-arrow-repeat"></i> Restart
+            </button>
+          <% } %>
+        </div>
+
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% }) %>
+  <% } %>
+
+</div>
+</div>
+
+<!-- Abort Modal -->
+<div class="td-modal-backdrop" id="abortModalBackdrop">
+  <div class="td-modal">
+    <div class="td-modal-head">
+      <div class="td-modal-head-icon"><i class="bi bi-x-circle-fill"></i></div>
+      <div class="td-modal-title">Abort Test</div>
+    </div>
+    <div class="td-modal-body">
+      <div class="td-modal-info" id="abortModalInfo">—</div>
+      <div class="td-modal-label">Reason for aborting <span style="color:#dc2626">*</span></div>
+      <select class="td-modal-select" id="abortReasonSelect" onchange="onAbortReasonChange(this)">
+        <option value="">— Select a reason —</option>
+        <option value="Patient Left">Patient Left</option>
+        <option value="Patient Refused">Patient Refused</option>
+        <option value="Machine Breakdown">Machine Breakdown</option>
+        <option value="Claustrophobia">Claustrophobia</option>
+        <option value="Unable to Stay Still">Unable to Stay Still</option>
+        <option value="Medical Contraindication">Medical Contraindication</option>
+        <option value="Emergency">Emergency</option>
+        <option value="Other">Other</option>
+      </select>
+      <div class="td-modal-err" id="abortReasonErr">Please select a reason.</div>
+      <div class="td-modal-other" id="abortOtherWrap">
+        <input type="text" class="td-modal-other-input" id="abortOtherInput" placeholder="Please specify…" maxlength="200">
+        <div class="td-modal-err" id="abortOtherErr">Please specify the reason.</div>
+      </div>
+    </div>
+    <div class="td-modal-foot">
+      <button type="button" class="td-modal-cancel" onclick="closeAbortModal()">Cancel</button>
+      <button type="button" class="td-modal-confirm" onclick="submitAbort()">
+        <i class="bi bi-x-circle me-1"></i> Confirm Abort
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+var _abortTestId     = null;
+var _confirmCallback = null;
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, type, duration) {
+    type = type || 'info'; duration = duration || 3500;
+    var icons  = {success:'bi-check-circle-fill',danger:'bi-x-circle-fill',warning:'bi-exclamation-triangle-fill',info:'bi-info-circle-fill'};
+    var colors = {success:'#16a34a',danger:'#dc2626',warning:'#F59E0B',info:'#185FA5'};
+    var el = document.createElement('div');
+    el.className = 'td-toast toast-' + type;
+    el.innerHTML = '<i class="bi ' + (icons[type]||'bi-info-circle-fill') + ' td-toast-icon" style="color:' + (colors[type]||'#185FA5') + '"></i>' +
+        '<div class="td-toast-body">' + msg + '</div>' +
+        '<button class="td-toast-close" onclick="this.closest(\'.td-toast\').remove()"><i class="bi bi-x-lg"></i></button>';
+    document.getElementById('tdToastContainer').appendChild(el);
+    setTimeout(function() { if (el.parentNode) el.remove(); }, duration);
+}
+
+// ── Centered confirm ──────────────────────────────────────────
+function showConfirm(title, sub, okLabel, okClass, onConfirm) {
+    _confirmCallback = onConfirm;
+    document.getElementById('tdConfirmTitle').textContent = title;
+    document.getElementById('tdConfirmSub').innerHTML     = sub;
+    var ok = document.getElementById('tdConfirmOkBtn');
+    ok.innerHTML  = okLabel || 'Confirm';
+    ok.className  = 'td-confirm-ok ' + (okClass || 'ok-success');
+    document.getElementById('tdConfirmOverlay').style.display = 'flex';
+    pauseRefresh();
+}
+document.getElementById('tdConfirmOkBtn').addEventListener('click', function() {
+    document.getElementById('tdConfirmOverlay').style.display = 'none';
+    if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+    resumeRefresh();
+});
+document.getElementById('tdConfirmCancelBtn').addEventListener('click', function() {
+    document.getElementById('tdConfirmOverlay').style.display = 'none';
+    _confirmCallback = null;
+    resumeRefresh();
+});
+document.getElementById('tdConfirmOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = 'none'; _confirmCallback = null; resumeRefresh();
+    }
+});
+
+// ── Auto-refresh ──────────────────────────────────────────────
+var REFRESH_SECS = 30;
+var _countdown   = REFRESH_SECS;
+var _timer       = null;
+var _paused      = false;
+var _countdownEl = document.getElementById('tdRefreshCountdown');
+
+function startRefreshTimer() {
+    _countdown = REFRESH_SECS;
+    if (_countdownEl) _countdownEl.textContent = _countdown + 's';
+    clearInterval(_timer);
+    _timer = setInterval(function() {
+        if (_paused) return;
+        _countdown--;
+        if (_countdownEl) _countdownEl.textContent = _countdown + 's';
+        if (_countdown <= 0) { clearInterval(_timer); location.reload(); }
+    }, 1000);
+}
+function pauseRefresh()  { _paused = true; }
+function resumeRefresh() { _paused = false; }
+
+// Pause when abort modal open
+document.getElementById('abortModalBackdrop').addEventListener('click', function() {
+    if (this.classList.contains('open')) pauseRefresh();
+});
+
+startRefreshTimer();
+
+// ── Start test ────────────────────────────────────────────────
+function confirmStartTest(btn) {
+    showConfirm(
+        'Start Test?',
+        'Start <strong>' + btn.dataset.testName + '</strong> for <strong>' + btn.dataset.patientName + '</strong>?',
+        '<i class="bi bi-play-fill me-1"></i> Start', 'ok-success',
+        function() { doStartTest(btn, btn.dataset.testId); }
+    );
+}
+function doStartTest(btn, testId) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    fetch('/technician/startTest', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({patientTestId:testId}) })
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if (d.success) { showToast('Test started.','success'); setTimeout(function(){location.reload();},700); }
+        else { showToast(d.message||'Error.','danger'); btn.disabled=false; btn.innerHTML='<i class="bi bi-play-fill"></i> Start'; }
+    })
+    .catch(function(){ showToast('Network error.','danger'); btn.disabled=false; btn.innerHTML='<i class="bi bi-play-fill"></i> Start'; });
+}
+
+// ── Complete test ─────────────────────────────────────────────
+function confirmCompleteTest(btn) {
+    showConfirm(
+        'Mark as Completed?',
+        'Mark <strong>' + btn.dataset.testName + '</strong> for <strong>' + btn.dataset.patientName + '</strong> as completed?',
+        '<i class="bi bi-check-lg me-1"></i> Complete', 'ok-success',
+        function() { doCompleteTest(btn, btn.dataset.testId); }
+    );
+}
+function doCompleteTest(btn, testId) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    fetch('/technician/completeTest', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({patientTestId:testId}) })
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if (d.success) {
+            showToast(d.allDone ? '✅ All tests completed!' : 'Test completed.', 'success', d.allDone?4000:2500);
+            setTimeout(function(){location.reload();}, d.allDone?1200:700);
+        } else {
+            showToast(d.message||'Error.','danger');
+            btn.disabled=false; btn.innerHTML='<i class="bi bi-check-lg"></i> Complete';
+        }
+    })
+    .catch(function(){ showToast('Network error.','danger'); btn.disabled=false; btn.innerHTML='<i class="bi bi-check-lg"></i> Complete'; });
+}
+
+// ── Restart aborted test ──────────────────────────────────────
+function confirmRestartTest(btn) {
+    showConfirm(
+        'Restart Test?',
+        'Restart <strong>' + btn.dataset.testName + '</strong> for <strong>' + btn.dataset.patientName + '</strong>?<br>' +
+        '<span style="font-size:12px;color:#6B7280">Abort reason will be cleared and test will resume.</span>',
+        '<i class="bi bi-arrow-repeat me-1"></i> Restart', 'ok-warning',
+        function() { doStartTest(btn, btn.dataset.testId); }
+    );
+}
+
+// ── Move patient up ───────────────────────────────────────────
+function movePatientUp(btn) {
+    var queueId  = btn.dataset.queueId;
+    var roomCode = btn.dataset.room;
+    btn.disabled = true;
+    fetch('/technician/moveUp', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ queueId: queueId, roomCode: roomCode })
+    })
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if (d.success) {
+            showToast('Patient moved up in queue.', 'info');
+            setTimeout(function(){location.reload();}, 600);
+        } else {
+            showToast(d.message || 'Could not move patient.', 'warning');
+            btn.disabled = false;
+        }
+    })
+    .catch(function(){ showToast('Network error.','danger'); btn.disabled=false; });
+}
+
+// ── Drag and drop reorder ─────────────────────────────────────
+var _dragSrc = null;
+
+document.querySelectorAll('.td-queue-list').forEach(function(list) {
+    list.addEventListener('dragstart', function(e) {
+        var card = e.target.closest('.td-card[draggable="true"]');
+        if (!card) return;
+        _dragSrc = card;
+        card.classList.add('dragging');
+        pauseRefresh();
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    list.addEventListener('dragend', function(e) {
+        var card = e.target.closest('.td-card');
+        if (!card) return;
+        card.classList.remove('dragging');
+        document.querySelectorAll('.td-card').forEach(function(c){ c.classList.remove('drag-over'); });
+        resumeRefresh();
+    });
+
+    list.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        var card = e.target.closest('.td-card[draggable="true"]');
+        if (!card || card === _dragSrc) return;
+        document.querySelectorAll('.td-card').forEach(function(c){ c.classList.remove('drag-over'); });
+        card.classList.add('drag-over');
+    });
+
+    list.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var target = e.target.closest('.td-card[draggable="true"]');
+        if (!target || !_dragSrc || target === _dragSrc) return;
+
+        // Reorder DOM
+        var allCards  = Array.from(list.querySelectorAll('.td-card[draggable="true"]'));
+        var srcIdx    = allCards.indexOf(_dragSrc);
+        var tgtIdx    = allCards.indexOf(target);
+
+        if (srcIdx < tgtIdx) {
+            list.insertBefore(_dragSrc, target.nextSibling);
+        } else {
+            list.insertBefore(_dragSrc, target);
+        }
+
+        target.classList.remove('drag-over');
+
+        // Save new order to server
+        var newOrder = Array.from(list.querySelectorAll('.td-card')).map(function(c) {
+            return c.dataset.queueId;
+        });
+
+        fetch('/technician/saveOrder', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ orderedQueueIds: newOrder })
+        })
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if (d.success) {
+                showToast('Queue order saved.', 'info', 2000);
+                // Update position badges
+                list.querySelectorAll('.td-pos-badge').forEach(function(badge, idx){
+                    badge.textContent = '#' + (idx + 1);
+                });
+            } else {
+                showToast('Could not save order. Refreshing…', 'warning');
+                setTimeout(function(){location.reload();}, 1500);
+            }
+        })
+        .catch(function(){ showToast('Network error.','danger'); });
+
+        _dragSrc = null;
+    });
+});
+
+// ── Abort modal ───────────────────────────────────────────────
+function openAbortModal(btn) {
+    _abortTestId = btn.dataset.testId;
+    document.getElementById('abortModalInfo').textContent = btn.dataset.patientName + ' — ' + btn.dataset.testName;
+    document.getElementById('abortReasonSelect').value = '';
+    document.getElementById('abortReasonSelect').classList.remove('is-err');
+    document.getElementById('abortReasonErr').classList.remove('show');
+    document.getElementById('abortOtherWrap').classList.remove('show');
+    document.getElementById('abortOtherInput').value = '';
+    document.getElementById('abortOtherErr').classList.remove('show');
+    document.getElementById('abortModalBackdrop').classList.add('open');
+    pauseRefresh();
+}
+function closeAbortModal() {
+    document.getElementById('abortModalBackdrop').classList.remove('open');
+    _abortTestId = null;
+    resumeRefresh();
+}
+document.getElementById('abortModalBackdrop').addEventListener('click', function(e) {
+    if (e.target === this) closeAbortModal();
+});
+function onAbortReasonChange(sel) {
+    sel.classList.remove('is-err');
+    document.getElementById('abortReasonErr').classList.remove('show');
+    var wrap = document.getElementById('abortOtherWrap');
+    if (sel.value === 'Other') { wrap.classList.add('show'); document.getElementById('abortOtherInput').focus(); }
+    else { wrap.classList.remove('show'); document.getElementById('abortOtherInput').value = ''; }
+}
+function submitAbort() {
+    var reason = document.getElementById('abortReasonSelect').value;
+    var other  = document.getElementById('abortOtherInput').value.trim();
+    var valid  = true;
+    if (!reason) { document.getElementById('abortReasonSelect').classList.add('is-err'); document.getElementById('abortReasonErr').classList.add('show'); valid=false; }
+    if (reason==='Other'&&!other) { document.getElementById('abortOtherInput').classList.add('is-err'); document.getElementById('abortOtherErr').classList.add('show'); valid=false; }
+    if (!valid) return;
+
+    var note    = reason === 'Other' ? other : reason;
+    var confirm = document.querySelector('#abortModalBackdrop .td-modal-confirm');
+    confirm.disabled = true;
+    confirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Aborting…';
+
+    fetch('/technician/abortTest', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({patientTestId:_abortTestId,note:note}) })
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if (d.success) { closeAbortModal(); showToast('Test aborted: '+note,'warning',4000); setTimeout(function(){location.reload();},1000); }
+        else { showToast(d.message||'Error.','danger'); confirm.disabled=false; confirm.innerHTML='<i class="bi bi-x-circle me-1"></i> Confirm Abort'; }
+    })
+    .catch(function(){ showToast('Network error.','danger'); confirm.disabled=false; confirm.innerHTML='<i class="bi bi-x-circle me-1"></i> Confirm Abort'; });
+}
+</script>

@@ -1,0 +1,1031 @@
+<style>
+  :root {
+    --brand:#185FA5; --brand-soft:#E6F1FB; --brand-text:#0C447C;
+    --surface:#ffffff; --surface-alt:#F8F9FB;
+    --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.14);
+    --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+    --success:#10B981; --success-bg:#ECFDF5;
+    --warning-bg:#FAEEDA; --warning-text:#854F0B;
+    --danger-bg:#FCEBEB;  --danger-text:#A32D2D;
+    --info-bg:#E6F1FB;    --info-text:#185FA5;
+    --radius-sm:6px; --radius-md:10px; --radius-lg:14px; --radius-xl:18px;
+    --shadow-card:0 1px 4px rgba(0,0,0,0.06),0 0 0 0.5px rgba(0,0,0,0.08);
+    --shadow-elevated:0 10px 25px -5px rgba(0,0,0,0.08),0 4px 6px -2px rgba(0,0,0,0.04);
+    --transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  * { box-sizing:border-box; }
+
+  .rd-wrapper { width:100%; padding:16px 0 40px; }
+
+  /* ── Stepper ── */
+  .rd-stepper {
+    display:flex; align-items:flex-start; justify-content:center; gap:0; margin-bottom:28px;
+  }
+  .rd-step {
+    display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:1; flex-shrink:0;
+  }
+  .rd-step-circle {
+    width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; background:var(--surface); color:var(--text-hint);
+    border:2px solid var(--border-strong); transition:var(--transition);
+  }
+  .rd-step.active .rd-step-circle { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 0 0 4px var(--brand-soft); }
+  .rd-step.done .rd-step-circle { background:var(--success); color:#fff; border-color:var(--success); }
+  .rd-step-label { font-size:12px; font-weight:600; color:var(--text-hint); transition:var(--transition); white-space:nowrap; }
+  .rd-step.active .rd-step-label { color:var(--brand); }
+  .rd-step.done .rd-step-label { color:var(--success); }
+  .rd-step-line {
+    flex:1; max-width:100px; height:3px; background:var(--border); margin:18px 8px 0;
+    transition:var(--transition); border-radius:2px;
+  }
+  .rd-step-line.done { background:var(--success); }
+
+  /* ── Card ── */
+  .rd-card {
+    background:var(--surface); border-radius:var(--radius-xl); box-shadow:var(--shadow-card);
+    overflow:hidden; position:relative; min-height:480px;
+  }
+  .rd-card-header {
+    padding:24px 28px 20px; border-bottom:1px solid var(--border);
+    background:linear-gradient(135deg, var(--surface) 0%, var(--surface-alt) 100%);
+  }
+  .rd-header-left { display:flex; align-items:center; gap:14px; }
+  .rd-header-icon {
+    width:44px; height:44px; background:var(--brand-soft); border-radius:var(--radius-md);
+    display:flex; align-items:center; justify-content:center; color:var(--brand); font-size:18px; flex-shrink:0;
+  }
+  .rd-header-title{ font-size:17px; font-weight:700; color:var(--text-primary); margin:0; }
+  .rd-header-sub  { font-size:13px; color:var(--text-secondary); margin:4px 0 0; }
+
+  /* ── Steps container ── */
+  .rd-steps-container { position:relative; overflow:hidden; }
+  .rd-step-panel {
+    padding:28px; position:absolute; top:0; left:0; width:100%; opacity:0; transform:translateX(30px);
+    pointer-events:none; transition:opacity 0.35s ease, transform 0.35s ease;
+  }
+  .rd-step-panel.active { position:relative; opacity:1; transform:translateX(0); pointer-events:auto; }
+  .rd-step-panel.leaving { opacity:0; transform:translateX(-30px); }
+
+  /* ── Section labels ── */
+  .rd-section-label {
+    font-size:11px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.08em;
+    display:flex; align-items:center; gap:8px; margin-bottom:20px; padding-bottom:10px; border-bottom:1px dashed var(--border);
+  }
+
+  /* ── Fields ── */
+  .rd-grid   { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
+  .rd-grid-3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+  .rd-full   { grid-column:1/-1; }
+  .rd-field-label {
+    font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em;
+    display:block; margin-bottom:6px;
+  }
+  .rd-req { color:var(--danger-text); margin-left:2px; }
+  .rd-input-wrap {
+    display:flex; align-items:center; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--surface); overflow:hidden; transition:var(--transition);
+  }
+  .rd-input-wrap:hover { border-color:var(--border-strong); }
+  .rd-input-wrap:focus-within { border-color:var(--brand); box-shadow:0 0 0 4px rgba(24,95,165,.08); }
+  .rd-input-wrap.error { border-color:var(--danger-text); background:var(--danger-bg); }
+  .rd-input-icon { padding:0 12px; color:var(--text-hint); font-size:14px; flex-shrink:0; }
+  .rd-input-wrap input,
+  .rd-input-wrap select,
+  .rd-input-wrap textarea {
+    border:none; outline:none; background:transparent; font-size:13.5px; color:var(--text-primary);
+    padding:10px 12px 10px 0; width:100%; font-family:inherit;
+  }
+  .rd-input-wrap select { appearance:none; -webkit-appearance:none; cursor:pointer; }
+  .rd-input-wrap input::placeholder { color:var(--text-hint); }
+  .rd-error-msg { font-size:11px; color:var(--danger-text); margin-top:4px; display:none; }
+  .rd-error-msg.show { display:block; }
+  .rd-hint { font-size:11px; color:var(--text-hint); margin-top:4px; }
+
+  /* ── Fix: flex inputs must shrink and show text ── */
+  .rd-input-wrap input[type="text"],
+  .rd-input-wrap input[type="tel"],
+  .rd-input-wrap input[type="number"] {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  /* Hide Flatpickr's original hidden input */
+  .rd-input-wrap input.flatpickr-input {
+    display: none !important;
+  }
+
+  /* Ensure Flatpickr alt-input is visible */
+  .rd-input-wrap input.rd-time-alt {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    color: var(--text-primary) !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    background: transparent !important;
+    cursor: pointer;
+  }
+
+  /* ── Tom Select integration ── */
+  .rd-input-wrap .ts-wrapper {
+    flex: 1 1 auto; min-width: 0; padding: 0 !important;
+  }
+  .rd-input-wrap .ts-wrapper.single .ts-control {
+    border: none !important; box-shadow: none !important; background: transparent !important;
+    padding: 9px 12px 9px 0 !important; min-height: unset !important; line-height: 1.5 !important;
+  }
+  .rd-input-wrap .ts-wrapper.single .ts-control::after { right: 4px !important; }
+  .rd-input-wrap .ts-wrapper.single .ts-control input {
+    font-size: 13.5px !important; color: var(--text-primary) !important;
+  }
+  .rd-input-wrap .ts-wrapper.single.dropdown-active .ts-control,
+  .rd-input-wrap .ts-wrapper.single.focus .ts-control,
+  .rd-input-wrap .ts-wrapper.single:focus-within .ts-control {
+    border: none !important; box-shadow: none !important;
+  }
+  .rd-input-wrap.error .ts-wrapper.single .ts-control {
+    background: var(--danger-bg) !important;
+  }
+
+  /* Dropdowns parented to body because of overflow:hidden on card/steps-container */
+  body > .ts-dropdown {
+    z-index: 10500; font-size: 13.5px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong); box-shadow: var(--shadow-elevated);
+  }
+  body > .ts-dropdown .active { background: var(--brand-soft); color: var(--brand-text); }
+
+  /* ── Flatpickr calendar z-index ── */
+  .flatpickr-calendar.hasTime.noCalendar { z-index: 10500 !important; }
+
+  /* ── Visiting Schedule ── */
+  .rd-visit-card {
+    background:var(--surface-alt); border:1.5px solid var(--border); border-radius:var(--radius-md);
+    padding:18px; margin-bottom:12px; transition:var(--transition); position:relative;
+  }
+  .rd-visit-card:hover { border-color:var(--border-strong); box-shadow:var(--shadow-card); }
+  .rd-visit-card.error { border-color:var(--danger-text); }
+  .rd-visit-header {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
+  }
+  .rd-visit-badge {
+    display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px;
+    background:var(--brand-soft); color:var(--brand-text); font-size:12px; font-weight:600;
+  }
+  .rd-visit-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr 1fr auto; gap:12px; align-items:flex-end; }
+  .rd-visit-remove {
+    width:36px; height:36px; border-radius:var(--radius-sm); border:none; background:var(--danger-bg);
+    color:var(--danger-text); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:var(--transition); font-size:14px;
+  }
+  .rd-visit-remove:hover { background:#f5d0d0; transform:scale(1.05); }
+
+  /* ── Commission Grid ── */
+  .rd-commission-grid {
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px;
+  }
+  .rd-commission-item {
+    display:flex; align-items:center; justify-content:space-between; padding:12px 14px;
+    background:var(--surface-alt); border:1.5px solid var(--border); border-radius:var(--radius-md);
+    transition:var(--transition);
+  }
+  .rd-commission-item:hover { border-color:var(--border-strong); }
+  .rd-commission-item.error { border-color:var(--danger-text); background:var(--danger-bg); }
+  .rd-commission-name { font-size:13px; font-weight:500; color:var(--text-primary); display:flex; align-items:center; gap:6px; }
+  .rd-commission-select { min-width:110px; }
+
+  /* Commission select sizing fix */
+  .rd-commission-item .rd-input-wrap {
+    flex: 0 1 140px;
+  }
+  .rd-commission-item .ts-wrapper,
+  .rd-commission-item .ts-control {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .rd-commission-item .ts-wrapper.single .ts-control {
+    border: none !important; box-shadow: none !important; background: transparent !important;
+    padding: 0 !important; min-height: unset !important;
+  }
+  .rd-commission-item.error .ts-wrapper.single .ts-control {
+    background: var(--danger-bg) !important; color: var(--danger-text) !important;
+  }
+
+  /* ── Review Step ── */
+  .rd-review-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
+  .rd-review-item { padding:12px 16px; background:var(--surface-alt); border-radius:var(--radius-md); border:1px solid var(--border); }
+  .rd-review-label { font-size:10px; font-weight:700; color:var(--text-hint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+  .rd-review-value { font-size:14px; font-weight:600; color:var(--text-primary); }
+  .rd-review-empty { color:var(--text-hint); font-style:italic; font-weight:400; }
+  .rd-review-section { margin-bottom:24px; }
+  .rd-review-section-title { font-size:13px; font-weight:700; color:var(--brand); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+
+  /* ── Buttons ── */
+  .rd-btn-bar {
+    padding:20px 28px; background:var(--surface-alt); border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .rd-btn {
+    display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border-radius:var(--radius-sm);
+    font-size:13.5px; font-weight:600; border:none; cursor:pointer; transition:var(--transition); text-decoration:none;
+  }
+  .rd-btn-primary { background:var(--brand); color:#fff; box-shadow:0 2px 8px rgba(24,95,165,.2); }
+  .rd-btn-primary:hover { background:var(--brand-text); transform:translateY(-1px); box-shadow:0 4px 12px rgba(24,95,165,.25); }
+  .rd-btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+  .rd-btn-outline { background:transparent; color:var(--brand); border:1.5px solid var(--brand); }
+  .rd-btn-outline:hover { background:var(--brand-soft); }
+  .rd-btn-ghost { background:transparent; color:var(--text-secondary); }
+  .rd-btn-ghost:hover { color:var(--text-primary); background:rgba(0,0,0,.03); }
+  .rd-btn-danger { background:var(--danger-bg); color:var(--danger-text); border:1.5px solid rgba(163,45,45,.15); }
+  .rd-btn-danger:hover { background:#f5d0d0; }
+  .rd-btn-sm { padding:7px 14px; font-size:12px; }
+
+  /* ── Toast ── */
+  .rd-toast {
+    position:fixed; top:20px; right:20px; padding:14px 20px; border-radius:var(--radius-md);
+    background:var(--text-primary); color:#fff; font-size:13px; font-weight:500;
+    box-shadow:var(--shadow-elevated); transform:translateX(150%); transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    z-index:9999; display:flex; align-items:center; gap:10px;
+  }
+  .rd-toast.show { transform:translateX(0); }
+  .rd-toast.success { background:var(--success); }
+  .rd-toast.error { background:var(--danger-text); }
+
+  /* ── Animations ── */
+  @keyframes fadeInUp {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .animate-in { animation:fadeInUp 0.4s ease forwards; }
+
+  @media(max-width:768px) {
+    .rd-grid, .rd-grid-3, .rd-review-grid { grid-template-columns:1fr; }
+    .rd-visit-grid { grid-template-columns:1fr 1fr; }
+    .rd-visit-grid > *:nth-child(5) { grid-column:1/-1; justify-self:end; }
+    .rd-step-line { max-width:40px; margin-top:18px; }
+    .rd-step-label { font-size:10px; }
+    .rd-commission-grid { grid-template-columns:1fr; }
+  }
+</style>
+
+<div class="rd-wrapper">
+
+  <!-- Stepper -->
+  <div class="rd-stepper" id="stepper">
+    <div class="rd-step active" data-step="0">
+      <div class="rd-step-circle"><i class="bi bi-person"></i></div>
+      <span class="rd-step-label">Details</span>
+    </div>
+    <div class="rd-step-line"></div>
+    <div class="rd-step" data-step="1">
+      <div class="rd-step-circle"><i class="bi bi-calendar-week"></i></div>
+      <span class="rd-step-label">Schedule</span>
+    </div>
+    <div class="rd-step-line"></div>
+    <div class="rd-step" data-step="2">
+      <div class="rd-step-circle"><i class="bi bi-percent"></i></div>
+      <span class="rd-step-label">Commissions</span>
+    </div>
+    <div class="rd-step-line"></div>
+    <div class="rd-step" data-step="3">
+      <div class="rd-step-circle"><i class="bi bi-check2-circle"></i></div>
+      <span class="rd-step-label">Review</span>
+    </div>
+  </div>
+
+  <form action="/doctor/registerDoctor" method="post" class="needs-validation" novalidate id="registerDoctorForm" autocomplete="off">
+
+    <div class="rd-card">
+      <div class="rd-card-header">
+        <div class="rd-header-left">
+          <div class="rd-header-icon"><i class="bi bi-person-badge"></i></div>
+          <div>
+            <p class="rd-header-title">Register Doctor</p>
+            <p class="rd-header-sub" id="headerSub">Fill in the doctor's personal and professional details</p>
+          </div>
+        </div>
+      </div>
+
+      <%- include ("../partials/messages"); %>
+
+      <div class="rd-steps-container">
+
+        <!-- ══ STEP 1: Doctor Details ════════════════════════ -->
+        <div class="rd-step-panel active" data-panel="0">
+          <div class="rd-section-label"><i class="bi bi-person-circle"></i> Doctor Details</div>
+
+          <div class="rd-grid">
+            <div>
+              <label class="rd-field-label">First Name <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-person"></i></span>
+                <input type="text" name="firstName" placeholder="Without 'Dr.' prefix" required style="text-transform:capitalize" data-validate="name" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">First name is required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Last Name <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-person"></i></span>
+                <input type="text" name="lastName" placeholder="Last name" required style="text-transform:capitalize" data-validate="name" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">Last name is required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Degree 1 <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-mortarboard"></i></span>
+                <input type="text" name="degree1" placeholder="e.g. MBBS" required style="text-transform:capitalize" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">Required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Degree 2 <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-mortarboard"></i></span>
+                <input type="text" name="degree2" placeholder="e.g. MD" required style="text-transform:capitalize" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">Required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Degree 3</label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-mortarboard"></i></span>
+                <input type="text" name="degree3" placeholder="Optional" style="text-transform:capitalize" autocomplete="off">
+              </div>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Degree 4</label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-mortarboard"></i></span>
+                <input type="text" name="degree4" placeholder="Optional" style="text-transform:capitalize" autocomplete="off">
+              </div>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Specialist In <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-clipboard2-pulse"></i></span>
+                <input type="text" name="specialistIn" placeholder="e.g. Cardiology" required style="text-transform:capitalize" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">Specialization is required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Worked At</label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-building"></i></span>
+                <input type="text" name="workedAt" placeholder="Previous hospital / clinic" style="text-transform:capitalize" autocomplete="off">
+              </div>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Years of Experience <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-clock-history"></i></span>
+                <input type="number" name="yearOfExperience" placeholder="e.g. 10" min="0" required data-validate="number" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">Valid number required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Registration No</label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-card-text"></i></span>
+                <input type="text" name="registration" placeholder="Medical council reg. no." style="text-transform:capitalize" autocomplete="off">
+              </div>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Award</label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-trophy"></i></span>
+                <input type="text" name="award" placeholder="Optional award / recognition" autocomplete="off">
+              </div>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Instruction <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-info-circle"></i></span>
+                <input type="text" name="instruction" placeholder="Prescription footer instruction" required style="text-transform:capitalize" autocomplete="off">
+              </div>
+              <span class="rd-error-msg">Instruction is required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Mobile Number 1 <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-phone"></i></span>
+                <input type="tel" name="mobileNumberFirst" placeholder="+91 XXXXXXXXXX" pattern="^\+?\d{10,15}$" required data-validate="phone" autocomplete="off">
+              </div>
+              <p class="rd-hint">Include country code e.g. +911234567890</p>
+              <span class="rd-error-msg">Valid phone number required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Mobile Number 2</label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-phone-plus"></i></span>
+                <input type="tel" name="mobileNumberSecond" placeholder="+91 XXXXXXXXXX" pattern="^\+?\d{10,15}$" data-validate="phone" autocomplete="off">
+              </div>
+              <p class="rd-hint">Optional secondary number</p>
+              <span class="rd-error-msg">Valid phone number required</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Authorize for Blood Test <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-droplet-half"></i></span>
+                <select name="authorizeForBloodTest" class="rd-ts" data-ts-no-search required>
+                  <option value="">Select authorisation</option>
+                  <option value="1">Yes — Authorised</option>
+                  <option value="2">No — Not Authorised</option>
+                </select>
+              </div>
+              <span class="rd-error-msg">Please select an option</span>
+            </div>
+
+            <div>
+              <label class="rd-field-label">Flat Discount <span class="rd-req">*</span></label>
+              <div class="rd-input-wrap">
+                <span class="rd-input-icon"><i class="bi bi-percent"></i></span>
+                <select name="flatDiscount" class="rd-ts" data-ts-no-search required>
+                  <option value="">Select flat discount</option>
+                  <% [0,5,10,15,20,25,30,35,40,50].forEach(d => { %>
+                    <option value="<%= d %>"><%= d %>%</option>
+                  <% }) %>
+                </select>
+              </div>
+              <span class="rd-error-msg">Please select a discount</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ STEP 2: Visiting Schedule ═════════════════════ -->
+        <div class="rd-step-panel" data-panel="1">
+          <div class="rd-section-label"><i class="bi bi-calendar-week"></i> Visiting Schedule</div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:-10px 0 16px;">Add one or more visiting schedules. Each schedule includes area, day, and time slot.</p>
+
+          <div id="visitingDaysContainer">
+            <!-- Rows are rendered from the template below (one row on load) -->
+          </div>
+
+          <template id="visitRowTemplate">
+            <div class="rd-visit-card visiting-day animate-in">
+              <div class="rd-visit-header">
+                <span class="rd-visit-badge"><i class="bi bi-geo-alt"></i> <span class="area-label">New Schedule</span></span>
+              </div>
+              <div class="rd-visit-grid">
+                <div>
+                  <label class="rd-field-label">Area <span class="rd-req">*</span></label>
+                  <div class="rd-input-wrap">
+                    <span class="rd-input-icon"><i class="bi bi-geo-alt"></i></span>
+                    <input type="text" name="area[]" placeholder="Area / Location" required autocomplete="off">
+                  </div>
+                </div>
+                <div>
+                  <label class="rd-field-label">Day <span class="rd-req">*</span></label>
+                  <div class="rd-input-wrap">
+                    <span class="rd-input-icon"><i class="bi bi-calendar3"></i></span>
+                    <select name="days[]" class="rd-ts-day" required>
+                      <option value="">Select day</option>
+                      <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                      <option>Thursday</option><option>Friday</option><option>Saturday</option>
+                      <option>Sunday</option><option value="AllDay">All Day</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="rd-field-label">Start Time <span class="rd-req">*</span></label>
+                  <div class="rd-input-wrap">
+                    <span class="rd-input-icon"><i class="bi bi-clock"></i></span>
+                    <input type="text" name="startTimes[]" class="rd-time" placeholder="Select time" required autocomplete="off">
+                  </div>
+                </div>
+                <div>
+                  <label class="rd-field-label">End Time <span class="rd-req">*</span></label>
+                  <div class="rd-input-wrap">
+                    <span class="rd-input-icon"><i class="bi bi-clock-fill"></i></span>
+                    <input type="text" name="endTimes[]" class="rd-time" placeholder="Select time" required autocomplete="off">
+                  </div>
+                </div>
+                <div>
+                  <button type="button" class="rd-visit-remove remove-day" title="Remove schedule">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <button type="button" class="rd-btn rd-btn-outline rd-btn-sm" id="addDayButton" style="margin-top:8px;">
+            <i class="bi bi-plus-lg"></i> Add Another Schedule
+          </button>
+        </div>
+
+        <!-- ══ STEP 3: Test Category Commission ═══════════════ -->
+        <div class="rd-step-panel" data-panel="2">
+          <div class="rd-section-label"><i class="bi bi-vials"></i> Test Category Commission (%)</div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:-10px 0 16px;">Set commission percentage for each test category. All fields are required.</p>
+
+          <div class="rd-commission-grid" id="commissionGrid">
+            <% testCategoriesList.forEach(function(testCategory) { %>
+            <div class="rd-commission-item" data-cat="<%= testCategory.Name %>">
+              <span class="rd-commission-name">
+                <i class="bi bi-dot" style="color:var(--brand);font-size:20px;"></i>
+                <%= testCategory.Name %>
+              </span>
+              <div class="rd-input-wrap rd-commission-select">
+                <span class="rd-input-icon"><i class="bi bi-percent"></i></span>
+                <select name="<%= testCategory.Name %>"
+                        data-category-id="<%= testCategory.Id %>"
+                        class="thanks" required>
+                  <option value="">Select %</option>
+                  <% for(let i = 20; i <= 50; i++) { %>
+                    <option value="<%= i %>"><%= i %>%</option>
+                  <% } %>
+                </select>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+
+          <input type="hidden" name="thanksDetails" id="thanksDetails">
+        </div>
+
+        <!-- ══ STEP 4: Review ════════════════════════════════ -->
+        <div class="rd-step-panel" data-panel="3">
+          <div class="rd-section-label"><i class="bi bi-clipboard-check"></i> Review & Confirm</div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:-10px 0 20px;">Please review all details before submitting the registration.</p>
+
+          <div id="reviewContent">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div><!-- /steps-container -->
+
+      <!-- ── Button Bar ── -->
+      <div class="rd-btn-bar">
+        <a href="/doctor" class="rd-btn rd-btn-ghost" id="backBtn">
+          <i class="bi bi-x-lg"></i> Cancel
+        </a>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="rd-btn rd-btn-outline" id="prevBtn" style="display:none;">
+            <i class="bi bi-arrow-left"></i> Previous
+          </button>
+          <button type="button" class="rd-btn rd-btn-primary" id="nextBtn">
+            Next <i class="bi bi-arrow-right"></i>
+          </button>
+          <button type="submit" class="rd-btn rd-btn-primary" id="submitBtn" style="display:none;">
+            <i class="bi bi-check2-circle"></i> Register Doctor
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /rd-card -->
+  </form>
+</div><!-- /rd-wrapper -->
+
+<!-- Toast -->
+<div class="rd-toast" id="toast"><i class="bi bi-check-circle"></i> <span id="toastMsg">Saved</span></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
+
+    // ── Kill stale draft ──
+    try { localStorage.removeItem('doctorRegDraft'); } catch (e) {}
+
+    let currentStep = 0;
+    const totalSteps = 4;
+    const form = document.getElementById('registerDoctorForm');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const backBtn = document.getElementById('backBtn');
+    const headerSub = document.getElementById('headerSub');
+    const stepperSteps = document.querySelectorAll('.rd-step');
+    const stepperLines = document.querySelectorAll('.rd-step-line');
+    const panels = document.querySelectorAll('.rd-step-panel');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+
+    const stepTitles = [
+        "Fill in the doctor's personal and professional details",
+        'Add visiting schedules with area, day, and time slots',
+        'Set commission percentage for each test category',
+        'Review all details before final submission'
+    ];
+
+    // ═════════════════════════════════════════════════════════════════
+    // HELPERS
+    // ═════════════════════════════════════════════════════════════════
+    function elValue(el) {
+        if (!el) return '';
+        // TomSelect instance
+        if (el.tomselect && typeof el.tomselect.getValue === 'function') {
+            const v = el.tomselect.getValue();
+            if (v !== '' && v !== null && v !== undefined) return String(v);
+        }
+        // Native value
+        if (el.value !== undefined && el.value !== null && String(el.value).trim() !== '') {
+            return String(el.value).trim();
+        }
+        // Selected option fallback
+        if (el.selectedOptions && el.selectedOptions.length > 0) {
+            const opt = el.selectedOptions[0];
+            if (opt.value) return String(opt.value);
+        }
+        return '';
+    }
+
+    function getFieldValue(name) {
+        return elValue(form.querySelector('[name="' + name + '"]'));
+    }
+
+    function getArrayValues(name) {
+        const vals = [];
+        form.querySelectorAll('[name="' + name + '"]').forEach(el => vals.push(elValue(el)));
+        return vals;
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // TOM SELECT + FLATPICKR
+    // ═════════════════════════════════════════════════════════════════
+    function initTomSelect(sel) {
+        if (!sel || sel.tagName !== 'SELECT') return null;
+        // Destroy any existing instance (from common.js) so we control config
+        if (sel.tomselect && typeof sel.tomselect.destroy === 'function') {
+            sel.tomselect.destroy();
+        }
+        const noSearch = sel.hasAttribute('data-ts-no-search') ||
+                         sel.classList.contains('rd-ts-day') ||
+                         sel.classList.contains('thanks');
+        const instance = new TomSelect(sel, {
+            create: false,
+            allowEmptyOption: false,
+            maxOptions: null,
+            controlInput: noSearch ? null : undefined,
+            dropdownParent: 'body'
+        });
+
+        // Clear visual error immediately when user picks a value
+        instance.on('change', function () {
+            clearFieldError(sel);
+            const item = sel.closest('.rd-commission-item') || sel.closest('.rd-visit-card');
+            if (item) item.classList.remove('error');
+        });
+        return instance;
+    }
+
+    function initTimePicker(input) {
+        if (!input || input.tagName !== 'INPUT') return null;
+        if (input._flatpickr && typeof input._flatpickr.destroy === 'function') {
+            input._flatpickr.destroy();
+        }
+        return flatpickr(input, {
+            enableTime: true,
+            noCalendar: true,
+            time_24hr: false,
+            minuteIncrement: 5,
+            dateFormat: 'H:i',          // submitted to server: "14:30"
+            altInput: true,
+            altFormat: 'h:i K',         // shown to user: "02:30 PM"
+            altInputClass: 'rd-time-alt',
+            allowInput: false,
+            onChange: function () {
+                clearFieldError(input);
+                const card = input.closest('.rd-visit-card');
+                if (card) card.classList.remove('error');
+            }
+        });
+    }
+
+    function initRow(card) {
+        initTomSelect(card.querySelector('select[name="days[]"]'));
+        card.querySelectorAll('input.rd-time').forEach(initTimePicker);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // NAVIGATION
+    // ═════════════════════════════════════════════════════════════════
+    function goToStep(n) {
+        if (n < 0 || n >= totalSteps) return;
+        if (n > currentStep && !validateStep(currentStep)) return;
+
+        const direction = n > currentStep ? 1 : -1;
+        const oldStep = currentStep;
+
+        panels[oldStep].classList.remove('active');
+        if (direction > 0) panels[oldStep].classList.add('leaving');
+        else panels[oldStep].style.transform = 'translateX(30px)';
+
+        setTimeout(() => {
+            panels[oldStep].classList.remove('leaving');
+            panels[oldStep].style.transform = '';
+        }, 350);
+
+        currentStep = n;
+
+        setTimeout(() => {
+            panels[currentStep].classList.add('active');
+            panels[currentStep].style.transform = direction > 0 ? 'translateX(30px)' : 'translateX(-30px)';
+            requestAnimationFrame(() => { panels[currentStep].style.transform = 'translateX(0)'; });
+        }, 50);
+
+        stepperSteps.forEach((s, i) => {
+            s.classList.remove('active','done');
+            if (i < currentStep) s.classList.add('done');
+            if (i === currentStep) s.classList.add('active');
+        });
+        stepperLines.forEach((l, i) => { l.classList.toggle('done', i < currentStep); });
+
+        prevBtn.style.display = currentStep === 0 ? 'none' : 'inline-flex';
+        nextBtn.style.display = currentStep === totalSteps - 1 ? 'none' : 'inline-flex';
+        submitBtn.style.display = currentStep === totalSteps - 1 ? 'inline-flex' : 'none';
+        backBtn.style.display = currentStep === 0 ? 'inline-flex' : 'none';
+        headerSub.textContent = stepTitles[currentStep];
+
+        if (currentStep === 3) renderReview();
+    }
+
+    nextBtn.addEventListener('click', () => goToStep(currentStep + 1));
+    prevBtn.addEventListener('click', () => goToStep(currentStep - 1));
+
+    // ═════════════════════════════════════════════════════════════════
+    // VALIDATION
+    // ═════════════════════════════════════════════════════════════════
+    function validateStep(step) {
+        const panel = panels[step];
+        const inputs = panel.querySelectorAll('input[required], select[required]');
+        let valid = true;
+
+        inputs.forEach(input => {
+            const wrap = input.closest('.rd-input-wrap') || input.closest('.rd-visit-card') || input.closest('.rd-commission-item');
+            const error = findErrorMsg(input);
+
+            if (wrap) wrap.classList.remove('error');
+            if (error) error.classList.remove('show');
+
+            const actualValue = elValue(input);
+
+            let fieldValid = true;
+            if (!actualValue) fieldValid = false;
+            if (input.pattern && actualValue && !new RegExp(input.pattern).test(actualValue)) fieldValid = false;
+            if (input.type === 'number' && actualValue !== '' && Number(actualValue) < 0) fieldValid = false;
+
+            if (!fieldValid) {
+                valid = false;
+                if (wrap) wrap.classList.add('error');
+                if (error) error.classList.add('show');
+            }
+        });
+
+        if (step === 1) {
+            const rows = document.querySelectorAll('.visiting-day');
+            if (rows.length === 0) {
+                showToast('Please add at least one visiting schedule', 'error');
+                valid = false;
+            }
+            rows.forEach(card => {
+                const st = elValue(card.querySelector('[name="startTimes[]"]'));
+                const et = elValue(card.querySelector('[name="endTimes[]"]'));
+                if (st && et && et <= st) {
+                    valid = false;
+                    card.classList.add('error');
+                    showToast('End time must be after start time', 'error');
+                } else {
+                    card.classList.remove('error');
+                }
+            });
+        }
+
+        if (step === 2) {
+            // CRITICAL: only target real <select> elements inside the commission grid
+            const selects = document.querySelectorAll('#commissionGrid select.thanks');
+            let allSelected = true;
+            selects.forEach(s => {
+                const item = s.closest('.rd-commission-item');
+                const val = elValue(s);
+                if (!val) {
+                    allSelected = false;
+                    if (item) item.classList.add('error');
+                } else {
+                    if (item) item.classList.remove('error');
+                }
+            });
+            if (!allSelected) {
+                showToast('Please set commission for all categories', 'error');
+                valid = false;
+            }
+        }
+
+        if (!valid && step !== 3) showToast('Please fix the highlighted fields', 'error');
+        return valid;
+    }
+
+    function findErrorMsg(input) {
+        const wrap = input.closest('.rd-input-wrap');
+        if (!wrap) return null;
+        const parent = wrap.parentElement;
+        if (!parent) return null;
+        return parent.querySelector('.rd-error-msg');
+    }
+
+    function clearFieldError(input) {
+        if (!input || !input.closest) return;
+        const wrap = input.closest('.rd-input-wrap') || input.closest('.rd-visit-card') || input.closest('.rd-commission-item');
+        if (wrap) wrap.classList.remove('error');
+        const error = findErrorMsg(input);
+        if (error) error.classList.remove('show');
+    }
+
+    form.addEventListener('input',  (e) => clearFieldError(e.target));
+    form.addEventListener('change', (e) => clearFieldError(e.target));
+
+    // ═════════════════════════════════════════════════════════════════
+    // VISITING SCHEDULE BUILDER
+    // ═════════════════════════════════════════════════════════════════
+    const container = document.getElementById('visitingDaysContainer');
+    const rowTemplate = document.getElementById('visitRowTemplate');
+
+    function addVisitRow() {
+        const frag = rowTemplate.content.cloneNode(true);
+        const card = frag.querySelector('.rd-visit-card');
+        container.appendChild(frag);
+
+        const areaInput = card.querySelector('[name="area[]"]');
+        const daySelect = card.querySelector('[name="days[]"]');
+        areaInput.addEventListener('input', () => updateBadge(card));
+        daySelect.addEventListener('change', () => updateBadge(card));
+
+        card.querySelector('.remove-day').addEventListener('click', function() {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => card.remove(), 250);
+        });
+
+        initRow(card);
+        return card;
+    }
+
+    function updateBadge(card) {
+        const badge = card.querySelector('.rd-visit-badge');
+        const area = (elValue(card.querySelector('[name="area[]"]')) || '').trim() || 'New Schedule';
+        const day = elValue(card.querySelector('[name="days[]"]'));
+        badge.innerHTML = '<i class="bi bi-geo-alt"></i> <span class="area-label"></span>' +
+            (day ? ' <span style="opacity:.8;margin-left:4px;">• ' + day + '</span>' : '');
+        badge.querySelector('.area-label').textContent = area;
+    }
+
+    document.getElementById('addDayButton').addEventListener('click', addVisitRow);
+
+    // ═════════════════════════════════════════════════════════════════
+    // REVIEW RENDERER
+    // ═════════════════════════════════════════════════════════════════
+    function to12h(t) {
+        if (!t) return '';
+        const parts = String(t).split(':');
+        let h = parseInt(parts[0], 10);
+        const m = parts[1] || '00';
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return String(h).padStart(2, '0') + ':' + m + ' ' + ampm;
+    }
+
+    function renderReview() {
+        const review = document.getElementById('reviewContent');
+
+        const data = {
+            firstName: getFieldValue('firstName'),
+            lastName: getFieldValue('lastName'),
+            degree1: getFieldValue('degree1'),
+            degree2: getFieldValue('degree2'),
+            degree3: getFieldValue('degree3'),
+            degree4: getFieldValue('degree4'),
+            specialistIn: getFieldValue('specialistIn'),
+            workedAt: getFieldValue('workedAt'),
+            yearOfExperience: getFieldValue('yearOfExperience'),
+            registration: getFieldValue('registration'),
+            award: getFieldValue('award'),
+            instruction: getFieldValue('instruction'),
+            mobileNumberFirst: getFieldValue('mobileNumberFirst'),
+            mobileNumberSecond: getFieldValue('mobileNumberSecond'),
+            authorizeForBloodTest: getFieldValue('authorizeForBloodTest'),
+            flatDiscount: getFieldValue('flatDiscount'),
+            area: getArrayValues('area[]'),
+            days: getArrayValues('days[]'),
+            startTimes: getArrayValues('startTimes[]'),
+            endTimes: getArrayValues('endTimes[]')
+        };
+
+        const val = (v, fallback) => v ? '<span class="rd-review-value">' + v + '</span>' : '<span class="rd-review-value rd-review-empty">' + (fallback || '—') + '</span>';
+        const authText = data.authorizeForBloodTest === '1' ? 'Yes — Authorised' : data.authorizeForBloodTest === '2' ? 'No — Not Authorised' : '—';
+
+        let html = '';
+
+        html += '<div class="rd-review-section">' +
+            '<div class="rd-review-section-title"><i class="bi bi-person-circle"></i> Doctor Details</div>' +
+            '<div class="rd-review-grid">' +
+                '<div class="rd-review-item"><div class="rd-review-label">Full Name</div>' + val((data.firstName + ' ' + data.lastName).trim()) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Degrees</div>' + val([data.degree1, data.degree2, data.degree3, data.degree4].filter(Boolean).join(', ')) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Specialist In</div>' + val(data.specialistIn) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Worked At</div>' + val(data.workedAt) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Experience</div>' + val(data.yearOfExperience ? data.yearOfExperience + ' years' : '') + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Registration</div>' + val(data.registration) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Award</div>' + val(data.award) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Instruction</div>' + val(data.instruction) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Mobile 1</div>' + val(data.mobileNumberFirst) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Mobile 2</div>' + val(data.mobileNumberSecond) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Blood Test Auth</div>' + val(authText) + '</div>' +
+                '<div class="rd-review-item"><div class="rd-review-label">Flat Discount</div>' + val(data.flatDiscount !== '' ? data.flatDiscount + '%' : '') + '</div>' +
+            '</div></div>';
+
+        let scheduleHtml = '';
+        for (let i = 0; i < data.area.length; i++) {
+            if (data.area[i]) {
+                scheduleHtml += '<div class="rd-review-item" style="margin-bottom:8px;">' +
+                    '<div class="rd-review-value"><i class="bi bi-geo-alt" style="color:var(--brand);"></i> ' +
+                    data.area[i] + ' &nbsp;•&nbsp; ' + (data.days[i] || '—') + ' &nbsp;•&nbsp; ' +
+                    (to12h(data.startTimes[i]) || '—') + ' – ' + (to12h(data.endTimes[i]) || '—') +
+                    '</div></div>';
+            }
+        }
+        html += '<div class="rd-review-section">' +
+            '<div class="rd-review-section-title"><i class="bi bi-calendar-week"></i> Visiting Schedule (' + data.area.filter(Boolean).length + ')</div>' +
+            (scheduleHtml || '<p class="rd-review-empty" style="padding:12px;">No schedules added</p>') +
+            '</div>';
+
+        // CRITICAL: scope commission reads to the grid only
+        const catItems = document.querySelectorAll('#commissionGrid .rd-commission-item');
+        let commHtml = '<div class="rd-review-grid">';
+        catItems.forEach(item => {
+            const name = item.dataset.cat;
+            const sel = item.querySelector('select.thanks');
+            const v = elValue(sel);
+            commHtml += '<div class="rd-review-item"><div class="rd-review-label">' + name + '</div>' + val(v ? v + '%' : '') + '</div>';
+        });
+        commHtml += '</div>';
+        html += '<div class="rd-review-section">' +
+            '<div class="rd-review-section-title"><i class="bi bi-percent"></i> Commissions</div>' +
+            commHtml + '</div>';
+
+        review.innerHTML = html;
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // COMMISSION JSON + SUBMIT
+    // ═════════════════════════════════════════════════════════════════
+    form.addEventListener('submit', (e) => {
+        const commissions = [];
+        // CRITICAL: only serialize real selects inside the commission grid
+        document.querySelectorAll('#commissionGrid select.thanks').forEach(sel => {
+            commissions.push({
+                categoryId: sel.dataset.categoryId,
+                categoryName: sel.name,
+                percentage: elValue(sel)
+            });
+        });
+        document.getElementById('thanksDetails').value = JSON.stringify(commissions);
+
+        for (let s = 0; s < totalSteps - 1; s++) {
+            if (!validateStep(s)) {
+                e.preventDefault();
+                goToStep(s);
+                return false;
+            }
+        }
+    });
+
+    // ═════════════════════════════════════════════════════════════════
+    // TOAST
+    // ═════════════════════════════════════════════════════════════════
+    function showToast(msg, type) {
+        type = type || 'success';
+        toastMsg.textContent = msg;
+        toast.className = 'rd-toast ' + type;
+        toast.querySelector('i').className = type === 'success' ? 'bi bi-check-circle' : 'bi bi-exclamation-circle';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // INIT
+    // ═════════════════════════════════════════════════════════════════
+    form.reset();
+
+    // Step 1 selects
+    document.querySelectorAll('select.rd-ts').forEach(initTomSelect);
+    // Commission selects (scoped to grid so we don't touch stray elements)
+    document.querySelectorAll('#commissionGrid select.thanks').forEach(initTomSelect);
+    // First schedule row
+    addVisitRow();
+});
+</script>

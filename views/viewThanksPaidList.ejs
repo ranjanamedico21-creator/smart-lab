@@ -1,0 +1,394 @@
+<%
+  var rows  = (typeof patientsList !== 'undefined' && patientsList) ? patientsList : [];
+  var docs  = (typeof doctorDetails !== 'undefined' && doctorDetails) ? doctorDetails : [];
+  var f     = (typeof filters !== 'undefined' && filters) ? filters : { FromDate: (typeof fromDate !== 'undefined' ? fromDate : ''), ToDate: (typeof toDate !== 'undefined' ? toDate : ''), Name: '', Doctor: '', ThanksGivenTo: '', DateBasis: 'paid', Status: '' };
+  var T     = (typeof totals !== 'undefined' && totals) ? totals : { count: rows.length, amount: 0, billed: 0, calculated: 0, cancelledCount: 0, cancelledAmount: 0, overPaid: 0 };
+  var recv  = (typeof byReceiver !== 'undefined' && byReceiver) ? byReceiver : [];
+  var bydoc = (typeof byDoctor !== 'undefined' && byDoctor) ? byDoctor : [];
+  var money = function (v) { return '₹' + (Number(v) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
+  var initials = function (s) { return String(s || '?').trim().split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toUpperCase(); };
+  var jsonSafe = function (o) { return JSON.stringify(o).replace(/</g, '\\u003c'); };
+  var hasCalc = rows.some(function (r) { return r.CalculatedThanks != null; });
+  var filterCount = [f.Doctor, f.ThanksGivenTo, f.Status].filter(Boolean).length + (f.DateBasis === 'registered' ? 1 : 0);
+%>
+
+<style>
+  .tp{ --bg:#f4f6fb; --card:#fff; --line:#e8ebf3; --line2:#f0f2f8; --ink:#101828; --ink2:#475467; --ink3:#98a2b3;
+       --pri:#3056d3; --pri2:#2443b0; --pris:#eef2ff; --ok:#0f7b55; --oks:#e7f6ef; --bad:#c0362c; --bads:#fdeeec;
+       --warn:#b45309; --warns:#fff5e6; --rose:#be185d; --roses:#fdeef5;
+       max-width:1440px; margin:0 auto; padding:8px 0 40px; color:var(--ink); }
+  .tp-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .tp-h1{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin:0}
+  .tp-sub{font-size:.82rem;color:var(--ink2);margin-top:2px}
+  .tp-btn{height:38px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:0 13px;font-size:.84rem;font-weight:600;color:var(--ink2);display:inline-flex;align-items:center;gap:7px}
+  .tp-btn:hover{border-color:#cfd5e3;color:var(--ink)}
+  .tp-btn-pri{background:var(--pri);border-color:var(--pri);color:#fff}
+  .tp-btn-pri:hover{background:var(--pri2);color:#fff}
+
+  .tp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+  .tp-stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center}
+  .tp-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+  .tp-v{font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+  .tp-l{font-size:.74rem;color:var(--ink3)}
+
+  .tp-card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .tp-filters{padding:14px;border-bottom:1px solid var(--line);background:#fafbfe}
+  .tp-filters .form-label{font-size:.72rem;font-weight:600;color:var(--ink2);margin-bottom:4px}
+  .tp-filters .form-control,.tp-filters .form-select{height:40px;border-radius:10px;border-color:var(--line);font-size:.9rem}
+  .tp-filters .form-control:focus,.tp-filters .form-select:focus{border-color:var(--pri);box-shadow:0 0 0 4px rgba(48,86,211,.12)}
+  .tp-seg{display:inline-flex;background:#eef0f6;border-radius:10px;padding:3px;gap:2px;height:40px}
+  .tp-seg label{margin:0;cursor:pointer}
+  .tp-seg input{display:none}
+  .tp-seg span{display:inline-flex;align-items:center;height:34px;padding:0 12px;border-radius:8px;font-size:.8rem;font-weight:600;color:var(--ink2);white-space:nowrap}
+  .tp-seg input:checked + span{background:#fff;color:var(--pri);box-shadow:0 1px 3px rgba(16,24,40,.1)}
+  .tp-quick{display:flex;gap:6px;flex-wrap:wrap}
+  .tp-quick button{border:1px solid var(--line);background:#fff;border-radius:99px;font-size:.76rem;font-weight:600;color:var(--ink2);padding:4px 11px}
+  .tp-quick button:hover{border-color:var(--pri);color:var(--pri)}
+
+  .tp-tabs{display:flex;gap:4px;padding:10px 14px 0;border-bottom:1px solid var(--line)}
+  .tp-tabs button{border:0;background:transparent;font-size:.84rem;font-weight:600;color:var(--ink3);padding:8px 12px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tp-tabs button.on{color:var(--pri);border-bottom-color:var(--pri)}
+  .tp-tabs .cnt{font-size:.68rem;background:#eef0f6;color:var(--ink2);border-radius:99px;padding:1px 7px;margin-left:4px}
+
+  .tp-table{width:100%;border-collapse:separate;border-spacing:0}
+  .tp-table thead th{position:sticky;top:0;z-index:1;background:#f8f9fc;font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
+  .tp-table tbody td{padding:11px 12px;border-bottom:1px solid var(--line2);vertical-align:top;font-size:.86rem}
+  .tp-table tbody tr:hover{background:#f8faff}
+  .tp-table tbody tr.off{background:#fffafa}
+  .tp-table tbody tr.off td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
+  .tp-table tfoot td{padding:11px 12px;background:#f8f9fc;font-weight:700;border-top:1px solid var(--line)}
+  .tp-num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tp-r{text-align:right}
+  .tp-who{display:flex;gap:10px;min-width:220px}
+  .tp-av{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;flex-shrink:0}
+  .tp-av.m{background:#e8efff;color:#2c4fc2}.tp-av.f{background:#fdebf3;color:#b4236c}.tp-av.o{background:#eef1f6;color:#475467}
+  .tp-name{font-weight:650;color:var(--ink);text-decoration:none;text-transform:capitalize}
+  .tp-name:hover{color:var(--pri)}
+  .tp-meta{font-size:.75rem;color:var(--ink3);margin-top:2px;display:flex;flex-wrap:wrap;gap:3px 9px}
+  .tp-meta a{color:var(--ink2);text-decoration:none}
+  .tp-bill{font-family:ui-monospace,Menlo,monospace;font-size:.7rem;background:#f2f4f9;color:var(--ink2);border-radius:6px;padding:1px 6px}
+  .tp-tests{font-size:.74rem;color:var(--ink2);margin-top:3px;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tp-doc{font-weight:600;text-transform:capitalize}
+  .tp-small{font-size:.74rem;color:var(--ink3)}
+  .tp-pill{display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:2px 8px;font-size:.7rem;font-weight:600;white-space:nowrap}
+  .p-bad{background:var(--bads);color:var(--bad)}.p-ok{background:var(--oks);color:var(--ok)}.p-warn{background:var(--warns);color:var(--warn)}.p-gray{background:#f2f4f7;color:var(--ink2)}
+  .tp-ib{width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink2);text-decoration:none;border:1px solid transparent}
+  .tp-ib:hover{background:#f2f4f9;color:var(--pri);border-color:var(--line)}
+  .tp-empty{padding:48px 16px;text-align:center;color:var(--ink2)}
+  .tp-pane{display:none}.tp-pane.on{display:block}
+
+  @media (max-width:1199.98px){ .tp-stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:991.98px){
+    #tpEntries thead{display:none}
+    #tpEntries,#tpEntries tbody,#tpEntries tr,#tpEntries td,#tpEntries tfoot{display:block;width:100%}
+    #tpEntries tbody tr{padding:12px 14px;border-bottom:8px solid var(--bg);position:relative}
+    #tpEntries tbody td{border:0;padding:0}
+    #tpEntries td.c-no{display:none}
+    #tpEntries td[data-l]{display:inline-block;width:auto;margin:10px 16px 0 0;vertical-align:top}
+    #tpEntries td[data-l]::before{content:attr(data-l);display:block;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
+    #tpEntries td.c-act{position:absolute;top:10px;right:8px;width:auto}
+    #tpEntries tfoot tr{display:flex;justify-content:space-between;padding:12px 14px}
+    #tpEntries tfoot td{padding:0;background:transparent;border:0;width:auto}
+    #tpEntries tfoot td.hide-sm{display:none}
+    .tp-who{min-width:0;padding-right:40px}
+    .tp-tests{white-space:normal;max-width:none}
+  }
+  @media (max-width:575.98px){ .tp-stats{gap:8px} .tp-ic{display:none} .tp-h1{font-size:1.2rem} }
+  @media print{
+    .tp-noprint,nav,header,aside,.sidebar,footer{display:none!important}
+    .tp-card,.tp-stat{border-color:#ccc} .tp-pane{display:block!important} .tp-table thead th{position:static}
+    body{background:#fff!important}
+  }
+</style>
+
+<div class="tp">
+  <div class="tp-top">
+    <div>
+      <h1 class="tp-h1">Thanks Paid</h1>
+      <div class="tp-sub">
+        <%= f.DateBasis === 'registered' ? 'Patients registered' : 'Paid' %>
+        <%= f.FromDate === f.ToDate ? 'on ' + f.FromDate : 'from ' + f.FromDate + ' to ' + f.ToDate %>
+      </div>
+    </div>
+    <div class="d-flex gap-2 tp-noprint">
+      <button type="button" class="tp-btn" id="tpCsv" <%= rows.length ? '' : 'disabled' %>><i class="bi bi-filetype-csv"></i> Export</button>
+      <button type="button" class="tp-btn" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+    </div>
+  </div>
+
+  <%- include("./partials/messages"); %>
+
+  <div class="tp-stats">
+    <div class="tp-stat"><div class="tp-ic" style="background:var(--roses);color:var(--rose)"><i class="bi bi-heart-fill"></i></div>
+      <div><div class="tp-v"><%= money(T.amount) %></div><div class="tp-l">Thanks paid · <%= T.count %> patient<%= T.count !== 1 ? 's' : '' %></div></div></div>
+    <div class="tp-stat"><div class="tp-ic" style="background:var(--pris);color:var(--pri)"><i class="bi bi-receipt"></i></div>
+      <div><div class="tp-v"><%= money(T.billed) %></div><div class="tp-l">Billed for these patients<%= T.billed > 0 ? ' · ' + (T.amount * 100 / T.billed).toFixed(1) + '%' : '' %></div></div></div>
+    <div class="tp-stat"><div class="tp-ic" style="background:var(--warns);color:var(--warn)"><i class="bi bi-calculator"></i></div>
+      <div>
+        <% if (hasCalc) { %>
+          <% var diff = (T.comparedPaid || 0) - T.calculated; %>
+          <div class="tp-v" style="color:<%= diff > 0 ? 'var(--bad)' : 'var(--ok)' %>"><%= (diff > 0 ? '+' : '') + money(diff) %></div>
+          <div class="tp-l">Paid <%= money(T.comparedPaid) %> vs calculated <%= money(T.calculated) %><%= T.comparedCount < T.count ? ' (' + T.comparedCount + ' of ' + T.count + ')' : '' %></div>
+        <% } else { %>
+          <div class="tp-v">—</div><div class="tp-l">No calculated commission to compare</div>
+        <% } %>
+      </div></div>
+    <div class="tp-stat"><div class="tp-ic" style="background:var(--bads);color:var(--bad)"><i class="bi bi-arrow-counterclockwise"></i></div>
+      <div><div class="tp-v" style="color:<%= T.cancelledAmount > 0 ? 'var(--bad)' : 'inherit' %>"><%= money(T.cancelledAmount) %></div>
+           <div class="tp-l">To recover · <%= T.cancelledCount %> cancelled patient<%= T.cancelledCount !== 1 ? 's' : '' %></div></div></div>
+  </div>
+
+  <div class="tp-card">
+    <!-- Filters -->
+    <form action="/patient/searchThanksPaidPatient" method="post" class="tp-filters tp-noprint" id="tpForm" autocomplete="off">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-4 col-xl-3">
+          <label class="form-label" for="tpName">Patient</label>
+          <input type="search" class="form-control" id="tpName" name="Name" value="<%= f.Name %>" placeholder="Name, phone or bill no.">
+        </div>
+        <div class="col-12 col-md-4 col-xl-2">
+          <label class="form-label">Date is</label>
+          <div class="tp-seg w-100">
+            <label class="flex-fill"><input type="radio" name="DateBasis" value="paid" <%= f.DateBasis !== 'registered' ? 'checked' : '' %>><span class="w-100 justify-content-center">Paid on</span></label>
+            <label class="flex-fill"><input type="radio" name="DateBasis" value="registered" <%= f.DateBasis === 'registered' ? 'checked' : '' %>><span class="w-100 justify-content-center">Registered</span></label>
+          </div>
+        </div>
+        <div class="col-6 col-md-2 col-xl-2">
+          <label class="form-label" for="FromDate">From</label>
+          <input type="text" class="form-control" id="FromDate" name="FromDate" value="<%= f.FromDate %>">
+        </div>
+        <div class="col-6 col-md-2 col-xl-2">
+          <label class="form-label" for="ToDate">To</label>
+          <input type="text" class="form-control" id="ToDate" name="ToDate" value="<%= f.ToDate %>">
+        </div>
+        <div class="col-12 col-md-4 col-xl-3">
+          <label class="form-label" for="doctor">Referring doctor</label>
+          <select name="Doctor" id="doctor" class="form-select">
+            <option value="">All doctors</option>
+            <% docs.forEach(function (d) { %><option value="<%= d.Id %>" <%= String(d.Id) === String(f.Doctor) ? 'selected' : '' %>>Dr. <%= d.FirstName %> <%= d.LastName %></option><% }) %>
+          </select>
+        </div>
+        <div class="col-12 col-md-4 col-xl-3">
+          <label class="form-label" for="tpRecv">Thanks given to</label>
+          <input type="search" class="form-control" id="tpRecv" name="ThanksGivenTo" value="<%= f.ThanksGivenTo %>" placeholder="Name or mobile">
+        </div>
+        <div class="col-6 col-md-2 col-xl-2">
+          <label class="form-label" for="tpStatus">Patient status</label>
+          <select name="Status" id="tpStatus" class="form-select ts-exclude">
+            <option value="">All</option>
+            <option value="active"    <%= f.Status === 'active' ? 'selected' : '' %>>Active</option>
+            <option value="cancelled" <%= f.Status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2 col-xl-auto d-flex gap-2">
+          <button type="submit" class="tp-btn tp-btn-pri flex-fill" id="tpGo"><i class="bi bi-search"></i> <span>Search</span></button>
+          <button type="button" class="tp-btn" id="tpReset" title="Reset filters"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="col-12 col-xl d-flex justify-content-xl-end">
+          <div class="tp-quick">
+            <button type="button" data-q="today">Today</button>
+            <button type="button" data-q="week">This week</button>
+            <button type="button" data-q="month">This month</button>
+            <button type="button" data-q="lastmonth">Last month</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- Tabs -->
+    <div class="tp-tabs tp-noprint" role="tablist">
+      <button type="button" class="on" data-tab="tpPaneEntries" role="tab">Entries <span class="cnt"><%= rows.length %></span></button>
+      <button type="button" data-tab="tpPaneRecv" role="tab">By receiver <span class="cnt"><%= recv.length %></span></button>
+      <button type="button" data-tab="tpPaneDoc" role="tab">By doctor <span class="cnt"><%= bydoc.length %></span></button>
+    </div>
+
+    <!-- Entries -->
+    <div class="tp-pane on" id="tpPaneEntries">
+      <% if (!rows.length) { %>
+        <div class="tp-empty"><i class="bi bi-heart fs-2 d-block mb-2" style="color:var(--rose)"></i>No thanks payments for these filters.</div>
+      <% } else { %>
+      <div class="table-responsive">
+        <table class="tp-table" id="tpEntries">
+          <thead><tr>
+            <th style="width:38px">#</th><th>Patient</th><th>Registered</th><th>Referring doctor</th>
+            <th class="tp-r">Bill</th><th>Thanks given to</th><th class="tp-r">Thanks</th><th>Paid on</th><th></th>
+          </tr></thead>
+          <tbody>
+          <% rows.forEach(function (p, i) {
+               var g = p.Gender == 1 ? 'm' : (p.Gender == 2 ? 'f' : 'o');
+               var off = Number(p.Status) === 0;
+               var mob = String(p.ThanksGivenToMobile || '').replace(/\D/g, '');
+          %>
+            <tr class="<%= off ? 'off' : '' %>">
+              <td class="c-no tp-small fw-semibold"><%= i + 1 %></td>
+              <td>
+                <div class="tp-who">
+                  <div class="tp-av <%= g %>"><%= initials(p.Name) %></div>
+                  <div style="min-width:0">
+                    <a class="tp-name" href="/patient/getPatientDetail?patientId=<%= p.Id %>"><%= p.Title %> <%= p.Name %></a>
+                    <% if (off) { %> <span class="tp-pill p-bad">Cancelled · recover</span><% } %>
+                    <div class="tp-meta">
+                      <span class="tp-bill">#<%= p.Id %></span>
+                      <span><%= p.GenderLabel %><%= p.Age ? ', ' + p.Age + ' ' + String(p.YMD || '').charAt(0).toLowerCase() : '' %></span>
+                      <% if (p.PhoneNumber) { %><a href="tel:<%= p.PhoneNumber %>"><i class="bi bi-telephone"></i> <%= p.PhoneNumber %></a><% } %>
+                    </div>
+                    <% if (p.TestNames) { %><div class="tp-tests" title="<%= p.TestNames %>"><%= p.TestNames %></div><% } %>
+                  </div>
+                </div>
+              </td>
+              <td data-l="Registered" class="text-nowrap">
+                <%= p.RegisteredOn %>
+                <% if (p.RegisteredByName) { %><div class="tp-small">by <span class="text-capitalize"><%= p.RegisteredByName %></span></div><% } %>
+              </td>
+              <td data-l="Referring doctor">
+                <% if (p.DoctorName) { %>
+                  <div class="tp-doc"><%= p.DoctorName %></div>
+                  <% if (p.docDegrees || p.docSpecialist) { %><div class="tp-small"><%= [p.docDegrees, p.docSpecialist].filter(Boolean).join(' · ') %></div><% } %>
+                  <% if (p.ClinicName) { %><div class="tp-small"><i class="bi bi-hospital"></i> <%= p.ClinicName %></div><% } %>
+                <% } else { %><span class="tp-small">—</span><% } %>
+              </td>
+              <td data-l="Bill" class="tp-r">
+                <div class="tp-num"><%= money(p.GrossAmount) %></div>
+                <% if (Number(p.DuesAmount) > 0 && !off) { %><span class="tp-pill p-warn">Due <%= money(p.DuesAmount) %></span><% } %>
+              </td>
+              <td data-l="Thanks given to">
+                <div class="text-capitalize fw-semibold"><%= p.ThanksGivenTo %></div>
+                <% if (mob) { %>
+                  <div class="tp-small"><a href="tel:<%= mob %>" class="text-reset text-decoration-none"><%= p.ThanksGivenToMobile %></a>
+                  <% if (mob.length === 10) { %> · <a href="https://wa.me/91<%= mob %>" target="_blank" rel="noopener" class="text-success" title="WhatsApp"><i class="bi bi-whatsapp"></i></a><% } %></div>
+                <% } %>
+              </td>
+              <td data-l="Thanks" class="tp-r">
+                <div class="tp-num" style="color:var(--rose)"><%= money(p.ThanksAmount) %></div>
+                <% if (p.Difference != null && Math.abs(p.Difference) >= 1) { %>
+                  <span class="tp-pill <%= p.Difference > 0 ? 'p-bad' : 'p-gray' %>" title="Calculated commission <%= money(p.CalculatedThanks) %>">
+                    <%= p.Difference > 0 ? '+' : '' %><%= money(p.Difference) %> vs calc
+                  </span>
+                <% } else if (p.Difference != null) { %>
+                  <span class="tp-pill p-ok" title="Matches calculated commission">✓ as calculated</span>
+                <% } %>
+              </td>
+              <td data-l="Paid on" class="text-nowrap">
+                <%= p.ThanksGivenOn %>
+                <div class="tp-small text-capitalize"><%= [p.PaidByName ? 'by ' + p.PaidByName : '', Number(p.DaysToPay) > 0 ? p.DaysToPay + ' day' + (p.DaysToPay != 1 ? 's' : '') + ' after visit' : ''].filter(Boolean).join(' · ') %></div>
+              </td>
+              <td class="c-act tp-noprint"><a class="tp-ib" href="/patient/getPatientDetail?patientId=<%= p.Id %>" title="Open patient"><i class="bi bi-box-arrow-up-right"></i></a></td>
+            </tr>
+          <% }) %>
+          </tbody>
+          <tfoot><tr>
+            <td class="hide-sm"></td><td>Total · <%= T.count %></td><td class="hide-sm"></td><td class="hide-sm"></td>
+            <td class="tp-r tp-num hide-sm"><%= money(T.billed) %></td><td class="hide-sm"></td>
+            <td class="tp-r tp-num" style="color:var(--rose)"><%= money(T.amount) %></td><td class="hide-sm"></td><td class="hide-sm"></td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- By receiver -->
+    <div class="tp-pane" id="tpPaneRecv">
+      <div class="table-responsive">
+        <table class="tp-table">
+          <thead><tr><th>#</th><th>Thanks given to</th><th>Mobile</th><th class="tp-r">Patients</th><th class="tp-r">Total paid</th></tr></thead>
+          <tbody>
+            <% recv.forEach(function (r, i) { %>
+              <tr><td class="tp-small"><%= i + 1 %></td><td class="text-capitalize fw-semibold"><%= r.name %></td><td><%= r.mobile || '—' %></td>
+                  <td class="tp-r"><%= r.count %></td><td class="tp-r tp-num" style="color:var(--rose)"><%= money(r.amount) %></td></tr>
+            <% }) %>
+            <% if (!recv.length) { %><tr><td colspan="5" class="tp-empty">Nothing to show.</td></tr><% } %>
+          </tbody>
+          <% if (recv.length) { %><tfoot><tr><td></td><td>Total</td><td></td><td class="tp-r"><%= T.count %></td><td class="tp-r"><%= money(T.amount) %></td></tr></tfoot><% } %>
+        </table>
+      </div>
+    </div>
+
+    <!-- By doctor -->
+    <div class="tp-pane" id="tpPaneDoc">
+      <div class="table-responsive">
+        <table class="tp-table">
+          <thead><tr><th>#</th><th>Referring doctor</th><th class="tp-r">Patients</th><th class="tp-r">Billed</th><th class="tp-r">Thanks paid</th><th class="tp-r">% of bill</th></tr></thead>
+          <tbody>
+            <% bydoc.forEach(function (d, i) { %>
+              <tr><td class="tp-small"><%= i + 1 %></td><td class="tp-doc"><%= d.name %></td><td class="tp-r"><%= d.count %></td>
+                  <td class="tp-r tp-num"><%= money(d.billed) %></td><td class="tp-r tp-num" style="color:var(--rose)"><%= money(d.amount) %></td>
+                  <td class="tp-r"><%= d.billed > 0 ? (d.amount * 100 / d.billed).toFixed(1) + '%' : '—' %></td></tr>
+            <% }) %>
+            <% if (!bydoc.length) { %><tr><td colspan="6" class="tp-empty">Nothing to show.</td></tr><% } %>
+          </tbody>
+          <% if (bydoc.length) { %><tfoot><tr><td></td><td>Total</td><td class="tp-r"><%= T.count %></td><td class="tp-r"><%= money(T.billed) %></td><td class="tp-r"><%= money(T.amount) %></td>
+            <td class="tp-r"><%= T.billed > 0 ? (T.amount * 100 / T.billed).toFixed(1) + '%' : '—' %></td></tr></tfoot><% } %>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="tpData"><%- jsonSafe(rows.map(function (p) { return {
+  bill: p.Id, title: p.Title || '', name: p.Name, phone: p.PhoneNumber || '', registered: p.RegisteredOn, doctor: p.DoctorName || '',
+  clinic: p.ClinicName || '', billAmount: Number(p.GrossAmount) || 0, thanksTo: p.ThanksGivenTo, thanksMobile: p.ThanksGivenToMobile || '',
+  thanks: Number(p.ThanksAmount) || 0, calculated: p.CalculatedThanks, paidOn: p.ThanksGivenOn, paidBy: p.PaidByName || '',
+  status: Number(p.Status) === 0 ? 'Cancelled' : 'Active' }; })) %></script>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('tpForm'), from = $('FromDate'), to = $('ToDate');
+
+  // Tabs
+  document.querySelectorAll('.tp-tabs [data-tab]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.tp-tabs [data-tab]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      document.querySelectorAll('.tp-pane').forEach(function (p) { p.classList.toggle('on', p.id === b.dataset.tab); });
+    });
+  });
+
+  // Dates
+  var M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var fmt = function (d) { return d.getDate() + ' ' + M[d.getMonth()] + ' ' + d.getFullYear(); };
+  if (window.flatpickr) {
+    var opt = { dateFormat: 'j M Y', allowInput: true, maxDate: 'today', disableMobile: true };
+    [from, to].forEach(function (el) { if (el && !el._flatpickr) flatpickr(el, opt); });
+  }
+  document.querySelectorAll('.tp-quick [data-q]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = new Date(); t.setHours(0,0,0,0);
+      var r = { today: [t, t],
+                week: [new Date(t.getFullYear(), t.getMonth(), t.getDate() - ((t.getDay() + 6) % 7)), t],
+                month: [new Date(t.getFullYear(), t.getMonth(), 1), t],
+                lastmonth: [new Date(t.getFullYear(), t.getMonth() - 1, 1), new Date(t.getFullYear(), t.getMonth(), 0)] }[b.dataset.q];
+      from.value = fmt(r[0]); to.value = fmt(r[1]);
+      form.submit();
+    });
+  });
+  document.querySelectorAll('input[name="DateBasis"]').forEach(function (r) { r.addEventListener('change', function () { form.submit(); }); });
+  $('tpReset').addEventListener('click', function () {
+    ['tpName', 'tpRecv', 'FromDate', 'ToDate'].forEach(function (id) { $(id).value = ''; });
+    var d = $('doctor'); d.value = ''; if (d.tomselect) d.tomselect.clear(true);
+    $('tpStatus').value = ''; form.querySelector('input[name="DateBasis"][value="paid"]').checked = true;
+    form.submit();
+  });
+  form.addEventListener('submit', function () { var b = $('tpGo'); b.disabled = true; b.querySelector('span').textContent = 'Loading…'; });
+
+  // CSV export (what is on screen)
+  var btn = $('tpCsv');
+  if (btn) btn.addEventListener('click', function () {
+    var rows; try { rows = JSON.parse($('tpData').textContent); } catch (_) { rows = []; }
+    var cell = function (v) {
+      var s = v == null ? '' : String(v);
+      if (/^[=+\-@]/.test(s)) s = "'" + s;
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    var head = ['Bill No','Title','Patient','Phone','Registered','Referring Doctor','Clinic','Bill Amount','Thanks Given To','Mobile','Thanks','Calculated','Paid On','Paid By','Status'];
+    var lines = [head.map(cell).join(',')].concat(rows.map(function (r) {
+      return [r.bill, r.title, r.name, r.phone, r.registered, r.doctor, r.clinic, r.billAmount, r.thanksTo, r.thanksMobile, r.thanks, r.calculated == null ? '' : r.calculated, r.paidOn, r.paidBy, r.status].map(cell).join(',');
+    }));
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'thanks-paid_' + (from.value || '').replace(/\s+/g, '-') + '_to_' + (to.value || '').replace(/\s+/g, '-') + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+})();
+</script>

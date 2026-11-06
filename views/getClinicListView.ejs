@@ -1,0 +1,140 @@
+<%
+  var rows = (typeof clinicDetails !== 'undefined' && clinicDetails) ? clinicDetails : [];
+  var totalDocs = rows.reduce(function (s, c) { return s + (Number(c.DoctorCount) || 0); }, 0);
+  var noDocs    = rows.filter(function (c) { return !Number(c.DoctorCount); }).length;
+%>
+<style>
+  .cl{--brand:#185FA5;--brand-soft:#E6F1FB;--border:#e2e8f0;--alt:#F8F9FB;--text-2:#6B7280;--hint:#9CA3AF;padding:16px 0 40px;max-width:1200px;margin:0 auto}
+  .cl-card{background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
+  .cl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .cl-head-l{display:flex;align-items:center;gap:12px}
+  .cl-ic{width:38px;height:38px;border-radius:8px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:17px}
+  .cl-title{font-size:15px;font-weight:600;margin:0}
+  .cl-sub{font-size:12px;color:var(--text-2);margin:2px 0 0}
+  .cl-stats{display:flex;gap:8px;flex-wrap:wrap}
+  .cl-pill{font-size:11.5px;font-weight:500;padding:4px 10px;border-radius:99px;background:var(--alt);border:1px solid var(--border);color:var(--text-2)}
+  .cl-pill.warn{background:#FAEEDA;border-color:#FAC775;color:#854F0B}
+  .cl-tools{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--alt);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .cl-search{position:relative;flex:1;min-width:220px;max-width:420px}
+  .cl-search i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--hint)}
+  .cl-search input{padding-left:34px;height:40px}
+  .cl-table{width:100%;border-collapse:collapse}
+  .cl-table th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);padding:10px 16px;border-bottom:1px solid var(--border);background:var(--alt);white-space:nowrap;text-align:left}
+  .cl-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+  .cl-table tr:hover td{background:#f8fbff}
+  .cl-name{font-weight:600;text-transform:capitalize}
+  .cl-muted{font-size:12px;color:var(--text-2)}
+  .cl-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+  .b-ok{background:#EAF3DE;color:#3B6D11}.b-warn{background:#FAEEDA;color:#854F0B}.b-none{background:#f1f5f9;color:#64748b}
+  .cl-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .cl-empty{text-align:center;padding:48px 16px;color:var(--text-2)}
+
+  /* Phones: table rows become cards */
+  @media (max-width:767.98px){
+    .cl{padding:8px 0 24px}
+    .cl-table thead{display:none}
+    .cl-table,.cl-table tbody,.cl-table tr,.cl-table td{display:block;width:100%}
+    .cl-table tr{border-bottom:8px solid var(--alt);padding:10px 4px}
+    .cl-table td{border:0;padding:4px 14px}
+    .cl-table td[data-l]::before{content:attr(data-l);display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint)}
+    .cl-actions .btn{flex:1}
+  }
+</style>
+
+<div class="cl">
+  <%- include("./partials/messages"); %>
+
+  <div class="cl-card">
+    <div class="cl-head">
+      <div class="cl-head-l">
+        <div class="cl-ic"><i class="bi bi-hospital"></i></div>
+        <div><p class="cl-title">Clinics</p><p class="cl-sub">Referring clinics, their doctors and prescription headers</p></div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="cl-stats">
+          <span class="cl-pill"><%= rows.length %> clinic<%= rows.length !== 1 ? 's' : '' %></span>
+          <span class="cl-pill"><%= totalDocs %> doctor link<%= totalDocs !== 1 ? 's' : '' %></span>
+          <% if (noDocs) { %><span class="cl-pill warn" title="Clinics with no doctor attached"><i class="bi bi-exclamation-circle"></i> <%= noDocs %> without doctors</span><% } %>
+        </div>
+        <a href="/clinic/registerClinic" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Register clinic</a>
+      </div>
+    </div>
+
+    <% if (rows.length) { %>
+      <div class="cl-tools">
+        <div class="cl-search">
+          <i class="bi bi-search"></i>
+          <input type="search" class="form-control" id="clQ" placeholder="Search name, phone, area, city, marketing person…" autocomplete="off" aria-label="Search clinics">
+        </div>
+        <span class="small text-muted" id="clInfo"></span>
+      </div>
+    <% } %>
+
+    <div class="table-responsive">
+      <table class="cl-table">
+        <thead>
+          <tr><th>Clinic</th><th>Contact</th><th>Area</th><th>Marketing</th><th>Doctors</th><th>Header</th><th></th></tr>
+        </thead>
+        <tbody id="clBody">
+          <% if (!rows.length) { %>
+            <tr><td colspan="7" class="cl-empty">
+              <i class="bi bi-hospital" style="font-size:30px"></i>
+              <div class="fw-semibold mt-2">No clinics yet</div>
+              <div class="small mb-3">Register a clinic to attach doctors and print prescription headers.</div>
+              <a href="/clinic/registerClinic" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Register clinic</a>
+            </td></tr>
+          <% } %>
+          <% rows.forEach(function (c) {
+               var n = Number(c.DoctorCount) || 0;
+               var search = [c.Name, c.Email, c.PhoneNumber, c.SecondaryNumber, c.KeyArea, c.City, c.LandMark, c.Pincode, c.AssignedName].filter(Boolean).join(' ').toLowerCase();
+          %>
+            <tr data-q="<%= search %>">
+              <td data-l="Clinic">
+                <div class="cl-name"><%= c.Name %></div>
+                <div class="cl-muted"><%= c.Email || '' %></div>
+              </td>
+              <td data-l="Contact">
+                <% if (c.PhoneNumber) { %><a href="tel:<%= c.PhoneNumber %>" class="text-decoration-none"><i class="bi bi-telephone me-1"></i><%= c.PhoneNumber %></a><% } %>
+                <% if (c.SecondaryNumber) { %><div class="cl-muted"><%= c.SecondaryNumber %></div><% } %>
+              </td>
+              <td data-l="Area">
+                <div class="text-capitalize"><%= c.KeyArea || '—' %></div>
+                <div class="cl-muted text-capitalize"><%= [c.City, c.Pincode].filter(Boolean).join(' – ') %></div>
+              </td>
+              <td data-l="Marketing"><%= c.AssignedName %></td>
+              <td data-l="Doctors">
+                <span class="cl-badge <%= n ? 'b-ok' : 'b-warn' %>"><i class="bi bi-person<%= n ? '-check' : '-exclamation' %>"></i> <%= n %></span>
+              </td>
+              <td data-l="Header">
+                <% if (c.HasHeader) { %><span class="cl-badge b-ok"><i class="bi bi-image"></i> Uploaded</span>
+                <% } else { %><span class="cl-badge b-none">None</span><% } %>
+              </td>
+              <td>
+                <div class="cl-actions">
+                  <a href="/clinic/attachDoctor/<%= c.Id %>" class="btn btn-sm btn-outline-primary"><i class="bi bi-person-plus"></i> Doctors</a>
+                  <a href="/clinic/updateClinicDetails/<%= c.Id %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+          <tr id="clNoMatch" style="display:none"><td colspan="7" class="cl-empty"><i class="bi bi-search"></i> No clinic matches your search.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var q = document.getElementById('clQ'); if (!q) return;
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#clBody tr[data-q]'));
+  var info = document.getElementById('clInfo');
+  function run() {
+    var t = q.value.trim().toLowerCase(), n = 0;
+    rows.forEach(function (r) { var ok = !t || r.dataset.q.indexOf(t) !== -1; r.style.display = ok ? '' : 'none'; if (ok) n++; });
+    document.getElementById('clNoMatch').style.display = n ? 'none' : '';
+    info.textContent = t ? n + ' of ' + rows.length : '';
+  }
+  q.addEventListener('input', run);
+})();
+</script>

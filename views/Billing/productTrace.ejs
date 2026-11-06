@@ -1,0 +1,1108 @@
+
+<%
+  /* views/Billing/productTrace.ejs
+     Controller variables:
+     suppliers, products, supplierId, productId, batch, trace, moment, notifications
+  */
+
+  const money = (v) =>
+    (v === null || v === undefined || v === '' || isNaN(Number(v)))
+      ? '–'
+      : Number(v).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+  const qty = (v) =>
+    Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+  const day = (d) => (d ? moment(d).format('DD-MM-YYYY') : '–');
+
+  const tone = (v) =>
+    Number(v) > 0 ? 'text-success' : Number(v) < 0 ? 'text-danger' : '';
+
+  const signed = (v) => (Number(v) > 0 ? '+' : '') + money(v);
+
+  const today = moment().startOf('day');
+
+  const expiryBadge = (d) => {
+    if (!d) return '';
+
+    const e = moment(d).startOf('day');
+
+    if (e.isBefore(today)) {
+      return '<span class="badge text-bg-danger ms-1">Expired</span>';
+    }
+
+    if (e.isBefore(today.clone().add(3, 'months'))) {
+      return '<span class="badge text-bg-warning ms-1">&lt; 3 months</span>';
+    }
+
+    return '';
+  };
+
+  const productList = (products || []).map((p) => ({
+    id: p.Id,
+    name: p.ProductName,
+    supplierId: p.SupplierId
+  }));
+
+  const notes = notifications || [];
+%>
+
+<style>
+  /* =========================================================
+     PRODUCT TRACE — MODERN SMARTLAB UI
+     CSS only: existing application logic is preserved.
+     ========================================================= */
+
+  :root {
+    --trace-primary: #2563eb;
+    --trace-primary-dark: #1d4ed8;
+    --trace-text: #1e293b;
+    --trace-muted: #64748b;
+    --trace-border: #e2e8f0;
+    --trace-surface: #ffffff;
+    --trace-page: #f5f7fb;
+    --trace-radius: 14px;
+  }
+
+  /* Main page */
+  .product-trace-page {
+    color: var(--trace-text);
+    padding-top: 1.25rem;
+    padding-bottom: 2rem;
+  }
+
+  .trace-page-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+
+  .trace-page-heading h4 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    color: #0f172a;
+  }
+
+  .trace-page-heading .trace-heading-icon {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.55rem;
+    border-radius: 12px;
+    color: var(--trace-primary);
+    background: #dbeafe;
+    vertical-align: middle;
+  }
+
+  .trace-page-heading .btn {
+    border-radius: 9px;
+    padding: 0.55rem 0.85rem;
+    font-weight: 600;
+  }
+
+  /* Search panel */
+  #traceForm {
+    background: var(--trace-surface);
+    border: 1px solid var(--trace-border);
+    border-radius: var(--trace-radius);
+    padding: 1.35rem;
+    box-shadow: 0 5px 20px rgba(15, 23, 42, 0.045);
+  }
+
+  #traceForm .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 700 !important;
+  }
+
+  #traceForm .form-select,
+  #traceForm .form-control {
+    min-height: 44px;
+    border: 1px solid #dbe2ec;
+    border-radius: 9px;
+    color: var(--trace-text);
+    background-color: #fff;
+    font-size: 0.9rem;
+    box-shadow: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  #traceForm .form-select:focus,
+  #traceForm .form-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  #traceForm .form-select:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  #traceForm .form-text {
+    color: var(--trace-muted);
+    font-size: 0.8rem;
+  }
+
+  #traceForm .btn {
+    min-height: 44px;
+    border-radius: 9px;
+    font-size: 0.88rem;
+    font-weight: 650;
+    transition: all 0.18s ease;
+  }
+
+  #traceForm .btn-primary {
+    background: var(--trace-primary);
+    border-color: var(--trace-primary);
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.16);
+  }
+
+  #traceForm .btn-primary:hover {
+    background: var(--trace-primary-dark);
+    border-color: var(--trace-primary-dark);
+    transform: translateY(-1px);
+  }
+
+  #traceForm .btn-outline-secondary {
+    min-width: 44px;
+    border-color: #dbe2ec;
+    color: #475569;
+  }
+
+  #traceForm .btn-outline-secondary:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+  }
+
+  /* Product and supplier labels */
+  .supplier-option {
+    text-transform: capitalize;
+  }
+
+  .trace-product-heading {
+    padding: 0.25rem 0 1.1rem;
+  }
+
+  .trace-product-heading h5 {
+    margin-bottom: 0.45rem;
+    color: #0f172a;
+    font-size: 1.18rem;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+  }
+
+  .trace-product-heading .trace-product-meta {
+    color: var(--trace-muted);
+    font-size: 0.86rem;
+    line-height: 1.8;
+  }
+
+  /* Summary cards */
+  .trace-card {
+    overflow: hidden;
+    height: 100%;
+    border: 1px solid var(--trace-border);
+    border-radius: 12px;
+    background: var(--trace-surface);
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .trace-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 20px rgba(15, 23, 42, 0.075);
+  }
+
+  .trace-card .card-body {
+    padding: 1rem;
+  }
+
+  .trace-card .label {
+    margin-bottom: 0.5rem;
+    color: var(--trace-muted);
+    font-size: 0.7rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.065em;
+  }
+
+  .trace-card .value {
+    color: #0f172a;
+    font-size: clamp(1.05rem, 1.4vw, 1.4rem);
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .trace-card .small {
+    margin-top: 0.4rem;
+    color: var(--trace-muted);
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+
+  .trace-card .value.text-success {
+    color: #15803d !important;
+  }
+
+  .trace-card .value.text-danger {
+    color: #dc2626 !important;
+  }
+
+  /* Report section cards */
+  .product-trace-page .card.mb-4 {
+    overflow: hidden;
+    border: 1px solid var(--trace-border);
+    border-radius: var(--trace-radius);
+    background: var(--trace-surface);
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.035);
+  }
+
+  .product-trace-page .card-header {
+    padding: 0.95rem 1.1rem;
+    border-bottom: 1px solid var(--trace-border);
+    background: #fff;
+    color: #1e293b;
+    font-size: 0.9rem;
+    font-weight: 750 !important;
+  }
+
+  .product-trace-page .card-header i {
+    color: var(--trace-primary);
+  }
+
+  .product-trace-page .table-responsive {
+    border-radius: 0 0 var(--trace-radius) var(--trace-radius);
+  }
+
+  /* Data tables */
+  .trace-table {
+    margin-bottom: 0;
+    color: #334155;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    border-color: #edf1f6;
+  }
+
+  .trace-table th {
+    padding: 0.85rem 0.9rem;
+    color: #475569;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.035em;
+    vertical-align: middle;
+  }
+
+  .trace-table td {
+    padding: 0.75rem 0.9rem;
+    border-color: #edf1f6;
+    vertical-align: middle;
+  }
+
+  .trace-table tbody tr {
+    transition: background-color 0.12s ease;
+  }
+
+  .trace-table.table-hover tbody tr:hover > * {
+    background-color: #f8fbff;
+    color: inherit;
+  }
+
+  .trace-table tfoot td {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    background: #f8fafc;
+    border-top: 1px solid #dbe2ec;
+    color: #1e293b;
+  }
+
+  .trace-table a {
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  .trace-table a:hover {
+    color: #1e40af;
+    text-decoration: underline !important;
+  }
+
+  .trace-table .badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  .trace-table .table-danger > *,
+  .trace-table tr.table-danger > * {
+    background-color: #fff1f2;
+  }
+
+  /* Pending challans */
+  .product-trace-page .border-warning {
+    border-color: #f3d28b !important;
+  }
+
+  .product-trace-page .bg-warning-subtle {
+    background-color: #fff9e8 !important;
+  }
+
+  .product-trace-page .bg-warning-subtle i {
+    color: #b7791f;
+  }
+
+  /* Alerts */
+  .product-trace-page .alert {
+    border-radius: 10px;
+    border-width: 1px;
+    font-size: 0.88rem;
+  }
+
+  /* Report note */
+  .trace-footnote {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--trace-border);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: var(--trace-muted);
+    font-size: 0.78rem;
+    line-height: 1.65;
+  }
+
+  /* Tom Select support — applies if the app initializes these selects */
+  #traceForm .ts-wrapper {
+    width: 100%;
+  }
+
+  #traceForm .ts-wrapper .ts-control {
+    min-height: 44px;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid #dbe2ec;
+    border-radius: 9px;
+    background: #fff;
+    color: var(--trace-text);
+    box-shadow: none;
+    font-size: 0.9rem;
+  }
+
+  #traceForm .ts-wrapper.focus .ts-control {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  #traceForm .ts-wrapper.disabled .ts-control {
+    background: #f1f5f9;
+    color: #94a3b8;
+  }
+
+  #traceForm .ts-dropdown {
+    overflow: hidden;
+    margin-top: 4px;
+    border: 1px solid var(--trace-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.13);
+    z-index: 1060;
+  }
+
+  #traceForm .ts-dropdown .option {
+    padding: 0.65rem 0.8rem;
+    font-size: 0.88rem;
+  }
+
+  #traceForm .ts-dropdown .active {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  /* Responsive layout */
+  @media (max-width: 991.98px) {
+    .trace-card .card-body {
+      padding: 0.85rem;
+    }
+
+    .trace-table th,
+    .trace-table td {
+      padding: 0.7rem;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .product-trace-page {
+      padding-top: 0.8rem;
+    }
+
+    .trace-page-heading h4 {
+      font-size: 1.12rem;
+    }
+
+    .trace-page-heading .trace-heading-icon {
+      width: 35px;
+      height: 35px;
+    }
+
+    #traceForm {
+      padding: 1rem;
+    }
+
+    #traceForm .row {
+      row-gap: 0.9rem;
+    }
+
+    .trace-card .label {
+      font-size: 0.65rem;
+    }
+
+    .trace-card .value {
+      font-size: 1.08rem;
+    }
+
+    .product-trace-page .card-header {
+      padding: 0.85rem;
+      font-size: 0.83rem;
+      line-height: 1.5;
+    }
+
+    .trace-table {
+      font-size: 0.78rem;
+    }
+
+    .trace-table th {
+      font-size: 0.68rem;
+    }
+  }
+
+  /* Print only the report, not the search controls */
+  @media print {
+    .d-print-none {
+      display: none !important;
+    }
+
+    .product-trace-page {
+      padding: 0 !important;
+      color: #000 !important;
+    }
+
+    .product-trace-page .card.mb-4,
+    .trace-card {
+      overflow: visible;
+      border: 1px solid #bbb !important;
+      box-shadow: none !important;
+      break-inside: avoid;
+    }
+
+    .trace-card .value {
+      font-size: 12pt;
+    }
+
+    .trace-table {
+      font-size: 8pt;
+      white-space: normal;
+    }
+
+    .trace-table th,
+    .trace-table td {
+      padding: 4px 5px !important;
+      color: #000 !important;
+      background: #fff !important;
+    }
+
+    .trace-table thead {
+      display: table-header-group;
+    }
+
+    .trace-table tr {
+      break-inside: avoid;
+    }
+
+    .trace-product-heading h5 {
+      color: #000 !important;
+    }
+
+    a {
+      color: #000 !important;
+      text-decoration: none !important;
+    }
+  }
+</style>
+
+<div class="container-fluid product-trace-page">
+
+  <!-- Page heading -->
+  <div class="trace-page-heading">
+    <h4>
+      <span class="trace-heading-icon">
+        <i class="bi bi-search"></i>
+      </span>
+      Product / Batch History
+    </h4>
+
+    <% if (trace) { %>
+      <button type="button"
+              class="btn btn-outline-secondary btn-sm d-print-none"
+              onclick="window.print()">
+        <i class="bi bi-printer me-1"></i> Print
+      </button>
+    <% } %>
+  </div>
+
+  <!-- Notifications -->
+  <% notes.forEach(function (n) { %>
+    <div class="alert alert-<%= n.type %> py-2" role="alert">
+      <i class="bi <%= n.icon || 'bi-info-circle-fill' %> me-1"></i>
+      <%= n.messages %>
+    </div>
+  <% }) %>
+
+  <!-- Search form -->
+  <form method="GET"
+        action="/billing/productTrace"
+        class="card card-body mb-4 d-print-none"
+        id="traceForm">
+
+    <div class="row g-3 align-items-end">
+
+      <div class="col-md-3">
+        <label for="supplierId" class="form-label">
+          <i class="bi bi-building me-1"></i> 1. Supplier
+        </label>
+
+        <select class="form-select"
+                id="supplierId"
+                name="supplierId"
+                required>
+          <option value="">-- select supplier --</option>
+
+          <% (suppliers || []).forEach(function (s) { %>
+            <option class="supplier-option"
+                    value="<%= s.Id %>"
+                    <%= String(s.Id) === String(supplierId) ? 'selected' : '' %>>
+              <%= s.Name %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label for="productId" class="form-label">
+          <i class="bi bi-box-seam me-1"></i> 2. Product
+        </label>
+
+        <select class="form-select"
+                id="productId"
+                name="productId"
+                required
+                disabled>
+          <option value="">-- select supplier first --</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label for="batch" class="form-label">
+          <i class="bi bi-upc-scan me-1"></i> 3. Batch number
+          <span class="text-muted fw-normal">(optional)</span>
+        </label>
+
+        <input type="text"
+               class="form-control"
+               id="batch"
+               name="batch"
+               list="batchList"
+               autocomplete="off"
+               placeholder="Type or select a batch"
+               value="<%= batch %>">
+
+        <datalist id="batchList"></datalist>
+      </div>
+
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">
+          <i class="bi bi-search me-1"></i> Search
+        </button>
+
+        <a href="/billing/productTrace"
+           class="btn btn-outline-secondary"
+           title="Clear filters"
+           aria-label="Clear filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="form-text mt-3">
+      <i class="bi bi-info-circle me-1"></i>
+      Leave the batch empty to see every batch of the product.
+      A part of the batch number is enough.
+    </div>
+  </form>
+
+  <% if (trace) { %>
+    <%
+      const s = trace.summary;
+      const hasLots = trace.lots.length > 0;
+    %>
+
+    <!-- Selected product -->
+    <div class="trace-product-heading">
+      <h5><%= trace.product.ProductName %></h5>
+
+      <div class="trace-product-meta">
+        <i class="bi bi-building me-1"></i>
+        Supplier:
+        <span class="supplier-option fw-semibold">
+          <%= trace.product.SupplierName %>
+        </span>
+
+        <% if (trace.product.KnownAs && trace.product.KnownAs.trim()) { %>
+          · <%= trace.product.KnownAs.trim() %>
+        <% } %>
+
+        <% if (trace.batch) { %>
+          · <span class="badge text-bg-secondary">
+            Batch contains "<%= trace.batch %>"
+          </span>
+        <% } else { %>
+          · <span class="badge text-bg-light border text-secondary">
+            All batches
+          </span>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (!hasLots) { %>
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        No stock record found for this product<%= trace.batch ? ' with that batch number' : '' %>.
+      </div>
+    <% } else { %>
+
+      <!-- Summary cards -->
+      <div class="row g-3 mb-4">
+
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="card trace-card">
+            <div class="card-body">
+              <div class="label">Bought</div>
+              <div class="value"><%= qty(s.boughtQty) %></div>
+              <div class="small">
+                <%= s.lotCount %> lot<%= s.lotCount === 1 ? '' : 's' %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="card trace-card">
+            <div class="card-body">
+              <div class="label">Sold (net)</div>
+              <div class="value"><%= qty(s.netSoldQty) %></div>
+              <div class="small">
+                Sold <%= qty(s.soldQty) %> − returned <%= qty(s.returnedQty) %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="card trace-card">
+            <div class="card-body">
+              <div class="label">In stock now</div>
+              <div class="value"><%= qty(s.inStockQty) %></div>
+
+              <% if (s.onChallanQty > 0) { %>
+                <div class="small text-warning">
+                  + <%= qty(s.onChallanQty) %> on challan, not billed
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="card trace-card">
+            <div class="card-body">
+              <div class="label">Avg buy price</div>
+              <div class="value">₹ <%= money(s.avgPurchasePrice) %></div>
+              <div class="small">Before GST</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="card trace-card">
+            <div class="card-body">
+              <div class="label">Avg sale price</div>
+              <div class="value">₹ <%= money(s.avgSalePrice) %></div>
+              <div class="small">Before GST, net of returns</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3 col-xl-2">
+          <div class="card trace-card">
+            <div class="card-body">
+              <div class="label">Margin on sold</div>
+              <div class="value <%= tone(s.margin) %>">
+                ₹ <%= signed(s.margin) %>
+              </div>
+              <div class="small <%= tone(s.margin) %>">
+                <%= s.marginPercent === null ? '' : signed(s.marginPercent) + ' % on cost' %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Purchase history -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <i class="bi bi-box-arrow-in-down me-2"></i>
+          Purchase History
+          <span class="text-muted fw-normal ms-1">
+            — one row per batch and purchase price
+          </span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-hover trace-table">
+            <thead>
+              <tr>
+                <th>Batch</th>
+                <th>Mfg</th>
+                <th>Expiry</th>
+                <th>Bought on</th>
+                <th>Supplier invoice</th>
+                <th>PO</th>
+                <th class="text-end">Purchase price</th>
+                <th class="text-end">MRP</th>
+                <th class="text-end">GST %</th>
+                <th class="text-end">Bought</th>
+                <th class="text-end">Sold</th>
+                <th class="text-end">Returned</th>
+                <th class="text-end">In stock</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <% trace.lots.forEach(function (l) { %>
+                <tr>
+                  <td class="fw-semibold"><%= l.BatchNumber %></td>
+                  <td><%= day(l.MfgDate) %></td>
+                  <td><%= day(l.ExpiryDate) %><%- expiryBadge(l.ExpiryDate) %></td>
+
+                  <td>
+                    <%= day(l.InvoiceDate || l.FirstReceived) %>
+
+                    <% if (
+                      l.LastReceived &&
+                      l.FirstReceived &&
+                      moment(l.LastReceived).format('YYYY-MM-DD') !==
+                      moment(l.FirstReceived).format('YYYY-MM-DD')
+                    ) { %>
+                      <div class="small text-muted">
+                        Restocked till <%= day(l.LastReceived) %>
+                      </div>
+                    <% } %>
+                  </td>
+
+                  <td><%= l.SupplierInvoiceNo || '–' %></td>
+                  <td><%= l.PoNumber || '–' %></td>
+                  <td class="text-end fw-semibold">₹ <%= money(l.PurchasePrice) %></td>
+                  <td class="text-end">₹ <%= money(l.MRP) %></td>
+                  <td class="text-end">
+                    <%= l.IgstPercentage === null ? '–' : qty(l.IgstPercentage) %>
+                  </td>
+                  <td class="text-end"><%= qty(l.ReceivedQty) %></td>
+                  <td class="text-end"><%= qty(l.SoldQty) %></td>
+                  <td class="text-end"><%= qty(l.ReturnedQty) %></td>
+                  <td class="text-end fw-semibold"><%= qty(l.CurrentStock) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td colspan="9" class="text-end">Total</td>
+                <td class="text-end"><%= qty(s.boughtQty) %></td>
+                <td class="text-end"><%= qty(s.soldQty) %></td>
+                <td class="text-end"><%= qty(s.returnedQty) %></td>
+                <td class="text-end"><%= qty(s.inStockQty) %></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sales history -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <i class="bi bi-box-arrow-up-right me-2"></i>
+          Sales History
+          <span class="text-muted fw-normal ms-1">
+            — customer, selling price and margin
+          </span>
+        </div>
+
+        <% if (trace.sales.length === 0) { %>
+          <div class="card-body text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Nothing has been sold yet<%= trace.batch ? ' from this batch' : '' %>.
+          </div>
+        <% } else { %>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-hover trace-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Batch</th>
+                  <th class="text-end">Qty</th>
+                  <th class="text-end">Returned</th>
+                  <th class="text-end">Sale price</th>
+                  <th class="text-end">Purchase price</th>
+                  <th class="text-end">Difference / unit</th>
+                  <th class="text-end">Margin %</th>
+                  <th class="text-end">Net margin</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <% trace.sales.forEach(function (r) { %>
+                  <tr class="<%= Number(r.DiffPerUnit) < 0 ? 'table-danger' : '' %>">
+                    <td><%= day(r.SaleDate) %></td>
+
+                    <td>
+                      <%= r.InvoiceId %>
+                      <% if (r.ChallanId) { %>
+                        <span class="badge text-bg-light border"
+                              title="Created from challan #<%= r.ChallanId %>">
+                          Challan
+                        </span>
+                      <% } %>
+                    </td>
+
+                    <td class="text-capitalize">
+                      <a href="/billing/customerLedger/<%= r.CustomerId %>"
+                         class="text-decoration-none">
+                        <%= r.CustomerName %>
+                      </a>
+                    </td>
+
+                    <td><%= r.BatchNumber %></td>
+                    <td class="text-end"><%= qty(r.QuantitySold) %></td>
+                    <td class="text-end">
+                      <%= Number(r.ReturnedQty) > 0 ? qty(r.ReturnedQty) : '–' %>
+                    </td>
+                    <td class="text-end fw-semibold">₹ <%= money(r.SalePrice) %></td>
+                    <td class="text-end">₹ <%= money(r.PurchasePrice) %></td>
+
+                    <td class="text-end fw-semibold <%= tone(r.DiffPerUnit) %>">
+                      <%= signed(r.DiffPerUnit) %>
+                      <% if (Number(r.DiffPerUnit) < 0) { %>
+                        <span class="badge text-bg-danger ms-1">Below cost</span>
+                      <% } %>
+                    </td>
+
+                    <td class="text-end <%= tone(r.MarginPercent) %>">
+                      <%= r.MarginPercent === null ? '–' : signed(r.MarginPercent) + ' %' %>
+                    </td>
+
+                    <td class="text-end fw-semibold <%= tone(r.NetMargin) %>">
+                      <%= signed(r.NetMargin) %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <td colspan="4" class="text-end">Total</td>
+                  <td class="text-end"><%= qty(s.soldQty) %></td>
+                  <td class="text-end"><%= qty(s.returnedQty) %></td>
+
+                  <td class="text-end">
+                    ₹ <%= money(s.avgSalePrice) %>
+                    <span class="text-muted fw-normal small">avg</span>
+                  </td>
+
+                  <td class="text-end">
+                    ₹ <%= money(s.costOfSold && s.netSoldQty ? s.costOfSold / s.netSoldQty : null) %>
+                    <span class="text-muted fw-normal small">avg</span>
+                  </td>
+
+                  <td></td>
+                  <td></td>
+                  <td class="text-end <%= tone(s.margin) %>">
+                    <%= signed(s.margin) %>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Delivered on challan but not billed -->
+      <% if (trace.pendingChallans.length > 0) { %>
+        <div class="card mb-4 border-warning">
+          <div class="card-header bg-warning-subtle">
+            <i class="bi bi-truck me-2"></i>
+            Delivered on Challan — Not Billed Yet
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm trace-table">
+              <thead>
+                <tr>
+                  <th>Challan</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Customer</th>
+                  <th>Batch</th>
+                  <th class="text-end">Qty</th>
+                  <th class="text-end">Purchase price</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <% trace.pendingChallans.forEach(function (c) { %>
+                  <tr>
+                    <td class="fw-semibold">#<%= c.ChallanId %></td>
+                    <td><%= day(c.ChallanDate) %></td>
+                    <td><%= c.Status %></td>
+                    <td class="text-capitalize"><%= c.CustomerName %></td>
+                    <td><%= c.BatchNumber %></td>
+                    <td class="text-end"><%= qty(c.QuantitySold) %></td>
+                    <td class="text-end">₹ <%= money(c.PurchasePrice) %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Explanation -->
+      <div class="trace-footnote">
+        <i class="bi bi-info-circle me-1"></i>
+        All prices are before GST. Price difference = sale price − purchase price
+        of the same batch (lot). "Bought" comes from the stock ledger
+        (purchase receipts and free quantity; stock that was only put back
+        after a sale edit, a cancelled challan or a customer return is not counted).
+        Net margin is calculated on quantity sold minus returned.
+      </div>
+
+    <% } %>
+  <% } %>
+</div>
+<script>
+  window.addEventListener('load', function () {
+    'use strict';
+  
+    const PRODUCTS = <%- JSON.stringify(productList).replace(/</g, '\\u003c') %>;
+    const preProduct = <%- JSON.stringify(String(productId || '')) %>;
+  
+    const supplierSel = document.getElementById('supplierId');
+    const productSel  = document.getElementById('productId');
+    const batchInput  = document.getElementById('batch');
+    const batchList   = document.getElementById('batchList');
+  
+    if (!supplierSel || !productSel) return;
+  
+    // Tell Tom Select (added by common.js) to re-read the native <select>
+    function refreshTS(el) {
+      const ts = el.tomselect;
+      if (!ts) return;                       // Tom Select not applied yet: it will read the select itself
+      ts.sync();                             // reload options + selected value
+      el.disabled ? ts.disable() : ts.enable();
+    }
+  
+    function fillProducts(selected) {
+      const sid = supplierSel.value;
+      const list = PRODUCTS.filter(function (p) {
+        return String(p.supplierId) === String(sid);
+      });
+  
+      productSel.innerHTML = '';
+  
+      const first = document.createElement('option');
+      first.value = '';
+      first.textContent = !sid ? '-- select supplier first --'
+                        : list.length ? '-- select product --'
+                        : '-- no products for this supplier --';
+      productSel.appendChild(first);
+  
+      list.forEach(function (p) {
+        const o = document.createElement('option');
+        o.value = p.id;
+        o.textContent = p.name;
+        productSel.appendChild(o);
+      });
+  
+      productSel.disabled = !sid;
+      productSel.value = selected ? String(selected) : '';
+  
+      refreshTS(productSel);
+    }
+  
+    function loadBatches() {
+      batchList.innerHTML = '';
+      const pid = productSel.value;
+      if (!pid) return;
+  
+      fetch('/billing/productTrace/batches?productId=' + encodeURIComponent(pid),
+            { credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+        .then(function (rows) {
+          rows.forEach(function (b) {
+            const o = document.createElement('option');
+            o.value = b.batch;
+            o.label = 'exp ' + (b.expiry || '-') + ', stock ' + b.quantity;
+            batchList.appendChild(o);
+          });
+        })
+        .catch(function () { /* suggestions are optional */ });
+    }
+  
+    // Tom Select fires a normal 'change' on the original select, so these work
+    supplierSel.addEventListener('change', function () {
+      fillProducts('');
+      batchInput.value = '';
+      batchList.innerHTML = '';
+    });
+  
+    productSel.addEventListener('change', function () {
+      batchInput.value = '';
+      loadBatches();
+    });
+  
+    // Initial state (also restores the selection after a search)
+    fillProducts(preProduct);
+    loadBatches();
+  
+    // In case common.js sets up Tom Select a moment later
+    setTimeout(function () { refreshTS(supplierSel); refreshTS(productSel); }, 300);
+  });
+  </script>
+
+  

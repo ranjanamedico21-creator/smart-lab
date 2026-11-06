@@ -1,0 +1,151 @@
+<%
+  var D = doctor || {};
+  var ROWS = (typeof rows !== 'undefined' && rows) ? rows : [];
+  var ERR = (typeof errors !== 'undefined' && errors) ? errors : [];
+  var P = (typeof posted !== 'undefined' && posted) ? posted : null;     // values typed before an error
+  var name = 'Dr. ' + [D.FirstName, D.LastName].filter(Boolean).join(' ');
+  var showZero = P ? P.showZeroSubTests === '1' : Number(D.ShowZeroThanksSubTests) === 1;
+  var val = function (r, k, own) { if (P && P[k + '_' + r.SubTestId] !== undefined) return P[k + '_' + r.SubTestId]; return own == null ? '' : own; };
+  var showVal = function (r) { if (P && P['show_' + r.SubTestId] !== undefined) return P['show_' + r.SubTestId]; return r.ShowInReport == null ? 'auto' : String(Number(r.ShowInReport)); };
+  var own = ROWS.filter(function (r) { return r.OwnThanks != null || r.OwnDiscount != null || r.ShowInReport != null; }).length;
+%>
+<style>
+  .stx{--brand:#185FA5;--brand-soft:#E6F1FB;--ink:#111827;--ink2:#6B7280;--ink3:#9CA3AF;--line:rgba(0,0,0,.09);--bad:#A32D2D;--bads:#FCEBEB;--ok:#3B6D11;--oks:#EAF3DE;--warn:#854F0B;--warns:#FFF6E5;
+       width:100%;padding:12px 0 40px;color:var(--ink)}
+  .stx *{box-sizing:border-box}
+  .stx-crumb{font-size:12.5px;color:var(--ink2);margin-bottom:14px}.stx-crumb a{color:var(--brand);text-decoration:none}
+  .stx-card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);overflow:hidden;margin-bottom:16px}
+  .stx-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#fff,#F8F9FB)}
+  .stx-head-l{display:flex;align-items:center;gap:12px;min-width:0}
+  .stx-icon{width:42px;height:42px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .stx-title{font-size:17px;font-weight:700;margin:0;text-transform:capitalize}.stx-sub{font-size:13px;color:var(--ink2);margin:2px 0 0}
+  .stx-body{padding:22px}
+  .stx-msgs{padding:0 22px}.stx-msgs:empty{display:none}
+  .stx-err{margin:16px 22px 0;padding:12px 14px;border-radius:10px;background:var(--bads);color:var(--bad);font-size:13px}
+  .stx-err ul{margin:6px 0 0;padding-left:18px}
+  .stx-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .stx-grid .full{grid-column:1/-1}.stx-grid .two{grid-column:span 2}
+  @media(max-width:760px){.stx-grid{grid-template-columns:1fr 1fr}.stx-grid .two{grid-column:1/-1}}
+  @media(max-width:520px){.stx-grid{grid-template-columns:1fr}.stx-body{padding:16px}.stx-head{padding:14px 16px}}
+  .stx-label{font-size:11px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+  .stx-req{color:var(--bad)}
+  .stx-in{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:44px}
+  .stx-in:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px rgba(24,95,165,.08)}
+  .stx-in .pre{padding:0 10px 0 12px;color:var(--ink3);font-weight:600}
+  .stx-in input,.stx-in select{border:0;outline:0;background:transparent;flex:1;min-width:0;padding:10px 12px 10px 0;font-size:14.5px}
+  .stx-in select{padding-left:12px}
+  .stx-hint{font-size:12px;color:var(--ink3);margin-top:5px}
+  .stx-note{display:flex;gap:10px;background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink2)}
+  .stx-note i{color:var(--brand);font-size:16px}
+  .stx-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--line);background:#F8F9FB}
+  .stx-bar.sticky{position:sticky;bottom:0;z-index:5;box-shadow:0 -6px 16px rgba(0,0,0,.05)}
+  .stx-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
+  .stx-pri{background:var(--brand);color:#fff}.stx-pri:hover{background:#0C447C;color:#fff}.stx-pri:disabled{opacity:.6}
+  .stx-ghost{background:transparent;color:var(--ink2)}.stx-ghost:hover{background:rgba(0,0,0,.04);color:var(--ink)}
+  .stx-out{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}.stx-out:hover{background:var(--brand-soft)}
+  .stx-pill{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:3px 10px;background:#f2f4f7;color:var(--ink2);white-space:nowrap}
+  .stx-pill.ok{background:var(--oks);color:var(--ok)}.stx-pill.pri{background:var(--brand-soft);color:var(--brand)}.stx-pill.warn{background:var(--warns);color:var(--warn)}
+  .stx-table{width:100%;border-collapse:collapse;font-size:14px}
+  .stx-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);background:#FAFBFC;white-space:nowrap;text-align:left}
+  .stx-table td{padding:10px 12px;border-bottom:1px solid #f0f2f6;vertical-align:middle}
+  .stx-table tr:hover td{background:#FAFCFF}
+  .stx-search{position:relative;flex:1 1 240px;max-width:420px}
+  .stx-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+  .stx-search input{width:100%;height:40px;border:1.5px solid var(--line);border-radius:8px;padding:0 12px 0 36px;font-size:14px}
+  .stx-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line)}
+  .stx-empty{padding:48px 16px;text-align:center;color:var(--ink2)}
+  @media(max-width:520px){.stx-bar{padding:12px 16px}.stx-bar .stx-pri{flex:1}.stx-tools{padding:12px 16px}}
+</style>
+<style>
+  .stx-table input[type=number]{width:100px;height:38px;border:1.5px solid var(--line);border-radius:8px;padding:0 8px;font-size:14px}
+  .stx-table input[type=number]:focus,.stx-table select:focus{outline:0;border-color:var(--brand)}
+  .stx-table select{height:38px;border:1.5px solid var(--line);border-radius:8px;padding:0 6px;font-size:13px;background:#fff}
+  .stx-table tr.own td{background:#FFFBF0}
+  .stx-table .def{font-size:11.5px;color:var(--ink3)}
+  .stx-switch{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+  .stx-switch.on{border-color:var(--brand);background:var(--brand-soft)}
+  @media(max-width:700px){
+    .stx-table thead{display:none}.stx-table tr{display:block;border-bottom:1px solid var(--line);padding:10px 4px}
+    .stx-table td{display:flex;justify-content:space-between;align-items:center;gap:10px;border:0;padding:5px 10px}
+    .stx-table td[data-l]::before{content:attr(data-l);font-size:11px;font-weight:600;text-transform:uppercase;color:var(--ink2)}
+  }
+</style>
+<div class="stx">
+  <div class="stx-crumb"><a href="/user/home">Home</a> › <a href="/doctor/getDoctorListView">Doctors</a> › <a href="/doctor/getDoctorDetail?doctorId=<%= D.Id %>" class="text-capitalize"><%= name %></a> › Sub-test thanks</div>
+  <form method="post" action="/test/doctorSubTestRates/<%= D.Id %>" id="drForm" novalidate>
+    <input type="hidden" name="hasShowZero" value="1">
+    <div class="stx-card">
+      <div class="stx-head">
+        <div class="stx-head-l"><div class="stx-icon"><i class="bi bi-sliders"></i></div>
+          <div><p class="stx-title">Sub-test thanks · <%= name %></p>
+               <p class="stx-sub">Leave a box empty to use the sub-test's default. <%= own %> of <%= ROWS.length %> sub-tests have his own setting.</p></div></div>
+      </div>
+      <div class="stx-msgs"><%- include('../partials/messages') %></div>
+      <% if (ERR.length) { %><div class="stx-err" role="alert"><b>Not saved — please fix:</b><ul><% ERR.forEach(function (e) { %><li><%= e %></li><% }) %></ul></div><% } %>
+      <div class="stx-body" style="padding-bottom:10px">
+        <label class="stx-switch <%= showZero ? 'on' : '' %>" id="zeroBox">
+          <input type="checkbox" class="form-check-input mt-1" name="showZeroSubTests" value="1" id="showZero" <%= showZero ? 'checked' : '' %>>
+          <span><b>Show sub-tests with no thanks in his thanks report</b>
+            <span class="d-block small text-secondary">Off (usual): a sub-test that earned ₹0 is not printed. Sub-tests that earned thanks are always printed. You can change this for one sub-test in the last column.</span></span>
+        </label>
+      </div>
+      <% if (ROWS.length) { %>
+        <div class="stx-tools"><div class="stx-search"><i class="bi bi-search"></i><input type="search" id="drQ" placeholder="Search sub-test or test"></div>
+          <button type="button" class="stx-btn stx-ghost" id="drOnlyOwn"><i class="bi bi-funnel"></i> Only his own</button></div>
+        <div class="table-responsive"><table class="stx-table">
+          <thead><tr><th>Sub-test</th><th>Price</th><th>Thanks ₹</th><th>Discount ₹</th><th>In thanks report when ₹0</th><th></th></tr></thead>
+          <tbody id="drRows">
+            <% ROWS.forEach(function (r) { var isOwn = r.OwnThanks != null || r.OwnDiscount != null || r.ShowInReport != null; %>
+              <tr class="<%= isOwn ? 'own' : '' %>" data-q="<%= [r.Name, r.CategoryName, r.AttachedTo].join(' ').toLowerCase() %>" data-own="<%= isOwn ? 1 : 0 %>">
+                <td data-l="Sub-test"><div><b class="text-capitalize"><%= r.Name %></b><div class="def"><%= r.CategoryName || '' %><%= r.AttachedTo ? ' · ' + r.AttachedTo : '' %></div></div></td>
+                <td data-l="Price">₹<%= r.Price %></td>
+                <td data-l="Thanks ₹"><div><input type="number" min="0" step="1" name="thanks_<%= r.SubTestId %>" value="<%= val(r, 'thanks', r.OwnThanks) %>" placeholder="<%= r.DefaultThanks %>" aria-label="Thanks for <%= r.Name %>">
+                  <div class="def">default ₹<%= r.DefaultThanks %></div></div></td>
+                <td data-l="Discount ₹"><div><input type="number" min="0" max="<%= r.Price %>" step="1" name="discount_<%= r.SubTestId %>" value="<%= val(r, 'discount', r.OwnDiscount) %>" placeholder="<%= r.DefaultDiscount %>" aria-label="Discount for <%= r.Name %>">
+                  <div class="def">default ₹<%= r.DefaultDiscount %></div></div></td>
+                <td data-l="When ₹0"><select name="show_<%= r.SubTestId %>" aria-label="Show <%= r.Name %> in thanks report">
+                  <% [['auto', 'Doctor setting'], ['1', 'Show'], ['0', 'Hide']].forEach(function (o) { %><option value="<%= o[0] %>" <%= showVal(r) === o[0] ? 'selected' : '' %>><%= o[1] %></option><% }) %>
+                </select></td>
+                <td class="text-end"><button type="button" class="stx-btn stx-ghost" style="padding:6px 10px" data-reset title="Use the defaults for this sub-test"><i class="bi bi-arrow-counterclockwise"></i><span class="d-none d-md-inline">Default</span></button></td>
+              </tr>
+            <% }) %>
+          </tbody></table></div>
+        <div class="stx-empty" id="drNone" hidden>No sub-test matches.</div>
+      <% } else { %>
+        <div class="stx-empty">No sub-tests exist yet. <a href="/test/registerSubTest">Create one</a>.</div>
+      <% } %>
+      <div class="stx-bar sticky">
+        <a href="/doctor/getDoctorDetail?doctorId=<%= D.Id %>" class="stx-btn stx-ghost"><i class="bi bi-arrow-left"></i> Back to doctor</a>
+        <button type="submit" class="stx-btn stx-pri" id="drSave"><i class="bi bi-check2-circle"></i> Save</button>
+      </div>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var f = document.getElementById('drForm'), dirty = false, onlyOwn = false;
+  var z = document.getElementById('showZero');
+  z.addEventListener('change', function () { document.getElementById('zeroBox').classList.toggle('on', z.checked); });
+  f.addEventListener('input', function () { dirty = true; });
+  f.addEventListener('change', function () { dirty = true; });
+  f.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-reset]'); if (!b) return;
+    var tr = b.closest('tr'); tr.querySelectorAll('input').forEach(function (i) { i.value = ''; }); tr.querySelector('select').value = 'auto'; dirty = true;
+  });
+  var q = document.getElementById('drQ');
+  function filter() {
+    var v = q ? q.value.trim().toLowerCase() : '', n = 0;
+    document.querySelectorAll('#drRows tr').forEach(function (r) { var ok = (!v || r.dataset.q.indexOf(v) !== -1) && (!onlyOwn || r.dataset.own === '1'); r.hidden = !ok; if (ok) n++; });
+    var none = document.getElementById('drNone'); if (none) none.hidden = n > 0;
+  }
+  if (q) q.addEventListener('input', filter);
+  var oo = document.getElementById('drOnlyOwn');
+  if (oo) oo.addEventListener('click', function () { onlyOwn = !onlyOwn; oo.classList.toggle('stx-out', onlyOwn); filter(); });
+  f.addEventListener('submit', function (e) {
+    var bad = [].filter.call(f.querySelectorAll('input[name^=discount_]'), function (i) { return i.value !== '' && Number(i.value) > Number(i.max); });
+    if (bad.length) { e.preventDefault(); bad[0].focus(); alert('A discount is more than the sub-test price.'); return; }
+    dirty = false; var b = document.getElementById('drSave'); b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving…';
+  });
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+})();
+</script>

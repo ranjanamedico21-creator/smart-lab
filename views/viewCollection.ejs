@@ -1,0 +1,435 @@
+<%
+  const n   = v => Number(v) || 0;
+  const rs  = v => { const x = Math.round(n(v) * 100) / 100; return (x < 0 ? '−₹' : '₹') + Math.abs(x).toLocaleString('en-IN', { maximumFractionDigits: 2 }); };
+  const csrf = locals.csrfToken || '';
+  const G = locals.grand || {};
+  const U = locals.users || [];
+  const dr = locals.dateRange || {};
+  const period = dr.same ? dr.from : dr.from + ' – ' + dr.to;
+  const toDMY = s => { const p = String(s || '').split('-'); return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : ''; };
+  const dues = locals.outstandingDues || [];
+  const allDues = locals.allPendingDues || { total: 0, count: 0 };
+  const okMark = (a, b) => Math.abs(n(a) - n(b)) < 0.5;
+%>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+
+<style>
+.vc{ --ink:#1d2433; --slate:#5b6475; --mute:#8a93a3; --line:#e3e6ec; --paper:#f5f6f8; --teal:#0e7490; --teal-soft:#e6f4f7;
+     --rose:#be123c; --rose-soft:#fff1f3; --green:#15803d; --green-soft:#ecfdf3; --amber:#92400e; --amber-soft:#fffbeb;
+     font-family:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; color:var(--ink); max-width:1240px; margin:0 auto; }
+.vc *{ box-sizing:border-box; }
+.vc .num{ font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.vc h1{ font-size:22px; font-weight:700; margin:0; }
+.vc h2{ font-size:17px; font-weight:600; margin:0; }
+.vc h3{ font-size:14px; font-weight:600; margin:0 0 8px; }
+.vc-top{ display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+.vc-sub{ font-size:13px; color:var(--slate); margin-top:3px; }
+.vc-range{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.vc-range input{ font:inherit; font-size:14px; width:130px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.vc-btn{ font:inherit; font-size:13.5px; font-weight:500; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink);
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px; text-decoration:none; }
+.vc-btn:hover{ background:#fafbfc; color:var(--ink); }
+.vc-btn.primary{ background:var(--ink); border-color:var(--ink); color:#fff; }
+.vc-chip{ font-size:12.5px; padding:5px 11px; border-radius:99px; border:1px solid var(--line); background:#fff; color:var(--slate); cursor:pointer; }
+.vc-chip:hover{ border-color:var(--teal); color:var(--teal); }
+
+/* ── The settlement slip (the one bold element) ── */
+.slip{ background:#fff; border:1px solid var(--line); border-radius:16px; display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); overflow:hidden; }
+.slip > div{ padding:16px 18px; border-right:1px dashed var(--line); }
+.slip > div:last-child{ border-right:none; }
+.slip-t{ font-size:13px; font-weight:600; color:var(--slate); margin-bottom:8px; display:flex; justify-content:space-between; gap:8px; }
+.slip-row{ display:flex; justify-content:space-between; font-size:14px; padding:3px 0; }
+.slip-row span:first-child{ color:var(--slate); }
+.slip-row.minus span:last-child::before{ content:'− '; color:var(--mute); }
+.slip-row.plus span:last-child::before{ content:'+ '; color:var(--mute); }
+.slip-row.eq{ border-top:2px solid var(--ink); margin-top:6px; padding-top:7px; font-weight:700; font-size:17px; }
+.slip-row.eq span:first-child{ color:var(--ink); }
+.slip-row.eq.cash span:last-child{ color:var(--teal); }
+.slip-row.eq.dues span:last-child{ color:var(--rose); }
+.check{ font-size:12px; font-weight:600; padding:1px 8px; border-radius:99px; white-space:nowrap; }
+.check.ok{ background:var(--green-soft); color:var(--green); } .check.bad{ background:var(--rose-soft); color:var(--rose); }
+.vc-note{ font-size:12.5px; color:var(--mute); margin-top:6px; }
+
+.vc-alert{ font-size:13.5px; padding:10px 14px; border-radius:12px; margin:12px 0; display:flex; gap:8px; align-items:flex-start; }
+.vc-alert.warn{ background:var(--amber-soft); color:var(--amber); border:1px solid #fde68a; }
+.vc-alert.bad{ background:var(--rose-soft); color:#7f1d2d; border:1px solid #fecdd3; }
+
+/* ── Per user ── */
+.usr{ margin-top:26px; }
+.usr-h{ display:flex; align-items:center; gap:12px; padding-bottom:10px; border-bottom:2px solid var(--ink); margin-bottom:12px; flex-wrap:wrap; }
+.usr-av{ width:38px; height:38px; border-radius:10px; background:var(--teal); color:#fff; display:grid; place-items:center; font-weight:700; font-size:14px; }
+.usr-meta{ font-size:13px; color:var(--slate); }
+.usr-h .right{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+.tbl-wrap{ background:#fff; border:1px solid var(--line); border-radius:14px; overflow:auto; margin-top:12px; }
+.tbl{ width:100%; border-collapse:collapse; font-size:13.5px; }
+.tbl th{ text-align:left; font-size:12px; font-weight:600; color:var(--slate); padding:9px 10px; background:var(--paper); border-bottom:1px solid var(--line); white-space:nowrap; }
+.tbl th.num{ text-align:right; }
+.tbl td{ padding:8px 10px; border-bottom:1px solid #eef0f4; vertical-align:top; }
+.tbl tfoot td{ font-weight:700; background:#fafbfc; border-top:2px solid var(--ink); border-bottom:none; }
+.tbl tr.void td{ color:var(--mute); text-decoration:line-through; }
+.tbl tr.void td.keep{ text-decoration:none; }
+.tbl tr.flag td:first-child{ box-shadow:inset 3px 0 0 var(--rose); }
+.tbl .tests{ font-size:12px; color:var(--slate); max-width:260px; }
+.tbl .fl{ display:block; font-size:12px; color:var(--rose); margin-top:2px; }
+.tbl .bill a{ color:var(--teal); font-weight:600; text-decoration:none; }
+.tbl .tick{ width:18px; height:18px; accent-color:var(--green); }
+.zero{ color:#c5cad3; }
+.tag{ font-size:11.5px; font-weight:600; padding:1px 7px; border-radius:99px; background:var(--paper); color:var(--slate); white-space:nowrap; }
+.tag.in{ background:var(--green-soft); color:var(--green); } .tag.out{ background:var(--rose-soft); color:var(--rose); } .tag.old{ background:var(--amber-soft); color:var(--amber); }
+
+details.book{ margin-top:12px; }
+details.book summary{ cursor:pointer; font-size:14px; font-weight:600; padding:8px 0; list-style:none; display:flex; gap:8px; align-items:center; }
+details.book summary::-webkit-details-marker{ display:none; }
+details.book summary .bi{ transition:transform .15s; }
+details.book[open] summary .bi-chevron-right{ transform:rotate(90deg); }
+.sign{ display:none; }
+
+.sec{ margin-top:30px; }
+.sec-h{ display:flex; align-items:baseline; gap:10px; padding-bottom:8px; border-bottom:2px solid var(--ink); }
+.sec-h .num{ margin-left:auto; font-weight:700; }
+.empty{ padding:22px; text-align:center; color:var(--mute); font-size:14px; }
+
+@media (max-width: 860px){ .slip{ grid-template-columns:1fr; } .slip > div{ border-right:none; border-bottom:1px dashed var(--line); } }
+@media print{
+  @page{ size:A4; margin:12mm; }
+  .no-print, nav, header, .sidebar, .navbar, footer{ display:none !important; }
+  .vc{ max-width:none; font-size:12px; }
+  .vc .tbl{ font-size:11px; } .tbl th, .tbl td{ padding:4px 6px; }
+  .usr{ break-before:page; }
+  details.book{ display:block; } details.book > *{ display:block; }
+  details.book summary .bi{ display:none; }
+  .sign{ display:flex; justify-content:space-between; gap:40px; margin-top:28px; font-size:12px; }
+  .sign div{ flex:1; border-top:1px solid #000; padding-top:4px; }
+  .slip, .tbl-wrap{ border-color:#999; }
+  .vc *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+
+<div class="vc">
+
+  <% (locals.notifications || []).forEach(function(nt){ %>
+    <div class="alert alert-<%= nt.type %> alert-dismissible fade show no-print" role="alert">
+      <i class="bi <%= nt.icon %> me-1"></i><%= nt.messages %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% }) %>
+
+  <div class="vc-top">
+    <div>
+      <h1>Collection — <%= period %></h1>
+      <div class="vc-sub"><%= G.Bills || 0 %> bills by <%= U.length %> staff · generated <%= locals.generatedAt %></div>
+    </div>
+    <form class="vc-range no-print" method="post" id="rangeForm">
+      <% if (csrf) { %><input type="hidden" name="_csrf" value="<%= csrf %>"><% } %>
+      <button type="button" class="vc-chip" data-d="0">Today</button>
+      <button type="button" class="vc-chip" data-d="1">Yesterday</button>
+      <input type="text" name="FromDate" id="fFrom" value="<%= toDMY(locals.from) %>" placeholder="From" autocomplete="off" aria-label="From date">
+      <input type="text" name="ToDate"   id="fTo"   value="<%= toDMY(locals.to) %>"   placeholder="To"   autocomplete="off" aria-label="To date">
+      <button class="vc-btn primary"><i class="bi bi-search"></i> Show</button>
+      <button type="button" class="vc-btn" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+    </form>
+  </div>
+
+  <!-- ── Whole centre ── -->
+  <div class="slip" aria-label="Settlement for the whole centre">
+    <div>
+      <div class="slip-t">Bills made</div>
+      <div class="slip-row"><span>Gross (<%= G.Bills || 0 %> bills)</span><span class="num"><%= rs(G.Gross) %></span></div>
+      <div class="slip-row minus"><span>Discount</span><span class="num"><%= rs(G.Discount) %></span></div>
+      <div class="slip-row eq"><span>Net billed</span><span class="num"><%= rs(G.Net) %></span></div>
+      <% if (G.Cancelled) { %><div class="vc-note"><%= G.Cancelled %> bill(s) cancelled the same day are not counted.</div><% } %>
+    </div>
+    <div>
+      <div class="slip-t">Paid on these bills
+        <span class="check <%= okMark(G.Net, n(G.PaidAtReg) + n(G.DuesLeft)) ? 'ok' : 'bad' %>"><%= okMark(G.Net, n(G.PaidAtReg) + n(G.DuesLeft)) ? 'Adds up' : 'Does not add up' %></span></div>
+      <div class="slip-row"><span>Net billed</span><span class="num"><%= rs(G.Net) %></span></div>
+      <div class="slip-row minus"><span>Paid in cash</span><span class="num"><%= rs(G.Cash) %></span></div>
+      <div class="slip-row minus"><span>Paid online</span><span class="num"><%= rs(G.Online) %></span></div>
+      <div class="slip-row eq dues"><span>Dues of this <%= dr.same ? 'day' : 'period' %></span><span class="num"><%= rs(G.DuesLeft) %></span></div>
+      <% if (n(G.DuesNow) !== n(G.DuesLeft)) { %><div class="vc-note">Still unpaid today: <%= rs(G.DuesNow) %></div><% } %>
+    </div>
+    <div>
+      <div class="slip-t">Cash to hand over</div>
+      <div class="slip-row"><span>Cash on new bills</span><span class="num"><%= rs(G.NewBillCash) %></span></div>
+      <div class="slip-row plus"><span>Old dues received (cash)</span><span class="num"><%= rs(G.OldDuesCash) %></span></div>
+      <div class="slip-row minus"><span>Change returned</span><span class="num"><%= rs(G.ChangeReturned) %></span></div>
+      <div class="slip-row minus"><span>Cash refunded</span><span class="num"><%= rs(G.RefundCash) %></span></div>
+      <div class="slip-row eq cash"><span>Hand over</span><span class="num"><%= rs(G.HandOver) %></span></div>
+      <div class="vc-note">Online received (in bank): <b><%= rs(G.NetOnline) %></b></div>
+    </div>
+  </div>
+
+  <%
+    // ── Online received, by bank × staff ──
+    const os = locals.onlineSources || [];
+    const staffIds = []; const staffName = {};
+    os.forEach(function(o){ const k = String(o.UserId); if (staffIds.indexOf(k) < 0) { staffIds.push(k); staffName[k] = o.UserName || ('User #' + o.UserId); } });
+    const banks = []; const cell = {}; const bankTot = {}; const staffTot = {};
+    os.forEach(function(o){
+      const b = o.SourceName || o.SourceCode || 'Online (bank not recorded)';
+      if (banks.indexOf(b) < 0) banks.push(b);
+      const key = b + '|' + o.UserId;
+      cell[key] = n(cell[key]) + n(o.Amount);
+      bankTot[b] = n(bankTot[b]) + n(o.Amount);
+      staffTot[String(o.UserId)] = n(staffTot[String(o.UserId)]) + n(o.Amount);
+    });
+    const onlineIn = Object.keys(bankTot).reduce(function(a, k){ return a + bankTot[k]; }, 0);
+    const onlineOutBy = {}; U.forEach(function(u){ if (n(u.cashTotals.OnlineOut)) onlineOutBy[String(u.UserId)] = n(u.cashTotals.OnlineOut); });
+  %>
+  <% if (banks.length) { %>
+  <section class="sec" style="margin-top:18px">
+    <div class="sec-h"><h2>Online received by bank</h2><span class="num"><%= rs(onlineIn) %></span></div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Bank / UPI</th>
+          <% staffIds.forEach(function(k){ %><th class="num"><%= staffName[k] %></th><% }) %>
+          <th class="num">Total</th></tr></thead>
+        <tbody>
+        <% banks.forEach(function(b){ %>
+          <tr><td><%= b %></td>
+            <% staffIds.forEach(function(k){ const v = cell[b + '|' + k]; %><td class="num"><%- n(v) ? rs(v) : '<span class="zero">—</span>' %></td><% }) %>
+            <td class="num"><b><%= rs(bankTot[b]) %></b></td></tr>
+        <% }) %>
+        </tbody>
+        <tfoot>
+          <tr><td>Received</td><% staffIds.forEach(function(k){ %><td class="num"><%= rs(staffTot[k]) %></td><% }) %><td class="num"><%= rs(onlineIn) %></td></tr>
+          <% if (n(G.OnlineOut)) { %>
+          <tr><td style="font-weight:500">Less online refunds</td><% staffIds.forEach(function(k){ %><td class="num" style="font-weight:500"><%= onlineOutBy[k] ? '− ' + rs(onlineOutBy[k]) : '' %></td><% }) %>
+            <td class="num" style="font-weight:500">− <%= rs(G.OnlineOut) %></td></tr>
+          <tr><td>Net in bank</td><% staffIds.forEach(function(k){ %><td class="num"><%= rs(n(staffTot[k]) - n(onlineOutBy[k])) %></td><% }) %><td class="num"><%= rs(G.NetOnline) %></td></tr>
+          <% } %>
+        </tfoot>
+      </table>
+    </div>
+    <div class="vc-note">Match each row with that bank's statement or UPI app for <%= period %>.</div>
+  </section>
+  <% } %>
+
+  <% if (n(G.Flagged)) { %>
+    <div class="vc-alert bad"><i class="bi bi-flag-fill"></i><span><b><%= G.Flagged %> bill(s)</b> need a look — marked with a red edge below (dues not matching, discount without approval, or edited after registration).</span></div>
+  <% } %>
+  <% if (n(allDues.total) > n(locals.outstandingDues && locals.outstandingDues.total)) { %>
+    <div class="vc-note no-print">All unpaid bills in the system up to <%= dr.to %>: <%= rs(allDues.total) %> from <%= allDues.count %> patient(s). Only this <%= dr.same ? 'day' : 'period' %>'s dues are counted above.</div>
+  <% } %>
+
+  <% if (!U.length) { %>
+    <div class="tbl-wrap"><div class="empty">No bills or payments in this period.</div></div>
+  <% } %>
+
+  <!-- ── One statement per staff member ── -->
+  <% U.forEach(function(u){
+       const bt = u.billTotals, ct = u.cashTotals;
+       const ini = String(u.Name || '?').split(' ').map(function(w){ return w[0] || ''; }).join('').toUpperCase().slice(0, 2);
+       const covered = okMark(bt.Net, n(bt.PaidAtReg) + n(bt.DuesLeft));
+  %>
+  <section class="usr" aria-labelledby="u<%= u.UserId %>">
+    <div class="usr-h">
+      <div class="usr-av" aria-hidden="true"><%= ini %></div>
+      <div>
+        <h2 id="u<%= u.UserId %>"><%= u.Name %></h2>
+        <div class="usr-meta"><%= bt.Count %> bill(s)<%= bt.Cancelled ? ', ' + bt.Cancelled + ' cancelled same day' : '' %><%= u.Cancellations ? ' · ' + u.Cancellations + ' cancellation(s) done' : '' %> · <%= period %></div>
+      </div>
+      <div class="right no-print">
+        <span class="usr-meta">Ticked <b class="js-ticked">0</b> / <%= bt.Count %></span>
+      </div>
+    </div>
+
+    <div class="slip">
+      <div>
+        <div class="slip-t">Bills made</div>
+        <div class="slip-row"><span>Gross</span><span class="num"><%= rs(bt.Gross) %></span></div>
+        <div class="slip-row minus"><span>Discount</span><span class="num"><%= rs(bt.Discount) %></span></div>
+        <div class="slip-row eq"><span>Net billed</span><span class="num"><%= rs(bt.Net) %></span></div>
+      </div>
+      <div>
+        <div class="slip-t">Paid on these bills <span class="check <%= covered ? 'ok' : 'bad' %>"><%= covered ? 'Adds up' : 'Check' %></span></div>
+        <div class="slip-row"><span>Net billed</span><span class="num"><%= rs(bt.Net) %></span></div>
+        <div class="slip-row minus"><span>Paid in cash</span><span class="num"><%= rs(bt.Cash) %></span></div>
+        <div class="slip-row minus"><span>Paid online</span><span class="num"><%= rs(bt.Online) %></span></div>
+        <div class="slip-row eq dues"><span>Dues left</span><span class="num"><%= rs(bt.DuesLeft) %></span></div>
+      </div>
+      <div>
+        <div class="slip-t">Cash to hand over</div>
+        <div class="slip-row"><span>Cash received</span><span class="num"><%= rs(ct.CashIn) %></span></div>
+        <% if (n(ct.OldDuesCash)) { %><div class="vc-note" style="margin:-2px 0 2px">includes old dues <%= rs(ct.OldDuesCash) %></div><% } %>
+        <div class="slip-row minus"><span>Change returned</span><span class="num"><%= rs(ct.ChangeReturned) %></span></div>
+        <div class="slip-row minus"><span>Refunded</span><span class="num"><%= rs(ct.RefundCash) %></span></div>
+        <div class="slip-row eq cash"><span>Hand over</span><span class="num"><%= rs(ct.HandOver) %></span></div>
+        <div class="vc-note">Online: <b><%= rs(ct.NetOnline) %></b><% u.online.forEach(function(o){ %> · <%= o.SourceCode %> <%= rs(o.Amount) %><% }) %></div>
+      </div>
+    </div>
+
+    <% if (u.bills.length) { %>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th class="no-print" title="Tick each bill as you check the receipt"><span class="visually-hidden">Checked</span><i class="bi bi-check2-square"></i></th>
+          <th>Bill</th><th>Patient</th><th>Tests</th>
+          <th class="num">Gross</th><th class="num">Discount</th><th class="num">Net</th>
+          <th class="num">Cash</th><th class="num">Online</th><th class="num">Dues left</th>
+        </tr></thead>
+        <tbody>
+        <% u.bills.forEach(function(b){ const z = v => n(v) ? rs(v) : '<span class="zero">—</span>'; %>
+          <tr class="<%= b.SameDayCancel ? 'void' : '' %> <%= b.flags.length && !b.SameDayCancel ? 'flag' : '' %>">
+            <td class="no-print keep"><% if (!b.SameDayCancel) { %><input type="checkbox" class="tick js-tick" aria-label="Checked bill <%= b.BillNo %>"><% } %></td>
+            <td class="bill keep"><a href="/patient/getPatientDetail?patientId=<%= b.BillNo %>">#<%= b.BillNo %></a>
+              <div class="vc-note" style="margin:0"><%= dr.same ? (b.RegisteredTime || '') : b.RegDate %></div></td>
+            <td><%= b.Title || '' %> <%= b.Name %>
+              <% if (b.SameDayCancel) { %><span class="tag out" style="text-decoration:none">Cancelled same day</span>
+              <% } else if (b.Status === 0) { %><span class="tag out">Cancelled <%= b.CancelledOn %></span><% } %>
+              <% if (n(b.Discount) && b.DiscountApprovedBy) { %><div class="vc-note" style="margin:0">Discount by <%= b.DiscountApprovedBy %></div><% } %>
+              <% if (!b.SameDayCancel) b.flags.forEach(function(f){ %><span class="fl"><i class="bi bi-flag-fill"></i> <%= f %></span><% }) %>
+            </td>
+            <td class="tests"><%= b.Tests %><% if (b.Doctor) { %><div class="vc-note" style="margin:0">Dr. <%= b.Doctor %></div><% } %></td>
+            <td class="num"><%= rs(b.Gross) %></td>
+            <td class="num"><%- z(b.Discount) %></td>
+            <td class="num"><b><%= rs(b.Net) %></b></td>
+            <td class="num"><%- z(b.Cash) %></td>
+            <td class="num"><%- z(b.Online) %></td>
+            <td class="num" style="<%= n(b.DuesLeft) && !b.SameDayCancel ? 'color:var(--rose);font-weight:600' : '' %>"><%- b.SameDayCancel ? '<span class="zero">—</span>' : z(b.DuesLeft) %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+        <tfoot><tr>
+          <td class="no-print"></td><td colspan="3">Total of <%= bt.Count %> bill(s)</td>
+          <td class="num"><%= rs(bt.Gross) %></td><td class="num"><%= rs(bt.Discount) %></td><td class="num"><%= rs(bt.Net) %></td>
+          <td class="num"><%= rs(bt.Cash) %></td><td class="num"><%= rs(bt.Online) %></td><td class="num"><%= rs(bt.DuesLeft) %></td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <% } %>
+
+    <% if (u.cashbook.length) { %>
+    <details class="book">
+      <summary><i class="bi bi-chevron-right"></i> Cash book — <%= u.cashbook.length %> entries, hand over <%= rs(ct.HandOver) %></summary>
+      <div class="tbl-wrap" style="margin-top:4px">
+        <table class="tbl">
+          <thead><tr><th>Time</th><th>Bill</th><th>Patient</th><th>Entry</th>
+            <th class="num">Cash in</th><th class="num">Cash out</th><th class="num">Online in</th><th class="num">Online out</th></tr></thead>
+          <tbody>
+          <% u.cashbook.forEach(function(c){ const z = v => n(v) ? rs(v) : '<span class="zero">—</span>'; %>
+            <tr>
+              <td style="white-space:nowrap"><%= c.At %></td>
+              <td class="bill"><a href="/patient/getPatientDetail?patientId=<%= c.BillNo %>">#<%= c.BillNo %></a></td>
+              <td><%= c.Title || '' %> <%= c.Name %><% if (c.IsOld) { %><div class="vc-note" style="margin:0">billed <%= c.RegDate %></div><% } %></td>
+              <td><span class="tag <%= c.CashOut || c.OnlineOut ? 'out' : (c.IsOld ? 'old' : 'in') %>"><%= c.Kind %></span>
+                <% if (c.Source) { %><span class="vc-note"><%= c.Source %></span><% } %>
+                <% if (c.Note) { %><div class="vc-note" style="margin:0"><%= c.Note %></div><% } %></td>
+              <td class="num"><%- z(c.CashIn) %></td><td class="num"><%- z(c.CashOut) %></td>
+              <td class="num"><%- z(c.OnlineIn) %></td><td class="num"><%- z(c.OnlineOut) %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+          <tfoot><tr><td colspan="4">Cash in − cash out = <b><%= rs(ct.HandOver) %></b> to hand over</td>
+            <td class="num"><%= rs(ct.CashIn) %></td><td class="num"><%= rs(ct.CashOut) %></td>
+            <td class="num"><%= rs(ct.OnlineIn) %></td><td class="num"><%= rs(ct.OnlineOut) %></td></tr></tfoot>
+        </table>
+      </div>
+    </details>
+    <% } %>
+
+    <div class="sign"><div>Handed over by <%= u.Name %> — <%= rs(ct.HandOver) %></div><div>Received by (owner)</div><div>Date and time</div></div>
+  </section>
+  <% }) %>
+
+  <!-- ── Dues of this period ── -->
+  <section class="sec">
+    <div class="sec-h"><h2>Dues of this <%= dr.same ? 'day' : 'period' %></h2>
+      <span class="usr-meta"><%= dues.count || dues.length %> patient(s)</span><span class="num"><%= rs(dues.total) %></span></div>
+    <% if (!dues.length) { %><div class="empty">Every bill of this <%= dr.same ? 'day' : 'period' %> is fully paid.</div><% } else { %>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Bill</th><th>Patient</th><th>Phone</th><th>Doctor</th><th>Billed by</th><th class="num">Net bill</th><th class="num">Unpaid</th></tr></thead>
+        <tbody>
+        <% dues.forEach(function(d){ %>
+          <tr><td class="bill"><a href="/patient/getPatientDetail?patientId=<%= d.PatientId %>">#<%= d.PatientId %></a></td>
+            <td><%= d.Title || '' %> <%= d.Name %><% if (!dr.same) { %><div class="vc-note" style="margin:0"><%= d.RegisteredOn %></div><% } %></td>
+            <td><a href="tel:<%= d.PhoneNumber %>"><%= d.PhoneNumber %></a></td>
+            <td><%= ((d.DoctorFirstName || '') + ' ' + (d.DoctorLastName || '')).trim() || '—' %></td>
+            <td><%= d.RegisteredBy %></td>
+            <td class="num"><%= rs(d.ActualAmount) %></td>
+            <td class="num" style="color:var(--rose);font-weight:600"><%= rs(d.PendingDues) %></td></tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+
+  <% const canc = locals.cancellations || []; if (canc.length) { %>
+  <section class="sec">
+    <div class="sec-h"><h2>Cancellations</h2><span class="usr-meta"><%= canc.length %></span>
+      <span class="num"><%= rs(canc.filter(function(c){ return Number(c.AffectsCollection); }).reduce(function(a, c){ return a + n(c.TotalRefunded); }, 0)) %> refunded from this collection</span></div>
+    <div class="vc-note">A bill cancelled on the same day it was made is left out of everything above — its payment and refund cancel each other.</div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Bill</th><th>Patient</th><th>Billed on</th><th>Cancelled</th><th>By</th><th>Reason</th><th class="num">Refund</th></tr></thead>
+        <tbody>
+        <% canc.forEach(function(c){ %>
+          <tr><td class="bill"><a href="/patient/getPatientDetail?patientId=<%= c.PatientId %>">#<%= c.PatientId %></a></td>
+            <td><%= c.Name %><% if (Number(c.HadReport)) { %> <span class="tag out">had report</span><% } %></td>
+            <td><%= c.RegisteredOn %></td><td><%= c.CancelledAt %></td><td><%= c.CancelledByName %></td>
+            <td class="tests"><%= c.CancelReason || '' %></td>
+            <td class="num"><%= rs(c.TotalRefunded) %><% if (!Number(c.AffectsCollection)) { %><div class="vc-note" style="margin:0">same day — not counted</div><% } %></td></tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <% } %>
+
+  <% const adv = locals.advanceBookings || []; if (adv.length) { %>
+  <section class="sec">
+    <div class="sec-h"><h2>Advance bookings made</h2><span class="usr-meta"><%= adv.length %></span></div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Bill</th><th>Patient</th><th>Appointment</th><th>Booked by</th><th>Status</th><th class="num">Advance paid</th><th class="num">Balance</th></tr></thead>
+        <tbody>
+        <% adv.forEach(function(a){ %>
+          <tr><td class="bill"><a href="/patient/getPatientDetail?patientId=<%= a.PatientId %>">#<%= a.PatientId %></a></td>
+            <td><%= a.Name %></td><td><%= a.AppointmentDate %></td><td><%= a.RegisteredBy %></td>
+            <td><span class="tag"><%= Number(a.Status) === 0 ? 'cancelled' : a.BookingStatus %></span></td>
+            <td class="num"><%= rs(a.AdvancePaid) %></td><td class="num"><%= rs(a.BalancePending) %></td></tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <% } %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script>
+(function () {
+  function start() {
+    var form = document.getElementById('rangeForm');
+    var from = document.getElementById('fFrom'), to = document.getElementById('fTo');
+    if (window.flatpickr) {
+      var opts = { dateFormat: 'd-m-Y', allowInput: true, maxDate: 'today', disableMobile: true };
+      var fpTo = flatpickr(to, Object.assign({}, opts, { minDate: from.value || null }));
+      flatpickr(from, Object.assign({}, opts, { onChange: function (s) { if (s[0]) fpTo.set('minDate', s[0]); } }));
+    }
+    function dmy(d) { return ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear(); }
+    document.querySelectorAll('.vc-chip[data-d]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = new Date(); d.setDate(d.getDate() - Number(b.getAttribute('data-d')));
+        from.value = to.value = dmy(d); form.submit();
+      });
+    });
+    // tick bills while matching receipts (for the checker only — nothing is saved)
+    document.querySelectorAll('.usr').forEach(function (sec) {
+      var out = sec.querySelector('.js-ticked');
+      sec.querySelectorAll('.js-tick').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+          out.textContent = sec.querySelectorAll('.js-tick:checked').length;
+          cb.closest('tr').style.background = cb.checked ? 'var(--green-soft)' : '';
+        });
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>

@@ -1,0 +1,252 @@
+<style>
+  body {
+    background-color: #f4f6f9;
+  }
+
+  .card-premium {
+    border: none;
+    border-radius: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,.05);
+  }
+
+  .glass-header {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,.05);
+  }
+
+  .table-hover tbody tr {
+    transition: all .2s ease-in-out;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: rgba(13,110,253,.05);
+    transform: scale(1.002);
+  }
+
+  .badge-soft-primary {
+    background: rgba(13,110,253,.1);
+    color: #0d6efd;
+  }
+
+  .badge-soft-secondary {
+    background: rgba(108,117,125,.1);
+    color: #6c757d;
+  }
+
+  .badge-soft-dark {
+    background: rgba(33,37,41,.08);
+    color: #212529;
+  }
+
+  .page-link {
+    border-radius: 50rem !important;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,.05);
+  }
+
+  .search-box {
+    border-radius: 50rem;
+    padding-left: 2.5rem;
+  }
+
+  .search-icon {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    color: #6c757d;
+  }
+
+  thead th {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #6c757d;
+  }
+</style>
+
+
+<!-- Breadcrumb -->
+<section class="py-3">
+  <div class="container-fluid">
+    <div class="bg-white p-3 rounded-4 shadow-sm d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="fw-bold mb-0">Product Management</h5>
+        <small class="text-muted">Manage inventory & supplier mapping</small>
+      </div>
+      <div>
+        <a href="/billing/addProduct" class="btn btn-primary rounded-pill px-4 shadow-sm">
+          <i class="bi bi-plus-lg me-1"></i>Add Product
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Main Card -->
+<section class="pb-5">
+  <div class="container-fluid">
+    <div class="card card-premium">
+
+      <!-- Toolbar -->
+      <div class="card-header glass-header py-3 px-4">
+        <div class="row align-items-center g-3">
+
+          <!-- Search -->
+          <div class="col-md-4 position-relative">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="searchInput"
+                   class="form-control search-box shadow-sm"
+                   placeholder="Search products...">
+          </div>
+
+          <!-- Stats -->
+          <div class="col-md-4 text-md-center">
+            <% if (products && products.length > 0) { %>
+            <span class="badge badge-soft-primary px-3 py-2 rounded-pill">
+              Total Products : <strong><%= products.length %></strong>
+            </span>
+            <% } %>
+          </div>
+
+          <!-- Export -->
+          <div class="col-md-4 text-md-end">
+            <button class="btn btn-light border rounded-pill px-4 shadow-sm">
+              <i class="bi bi-download me-1 text-success"></i>Export
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="px-4 pt-3">
+        <%- include ("./partials/messages"); %>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+
+          <thead class="bg-light">
+            <tr>
+              <th class="ps-4 text-center">#</th>
+              <th>Supplier</th>
+              <th>Known As</th>
+              <th>Product Name</th>
+              <th class="text-center">HSN</th>
+              <th class="text-center">Created</th>
+              <th class="text-center pe-4">Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="productTable">
+
+            <% if (products && products.length > 0) { %>
+              <% let i = 0; products.forEach(function(product) { i++; %>
+              <tr>
+
+                <td class="ps-4 text-center text-muted fw-semibold"><%= i %></td>
+
+                <td>
+                  <span class="badge badge-soft-primary px-3 py-2 rounded-pill">
+                    <i class="bi bi-building me-1"></i>
+                    <%= product.SupplierName %>
+                  </span>
+                </td>
+
+                <td>
+                  <span class="badge badge-soft-secondary px-3 py-2 rounded-pill">
+                    <%= product.KnownAs %>
+                  </span>
+                </td>
+
+                <td class="fw-semibold">
+                  <a href="/billing/individualProductPriceHistory?productId=<%= product.Id %>"
+                     class="text-decoration-none text-dark">
+                    <%= product.ProductName %>
+                  </a>
+                </td>
+
+                <td class="text-center">
+                  <span class="badge badge-soft-dark px-3 py-2 rounded-pill">
+                    <%= product.Hsn %>
+                  </span>
+                </td>
+
+                <td class="text-center small">
+                  <div class="fw-semibold">
+                    <%= new Date(product.CreatedAt).toLocaleDateString('en-GB').replaceAll('/', '-') %>
+                  </div>
+                  <div class="text-muted small">
+                    <%= new Date(product.CreatedAt).toLocaleTimeString('en-GB',{hour12:false}) %>
+                  </div>
+                </td>
+
+                <td class="text-center pe-4">
+                  <a href="/billing/editProduct/<%= product.Id %>" 
+                     class="btn btn-sm btn-light border rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-pencil-square me-1 text-primary"></i>Edit
+                  </a>
+                </td>
+
+              </tr>
+            <% }) } else { %>
+
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted fw-semibold">
+                  <i class="bi bi-box me-2"></i>No products available
+                </td>
+              </tr>
+
+            <% } %>
+
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- Pagination -->
+<section class="pb-4">
+  <nav>
+    <div class="container">
+      <ul class="pagination pagination-sm gap-2 justify-content-center mt-4"
+          id="pagination_Number">
+
+        <li class="page-item disabled">
+          <a class="page-link prev_link">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+
+        <!-- JS inserts numbers -->
+
+        <li class="page-item">
+          <a class="page-link next_link">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </nav>
+</section>
+
+
+<!-- jQuery Live Search -->
+<script>
+  $(document).ready(function () {
+    $("#searchInput").on("keyup", function () {
+      var value = $(this).val().toLowerCase();
+      $("#productTable tr").filter(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      });
+    });
+  });
+</script>

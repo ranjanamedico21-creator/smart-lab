@@ -1,0 +1,20 @@
+<%# Flatpickr month plugin + helpers. Flatpickr itself comes from loggedInLayout, so pickers start on DOMContentLoaded. %>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/style.css">
+<style>
+  /* The layout paints inputs white on a dark bar, which hid the year in the calendar header. */
+  .flatpickr-calendar .numInputWrapper input.cur-year { color:#111827 !important; -webkit-text-fill-color:#111827; font-size:inherit; font-weight:600; width:100%; }
+  .flatpickr-calendar .numInputWrapper { width:5ch; min-width:58px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/index.js"></script>
+<script>
+  /* Month picker. Value stays YYYY-MM. disableMobile: phones get the same picker, native ones have no month grid. */
+  function pkvMonthPicker(target, onPick) {
+    return flatpickr(target, {
+      disableMobile: true,
+      allowInput: false,
+      dateFormat: 'Y-m',
+      plugins: [new monthSelectPlugin({ shorthand: true, dateFormat: 'Y-m' })],
+      onChange: function (dates, str) { if (onPick && str) onPick(str); }
+    });
+  }
+</script>

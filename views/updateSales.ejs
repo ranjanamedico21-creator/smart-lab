@@ -1,0 +1,639 @@
+<%
+  /* views/updateSales.ejs   (jQuery + Bootstrap 5 + Tom Select)
+     Variables: salesData (each line has CustomerPrice / PriceSource / ReturnedQty), customerDetails, totalSaleDetails,
+                availableStock (with supplier), suppliers, saleId, customerId, notifications */
+  const num = (v) => Number(v) || 0;
+  const money = (v) => num(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const plain = (v) => num(v).toFixed(2);
+  const head = (totalSaleDetails && totalSaleDetails[0]) || {};
+  const originalTotal = num(head.TotalValueWithTax);
+  const customerName = customerDetails ? customerDetails.CustomerName : '';
+  const notes = notifications || [];
+  const supplierList = (suppliers || []).map(function (s) { return { id: s.Id, name: String(s.Name || '').trim() }; });
+  const stockList = (availableStock || []).map(function (s) {
+    return {
+      id: s.StockId, productId: s.ProductId, name: s.ProductName, hsn: s.Hsn || '',
+      supplierId: s.SupplierId, supplier: String(s.SupplierName || '').trim(),
+      batch: s.BatchNumber, qty: num(s.Quantity), expiry: s.ExpiryDate || '',
+      mrp: s.MRP === null || s.MRP === undefined ? null : num(s.MRP),
+      igst: s.IGSTPercentage === null || s.IGSTPercentage === undefined ? null : num(s.IGSTPercentage),
+      price: s.CustomerPrice === null || s.CustomerPrice === undefined ? null : num(s.CustomerPrice),
+      source: s.PriceSource
+    };
+  });
+%>
+<style>
+  .edit-sale .hero { background: linear-gradient(135deg, #0d6efd 0%, #0a4fc4 100%); color: #fff; border-radius: 1rem; }
+  .edit-sale .hero .chip { background: rgba(255,255,255,.16); border-radius: 2rem; padding: .25rem .8rem; font-size: .85rem; white-space: nowrap; }
+  .edit-sale .card { border: 0; border-radius: 1rem; box-shadow: 0 .25rem 1rem rgba(33, 37, 41, .07); }
+  .edit-sale .card-header { background: transparent; border-bottom: 1px solid #eef0f3; font-weight: 600; }
+  .edit-sale thead th { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; background: #f8f9fb; border-bottom: 1px solid #e9ecef; white-space: nowrap; }
+  .edit-sale .table > :not(caption) > * > * { padding: .7rem .75rem; }
+  .edit-sale td { white-space: nowrap; }
+  .edit-sale td.product-cell { white-space: normal; min-width: 210px; }
+  .edit-sale input.form-control-sm { text-align: right; width: 92px; }
+  .edit-sale input.in-qty { width: 76px; }
+  .edit-sale tr.row-changed > td { background: #fffbe6; }
+  .edit-sale tr.row-added > td { background: #eef6ff; }
+  .edit-sale tr.removed > td { opacity: .4; }
+  .edit-sale tr.removed .product-name { text-decoration: line-through; }
+  .edit-sale tr.removed td.actions-cell { opacity: 1; }
+  .edit-sale .cust-price { font-size: .72rem; }
+  .edit-sale .sticky-bar { position: sticky; bottom: 0; z-index: 1020; background: rgba(255,255,255,.96); backdrop-filter: blur(4px); border-top: 1px solid #e9ecef; border-radius: 1rem 1rem 0 0; box-shadow: 0 -.25rem 1rem rgba(33,37,41,.08); }
+  .edit-sale .add-box { background: #f8fbff; border: 1px dashed #b6d4fe; border-radius: .85rem; }
+  .edit-sale .pick-info .badge { font-weight: 500; }
+  .edit-sale .ts-wrapper.single .ts-control { min-height: 42px; padding-top: .45rem; }
+  .edit-sale .opt-name { font-weight: 600; }
+  .edit-sale .opt-meta { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .25rem; font-size: .72rem; }
+  .edit-sale .opt-meta span { background: #eef1f5; border-radius: .4rem; padding: .05rem .45rem; color: #495057; }
+  .edit-sale .opt-meta span.exp-soon { background: #fff3cd; color: #7a5b00; }
+  .edit-sale .opt-meta span.price-ok { background: #d1e7dd; color: #0f5132; }
+  .edit-sale .opt-meta span.price-none { background: #f8d7da; color: #842029; }
+  .edit-sale .supplier-name { text-transform: capitalize; }
+  .edit-sale tr.row-flash > td { animation: rowflash 1.6s ease; }
+  @keyframes rowflash { 0% { background: #b7e4c7; } 100% { background: transparent; } }
+</style>
+
+<section class="container-fluid edit-sale py-3">
+
+  <!-- ===================== HEADER ===================== -->
+  <div class="hero p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <div class="text-white-50 small text-uppercase" style="letter-spacing:.06em">Update sale</div>
+        <h4 class="mb-2"><i class="bi bi-receipt me-2"></i>Invoice <%= head.InvoiceId || '' %></h4>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="chip"><i class="bi bi-person me-1"></i><span class="text-capitalize"><%= customerName %></span></span>
+          <% if (head.CreatedAt) { %><span class="chip"><i class="bi bi-calendar3 me-1"></i><%= head.CreatedAt %></span><% } %>
+          <span class="chip"><i class="bi bi-list-ul me-1"></i><%= salesData.length %> item<%= salesData.length === 1 ? '' : 's' %></span>
+        </div>
+      </div>
+      <div class="text-end">
+        <div class="text-white-50 small">Invoice total</div>
+        <div class="fs-3 fw-semibold">₹<%= money(originalTotal) %></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="jsWarning" class="alert alert-danger d-none">The page scripts did not load (jQuery is missing), so products cannot be added or removed here. Reload the page.</div>
+
+  <% notes.forEach(function (n) { %>
+    <div class="alert alert-<%= n.type %> d-flex align-items-start gap-2 shadow-sm" role="alert">
+      <i class="bi <%= n.icon || 'bi-info-circle-fill' %> mt-1"></i><div><%= n.messages %></div>
+    </div>
+  <% }) %>
+
+  <form action="/billing/updateSales/<%= customerId %>/<%= saleId %>" method="POST" id="salesForm" autocomplete="off">
+
+    <!-- ===================== ITEMS ===================== -->
+    <div class="card mb-4">
+      <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span><i class="bi bi-box-seam me-1"></i>Products in this sale</span>
+        <span class="small text-muted fw-normal">
+          <span class="badge rounded-pill" style="background:#fffbe6;color:#7a5b00;border:1px solid #f1e3a5">changed</span>
+          <span class="badge rounded-pill" style="background:#eef6ff;color:#0a4fc4;border:1px solid #b6d4fe">new</span>
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="salesTable">
+          <thead>
+            <tr>
+              <th class="ps-4">#</th><th>Product</th><th>Batch</th><th class="text-end">Qty</th><th class="text-end">Rate (₹)</th>
+              <th class="text-end">Taxable</th><th class="text-end">SGST %</th><th class="text-end">SGST ₹</th>
+              <th class="text-end">CGST %</th><th class="text-end">CGST ₹</th><th class="text-end">Total</th><th class="pe-4 text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+          <% salesData.forEach(function (l) {
+               const returned = num(l.ReturnedQty);
+               const id = l.SalesItemId;
+               const hasSaved = l.CustomerPrice !== null && l.CustomerPrice !== undefined; %>
+            <tr class="sale-row existing" data-item-id="<%= id %>" data-stock-id="<%= l.StockId %>" data-name="<%= l.ProductName %>"
+                data-orig-qty="<%= num(l.QuantitySold) %>" data-orig-rate="<%= plain(l.SalePrice) %>"
+                data-orig-sgst="<%= plain(l.Sgst) %>" data-orig-cgst="<%= plain(l.Cgst) %>"
+                data-min-qty="<%= returned > 0 ? returned : 1 %>" data-returned="<%= returned %>"
+                data-saved-price="<%= hasSaved ? plain(l.CustomerPrice) : '' %>">
+              <td class="ps-4 text-muted serial-no"></td>
+              <td class="product-cell">
+                <div class="fw-semibold product-name"><%= l.ProductName %></div>
+                <div class="small text-muted">HSN <%= l.Hsn || '–' %><% if (l.ExpiryDate) { %> &middot; exp <%= l.ExpiryDate %><% } %></div>
+              </td>
+              <td>
+                <span class="badge rounded-pill text-bg-light border"><%= l.BatchNumber %></span>
+                <% if (returned > 0) { %><span class="badge rounded-pill text-bg-warning" title="Quantity already returned by the customer">returned <%= returned %></span><% } %>
+              </td>
+              <td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-qty" name="quantity_<%= id %>"
+                         value="<%= num(l.QuantitySold) %>" min="<%= returned > 0 ? returned : 1 %>" step="1"></td>
+              <td class="text-end">
+                <input type="number" class="form-control form-control-sm d-inline-block in-rate" name="rate_<%= id %>"
+                       value="<%= plain(l.SalePrice) %>" min="0.01" step="0.01">
+                <div class="cust-price text-muted">
+                  <% if (hasSaved) { %>customer price ₹<%= money(l.CustomerPrice) %> <a href="#" class="use-price" title="Use the customer's saved price">use</a>
+                  <% } else { %>no saved price<% } %>
+                </div>
+              </td>
+              <td class="text-end out-taxable"></td>
+              <td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-sgst" name="sgst_<%= id %>"
+                         value="<%= plain(l.Sgst) %>" min="0" step="0.01"></td>
+              <td class="text-end out-sgst"></td>
+              <td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-cgst" name="cgst_<%= id %>"
+                         value="<%= plain(l.Cgst) %>" min="0" step="0.01"></td>
+              <td class="text-end out-cgst"></td>
+              <td class="text-end fw-semibold text-primary out-total"></td>
+              <td class="pe-4 text-end actions-cell">
+                <% if (returned > 0) { %>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="This line has a sales return, so it cannot be removed"><i class="bi bi-lock"></i></button>
+                <% } else { %>
+                  <button type="button" class="btn btn-sm btn-outline-danger toggle-remove" title="Remove this product"><i class="bi bi-trash"></i> <span class="d-none d-xl-inline">Remove</span></button>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+          <tfoot>
+            <tr class="table-light fw-semibold">
+              <td colspan="5" class="ps-4 text-end">Total</td>
+              <td class="text-end" id="totTaxable">₹0.00</td><td></td><td class="text-end" id="totSgst">₹0.00</td>
+              <td></td><td class="text-end" id="totCgst">₹0.00</td><td class="text-end text-primary" id="totGrand">₹0.00</td><td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===================== ADD A PRODUCT ===================== -->
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-plus-circle me-1"></i>Add a product to this sale</div>
+      <div class="card-body">
+        <div class="add-box p-3">
+          <div class="row g-3">
+            <div class="col-lg-3">
+              <label class="form-label fw-semibold small mb-1" for="addSupplier">Supplier</label>
+              <select id="addSupplier" class="supplier-name"></select>
+            </div>
+            <div class="col-lg-9">
+              <label class="form-label fw-semibold small mb-1" for="addProduct">Product <span class="text-muted fw-normal">(each line is a batch: expiry, stock and GST are shown)</span></label>
+              <select id="addProduct"></select>
+            </div>
+          </div>
+
+          <div class="pick-info small mt-3" id="pickInfo"></div>
+
+          <div class="row g-3 align-items-end mt-1">
+            <div class="col-6 col-md-2 col-lg-1">
+              <label class="form-label fw-semibold small mb-1" for="addQty">Qty</label>
+              <input type="number" id="addQty" class="form-control" min="1" step="1" value="1" disabled>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+              <label class="form-label fw-semibold small mb-1" for="addRate">Rate (₹)</label>
+              <input type="number" id="addRate" class="form-control" min="0.01" step="0.01" disabled>
+              <div class="cust-price text-muted" id="addRateHint"></div>
+            </div>
+            <div class="col-6 col-md-2 col-lg-2">
+              <label class="form-label fw-semibold small mb-1" for="addSgst">SGST %</label>
+              <input type="number" id="addSgst" class="form-control" min="0" step="0.01" disabled>
+            </div>
+            <div class="col-6 col-md-2 col-lg-2">
+              <label class="form-label fw-semibold small mb-1" for="addCgst">CGST %</label>
+              <input type="number" id="addCgst" class="form-control" min="0" step="0.01" disabled>
+            </div>
+            <div class="col-12 col-md-3 col-lg-2">
+              <button type="button" class="btn btn-success w-100" id="addLineBtn" disabled><i class="bi bi-plus-lg me-1"></i>Add to sale</button>
+            </div>
+          </div>
+          <div class="alert alert-danger py-2 px-3 small mt-3 mb-0 d-none" id="addError" role="alert"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== STICKY SAVE BAR (messages appear here, next to the button) ===================== -->
+    <div class="sticky-bar px-3 py-3">
+      <div id="clientAlerts"></div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div id="totalCompare" class="fs-6 text-muted"></div>
+        <div class="d-flex gap-2">
+          <a href="javascript:history.back()" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+          <button type="submit" class="btn btn-primary px-4" id="saveBtn"><i class="bi bi-check2-circle me-1"></i>Update Sales</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- ===================== CONFIRM MODAL (Bootstrap) ===================== -->
+  <div class="modal fade" id="confirmSaveModal" tabindex="-1" aria-labelledby="confirmSaveLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmSaveLabel"><i class="bi bi-question-circle me-2 text-primary"></i>Save the changes?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="confirmSaveBody"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep editing</button>
+          <button type="button" class="btn btn-primary" id="confirmSaveBtn"><i class="bi bi-check2-circle me-1"></i>Yes, update the sale</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const $ = window.jQuery;
+  if (!$) { document.getElementById('jsWarning').classList.remove('d-none'); return; }
+
+  const STOCK = <%- JSON.stringify(stockList).replace(/</g, '\\u003c') %>;
+  const SUPPLIERS = <%- JSON.stringify(supplierList).replace(/</g, '\\u003c') %>;
+  const ORIGINAL_TOTAL = <%= originalTotal %>;
+
+  const $form = $('#salesForm');
+  const $tbody = $('#salesTable tbody');
+  const $qty = $('#addQty'), $rate = $('#addRate'), $sgst = $('#addSgst'), $cgst = $('#addCgst');
+  const $addBtn = $('#addLineBtn'), $err = $('#addError'), $info = $('#pickInfo'), $rateHint = $('#addRateHint');
+
+  const r2 = function (n) { return Math.round((Number(n) + Number.EPSILON) * 100) / 100; };
+  const inr = function (n) { return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  const esc = function (s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  const num = function ($el) { return parseFloat($el.val()); };
+
+  /* ---------- messages: Bootstrap alerts (no browser alert() / confirm() anywhere) ---------- */
+  const ICONS = { danger: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', success: 'bi-check-circle-fill', info: 'bi-info-circle-fill' };
+  function notify(type, html, autoHideMs) {
+    const $a = $('<div class="alert alert-' + type + ' alert-dismissible fade show shadow-sm mb-2" role="alert"></div>')
+      .append('<i class="bi ' + (ICONS[type] || ICONS.info) + ' me-2"></i>')
+      .append($('<span class="alert-text"></span>').html(html))
+      .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+    $('#clientAlerts').empty().append($a);
+    if (autoHideMs) setTimeout(function () { $a.remove(); }, autoHideMs);
+  }
+  function clearAlerts() { $('#clientAlerts').empty(); }
+  $(document).on('click', '#clientAlerts .btn-close', function () { $(this).closest('.alert').remove(); });   // works even without Bootstrap's JS
+  function addErr(msg) { $err.text(msg || '').toggleClass('d-none', !msg); }
+
+  /* ---------- a select that uses Tom Select when it is loaded and a plain <select> otherwise ---------- */
+  function makePicker(selector, cfg) {
+    const el = $(selector)[0];
+    let ts = null;
+    if (window.TomSelect) {
+      ts = new window.TomSelect(el, {
+        valueField: 'value', labelField: 'name', searchField: cfg.searchField || ['name'],
+        maxOptions: 1000, create: false, closeAfterSelect: true, placeholder: cfg.placeholder,
+        render: cfg.render || {}, onChange: function (v) { cfg.onChange(v); }
+      });
+    } else {
+      $(el).on('change', function () { cfg.onChange($(el).val()); });
+    }
+    return {
+      set: function (items, placeholder) {
+        if (ts) {
+          ts.clear(true); ts.clearOptions(); ts.addOptions(items); ts.refreshOptions(false);
+          if (placeholder !== undefined) { ts.settings.placeholder = placeholder; ts.control_input.setAttribute('placeholder', placeholder); }
+        } else {
+          const $s = $(el).empty().append($('<option>').val('').text(placeholder || ''));
+          items.forEach(function (it) { $s.append($('<option>').val(it.value).text(it.name).prop('disabled', !!it.disabled)); });
+        }
+      },
+      value: function () { return ts ? ts.getValue() : $(el).val(); },
+      setValue: function (v) { if (ts) ts.setValue(v); else $(el).val(v).trigger('change'); },
+      clear: function () { if (ts) ts.clear(true); else $(el).val(''); },
+      enable: function () { if (ts) ts.enable(); else $(el).prop('disabled', false); },
+      disable: function () { if (ts) ts.disable(); else $(el).prop('disabled', true); }
+    };
+  }
+
+  /* ---------- calculations (same rounding as the server) ---------- */
+  function lineAmounts($tr) {
+    const qty = num($tr.find('.in-qty')) || 0, rate = num($tr.find('.in-rate')) || 0;
+    const sgst = num($tr.find('.in-sgst')) || 0, cgst = num($tr.find('.in-cgst')) || 0;
+    const taxable = r2(qty * rate), sgstAmt = r2(taxable * sgst / 100), cgstAmt = r2(taxable * cgst / 100);
+    return { taxable: taxable, sgstAmt: sgstAmt, cgstAmt: cgstAmt, total: r2(taxable + sgstAmt + cgstAmt) };
+  }
+
+  function hintState($tr) {
+    const saved = $tr.attr('data-saved-price');
+    if (saved === undefined || saved === '') return;
+    const same = r2(num($tr.find('.in-rate'))) === r2(parseFloat(saved));
+    $tr.find('.cust-price').toggleClass('text-success', same).toggleClass('text-danger', !same).removeClass('text-muted');
+  }
+
+  function recalc() {
+    let sumT = 0, sumS = 0, sumC = 0, sumG = 0, n = 0;
+    $tbody.find('tr.sale-row').each(function () {
+      const $tr = $(this), a = lineAmounts($tr);
+      $tr.find('.out-taxable').text(inr(a.taxable));
+      $tr.find('.out-sgst').text(inr(a.sgstAmt));
+      $tr.find('.out-cgst').text(inr(a.cgstAmt));
+      $tr.find('.out-total').text(inr(a.total));
+      if ($tr.hasClass('removed')) { $tr.find('.serial-no').text('–'); return; }
+      n += 1;
+      $tr.find('.serial-no').text(n);
+      sumT += a.taxable; sumS += a.sgstAmt; sumC += a.cgstAmt; sumG += a.total;
+      hintState($tr);
+      if ($tr.hasClass('existing')) {
+        $tr.toggleClass('row-changed',
+          num($tr.find('.in-qty')) !== parseFloat($tr.attr('data-orig-qty')) ||
+          r2(num($tr.find('.in-rate'))) !== parseFloat($tr.attr('data-orig-rate')) ||
+          r2(num($tr.find('.in-sgst'))) !== parseFloat($tr.attr('data-orig-sgst')) ||
+          r2(num($tr.find('.in-cgst'))) !== parseFloat($tr.attr('data-orig-cgst')));
+      }
+    });
+    sumT = r2(sumT); sumS = r2(sumS); sumC = r2(sumC); sumG = r2(sumG);
+    $('#totTaxable').text(inr(sumT)); $('#totSgst').text(inr(sumS)); $('#totCgst').text(inr(sumC)); $('#totGrand').text(inr(sumG));
+    const diff = r2(sumG - ORIGINAL_TOTAL);
+    $('#totalCompare').html('Invoice total <span class="text-decoration-line-through">' + inr(ORIGINAL_TOTAL) + '</span> &rarr; <strong class="text-dark">' + inr(sumG) + '</strong>' +
+      (diff === 0 ? '' : ' <span class="badge ' + (diff > 0 ? 'text-bg-success' : 'text-bg-danger') + '">' + (diff > 0 ? '+' : '') + inr(diff) + '</span>'));
+    return { count: n, total: sumG };
+  }
+
+  /* ---------- table actions ---------- */
+  $tbody.on('click', 'a.use-price', function (e) {
+    e.preventDefault();
+    const $tr = $(this).closest('tr');
+    $tr.find('.in-rate').val(parseFloat($tr.attr('data-saved-price')).toFixed(2)).trigger('input');
+  });
+  $tbody.on('click', 'button.toggle-remove', function () {
+    const $tr = $(this).closest('tr'), removing = !$tr.hasClass('removed');
+    $tr.toggleClass('removed', removing).find('input').prop('disabled', removing);
+    $(this).toggleClass('btn-outline-danger', !removing).toggleClass('btn-outline-secondary', removing)
+      .html(removing ? '<i class="bi bi-arrow-counterclockwise"></i> <span class="d-none d-xl-inline">Undo</span>' : '<i class="bi bi-trash"></i> <span class="d-none d-xl-inline">Remove</span>');
+    recalc();
+  });
+  $tbody.on('click', 'button.remove-new', function () { $(this).closest('tr').remove(); recalc(); });
+  $tbody.on('input change', 'input', recalc);
+
+  /* ---------- the same batch + price + GST is ONE line: find / count lines of a batch ---------- */
+  // how many units of this batch this edit takes from stock (+) or gives back (-)
+  function lotDelta(stockId) {
+    let d = 0;
+    $tbody.find('tr.sale-row').each(function () {
+      const $tr = $(this);
+      if (String($tr.attr('data-stock-id')) !== String(stockId)) return;
+      const now = $tr.hasClass('removed') ? 0 : (parseInt($tr.find('.in-qty').val(), 10) || 0);
+      const orig = $tr.hasClass('existing') ? parseFloat($tr.attr('data-orig-qty')) : 0;
+      d += now - orig;
+    });
+    return d;
+  }
+  function findMatchingRow(stockId, rate, sgst, cgst) {
+    let $found = null;
+    $tbody.find('tr.sale-row').not('.removed').each(function () {
+      const $tr = $(this);
+      if (String($tr.attr('data-stock-id')) !== String(stockId)) return;
+      if (r2(num($tr.find('.in-rate'))) === r2(rate) && r2(num($tr.find('.in-sgst'))) === r2(sgst) && r2(num($tr.find('.in-cgst'))) === r2(cgst)) { $found = $tr; return false; }
+    });
+    return $found;
+  }
+  function flashRow($tr) {
+    $tr.addClass('row-flash');
+    setTimeout(function () { $tr.removeClass('row-flash'); }, 1700);
+    if (typeof $tr[0].scrollIntoView === 'function') $tr[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  /* ---------- add panel: supplier -> product (each option is a batch) ---------- */
+  const expiryClass = function (d) {
+    const p = String(d).split('-');
+    if (p.length !== 3) return '';
+    const days = (new Date(p[2], p[1] - 1, p[0]) - new Date()) / 86400000;
+    return days < 90 ? 'exp-soon' : '';
+  };
+  const gstText = function (s) { return s.igst === null ? 'GST ?' : 'GST ' + s.igst + '%'; };
+
+  function supplierItems() {
+    const counts = {};
+    STOCK.forEach(function (s) { counts[s.supplierId] = (counts[s.supplierId] || 0) + 1; });
+    const list = SUPPLIERS.slice();
+    STOCK.forEach(function (s) { if (!list.some(function (x) { return String(x.id) === String(s.supplierId); })) list.push({ id: s.supplierId, name: s.supplier }); });
+    return list.map(function (x) { return { value: String(x.id), name: x.name, count: counts[x.id] || 0, disabled: !(counts[x.id] > 0) }; })
+               .sort(function (a, b) { return (b.count > 0) - (a.count > 0) || a.name.localeCompare(b.name); });
+  }
+
+  const productPicker = makePicker('#addProduct', {
+    placeholder: 'Choose a supplier first', searchField: ['name', 'batch', 'expiry'],
+    onChange: function (v) { onProductChange(v); },
+    render: {
+      option: function (d, e) {
+        return '<div class="py-1"><div class="opt-name">' + e(d.name) + '</div><div class="opt-meta">' +
+          '<span>Batch ' + e(d.batch) + '</span><span class="' + (d.expClass || '') + '">Exp ' + e(d.expiry) + '</span>' +
+          '<span>Stock ' + e(d.qty) + '</span><span>' + e(d.gst) + '</span>' +
+          (d.price === null ? '<span class="price-none">no saved price</span>' : '<span class="price-ok">' + e(inr(d.price)) + '</span>') + '</div></div>';
+      },
+      item: function (d, e) { return '<div>' + e(d.name) + ' <span class="text-muted">&middot; Batch ' + e(d.batch) + '</span></div>'; }
+    }
+  });
+
+  const supplierPicker = makePicker('#addSupplier', {
+    placeholder: 'Choose a supplier', searchField: ['name'],
+    onChange: function (v) { fillProducts(v); },
+    render: {
+      option: function (d, e) {
+        return '<div class="d-flex justify-content-between gap-3 ' + (d.disabled ? 'text-muted' : '') + '"><span class="supplier-name">' + e(d.name) + '</span><span class="small">' +
+          (d.count > 0 ? e(d.count) + ' in stock' : 'no stock') + '</span></div>';
+      },
+      item: function (d, e) { return '<div class="supplier-name">' + e(d.name) + '</div>'; }
+    }
+  });
+
+  function setAddFields(enabled) { [$qty, $rate, $sgst, $cgst, $addBtn].forEach(function ($x) { $x.prop('disabled', !enabled); }); }
+  function resetAddFields() {
+    setAddFields(false);
+    $qty.val(1); $rate.val(''); $sgst.val(''); $cgst.val(''); $rateHint.text(''); $info.empty(); addErr('');
+  }
+
+  function fillProducts(supplierId) {
+    resetAddFields();
+    const rows = STOCK.filter(function (s) { return String(s.supplierId) === String(supplierId); });
+    const items = rows.map(function (s) {
+      return { value: String(s.id), name: s.name, batch: s.batch, expiry: s.expiry, qty: s.qty, gst: gstText(s), price: s.price, expClass: expiryClass(s.expiry) };
+    });
+    productPicker.set(items, supplierId ? (items.length ? 'Search product or batch…' : 'No stock for this supplier') : 'Choose a supplier first');
+    if (supplierId && items.length) productPicker.enable(); else productPicker.disable();
+  }
+
+  function selectedLot() {
+    const id = productPicker.value();
+    return STOCK.filter(function (s) { return String(s.id) === String(id); })[0] || null;
+  }
+
+  function onProductChange() {
+    addErr('');
+    const s = selectedLot();
+    if (!s) { resetAddFields(); return; }
+    setAddFields(true);
+    $qty.val(1);
+    $rate.val(s.price === null ? '' : s.price.toFixed(2)).attr('data-saved', s.price === null ? '' : s.price);
+    $sgst.val(s.igst === null ? '' : (s.igst / 2).toFixed(2));
+    $cgst.val(s.igst === null ? '' : (s.igst / 2).toFixed(2));
+    $rateHint.html(s.price === null
+      ? '<span class="text-danger">no saved price - enter the rate</span>'
+      : 'customer price ' + inr(s.price) + (s.source === 'LOT' ? ' (this batch)' : ' (default)'));
+    const badges = [
+      '<span class="badge text-bg-light border">Batch ' + esc(s.batch) + '</span>',
+      '<span class="badge ' + (expiryClass(s.expiry) ? 'text-bg-warning' : 'text-bg-light border') + '">Exp ' + esc(s.expiry) + '</span>',
+      '<span class="badge text-bg-light border">Stock ' + esc(s.qty) + '</span>',
+      '<span class="badge text-bg-light border">' + esc(gstText(s)) + (s.igst === null ? '' : ' = SGST ' + (s.igst / 2) + '% + CGST ' + (s.igst / 2) + '%') + '</span>'
+    ];
+    if (s.mrp !== null) badges.push('<span class="badge text-bg-light border">MRP ' + esc(inr(s.mrp)) + '</span>');
+    if (s.hsn) badges.push('<span class="badge text-bg-light border">HSN ' + esc(s.hsn) + '</span>');
+    $info.html(badges.join(' '));
+    $qty.trigger('focus');
+  }
+
+  $rate.on('input', function () {
+    const saved = $rate.attr('data-saved');
+    if (saved === undefined || saved === '') return;
+    $rateHint.toggleClass('text-danger', r2(num($rate)) !== r2(parseFloat(saved))).toggleClass('text-success', r2(num($rate)) === r2(parseFloat(saved)));
+  });
+
+  function addLine() {
+    addErr('');
+    const s = selectedLot();
+    if (!s) { addErr('Choose a supplier and a product first.'); return; }
+    const qty = parseInt($qty.val(), 10), rate = num($rate), sgst = num($sgst), cgst = num($cgst);
+    if (!(qty > 0) || String($qty.val()).trim() !== String(qty)) { addErr('Quantity must be a whole number above 0.'); return; }
+    if (!(rate > 0)) { addErr('Enter the rate (price) above 0.'); return; }
+    if (isNaN(sgst) || isNaN(cgst) || sgst < 0 || cgst < 0) { addErr('Enter SGST % and CGST % (0 or more).'); return; }
+
+    // stock: what this edit already takes from the batch (negative = it gives stock back)
+    const taken = lotDelta(s.id);
+    const avail = Math.max(0, s.qty - taken);
+    if (qty > avail) { addErr('Only ' + avail + ' in stock for this batch' + (taken > 0 ? ' (' + taken + ' already taken by this edit)' : '') + '.'); return; }
+
+    // same batch + price + GST already on the sale  ->  one line, bigger quantity
+    const $same = findMatchingRow(s.id, rate, sgst, cgst);
+    if ($same) {
+      const before = parseInt($same.find('.in-qty').val(), 10) || 0;
+      $same.find('.in-qty').val(before + qty);
+      recalc();
+      flashRow($same);
+      productPicker.clear(); resetAddFields();
+      $info.html('<span class="text-success"><i class="bi bi-plus-circle me-1"></i>' + esc(s.name) + ' (Batch ' + esc(s.batch) + ') is already on this sale at the same price and GST, so its quantity is now <strong>' + (before + qty) + '</strong> (' + before + ' + ' + qty + ').</span>');
+      return;
+    }
+
+    const savedAttr = s.price === null ? '' : s.price.toFixed(2);
+    const $tr = $(
+      '<tr class="sale-row added row-added" data-stock-id="' + esc(s.id) + '" data-name="' + esc(s.name) + '" data-saved-price="' + savedAttr + '">' +
+        '<td class="ps-4 text-muted serial-no"></td>' +
+        '<td class="product-cell"><div class="fw-semibold product-name">' + esc(s.name) + ' <span class="badge rounded-pill text-bg-primary">new</span></div>' +
+          '<div class="small text-muted">HSN ' + esc(s.hsn || '–') + ' &middot; exp ' + esc(s.expiry) + '</div>' +
+          '<input type="hidden" name="newStockId" value="' + esc(s.id) + '"></td>' +
+        '<td><span class="badge rounded-pill text-bg-light border">' + esc(s.batch) + '</span></td>' +
+        '<td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-qty" name="newQuantity" value="' + qty + '" min="1" step="1"></td>' +
+        '<td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-rate" name="newRate" value="' + rate.toFixed(2) + '" min="0.01" step="0.01">' +
+          '<div class="cust-price text-muted">' + (s.price === null ? 'no saved price' : 'customer price ' + inr(s.price) + ' <a href="#" class="use-price" title="Use the customer\'s saved price">use</a>') + '</div></td>' +
+        '<td class="text-end out-taxable"></td>' +
+        '<td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-sgst" name="newSgst" value="' + sgst.toFixed(2) + '" min="0" step="0.01"></td>' +
+        '<td class="text-end out-sgst"></td>' +
+        '<td class="text-end"><input type="number" class="form-control form-control-sm d-inline-block in-cgst" name="newCgst" value="' + cgst.toFixed(2) + '" min="0" step="0.01"></td>' +
+        '<td class="text-end out-cgst"></td>' +
+        '<td class="text-end fw-semibold text-primary out-total"></td>' +
+        '<td class="pe-4 text-end actions-cell"><button type="button" class="btn btn-sm btn-outline-danger remove-new" title="Remove this product"><i class="bi bi-trash"></i> <span class="d-none d-xl-inline">Remove</span></button></td>' +
+      '</tr>');
+    $tbody.append($tr);
+    recalc();
+
+    // keep the supplier (several products usually come from the same one); clear the product and the fields
+    productPicker.clear(); resetAddFields();
+    $info.html('<span class="text-success"><i class="bi bi-check-circle me-1"></i>Added. Pick the next product, or press "Update Sales" to save.</span>');
+  }
+  $addBtn.on('click', addLine);
+  $('#addQty, #addRate, #addSgst, #addCgst').on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addLine(); } });
+
+  /* ---------- save: validate -> Bootstrap confirmation modal -> submit ---------- */
+  const modalEl = document.getElementById('confirmSaveModal');
+  const modal = window.bootstrap && window.bootstrap.Modal ? window.bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+
+  // lines of the same batch + price + GST (none with a return): the server combines them into one line on save
+  function duplicateGroups() {
+    const groups = {};
+    $tbody.find('tr.sale-row').not('.removed').each(function () {
+      const $tr = $(this);
+      const key = [$tr.attr('data-stock-id'), r2(num($tr.find('.in-rate'))).toFixed(2), r2(num($tr.find('.in-sgst'))).toFixed(2), r2(num($tr.find('.in-cgst'))).toFixed(2)].join('|');
+      (groups[key] = groups[key] || []).push($tr);
+    });
+    return Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) {
+      return g.length > 1 && g.every(function ($r) { return !(parseFloat($r.attr('data-returned')) > 0); });
+    });
+  }
+
+  function changeSummary(totals) {
+    const names = function ($rows, withQty) {
+      return $rows.map(function () {
+        const $r = $(this);
+        return esc($r.attr('data-name')) + (withQty ? ' × ' + (parseInt($r.find('.in-qty').val(), 10) || 0) : '');
+      }).get();
+    };
+    const row = function (cls, label, list) { return list.length ? '<li class="mb-1"><span class="badge ' + cls + ' me-1">' + list.length + ' ' + label + '</span>' + list.join(', ') + '</li>' : ''; };
+    const added = names($tbody.find('tr.row-added'), true);
+    const changed = names($tbody.find('tr.row-changed').not('.removed'), true);
+    const removed = names($tbody.find('tr.removed'), false);
+    const combined = duplicateGroups().map(function (g) { return esc(g[0].attr('data-name')) + ' (' + g.length + ' lines)'; });
+    const diff = r2(totals.total - ORIGINAL_TOTAL);
+    return '<div class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light mb-3"><span class="text-muted">Invoice total</span>' +
+      '<span><del class="text-muted">' + inr(ORIGINAL_TOTAL) + '</del> &rarr; <strong class="fs-5">' + inr(totals.total) + '</strong>' +
+      (diff === 0 ? '' : ' <span class="badge ' + (diff > 0 ? 'text-bg-success' : 'text-bg-danger') + '">' + (diff > 0 ? '+' : '') + inr(diff) + '</span>') + '</span></div>' +
+      ((added.length + changed.length + removed.length) === 0
+        ? '<div class="text-muted small">No change was made to the products.</div>'
+        : '<ul class="list-unstyled small mb-0">' + row('text-bg-primary', 'added', added) + row('text-bg-warning', 'changed', changed) + row('text-bg-danger', 'removed', removed) + '</ul>') +
+      (combined.length ? '<div class="alert alert-info py-2 px-3 small mt-3 mb-0"><i class="bi bi-intersect me-1"></i>Lines with the same batch, price and GST will be <strong>combined into one line</strong> (quantities added): ' + combined.join(', ') + '.</div>' : '');
+  }
+
+  function doSubmit() {
+    const removed = $tbody.find('tr.removed').map(function () { return $(this).attr('data-item-id'); }).get();
+    $form.find('input[name="removedRows"]').remove();
+    $('<input type="hidden" name="removedRows">').val(JSON.stringify(removed)).appendTo($form);
+    $('#saveBtn, #confirmSaveBtn').prop('disabled', true);          // no double submit
+    $form[0].submit();                                               // native submit: does not run the handler below again
+  }
+
+  $('#confirmSaveBtn').on('click', function () { if (modal) modal.hide(); doSubmit(); });
+
+  $form.on('submit', function (event) {
+    event.preventDefault();
+    clearAlerts();
+    const problems = [];
+    let $firstBad = null;
+    const bad = function ($i, msg) { $i.addClass('is-invalid'); if (problems.indexOf(msg) === -1) problems.push(msg); if (!$firstBad) $firstBad = $i; };
+
+    $tbody.find('tr.sale-row').each(function () {
+      const $tr = $(this);
+      $tr.find('input.form-control').removeClass('is-invalid');
+      if ($tr.hasClass('removed')) return;
+      const min = parseInt($tr.attr('data-min-qty') || '1', 10);
+      const qty = Number($tr.find('.in-qty').val());
+      if (!Number.isInteger(qty) || qty < min) bad($tr.find('.in-qty'), 'Quantity must be a whole number, not below the quantity already returned.');
+      if (!(num($tr.find('.in-rate')) > 0)) bad($tr.find('.in-rate'), 'Rate must be above 0.');
+      if (isNaN(num($tr.find('.in-sgst'))) || num($tr.find('.in-sgst')) < 0 || isNaN(num($tr.find('.in-cgst'))) || num($tr.find('.in-cgst')) < 0)
+        bad(isNaN(num($tr.find('.in-sgst'))) || num($tr.find('.in-sgst')) < 0 ? $tr.find('.in-sgst') : $tr.find('.in-cgst'), 'SGST % and CGST % must be 0 or more.');
+    });
+    // stock per batch (all lines of a batch together)
+    STOCK.forEach(function (s) {
+      if (lotDelta(s.id) > s.qty) {
+        $tbody.find('tr.sale-row').not('.removed').filter(function () { return String($(this).attr('data-stock-id')) === String(s.id); })
+          .each(function () { bad($(this).find('.in-qty'), 'Not enough stock of ' + esc(s.name) + ' (Batch ' + esc(s.batch) + '): ' + lotDelta(s.id) + ' more needed, ' + s.qty + ' in stock.'); });
+      }
+    });
+
+    const totals = recalc();
+    if (totals.count === 0) { notify('warning', 'A sale must keep at least one product. Undo a removal or add a product.'); return; }
+    if (problems.length) {
+      notify('danger', '<strong>Please correct the highlighted values.</strong><br>' + problems.join('<br>'));
+      if ($firstBad) $firstBad.trigger('focus');
+      return;
+    }
+
+    $('#confirmSaveBody').html(changeSummary(totals));
+    if (modal) modal.show();
+    else if (window.confirm('Save the changes?\nInvoice total ' + inr(ORIGINAL_TOTAL) + ' -> ' + inr(totals.total))) doSubmit();   // Bootstrap JS missing
+  });
+
+  /* ---------- start ---------- */
+  const supItems = supplierItems();
+  supplierPicker.set(supItems, 'Choose a supplier');
+  productPicker.disable();
+  resetAddFields();
+  const withStock = supItems.filter(function (x) { return x.count > 0; });
+  if (withStock.length === 1) supplierPicker.setValue(withStock[0].value);   // only one supplier has stock: pick it for you
+  recalc();
+});
+</script>

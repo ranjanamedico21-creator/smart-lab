@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Invoice</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      background-color: #ffffff;
+      color: #000;
+    }
+
+    .invoice-container {
+      padding: 25px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .section-title {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    /* Box Background */
+    .info-box {
+      background: #f7f7f7;
+      border: 1px solid #e4e4e4;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .invoice-table th {
+      background: #e9ecef;
+      color: #000;
+      font-weight: 600;
+      border: 1px solid #dee2e6;
+      text-align: center;
+    }
+
+    .invoice-table td {
+      border: 1px solid #dee2e6;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .summary-box {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 6px;
+    }
+
+    /* Bank Details separator line */
+    .section-separator {
+      border-top: 2px solid #000;
+      margin: 25px 0 15px 0;
+    }
+
+    .terms-conditions {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .sign-line {
+      margin-top: 40px;
+      border-top: 1px solid #000;
+      width: 200px;
+      text-align: center;
+      margin-left: auto;
+      padding-top: 5px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="invoice-container">
+
+    <!-- BILLING SECTION -->
+    <div class="row info-box">
+      <div class="col-6">
+        <div class="section-title">Billed To</div>
+        <p>
+          <strong>Name:</strong> <%= supplierDetails[0].Name %><br>
+          <strong>Address:</strong> <%= supplierDetails[0].Address %><br>
+          <strong>Phone:</strong> <%= supplierDetails[0].ContactNo %><br>
+          <strong>GSTIN:</strong> <%= supplierDetails[0].GstIn %>
+        </p>
+      </div>
+
+      <div class="col-6 text-end">
+        <div class="section-title">Invoice Info</div>
+        <p>
+          <strong>Invoice No:</strong> <%= totalPurchasePoAmount[0].PurchaseInvoiceNo %><br>
+          <strong>Date:</strong> <%= new Date(totalPurchasePoAmount[0].OrderDate).toLocaleDateString() %><br>
+          <strong>Challan No:</strong> ___________<br>
+          <strong>Delivery Date:</strong> ___________
+        </p>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <table class="table table-sm invoice-table mt-3">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product / Service</th>
+          <th>Qty</th>
+          <th>Rate</th>
+          <th>Taxable Value</th>
+          <th>IGST (%)</th>
+          <th>IGST Amount</th>
+          <th>Total (Incl. Tax)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% let i = 1; totalPurchaseDetails.forEach(function(purchase) { %>
+        <tr>
+          <td><%= i++ %></td>
+          <td><%= purchase.ProductName %></td>
+          <td><%= purchase.Quantity %></td>
+          <td><%= purchase.PurchasePrice %></td>
+          <td><%= purchase.TotalAmount %></td>
+          <td><%= purchase.IGSTPercentage %></td>
+          <td><%= purchase.IGSTAmount %></td>
+          <td><%= Number(purchase.TotalAmount) + Number(purchase.IGSTAmount) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <!-- SUMMARY SECTION -->
+    <div class="row mt-4">
+      <div class="col-6">
+
+        <!-- Separator Line Before Bank Details -->
+        <div class="section-separator"></div>
+
+        <div class="section-title">Bank Details</div>
+        <p>
+          <strong>Bank:</strong> <%= companyDetails.coreCompanyBankName %><br>
+          <strong>Branch:</strong> <%= companyDetails.coreCompanyBranchName %><br>
+          <strong>Account No:</strong> <%= companyDetails.coreCompanyAccountNo %><br>
+          <strong>IFSC:</strong> <%= companyDetails.coreCompanyIFSCCode %>
+        </p>
+      </div>
+
+      <div class="col-6 text-end">
+        <div class="section-title">Amount Summary</div>
+
+        <div class="summary-box">
+          <table class="table table-borderless mb-0">
+            <tr>
+              <td class="text-end">Taxable Amount:</td>
+              <td class="text-end"><%= totalPurchasePoAmount[0].TotalValue %></td>
+            </tr>
+            <tr>
+              <td class="text-end">IGST:</td>
+              <td class="text-end"><%= totalPurchasePoAmount[0].IgstAmount %></td>
+            </tr>
+            <tr>
+              <td class="fw-bold text-end">Total Amount:</td>
+              <td class="fw-bold text-end">
+                <%= Number(totalPurchasePoAmount[0].IgstAmount) + Number(totalPurchasePoAmount[0].TotalValue) %>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="row mt-5">
+      <div class="col-6">
+        <div class="section-title">Terms & Conditions</div>
+        <p class="terms-conditions">
+          Goods once sold will not be taken back.<br>
+          Subject to jurisdiction.<br>
+          All disputes are subject to local court only.
+        </p>
+      </div>
+
+      <div class="col-6 text-end">
+        <div class="sign-line">Authorized Signatory</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

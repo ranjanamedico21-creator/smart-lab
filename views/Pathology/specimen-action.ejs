@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title><%= title %> - SmartLab</title>
+<style>
+  :root { --primary: #1e3a5f; --success: #16a34a; --danger: #dc2626; --warning: #d97706; --gray-50: #f8fafc; --gray-200: #e2e8f0; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .page-header { background: white; padding: 24px; border-radius: 10px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card { background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+  .card-header { background: var(--primary); color: white; padding: 16px 24px; font-weight: 600; }
+  .card-body { padding: 24px; }
+  .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--gray-200); }
+  .info-row:last-child { border-bottom: none; }
+  .label { color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; }
+  .value { color: #1e293b; font-weight: 500; }
+  .cap-color { width: 16px; height: 16px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(0,0,0,0.1); }
+  .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .form-control { width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 14px; margin-top: 8px; }
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
+  .timeline-item { position: relative; margin-bottom: 20px; }
+  .timeline-item::before { content: ''; position: absolute; left: -22px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid white; box-shadow: 0 0 0 2px var(--primary); }
+  .timeline-time { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+  .timeline-content { background: var(--gray-50); padding: 12px; border-radius: 8px; }
+
+  /* ===== Toast System ===== */
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    min-width: 320px;
+    max-width: 420px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    animation: toastSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(6px);
+  }
+  .toast.toast-out {
+    animation: toastSlideOut 0.3s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  }
+  .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .toast-body { flex: 1; line-height: 1.5; }
+  .toast-title { font-weight: 700; margin-bottom: 2px; }
+  .toast-close {
+    background: none; border: none; font-size: 16px; cursor: pointer;
+    color: inherit; opacity: 0.6; padding: 0; margin: -2px -4px 0 0;
+  }
+  .toast-close:hover { opacity: 1; }
+  .toast-success { background: rgba(22, 163, 74, 0.95); color: white; }
+  .toast-danger  { background: rgba(220, 38, 38, 0.95); color: white; }
+  .toast-warning { background: rgba(217, 119, 6, 0.95); color: white; }
+  .toast-info    { background: rgba(30, 58, 95, 0.95); color: white; }
+
+  /* ===== Confirmation Modal ===== */
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 10000; display: none; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  .confirm-overlay.active { display: flex; }
+  .confirm-box {
+    background: white; border-radius: 14px; padding: 28px 32px;
+    width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    animation: scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .confirm-box .confirm-icon { font-size: 42px; text-align: center; margin-bottom: 12px; }
+  .confirm-box .confirm-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; color: #1e293b; }
+  .confirm-box .confirm-msg { font-size: 14px; color: #64748b; text-align: center; margin-bottom: 24px; line-height: 1.5; }
+  .confirm-actions { display: flex; gap: 12px; }
+  .confirm-actions .btn { flex: 1; justify-content: center; }
+  .confirm-actions .btn-secondary { background: var(--gray-200); color: #334155; }
+
+  @keyframes toastSlideIn {
+    from { opacity: 0; transform: translateX(60px) scale(0.95); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  @keyframes toastSlideOut {
+    from { opacity: 1; transform: translateX(0) scale(1); }
+    to   { opacity: 0; transform: translateX(60px) scale(0.95); }
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* ===== Modern theme (matches the Result Entry / Verify screens) ===== */
+  :root { --primary:#0f766e; --success:#0d9488; --danger:#dc2626; --warning:#d97706; --gray-50:#f8fafc; --gray-200:#e6eaf1; }
+  body { background:#eef2f7; font-family:'Segoe UI', system-ui, -apple-system, 'Inter', Roboto, sans-serif; color:#0f172a; -webkit-font-smoothing:antialiased; }
+  .container { max-width:1100px; }
+  .page-header { border:1px solid #e6eaf1; border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+  .page-header h1 { font-size:19px; color:#0f172a; letter-spacing:-.01em; }
+  .page-header p { color:#64748b; font-size:13px; margin-top:3px; }
+  .card { border:1px solid #e6eaf1; border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.12); }
+  .card-header { background:linear-gradient(135deg,#0f766e,#115e59); font-size:13px; font-weight:700; letter-spacing:.02em; padding:15px 22px; }
+  .card-body { padding:22px; }
+  .info-row { padding:11px 0; border-color:#eef2f7; }
+  .label { font-size:10.5px; letter-spacing:.05em; color:#94a3b8; }
+  .value { color:#1e293b; font-weight:600; font-size:14px; }
+  .btn { border-radius:10px; padding:11px 20px; font-weight:700; transition:background .12s, transform .05s; }
+  .btn:active { transform:translateY(1px); }
+  .btn-success { background:#0d9488; box-shadow:0 1px 2px rgba(13,148,136,.4); }
+  .btn-success:hover { background:#0f766e; }
+  .btn-danger:hover { background:#b91c1c; }
+  .btn-secondary { background:#fff; color:#334155; border:1px solid #d7dee8; }
+  .form-control { border:1.5px solid #d7dee8; border-radius:10px; padding:10px 13px; }
+  .form-control:focus { outline:none; border-color:#0d9488; box-shadow:0 0 0 3px rgba(13,148,136,.18); }
+  .timeline::before { background:#e6eaf1; }
+  .timeline-item::before { background:#0d9488; box-shadow:0 0 0 2px #0d9488; }
+  .timeline-content { background:#f8fafc; border:1px solid #eef2f7; border-radius:10px; }
+  .toast-success { background:rgba(13,148,136,.97); }
+  .toast-info { background:rgba(15,118,110,.97); }
+  .confirm-box { border-radius:16px; }
+  .confirm-actions .btn-secondary { background:#eef2f7; color:#334155; }
+  @media (max-width:800px) { .grid-2 { grid-template-columns:1fr; } .container { padding:14px; } }
+</style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Confirmation Modal -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Confirm</div>
+    <div class="confirm-msg" id="confirmMsg">Are you sure?</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirmCancel">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-header">
+    <h1>🧪 Specimen Quality Control</h1>
+    <p>Review specimen details before acceptance or rejection</p>
+  </div>
+
+  <div class="grid-2">
+    <!-- Patient & Specimen Info -->
+    <div class="card">
+      <div class="card-header">Specimen Details</div>
+      <div class="card-body">
+        <div class="info-row"><span class="label">Patient</span><span class="value"><%= detail.PatientName %> (<%= detail.PatientAge %> <%= detail.PatientAgeUnit %>)</span></div>
+        <div class="info-row"><span class="label">Test</span><span class="value"><%= detail.TestName %></span></div>
+        <div class="info-row">
+          <span class="label">Specimen Type</span>
+          <span class="value">
+            <% if (detail.DefaultCapColor) { %><span class="cap-color" style="background:<%= detail.DefaultCapColor %>"></span><% } %>
+            <%= detail.ActualSpecimenType || detail.DefaultSpecimenTypeName || 'Not configured' %>
+          </span>
+        </div>
+        <div class="info-row"><span class="label">Container</span><span class="value"><%= detail.ActualContainerType || detail.DefaultContainerName || 'Not configured' %></span></div>
+        <div class="info-row"><span class="label">Barcode</span><span class="value" style="font-family:monospace;font-size:15px;"><%= detail.Barcode || 'Not assigned' %></span></div>
+        <% if (detail.MinVolume || detail.Inversions) { %>
+        <div class="info-row"><span class="label">Volume / Inversions</span><span class="value"><%= detail.MinVolume ? (Number(detail.MinVolume) + (detail.MaxVolume && Number(detail.MaxVolume) !== Number(detail.MinVolume) ? '-' + Number(detail.MaxVolume) : '') + ' ml') : '-' %> / <%= detail.Inversions || 0 %>x</span></div>
+        <% } %>
+        <% if (detail.CollectionInstructions) { %>
+        <div class="info-row"><span class="label">Instructions</span><span class="value" style="max-width:60%;text-align:right;"><%= detail.CollectionInstructions %></span></div>
+        <% } %>
+        <div class="info-row">
+          <span class="label">Current Status</span>
+          <span class="value">
+            <% var s = detail.Status || 'not_collected'; %>
+            <span style="text-transform:uppercase;font-weight:700;color:<%= s==='accepted'?'#16a34a':s==='rejected'?'#dc2626':'#d97706' %>;"><%= s %></span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <div class="card-header">Quality Check Actions</div>
+      <div class="card-body">
+        <% if (detail.Status === 'accepted') { %>
+          <div style="background:#f0fdf4; padding:16px; border-radius:8px; color:#166534; margin-bottom:16px;">
+            ✓ This specimen was accepted on <%= moment(detail.AcceptedAt).format('DD-MMM-YYYY HH:mm') %>
+          </div>
+          <% if (detail.ReportId) { %>
+            <%
+              /* FIX: route by REPORT status, not just specimen status. Once a
+                 specimen is accepted this block always showed "Enter Results",
+                 even after the report moved past draft — so clicking it landed
+                 on the entry page, where saving hit "Report is not in draft". */
+              var rs = detail.ReportStatus || 'draft';
+            %>
+            <% if (rs === 'draft') { %>
+              <a href="/pathology/view/entry/<%= detail.ReportId %>" class="btn btn-success">Enter Results →</a>
+            <% } else if (rs === 'rejected') { %>
+              <div style="background:#fef2f2; padding:14px; border-radius:8px; color:#991b1b; margin-bottom:14px;">
+                This report was rejected and sent back. Re-enter the results to continue.
+              </div>
+              <a href="/pathology/view/entry/<%= detail.ReportId %>" class="btn btn-success">Re-enter Results →</a>
+            <% } else { %>
+              <div style="background:#eff6ff; padding:14px; border-radius:8px; color:#1e40af; margin-bottom:14px;">
+                Results already entered. Report status: <strong style="text-transform:uppercase;"><%= rs %></strong>.
+              </div>
+              <% if (rs === 'completed' || rs === 'verified') { %>
+                <a href="/pathology/view/verify/<%= detail.ReportId %>" class="btn btn-success">Go to Verification →</a>
+              <% } else { %>
+                <a href="/pathology/view/verify/<%= detail.ReportId %>" class="btn btn-success">View Report →</a>
+              <% } %>
+            <% } %>
+          <% } else { %>
+            <div style="background:#fff7ed; padding:14px; border-radius:8px; color:#9a3412; margin-bottom:14px;">
+              No report yet. This happens when the test had no parameters mapped or no department when the specimen was accepted.
+              Fix it in Pathology admin, then create the report.
+            </div>
+            <button type="button" class="btn btn-success" id="btnCreateReport" onclick="createReport()">Create Report →</button>
+          <% } %>
+        <% } else if (detail.Status === 'rejected') { %>
+          <div style="background:#fef2f2; padding:16px; border-radius:8px; color:#991b1b; margin-bottom:16px;">
+            ✕ This specimen was rejected. Reason: <%= detail.RejectionReason %>
+          </div>
+          <p style="color:#64748b;margin-bottom:12px;">Collect a fresh sample from the patient, then create a new specimen (new barcode). The rejected one stays in the audit trail.</p>
+          <button type="button" class="btn btn-success" id="btnRecollect" onclick="recollect()">↻ Recollect Sample</button>
+        <% } else { %>
+          <form id="acceptForm" onsubmit="return handleAccept(event)">
+            <input type="hidden" name="specimenId" value="<%= detail.SpecimenId || '' %>">
+            <input type="hidden" name="patientTestRefferenceId" value="<%= detail.PatientTestRefferenceId %>">
+            <div style="margin-bottom:16px;">
+              <label class="label">Quality Check Notes</label>
+              <textarea name="qualityCheckNotes" class="form-control" rows="3" placeholder="Enter visual inspection notes..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">✓ Accept Specimen</button>
+          </form>
+
+          <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--gray-200);">
+
+          <% if (detail.SpecimenId) { %>
+          <form id="rejectForm" onsubmit="return handleReject(event)">
+            <input type="hidden" name="specimenId" value="<%= detail.SpecimenId %>">
+            <div style="margin-bottom:16px;">
+              <label class="label">Rejection Reason Category</label>
+              <select name="reasonCategory" class="form-control" required>
+                <option value="">Select reason...</option>
+                <option value="hemolysis">Hemolysis</option>
+                <option value="clotting">Clotting</option>
+                <option value="insufficient_volume">Insufficient Volume</option>
+                <option value="wrong_container">Wrong Container</option>
+                <option value="labeling_error">Labeling Error</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label class="label">Detailed Reason</label>
+              <textarea name="reason" class="form-control" rows="2" required placeholder="Describe the issue..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-danger">✕ Reject Specimen</button>
+          </form>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Timeline -->
+  <div class="card" style="margin-top:24px;">
+    <div class="card-header">Specimen Audit Trail</div>
+    <div class="card-body">
+      <% if (auditLog.length === 0) { %>
+        <p style="color:#64748b;">No audit entries yet.</p>
+      <% } else { %>
+        <div class="timeline">
+          <% auditLog.forEach(function(log) { %>
+            <div class="timeline-item">
+              <div class="timeline-time"><%= moment(log.PerformedAt).format('DD-MMM-YYYY HH:mm:ss') %></div>
+              <div class="timeline-content">
+                <strong><%= log.Action.toUpperCase() %></strong>
+                <% if (log.StatusFrom) { %> (<%= log.StatusFrom %> → <%= log.StatusTo %>)<% } %><br>
+                <small>By: <%= log.PerformedByName || 'System' %> <%= log.PerformedByRole ? '('+log.PerformedByRole+')' : '' %></small>
+                <% if (log.Remarks) { %><br><small style="color:#64748b;"><%= log.Remarks %></small><% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Toast Utility ===== */
+const Toast = {
+  container: document.getElementById('toastContainer'),
+  show(message, type = 'info', duration = 4000) {
+    const icons = { success: '✓', danger: '✕', warning: '⚠', info: 'ℹ' };
+    const titles = { success: 'Success', danger: 'Error', warning: 'Warning', info: 'Info' };
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+      <span class="toast-icon">${icons[type] || icons.info}</span>
+      <div class="toast-body">
+        <div class="toast-title">${titles[type] || titles.info}</div>
+        <div>${message}</div>
+      </div>
+      <button class="toast-close">&times;</button>
+    `;
+
+    toast.querySelector('.toast-close').addEventListener('click', () => this.dismiss(toast));
+    this.container.appendChild(toast);
+
+    const timer = setTimeout(() => this.dismiss(toast), duration);
+    toast.addEventListener('mouseenter', () => clearTimeout(timer));
+    toast.addEventListener('mouseleave', () => setTimeout(() => this.dismiss(toast), duration));
+  },
+  dismiss(toast) {
+    toast.classList.add('toast-out');
+    toast.addEventListener('animationend', () => toast.remove());
+  }
+};
+
+/* ===== Confirmation Utility ===== */
+function showConfirm({ title = 'Confirm', message = 'Are you sure?', icon = '⚠️', confirmText = 'Confirm', confirmClass = 'btn-danger', cancelText = 'Cancel' } = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('confirmOverlay');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent = message;
+    document.getElementById('confirmIcon').textContent = icon;
+
+    const okBtn = document.getElementById('confirmOk');
+    okBtn.textContent = confirmText;
+    okBtn.className = `btn ${confirmClass}`;
+
+    document.getElementById('confirmCancel').textContent = cancelText;
+
+    const cleanup = () => {
+      overlay.classList.remove('active');
+      okBtn.removeEventListener('click', onOk);
+      document.getElementById('confirmCancel').removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlayClick);
+    };
+
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onOverlayClick = (e) => { if (e.target === overlay) { cleanup(); resolve(false); } };
+
+    okBtn.addEventListener('click', onOk);
+    document.getElementById('confirmCancel').addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlayClick);
+
+    overlay.classList.add('active');
+  });
+}
+
+/* ===== Accept Handler ===== */
+// DOUBLE-SUBMIT GUARD: one specimen action in flight at a time. Blocks a second
+// submit that slips in between the confirm dialog and the button disabling, or
+// from the Enter key. The server also creates at most one report per test, so a
+// duplicate accept can never make a second report even if a request is retried.
+let __slBusy = false;
+
+async function handleAccept(e) {
+  e.preventDefault();
+  if (__slBusy) return false;
+
+  const confirmed = await showConfirm({
+    title: 'Accept Specimen?',
+    message: 'This will create a new report and mark the specimen as accepted. Continue?',
+    icon: '✓',
+    confirmText: 'Accept',
+    confirmClass: 'btn-success'
+  });
+  if (!confirmed) return false;
+  if (__slBusy) return false;
+  __slBusy = true;
+
+  const btn = e.target.querySelector('button');
+  btn.disabled = true;
+  const formData = new FormData(e.target);
+  try {
+    const res = await fetch('/pathology/specimens/accept', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        specimenId: formData.get('specimenId') || null,
+        patientTestRefferenceId: formData.get('patientTestRefferenceId'),
+        qualityCheckNotes: formData.get('qualityCheckNotes')
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      Toast.show('Specimen accepted! Opening result entry…', 'success');
+      setTimeout(() => { window.location.href = data.redirect || window.location.href; }, 900); // stay busy, navigating
+    } else {
+      Toast.show(data.message || 'Failed to accept specimen.', 'danger');
+      btn.disabled = false; __slBusy = false;
+    }
+  } catch (err) {
+    Toast.show('Network error: ' + err.message, 'danger');
+    btn.disabled = false; __slBusy = false;
+  }
+  return false;
+}
+
+async function postJson(url, body) {
+  const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'same-origin', body: JSON.stringify(body) });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch (e) { return { success: false, message: 'Unexpected response (HTTP ' + res.status + ')' }; }
+}
+
+async function recollect() {
+  if (__slBusy) return;
+  const ok = await showConfirm({ title: 'Recollect sample?', message: 'A new specimen with a new barcode will be created for this test.', icon: '↻', confirmText: 'Create', confirmClass: 'btn-success' });
+  if (!ok) return;
+  if (__slBusy) return;
+  __slBusy = true;
+  const btn = document.getElementById('btnRecollect'); if (btn) btn.disabled = true;
+  const data = await postJson('/pathology/specimens/recollect', { specimenId: <%= detail.SpecimenId || 'null' %> });
+  if (data.success) { Toast.show(data.message, 'success'); setTimeout(() => window.location.reload(), 900); } // stay busy, navigating
+  else { Toast.show(data.message || 'Recollect failed', 'danger'); if (btn) btn.disabled = false; __slBusy = false; }
+}
+
+async function createReport() {
+  if (__slBusy) return;
+  __slBusy = true;
+  const btn = document.getElementById('btnCreateReport'); if (btn) btn.disabled = true;
+  const data = await postJson('/pathology/specimens/create-report', { patientTestRefferenceId: <%= detail.PatientTestRefferenceId %> });
+  if (data.success) { window.location.href = data.redirect; } // stay busy, navigating
+  else { Toast.show(data.message || 'Could not create report', 'danger'); if (btn) btn.disabled = false; __slBusy = false; }
+}
+
+/* ===== Reject Handler ===== */
+async function handleReject(e) {
+  e.preventDefault();
+  if (__slBusy) return false;
+
+  const confirmed = await showConfirm({
+    title: 'Reject Specimen?',
+    message: 'This specimen will be permanently rejected. Are you sure?',
+    icon: '✕',
+    confirmText: 'Reject',
+    confirmClass: 'btn-danger'
+  });
+  if (!confirmed) return false;
+  if (__slBusy) return false;
+  __slBusy = true;
+
+  const btn = e.target.querySelector('button');
+  btn.disabled = true;
+  const formData = new FormData(e.target);
+  try {
+    const res = await fetch('/pathology/specimens/reject', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        specimenId: formData.get('specimenId'),
+        reason: formData.get('reason'),
+        reasonCategory: formData.get('reasonCategory')
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      Toast.show('Specimen rejected.', 'success');
+      setTimeout(() => window.location.reload(), 1200); // stay busy, navigating
+    } else {
+      Toast.show(data.message || 'Failed to reject specimen.', 'danger');
+      btn.disabled = false; __slBusy = false;
+    }
+  } catch (err) {
+    Toast.show('Network error: ' + err.message, 'danger');
+    btn.disabled = false; __slBusy = false;
+  }
+  return false;
+}
+</script>
+
+</body>
+</html>

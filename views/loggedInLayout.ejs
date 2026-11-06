@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%=title%></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+  <link rel="stylesheet" href="/common.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+  <style>
+    .navbar { position:sticky; top:0; z-index:1030; flex-wrap:nowrap; }
+
+    /* Brand shrinks gracefully on small screens */
+    .navbar-brand { min-width:0; display:flex; align-items:center; margin-right:0.5rem; }
+    .navbar-brand img { height:32px; width:auto; flex-shrink:0; }
+    .navbar-brand .brand-text {
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+
+    /* Top nav is always a single horizontal row (no collapse) */
+    .top-nav {
+      flex-direction:row; align-items:center; gap:0.25rem;
+      margin-left:auto; flex-shrink:0;
+    }
+    .top-nav .nav-link { padding:0.4rem 0.6rem; }
+    /* Non-expanded navbars render dropdowns static by default; float it instead */
+    .top-nav .dropdown-menu { position:absolute; right:0; left:auto; }
+
+    #layout-wrapper {
+      display:flex;
+      align-items:stretch;
+      min-height:calc(100vh - 56px);
+    }
+
+    #sidebarToggle { display:none !important; }
+
+    #sidebarOverlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.45); z-index:1040;
+    }
+    #sidebarOverlay.active { display:block; }
+
+    #main-content { flex:1 1 0%; min-width:0; }
+
+    /* Divider between mobile-only links and the main menu */
+    .sidebar-divider { border-top:1px solid rgba(255,255,255,.15); margin:6px 0; }
+
+    /* ── Nested submenu (level 2) ── */
+    .submenu-l2 {
+      list-style:none;
+      padding:0 0 4px 16px;
+      margin:0;
+    }
+    .submenu-l2 .nav-link {
+      font-size:12px !important;
+      padding:4px 10px !important;
+      color:rgba(255,255,255,.65) !important;
+    }
+    .submenu-l2 .nav-link:hover { color:#fff !important; background:rgba(255,255,255,.08) !important; }
+
+    .submenu-l2-toggle {
+      display:flex; align-items:center; justify-content:space-between;
+      cursor:pointer;
+    }
+    .submenu-l2-toggle::after {
+      content:'\F282'; /* bi-chevron-down */
+      font-family:"bootstrap-icons";
+      font-size:10px;
+      transition:transform .2s;
+      flex-shrink:0;
+    }
+    .submenu-l2-toggle[aria-expanded="true"]::after {
+      transform:rotate(180deg);
+    }
+
+    @media (max-width:991.98px) {
+      #sidebarToggle { display:inline-flex !important; }
+      #main-content  { width:100%; padding:0.75rem; }
+    }
+    @media (max-width:575.98px) {
+      .content-area { padding:12px !important; }
+      .navbar-brand .brand-text { font-size:1rem; }
+    }
+    /* Hover-open profile menu only on real desktop pointers */
+    @media (min-width:992px) and (hover:hover) {
+      .top-nav .dropdown:hover .dropdown-menu { display:block; margin-top:0; }
+    }
+  </style>
+</head>
+<body>
+  <%- include("./partials/uiNotify"); %>
+  <!-- Navbar: one hamburger (sidebar) on mobile, profile icon always visible -->
+  <nav class="navbar navbar-light bg-light shadow-sm">
+    <div class="container-fluid flex-nowrap">
+      <button id="sidebarToggle" class="btn btn-outline-light btn-sm me-2" aria-label="Open menu">
+        <i class="bi bi-list" style="font-size:1.4rem;color:#334091"></i>
+      </button>
+
+      <a class="navbar-brand" href="/home">
+        <img src="/logo.png" alt="Logo" class="me-2">
+        <span class="brand-text"><%= BRAND_NAME %></span>
+      </a>
+
+      <ul class="navbar-nav top-nav">
+        <!-- Desktop only: on mobile these live in the sidebar -->
+        <li class="nav-item d-none d-lg-block"><a class="nav-link" href="/home">Home</a></li>
+        <li class="nav-item d-none d-lg-block"><a class="nav-link" href="/aboutUs">About Us</a></li>
+        <li class="nav-item d-none d-lg-block"><a class="nav-link" href="/contactUs">Contact Us</a></li>
+
+        <!-- Profile: icon-only on mobile, icon + text on desktop -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false" aria-label="Profile">
+            <i class="bi bi-person-circle" style="font-size:1.25rem;vertical-align:middle"></i>
+            <span class="d-none d-lg-inline ms-1">Profile</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li><a class="dropdown-item" href="/user/myLeaves">My Leave</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li class="nav-item">
+              <a class="nav-link d-flex align-items-center" href="/user/leaveReview">
+                <i class="bi bi-calendar-check me-2"></i> Leave Review
+                <% if (typeof pendingLeaves !== 'undefined' && pendingLeaves > 0) { %>
+                  <span class="badge bg-danger rounded-pill ms-auto"><%= pendingLeaves %></span>
+                <% } %>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link d-flex align-items-center" href="/user/myLeaves">
+                <i class="bi bi-calendar3 me-2"></i> My Leaves
+                <% if (typeof leaveUpdates !== 'undefined' && leaveUpdates > 0) { %>
+                  <span class="badge bg-primary rounded-pill ms-auto"><%= leaveUpdates %></span>
+                <% } %>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="/user/logout">Logout</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div id="sidebarOverlay"></div>
+
+  <!-- Layout -->
+  <div id="layout-wrapper">
+
+    <div id="sidebar">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0 text-white">Menu</h4>
+        <button id="sidebarClose" class="btn btn-sm btn-outline-light d-lg-none" aria-label="Close menu">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <ul class="nav nav-pills flex-column mb-auto">
+
+        <!-- Dashboard -->
+        <li class="nav-item">
+          <a href="/home" class="nav-link">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+          </a>
+        </li>
+
+        <!-- Mobile only: top-bar links moved here -->
+        <li class="d-lg-none">
+          <a href="/aboutUs" class="nav-link"><i class="bi bi-info-circle me-1"></i>About Us</a>
+        </li>
+        <li class="d-lg-none">
+          <a href="/contactUs" class="nav-link"><i class="bi bi-telephone me-1"></i>Contact Us</a>
+        </li>
+        <li class="d-lg-none"><div class="sidebar-divider"></div></li>
+
+        <!-- ── Patients ── -->
+        <li>
+          <a href="#submenu1" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-people me-1"></i>Patients
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu1">
+            <li><a href="/patient/getPatientListView"   class="nav-link">Patient List</a></li>
+            <li><a href="/patient/registerPatient"      class="nav-link">Register Patient</a></li>
+            <li><a href="/patient/trackDuesAmount"      class="nav-link">Dues Amount</a></li>
+            <li><a href="/patient/dailyDuesReceived"    class="nav-link">Dues Received</a></li>
+            <li><a href="/report/viewCollection"        class="nav-link">View Collection</a></li>
+            <li><a href="/technician/dashboard"         class="nav-link">DashBoard</a></li>
+            <li><a href="/technician/queueView"         class="nav-link">Queue</a></li>
+          </ul>
+        </li>
+
+        <!-- ── Referral ── -->
+        <li>
+          <a href="#submenu2" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-arrow-repeat me-1"></i>Referral
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu2">
+            <li><a href="/clinic/registerClinic"        class="nav-link">Register Clinic</a></li>
+            <li><a href="/doctor/registerDoctor"        class="nav-link">Register Doctor</a></li>
+            <li><a href="/doctor/getDoctorListView"     class="nav-link">Doctors List</a></li>
+            <li><a href="/clinic/getClinicListView"     class="nav-link">Clinic List</a></li>
+          </ul>
+        </li>
+
+        <!-- ── Test ── -->
+        <li>
+          <a href="#submenu3" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-clipboard2-pulse me-1"></i>Test
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu3">
+            <li><a href="/category/createCategory"      class="nav-link">Create Category</a></li>
+            <li><a href="/test/createTest"              class="nav-link">Create Test</a></li>
+            <li><a href="/test/registerSubTest"         class="nav-link">Create Sub Test</a></li>
+            <li><a href="/category/getCategoryListView" class="nav-link">Category List</a></li>
+            <li><a href="/test/getTestListView"         class="nav-link">Test List</a></li>
+            <li><a href="/test/getSubParameterPage"     class="nav-link">Sub Parameter View</a></li>
+            <li><a href="/test/createSubparameter"      class="nav-link">Create Sub Parameter</a></li>
+            <li><a href="/test/getSubtestListView"     class="nav-link">Sub Test List</a></li>
+            <li><a href="/patient/viewThanksPaidPatientList" class="nav-link">Thanks List</a></li>
+          </ul>
+        </li>
+
+        <!-- ── Reports ── -->
+        <li>
+          <a href="#submenu4" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-bar-chart me-1"></i>Reports
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu4">
+            <li><a href="/report/getDiscountReport"             class="nav-link">Discount</a></li>
+            <li><a href="/patient/patientHistory"               class="nav-link">Patient History</a></li>
+            <li><a href="/schedule/getSchedule"                 class="nav-link">Marketing Schedule</a></li>
+            <li><a href="/report/getCategoryWiseCollection"     class="nav-link">Category Wise Patient</a></li>
+            <li><a href="/report/doctorPatientServiceReport"    class="nav-link">Doctor Service Patient</a></li>
+            <li><a href="/report/doctorBusinessReport"    class="nav-link">Doctor Service Patient</a></li>
+            <% if (locals.auditAlert) { %>
+              <a class="nav-link" href="/audit"><i class="bi bi-shield-lock"></i> Audit Center
+                <% if (auditAlert.total) { %><span class="badge bg-danger"><%= auditAlert.total %></span><% } %></a>
+            <% } %>
+          </ul>
+        </li>
+
+        <!-- ── Pathology ── -->
+        <li>
+          <a href="#submenu5" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-eyedropper me-1"></i>Pathology
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu5">
+            <li><a href="/pathology/admin/departments"      class="nav-link">Departments</a></li>
+            <li><a href="/pathology/admin/parameters"       class="nav-link">Parameters</a></li>
+            <li><a href="/pathology/admin/test-mapping"     class="nav-link">Test Mapping</a></li>
+            <li><a href="/pathology/admin/test-profiles"    class="nav-link">Test Profile</a></li>
+            <!-- TODO: ':parameter_id' is a route placeholder, not a real URL — point this at a list page -->
+            <li><a href="/pathology/admin/reference-ranges/:parameter_id" class="nav-link">Reference Range</a></li>
+            <li><a href="/pathology/admin/specimen-masters" class="nav-link">Specimen Master</a></li>
+          </ul>
+        </li>
+
+        <!-- ── Documents ── -->
+        <li>
+          <a href="#submenu6" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-folder me-1"></i>Documents
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu6">
+            <li><a href="/category/createDocumentCategory"  class="nav-link">Docs Category</a></li>
+            <li><a href="/category/getDocumentCategoryList" class="nav-link">Category List</a></li>
+            <li><a href="/report/displayDocumentDetails"    class="nav-link">Docs List</a></li>
+            <li><a href="/report/getDocumentUploadForm"     class="nav-link">Upload Docs</a></li>
+          </ul>
+        </li>
+
+        <!-- ── Thanks ── -->
+        <li>
+          <a href="#submenu7" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-heart me-1"></i>Thanks
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu7">
+            <li><a href="/report/referral"                      class="nav-link">Doctors Thanks List</a></li>
+            <li><a href="/patient/viewThanksPaidPatientList"    class="nav-link">Thanks Paid List</a></li>
+          </ul>
+        </li>
+
+        <!-- ── Billing (admin only) ── -->
+        <% if(isAdmin) { %>
+        <li>
+          <a href="#submenu8" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-receipt me-1"></i>Billing
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu8">
+
+            <li>
+              <a href="#bl-supplier" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-truck me-1"></i>Supplier</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-supplier">
+                <li><a href="/billing/createSupplier"   class="nav-link">Create Supplier</a></li>
+                <li><a href="/billing/getSupplierList"  class="nav-link">Supplier List</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-purchase" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-bag me-1"></i>Purchase</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-purchase">
+                <li><a href="/billing/createPurchasePo" class="nav-link">Create Purchase PO</a></li>
+                <li><a href="/billing/viewPurchasePo"   class="nav-link">View Purchase PO</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-products" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-box me-1"></i>Products</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-products">
+                <li><a href="/billing/createProduct"    class="nav-link">Create Product</a></li>
+                <li><a href="/billing/getProductList"   class="nav-link">Product List</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-stock" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-archive me-1"></i>Stock</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-stock">
+                <li><a href="/billing/getStockList"         class="nav-link">Stock List</a></li>
+                <li><a href="/billing/nonMovableStocks"     class="nav-link">Non Movable</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-customer" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-person me-1"></i>Customer</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-customer">
+                <li><a href="/billing/createCustomer"       class="nav-link">Create Customer</a></li>
+                <li><a href="/billing/getCustomerList"      class="nav-link">Customer List</a></li>
+                <li><a href="/billing/customerListWithDues" class="nav-link">Customer Dues</a></li>
+                <li><a href="/billing/paymentCorrection"    class="nav-link">Payment Correction</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-sales" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-cart me-1"></i>Sales</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-sales">
+                <li><a href="/billing/addSale"                  class="nav-link">Add Sale</a></li>
+                <li><a href="/billing/viewSales"                class="nav-link">View Sales</a></li>
+                <li><a href="/billing/salesReportCustomerWise"  class="nav-link">Report (Customer)</a></li>
+                <li><a href="/billing/salesReportSupplierWise"  class="nav-link">Report (Supplier)</a></li>
+                <li><a href="/billing/salesReturn"              class="nav-link">Sales Return</a></li>
+                <li><a href="/billing/viewSalesReturn"          class="nav-link">View Returns</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-challan" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-file-earmark-text me-1"></i>Challan</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-challan">
+                <li><a href="/billing/createChallan"    class="nav-link">Create Challan</a></li>
+                <li><a href="/billing/viewChallans"     class="nav-link">View Challans</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-payments" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-cash-coin me-1"></i>Payments</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-payments">
+                <li><a href="/billing/addPayment"            class="nav-link">Add Payment</a></li>
+                <li><a href="/billing/addPaymentToSupplier"  class="nav-link">Pay Supplier</a></li>
+                <li><a href="/billing/paymentCorrection"     class="nav-link">Correction</a></li>
+                <li><a href="/billing/paymentReceivable"     class="nav-link">Received Payments</a></li>
+                <li><a href="/billing/profitLossReport"      class="nav-link">P&amp;L Reports</a></li>
+                <li><a href="/billing/invoiceWiseProfitLoss" class="nav-link">P&amp;L Invoice Wise</a></li>
+              </ul>
+            </li>
+
+            <li>
+              <a href="#bl-expiry" data-bs-toggle="collapse"
+                 class="nav-link submenu-l2-toggle" aria-expanded="false">
+                <span><i class="bi bi-clock-history me-1"></i>Expiry</span>
+              </a>
+              <ul class="collapse submenu-l2" id="bl-expiry">
+                <li><a href="/billing/moveExpiredProduct"       class="nav-link">Move Expired</a></li>
+                <li><a href="/billing/listExpiredProduct"       class="nav-link">Expired List</a></li>
+                <li><a href="/billing/supplierDebitNotRegister" class="nav-link">Supplier DN</a></li>
+              </ul>
+            </li>
+
+          </ul>
+        </li>
+
+        <!-- ── Admin ── -->
+        <li>
+          <a href="#admin" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-shield-lock me-1"></i>Admin
+          </a>
+          <ul class="collapse list-unstyled submenu" id="admin">
+            <li><a href="/user/getUserList"         class="nav-link">User List</a></li>
+            <li><a href="/packet/adminPacket"       class="nav-link">Packet</a></li>
+            <li><a href="/packet/uploadExcelView"   class="nav-link">Upload Packet</a></li>
+          </ul>
+        </li>
+        <% } %>
+
+        <!-- ── Delivery ── -->
+        <li>
+          <a href="#submenu9" data-bs-toggle="collapse" class="nav-link">
+            <i class="bi bi-box-seam me-1"></i>Delivery
+          </a>
+          <ul class="collapse list-unstyled submenu" id="submenu9">
+            <li><a href="/packet/packets"   class="nav-link">Assign Packet</a></li>
+            <li><a href="/packet/myPackets" class="nav-link">My Packets</a></li>
+            <li><a href="/packet/report"    class="nav-link">Packet Report</a></li>
+          </ul>
+        </li>
+
+        <!-- Mobile only: logout at bottom of sidebar -->
+        <li class="d-lg-none"><div class="sidebar-divider"></div></li>
+        <li class="d-lg-none">
+          <a href="/user/logout" class="nav-link text-danger"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+        </li>
+
+      </ul>
+    </div><!-- /sidebar -->
+
+    <div id="main-content">
+      <div class="content-area">
+        <%- body %>
+      </div>
+    </div>
+
+  </div><!-- /layout-wrapper -->
+<!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+          integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="/pagination.js"></script>
+  <script src="/common.js"></script>
+  <script src="/patientBilling.js"></script>
+  <script src="/stockBilling.js"></script>
+  <script src="/sidebars.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
+    // ── Sidebar open/close ────────────────────────────────────────
+    var sidebar   = document.getElementById('sidebar');
+    var overlay   = document.getElementById('sidebarOverlay');
+    var toggleBtn = document.getElementById('sidebarToggle');
+    var closeBtn  = document.getElementById('sidebarClose');
+
+    function openSidebar()  { sidebar.classList.add('open');    overlay.classList.add('active'); }
+    function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); }
+
+    toggleBtn.addEventListener('click', openSidebar);
+    closeBtn.addEventListener('click',  closeSidebar);
+    overlay.addEventListener('click',   closeSidebar);
+
+    // Close sidebar after tapping any real page link (not collapse toggles)
+    sidebar.querySelectorAll('a.nav-link:not([data-bs-toggle])').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (window.innerWidth < 992) closeSidebar();
+      });
+    });
+
+    // If the screen is resized to desktop while the drawer is open, reset it
+    window.addEventListener('resize', function() {
+      if (window.innerWidth >= 992) closeSidebar();
+    });
+
+    // ── Froala (if loaded) ────────────────────────────────────────
+    if (typeof FroalaEditor !== 'undefined') {
+      new FroalaEditor('textarea#froala-editor-male',   { height:400, width:'100%' });
+      new FroalaEditor('textarea#froala-editor-female', { height:400, width:'100%' });
+      new FroalaEditor('textarea#froala-editor-report', { height:700, width:'100%', toolbarInline:false });
+    }
+
+    // ── Highlight current page & expand its parent menus ─────────
+    (function () {
+      const path = window.location.pathname;
+
+      document.querySelectorAll('#sidebar .nav-link.active').forEach(el => el.classList.remove('active'));
+
+      const activeLink = document.querySelector('#sidebar a.nav-link[href="' + path + '"]');
+      if (!activeLink) return;
+
+      activeLink.classList.add('active');
+
+      let parent = activeLink.closest('ul.collapse');
+      while (parent) {
+        parent.classList.add('show');
+        const toggle = document.querySelector('a[href="#' + parent.id + '"]');
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+        parent = parent.parentElement.closest('ul.collapse');
+      }
+    })();
+  </script>
+</body>
+</html>

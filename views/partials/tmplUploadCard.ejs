@@ -1,0 +1,59 @@
+<%# Reusable upload card partial %>
+<%# params: fieldName, label, icon, iconColor, existingFile, previewId %>
+
+<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+  <div style="padding:10px 16px;background:#f8f9fb;border-bottom:1px solid #e2e8f0;
+              display:flex;align-items:center;gap:8px">
+    <i class="bi <%= icon %>" style="color:<%= iconColor %>;font-size:14px"></i>
+    <span style="font-size:12px;font-weight:600;color:#111"><%= label %></span>
+    <% if(existingFile) { %>
+      <span style="font-size:10px;padding:2px 8px;border-radius:99px;
+                   background:#EAF3DE;color:#27500A;font-weight:600;margin-left:auto">
+        ✓ Exists
+      </span>
+    <% } %>
+  </div>
+  <div style="padding:16px">
+
+    <% if(existingFile) { %>
+      <div style="padding:8px 12px;background:#EAF3DE;border-radius:8px;
+                  font-size:12px;color:#27500A;margin-bottom:12px;
+                  display:flex;align-items:center;gap:6px">
+        <i class="bi bi-file-earmark-word" style="color:#185FA5"></i>
+        <strong><%= existingFile %></strong>
+        — upload new .docx to replace
+      </div>
+    <% } %>
+
+    <%# Drop zone %>
+    <div style="border:2px dashed #B5D4F4;border-radius:8px;padding:20px;
+                text-align:center;background:#f8fbff;cursor:pointer"
+         onclick="document.getElementById('file_<%= previewId %>').click()">
+      <input type="file" id="file_<%= previewId %>" name="<%= fieldName %>"
+             accept=".docx"
+             onchange="handleFileSelect(this,'<%= previewId %>')"
+             style="display:none">
+      <i class="bi bi-cloud-upload" style="font-size:24px;color:#185FA5;display:block;margin-bottom:6px"></i>
+      <div style="font-size:12px;font-weight:600;color:#185FA5" id="lbl_<%= previewId %>">
+        Click to select .docx
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:3px">Max 10MB</div>
+    </div>
+
+    <%# Preview button %>
+    <div id="previewRow_<%= previewId %>" style="display:none;margin-top:10px">
+      <button type="button"
+              id="prevBtn_<%= previewId %>"
+              onclick="previewFile('<%= fieldName %>','<%= previewId %>')"
+              style="padding:6px 14px;background:#E6F1FB;color:#0C447C;
+                     border:1px solid #B5D4F4;border-radius:7px;font-size:12px;
+                     font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
+        <i class="bi bi-eye"></i> Preview
+      </button>
+    </div>
+
+    <%# Preview box %>
+    <div id="<%= previewId %>" class="preview-box" style="margin-top:10px"></div>
+    <div id="status_<%= previewId %>" style="font-size:11px;margin-top:5px;min-height:14px"></div>
+  </div>
+</div>

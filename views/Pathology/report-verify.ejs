@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %> - SmartLab</title>
+<style>
+:root{
+  --bg:#eef2f7; --surface:#ffffff; --surface-2:#f8fafc;
+  --ink:#0f172a; --ink-2:#334155; --muted:#64748b; --faint:#94a3b8;
+  --line:#e6eaf1; --line-2:#d7dee8;
+  --brand:#0d9488; --brand-ink:#0f766e; --brand-soft:#e9fbf7; --brand-ring:rgba(13,148,136,.18);
+  --blue:#2563eb; --blue-soft:#eff5ff;
+  --violet:#7c3aed; --violet-soft:#f5f0ff;
+  --ok:#16a34a; --ok-ink:#15803d; --ok-soft:#eafaf0;
+  --warn:#d97706; --warn-ink:#b45309; --warn-soft:#fff6ea;
+  --crit:#dc2626; --crit-ink:#b91c1c; --crit-soft:#fdecec;
+  --r:14px;
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.12);
+  --sh-sm:0 1px 2px rgba(16,24,40,.06);
+  --font:'Segoe UI', system-ui, -apple-system, 'Inter', Roboto, sans-serif;
+  --mono:'SFMono-Regular', ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 18px 40px}
+.appbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.3) blur(8px);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-sm);padding:14px 18px;margin-bottom:16px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.appbar .lead{display:flex;align-items:center;gap:12px;min-width:0}
+.back{width:34px;height:34px;border-radius:10px;border:1px solid var(--line-2);background:#fff;color:var(--ink-2);
+  display:inline-flex;align-items:center;justify-content:center;font-size:17px;text-decoration:none;flex:0 0 auto}
+.back:hover{background:var(--surface-2)}
+.appbar h1{font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--ink);white-space:nowrap}
+.appbar .sub{font-size:12px;color:var(--muted)}
+.rn{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--brand-ink);background:var(--brand-soft);border:1px solid #cdeee7;border-radius:8px;padding:3px 9px}
+.spacer{flex:1 1 auto}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border:1px solid transparent}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9}
+.status-draft{background:#eef2f7;color:#475569;border-color:#dfe5ee}
+.status-completed{background:var(--blue-soft);color:#1d4ed8;border-color:#cfe0ff}
+.status-verified{background:var(--violet-soft);color:#6d28d9;border-color:#e4d8ff}
+.status-approved{background:var(--ok-soft);color:var(--ok-ink);border-color:#c7ecd3}
+.status-delivered{background:var(--ok-soft);color:#166534;border-color:#c7ecd3}
+.status-rejected{background:var(--crit-soft);color:var(--crit-ink);border-color:#f6cfcf}
+.stepper{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-sm);padding:20px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.step{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:78px}
+.step-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;background:#eef2f7;color:var(--faint);border:2px solid transparent;transition:all .15s}
+.step.completed .step-circle{background:var(--brand);color:#fff}
+.step.active .step-circle{background:#fff;color:var(--brand-ink);border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-ring)}
+.step-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.step.completed .step-label{color:var(--brand-ink)}
+.step.active .step-label{color:var(--ink)}
+.step-connector{flex:1 1 30px;max-width:70px;height:2px;background:#e2e8f0;margin-bottom:22px}
+.step-connector.completed{background:var(--brand)}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:16px}
+.sheet-head{background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;padding:22px;text-align:center}
+.sheet-head h2{font-size:19px;letter-spacing:.02em}
+.sheet-head p{font-size:12px;opacity:.85;margin-top:2px}
+.sheet-body{padding:24px}
+.sheet-body h3{font-size:14px;color:var(--brand-ink);margin-bottom:14px;font-weight:700}
+.preview-table{width:100%;border-collapse:collapse}
+.preview-table th{background:var(--surface-2);padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line)}
+.preview-table td{padding:10px 12px;border-bottom:1px solid #f0f3f8;font-size:13.5px}
+.preview-table tr.abnormal td{background:#fffdf7}
+.preview-table tr.critical td{background:#fdf4f4}
+.abnormal{color:var(--warn-ink);font-weight:700}
+.critical{color:var(--crit-ink);font-weight:800}
+.normal{color:var(--ink-2)}
+.alert{margin-top:18px;padding:14px 16px;border-radius:10px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
+.alert-crit{background:var(--crit-soft);border:1px solid #f3c3c3;color:var(--crit-ink)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:20px}
+.panel h3{font-size:14px;color:var(--ink);margin-bottom:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.banner{margin-bottom:16px;padding:14px 16px;border-radius:10px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
+.banner-ok{background:var(--ok-soft);border:1px solid #c7ecd3;color:var(--ok-ink)}
+.banner-info{background:var(--blue-soft);border:1px solid #cfe0ff;color:#1d4ed8}
+.banner-crit{background:var(--crit-soft);border:1px solid #f3c3c3;color:var(--crit-ink)}
+.remarks-area{width:100%;padding:12px;border:1px solid var(--line-2);border-radius:10px;font-size:14px;min-height:76px;margin-bottom:14px;resize:vertical;font-family:inherit;color:var(--ink)}
+.remarks-area:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
+.actions-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:11px 20px;border:1px solid transparent;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .05s,background .12s;font-family:inherit}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-secondary{background:#fff;color:var(--ink-2);border-color:var(--line-2)}
+.btn-secondary:hover{background:var(--surface-2)}
+.btn-verify{background:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(13,148,136,.4)}
+.btn-verify:hover{background:var(--brand-ink)}
+.btn-reject{background:#fff;color:var(--crit-ink);border-color:#f3c3c3}
+.btn-reject:hover{background:var(--crit-soft)}
+.btn-download{background:var(--blue);color:#fff}
+.btn-download:hover{background:#1d4ed8}
+.btn-deliver{background:var(--violet);color:#fff}
+.btn-deliver:hover{background:#6d28d9}
+.reject-panel{display:none;margin-top:16px;padding:16px;background:var(--crit-soft);border:1px solid #f3c3c3;border-radius:10px}
+.reject-panel.show{display:block}
+.reject-panel h4{color:var(--crit-ink);margin-bottom:10px;font-size:13px}
+.reject-panel select,.reject-panel textarea{width:100%;padding:10px;margin-bottom:10px;border:1px solid #eab8b8;border-radius:8px;font-size:13.5px;font-family:inherit}
+#slToastContainer{position:fixed;top:18px;right:18px;z-index:99999;display:flex;flex-direction:column;gap:10px;max-width:380px;pointer-events:none}
+.sl-toast{padding:13px 16px;border-radius:11px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -8px rgba(16,24,40,.3);animation:slIn .28s cubic-bezier(.2,.8,.2,1);display:flex;align-items:center;gap:10px;pointer-events:auto;border:1px solid}
+.sl-toast.sl-toast-exit{animation:slOut .28s ease-in forwards}
+.sl-toast-success{background:#fff;border-color:#bfe9cd;color:var(--ok-ink)}
+.sl-toast-error,.sl-toast-critical{background:#fff;border-color:#f3c3c3;color:var(--crit-ink)}
+.sl-toast-info{background:#fff;border-color:#cfe0ff;color:#1d4ed8}
+@keyframes slIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slOut{from{transform:translateX(0);opacity:1}to{transform:translateX(120%);opacity:0}}
+.sl-confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:100000;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease-out}
+.sl-confirm-box{background:#fff;border-radius:16px;padding:24px 26px;max-width:420px;width:90%;box-shadow:0 24px 60px -12px rgba(16,24,40,.4);animation:popIn .18s ease-out}
+.sl-confirm-box p{font-size:15px;color:var(--ink-2);margin-bottom:20px;line-height:1.5}
+.sl-confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+.sl-confirm-actions .btn{padding:9px 18px;font-size:13px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+@media (max-width:760px){.wrap{padding:12px}.appbar{padding:12px}.step{min-width:60px}.step-label{font-size:9px}}
+</style>
+</head>
+<body>
+<%
+  var status = report.Status;
+  var order = ['draft', 'completed', 'verified', 'approved', 'delivered'];
+  var idx = order.indexOf(status); // -1 for rejected
+  function stepClass(stepIndex) {
+    if (status === 'rejected') return stepIndex === 0 ? 'active' : '';
+    if (idx > stepIndex) return 'completed';
+    if (idx === stepIndex) return 'active';
+    return '';
+  }
+  function stepMark(stepIndex) { return (status !== 'rejected' && idx > stepIndex) ? '✓' : (stepIndex + 1); }
+%>
+<div class="wrap">
+
+  <div class="appbar">
+    <div class="lead">
+      <a class="back" href="/pathology/view/queues" title="Back to queues">&#8592;</a>
+      <div>
+        <h1>Verification &amp; Approval</h1>
+        <div class="sub"><%= report.DepartmentName || 'Pathology' %><%= (typeof BRAND_NAME !== 'undefined' && BRAND_NAME) ? (' · ' + BRAND_NAME) : '' %></div>
+      </div>
+      <span class="rn"><%= report.ReportNumber %></span>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill status-<%= status %>"><%= status %></span>
+  </div>
+
+  <div class="stepper">
+    <div class="step <%= stepClass(0) %>"><div class="step-circle"><%= stepMark(0) %></div><div class="step-label">Draft</div></div>
+    <div class="step-connector <%= idx >= 1 ? 'completed' : '' %>"></div>
+    <div class="step <%= stepClass(1) %>"><div class="step-circle"><%= stepMark(1) %></div><div class="step-label">Completed</div></div>
+    <div class="step-connector <%= idx >= 2 ? 'completed' : '' %>"></div>
+    <div class="step <%= stepClass(2) %>"><div class="step-circle"><%= stepMark(2) %></div><div class="step-label">Verified</div></div>
+    <div class="step-connector <%= idx >= 3 ? 'completed' : '' %>"></div>
+    <div class="step <%= stepClass(3) %>"><div class="step-circle"><%= stepMark(3) %></div><div class="step-label">Approved</div></div>
+    <div class="step-connector <%= idx >= 4 ? 'completed' : '' %>"></div>
+    <div class="step <%= stepClass(4) %>"><div class="step-circle"><%= stepMark(4) %></div><div class="step-label">Delivered</div></div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2><%= (typeof BRAND_NAME !== 'undefined' && BRAND_NAME) ? BRAND_NAME : 'PATHOLOGY LABORATORY' %></h2>
+      <p><%= report.DepartmentName %> &middot; NABL Accredited</p>
+    </div>
+    <div class="sheet-body">
+      <h3>Department: <%= report.DepartmentName %></h3>
+      <table class="preview-table">
+        <thead><tr><th>Parameter</th><th>Result</th><th>Unit</th><th>Reference Range</th><th>Flag</th></tr></thead>
+        <tbody>
+          <% results.forEach(function(r) {
+               var isCritical = r.Flag && r.Flag.indexOf('critical') !== -1;
+               var isAbnormal = r.Flag && r.Flag !== 'normal';
+               var cellClass = isCritical ? 'critical' : (isAbnormal ? 'abnormal' : 'normal');
+          %>
+            <tr class="<%= isCritical ? 'critical' : (isAbnormal ? 'abnormal' : '') %>">
+              <td><%= r.ParameterName %></td>
+              <td class="<%= cellClass %>"><%= r.FlagSymbol || '' %> <%= r.ResultValue || '-' %></td>
+              <td><%= r.Unit || r.ParamUnit || '' %></td>
+              <td><%= r.ReferenceRangeUsed || 'N/A' %></td>
+              <td class="<%= cellClass %>"><%= r.Flag ? r.Flag.toUpperCase().replace('_',' ') : 'PENDING' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <% if (results.some(function(r) { return r.Flag && r.Flag.indexOf('critical') !== -1; })) { %>
+        <div class="alert alert-crit"><strong>&#9888; Critical Alert:</strong>&nbsp;One or more results are in the critical range. Immediate clinical correlation required.</div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>&#128274; Actions</h3>
+
+    <% if (status === 'approved' || status === 'delivered') { %>
+      <div class="banner banner-ok"><span>&#10003;</span><div>This report is <strong><%= status %></strong>. You can now download the PDF<%= status === 'approved' ? ' and mark it delivered to the patient' : '' %>.</div></div>
+    <% } else if (status === 'rejected') { %>
+      <div class="banner banner-crit"><span>&#10007;</span><div>This report was rejected<%= report.RejectionReason ? (': ' + report.RejectionReason) : '' %>. It must return to result entry.</div></div>
+    <% } else if (status === 'draft') { %>
+      <div class="banner banner-info"><span>&#8505;</span><div>This report is still in draft. Complete result entry first.</div></div>
+    <% } else if (status === 'completed' || status === 'verified') { %>
+      <div class="banner banner-info"><span>&#8505;</span><div>Review the values above, then <%= status === 'completed' ? 'verify' : 'approve' %>. After approval the signed PDF can be downloaded and delivered.</div></div>
+    <% } %>
+
+    <% if (status === 'completed' || status === 'verified') { %>
+      <textarea class="remarks-area" id="remarksArea" placeholder="Add remarks (optional)..."><%= report.Remarks || '' %></textarea>
+    <% } %>
+
+    <div class="actions-row">
+      <% if (status === 'draft') { %>
+        <button class="btn btn-secondary" onclick="window.location.href='/pathology/view/entry/<%= report.Id %>'">&#9999; Go to Result Entry</button>
+
+      <% } else if (status === 'completed') { %>
+        <button class="btn btn-verify" id="btnAction" onclick="doTransition('verify', 'Verify this report? It will move to APPROVED stage next.')">&#10003; Verify Report</button>
+        <button class="btn btn-reject" onclick="showReject()">&#10007; Reject</button>
+
+      <% } else if (status === 'verified') { %>
+        <button class="btn btn-verify" id="btnAction" onclick="doTransition('approve', 'Approve this report? After approval the PDF can be downloaded and delivered.')">&#10003; Approve Report</button>
+        <button class="btn btn-reject" onclick="showReject()">&#10007; Reject</button>
+
+      <% } else if (status === 'approved') { %>
+        <button class="btn btn-download" onclick="downloadPdf()">&#11015; Download Report (PDF)</button>
+        <button class="btn btn-deliver" id="btnAction" onclick="doTransition('deliver', 'Mark this report as DELIVERED to the patient?')">&#128233; Mark Delivered</button>
+
+      <% } else if (status === 'delivered') { %>
+        <button class="btn btn-download" onclick="downloadPdf()">&#11015; Download Report (PDF)</button>
+
+      <% } else if (status === 'rejected') { %>
+        <button class="btn btn-secondary" onclick="window.location.href='/pathology/view/entry/<%= report.Id %>'">&#9999; Back to Result Entry</button>
+      <% } %>
+    </div>
+
+    <div class="reject-panel" id="rejectPanel">
+      <h4>Rejection Reason</h4>
+      <select id="rejectReason">
+        <option value="">Select reason...</option>
+        <option value="incorrect_sample">Incorrect sample identification</option>
+        <option value="discrepancy">Result discrepancy</option>
+        <option value="missing">Missing critical parameter</option>
+        <option value="qc_failure">Quality control failure</option>
+        <option value="other">Other</option>
+      </select>
+      <textarea id="rejectDetail" rows="3" placeholder="Detailed reason..."></textarea>
+      <button class="btn btn-reject" onclick="rejectReport()">Confirm Rejection</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var reportId = '<%= report.Id %>';
+
+function getToastContainer() {
+  var c = document.getElementById('slToastContainer');
+  if (!c) { c = document.createElement('div'); c.id = 'slToastContainer'; document.body.appendChild(c); }
+  else if (c.parentNode !== document.body) { document.body.appendChild(c); }
+  return c;
+}
+
+window.showToast = function(message, type) {
+  type = type || 'info';
+  var container = getToastContainer();
+  var toast = document.createElement('div');
+  toast.className = 'sl-toast sl-toast-' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.classList.add('sl-toast-exit');
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+  }, 4000);
+};
+
+function showConfirmToast(message, confirmLabel, onConfirm) {
+  var overlay = document.createElement('div');
+  overlay.className = 'sl-confirm-overlay';
+  overlay.innerHTML = '<div class="sl-confirm-box">' +
+    '<p></p>' +
+    '<div class="sl-confirm-actions">' +
+      '<button class="btn btn-secondary" data-act="cancel">Cancel</button>' +
+      '<button class="btn btn-verify" data-act="ok"></button>' +
+    '</div></div>';
+  overlay.querySelector('p').textContent = message;
+  overlay.querySelector('[data-act="ok"]').textContent = confirmLabel || 'Confirm';
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-act="cancel"]').onclick = function() { document.body.removeChild(overlay); };
+  overlay.querySelector('[data-act="ok"]').onclick = function() {
+    document.body.removeChild(overlay);
+    if (typeof onConfirm === 'function') onConfirm();
+  };
+  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
+}
+
+function parseJsonSafe(response) {
+  return response.text().then(function(text) {
+    try { return JSON.parse(text); }
+    catch (e) {
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, message: 'Session expired or not authorized. Please log in again.' };
+      }
+      return { success: false, message: 'Server returned an unexpected response (HTTP ' + response.status + ')' };
+    }
+  });
+}
+
+/*
+ * Single transition handler for verify / approve / deliver.
+ * On success the page reloads -- EJS then renders the NEXT stage's buttons,
+ * so the operator walks: Verify -> Approve -> Download/Deliver on one screen.
+ */
+// DOUBLE-SUBMIT GUARD: one workflow action in flight at a time. The server is
+// already race-safe (atomic status transition), so a duplicate click can never
+// create a second audit/verification row; this just keeps the UI honest.
+var __slBusy = false;
+function slLockButtons(on) {
+  __slBusy = on;
+  document.querySelectorAll('.btn-verify, .btn-reject, .btn-deliver').forEach(function(b) { b.disabled = on; });
+}
+
+function doTransition(action, confirmMsg) {
+  if (__slBusy) return;
+  showConfirmToast(confirmMsg, action.charAt(0).toUpperCase() + action.slice(1), function() {
+    if (__slBusy) return;
+    slLockButtons(true);
+    var btn = document.getElementById('btnAction');
+    var remarksEl = document.getElementById('remarksArea');
+    var body = action === 'deliver'
+      ? { DeliveryMethod: 'print' }
+      : { Remarks: remarksEl ? remarksEl.value : '' };
+
+    fetch('/pathology/reports/' + reportId + '/' + action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body)
+    })
+    .then(parseJsonSafe)
+    .then(function(data) {
+      if (data.success) {
+        var done = (data.data && data.data.to) ? data.data.to : (action + 'ed');
+        var note = (data.data && data.data.alreadyDone) ? ('Already ' + done) : ('✓ Report ' + done);
+        showToast(note, 'success');
+        setTimeout(function() { location.reload(); }, 800);   // stay locked, navigating
+      } else {
+        slLockButtons(false);
+        showToast(data.message || (action + ' failed'), 'error');
+      }
+    })
+    .catch(function(e) {
+      slLockButtons(false);
+      showToast(action + ' failed: ' + e.message, 'error');
+    });
+  });
+}
+
+function showReject() { document.getElementById('rejectPanel').classList.toggle('show'); }
+
+function rejectReport() {
+  var reason = document.getElementById('rejectReason').value;
+  var detail = document.getElementById('rejectDetail').value;
+  if (!reason) return showToast('Please select a rejection reason', 'error');
+  if (__slBusy) return;
+  showConfirmToast('Reject this report? It will return to DRAFT for re-entry.', 'Reject', function() {
+    if (__slBusy) return;
+    slLockButtons(true);
+    fetch('/pathology/reports/' + reportId + '/reject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ Reason: reason + (detail ? (': ' + detail) : '') })
+    })
+    .then(parseJsonSafe)
+    .then(function(data) {
+      if (data.success) {
+        showToast('Report rejected', 'success');
+        setTimeout(function() { location.reload(); }, 800);   // stay locked, navigating
+      } else {
+        slLockButtons(false);
+        showToast(data.message || 'Reject failed', 'error');
+      }
+    })
+    .catch(function(e) { slLockButtons(false); showToast('Reject failed: ' + e.message, 'error'); });
+  });
+}
+
+/* PDF download is only offered when status is approved/delivered --
+   matching the generatePDF guard on the server. */
+function downloadPdf() {
+  window.open('/pathology/reports/' + reportId + '/pdf', '_blank');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  getToastContainer();
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('toast')) showToast(params.get('toast'), params.get('type') || 'info');
+});
+</script>
+</body>
+</html>

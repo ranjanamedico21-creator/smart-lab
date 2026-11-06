@@ -1,0 +1,541 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --ink-muted: #6b7280;
+    --ink-light: #9ca3af;
+    --primary: #0f4c81;
+    --primary-light: #1a6bb5;
+    --accent: #c8973a;
+    --accent-light: #f0c97a;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fc;
+    --surface-tint: #eef3fa;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --success: #10b981;
+    --radius: 3px;
+    --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 8px 32px rgba(15,76,129,.08);
+    --shadow-hover: 0 2px 8px rgba(0,0,0,.08), 0 16px 48px rgba(15,76,129,.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f0f4f8;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  /* ── Wrapper ── */
+  .inv-wrap {
+    margin: 0 auto;
+  }
+
+  /* ── Card ── */
+  .inv-card {
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: box-shadow .3s;
+  }
+  .inv-card:hover { box-shadow: var(--shadow-hover); }
+
+  /* ── HEADER BAND ── */
+  .inv-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0a3560 100%);
+    padding: 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .inv-header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+  }
+  .inv-header::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 40%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(200,151,58,.06);
+  }
+  .inv-header-grid {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+  .inv-company-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.01em;
+    margin-bottom: .25rem;
+  }
+  .inv-company-meta {
+    font-size: .8rem;
+    color: rgba(255,255,255,.72);
+    line-height: 1.6;
+  }
+  .inv-logo img {
+    max-height: 70px;
+    filter: brightness(0) invert(1) opacity(.9);
+  }
+  .inv-dl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .55rem 1.1rem;
+    border: 1.5px solid rgba(255,255,255,.5);
+    border-radius: 6px;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 500;
+    letter-spacing: .02em;
+    text-decoration: none;
+    transition: background .2s, border-color .2s;
+    white-space: nowrap;
+  }
+  .inv-dl-btn:hover {
+    background: rgba(255,255,255,.15);
+    border-color: #fff;
+    color: #fff;
+  }
+  .inv-dl-btn svg { flex-shrink: 0; }
+
+  /* ── GST BAND ── */
+  .inv-gst-band {
+    background: var(--surface-tint);
+    border-bottom: 1px solid var(--border);
+    padding: .6rem 2.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: center;
+  }
+  .inv-gst-band span {
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .inv-gst-band span strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .inv-gst-band .center-label {
+    font-family: 'Playfair Display', serif;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  /* ── BODY ── */
+  .inv-body { padding: 2rem 2.5rem; }
+
+  /* ── Three-column info grid ── */
+  .inv-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .inv-info-col {
+    padding: 1.25rem 1.5rem;
+    border-right: 1px solid var(--border);
+  }
+  .inv-info-col:last-child { border-right: none; }
+  .inv-info-col-title {
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .85rem;
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--accent-light);
+    display: inline-block;
+  }
+  .inv-info-row {
+    display: flex;
+    gap: .35rem;
+    margin-bottom: .35rem;
+    font-size: .82rem;
+    line-height: 1.5;
+  }
+  .inv-info-row .lbl {
+    color: var(--ink-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+    min-width: 70px;
+  }
+  .inv-info-row .val {
+    color: var(--ink);
+    font-weight: 400;
+    text-transform: capitalize;
+  }
+
+  /* ── DIVIDER ── */
+  .inv-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+    margin: 1.75rem 0;
+  }
+
+  /* ── TABLE ── */
+  .inv-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .inv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .8rem;
+  }
+  .inv-table thead tr {
+    background: var(--primary);
+    color: #fff;
+  }
+  .inv-table thead th {
+    padding: .75rem .85rem;
+    font-weight: 500;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    font-size: .7rem;
+    white-space: nowrap;
+    border: none;
+  }
+  .inv-table thead th:first-child { padding-left: 1.25rem; }
+  .inv-table thead th:last-child { padding-right: 1.25rem; text-align: right; }
+  .inv-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .inv-table tbody tr:last-child { border-bottom: none; }
+  .inv-table tbody tr:nth-child(even) { background: var(--surface-alt); }
+  .inv-table tbody tr:hover { background: var(--surface-tint); }
+  .inv-table td {
+    padding: .75rem .85rem;
+    color: var(--ink);
+    vertical-align: middle;
+  }
+  .inv-table td:first-child { padding-left: 1.25rem; color: var(--ink-muted); font-weight: 500; }
+  .inv-table td:last-child { padding-right: 1.25rem; text-align: right; font-weight: 600; color: var(--primary); }
+  .inv-table .product-name { font-weight: 500; }
+  .inv-table .tax-chip {
+    display: inline-block;
+    background: var(--surface-tint);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: .1rem .4rem;
+    font-size: .72rem;
+    color: var(--ink-muted);
+  }
+
+  /* ── BOTTOM GRID ── */
+  .inv-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Bank details */
+  .inv-section-title {
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .85rem;
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--accent-light);
+    display: inline-block;
+  }
+  .inv-bank-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: .82rem;
+    padding: .3rem 0;
+    border-bottom: 1px dashed var(--border);
+    color: var(--ink);
+  }
+  .inv-bank-row:last-child { border-bottom: none; }
+  .inv-bank-row .lbl { color: var(--ink-muted); }
+
+  /* Summary box */
+  .inv-summary-box {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .inv-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .6rem 1.25rem;
+    font-size: .83rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .inv-summary-row:last-child {
+    border-bottom: none;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: .9rem;
+    padding: .8rem 1.25rem;
+  }
+  .inv-summary-row .lbl { color: var(--ink-muted); }
+  .inv-summary-row:last-child .lbl { color: rgba(255,255,255,.8); }
+  .inv-summary-row .val { font-weight: 500; }
+  .inv-total-tax-row {
+    background: var(--surface-tint);
+    border-bottom: 2px solid var(--border-strong) !important;
+  }
+  .inv-total-tax-row .lbl { color: var(--ink); font-weight: 500; }
+
+  /* ── TERMS + SIGNATURE ── */
+  .inv-footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .inv-terms-list {
+    list-style: none;
+    font-size: .8rem;
+    color: var(--ink-muted);
+    line-height: 1.8;
+  }
+  .inv-terms-list li::before {
+    content: '—';
+    margin-right: .5rem;
+    color: var(--border-strong);
+  }
+  .inv-sig-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: center;
+  }
+  .inv-sig-line {
+    width: 160px;
+    height: 1px;
+    background: var(--border-strong);
+    margin-bottom: .5rem;
+  }
+  .inv-sig-label {
+    font-size: .75rem;
+    color: var(--ink-muted);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  /* ── Messages partial wrapper ── */
+  .inv-messages { padding: 1rem 2.5rem 0; }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .inv-card { box-shadow: none; border-radius: 0; }
+    .inv-dl-btn { display: none; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 720px) {
+    .inv-header-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .inv-gst-band { grid-template-columns: 1fr; gap: .25rem; padding: .75rem 1.25rem; }
+    .inv-body { padding: 1.25rem; }
+    .inv-info-grid, .inv-bottom-grid, .inv-footer-grid { grid-template-columns: 1fr; }
+    .inv-info-col { border-right: none; border-bottom: 1px solid var(--border); }
+    .inv-info-col:last-child { border-bottom: none; }
+  }
+</style>
+
+<div class="inv-wrap">
+  <div class="inv-card">
+
+    <%- include ("./partials/messages"); %>
+
+    <!-- ── HEADER ── -->
+    <div class="inv-header">
+      <div class="inv-header-grid">
+        <div>
+          <div class="inv-company-name"><%= companyDetails.coreCompany %></div>
+          <div class="inv-company-meta">
+            <%= companyDetails.coreCompanyAddress %><br>
+            <%= companyDetails.coreCompanyEmail %> &nbsp;·&nbsp; <%= companyDetails.coreCompanyPhoneNumber %>
+          </div>
+        </div>
+        <div class="inv-logo">
+          <img src="/RanjanaImaging.PNG" alt="Company Logo">
+        </div>
+        <div>
+          <a href="/billing/downloadSales/<%= saleId %>/<%= customerDetails.Id %>" class="inv-dl-btn" id="downloadPdf">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GST BAND ── -->
+    <div class="inv-gst-band">
+      <span><strong>GSTIN:</strong> <%= companyDetails.coreCompanyGstNo %></span>
+      <span class="center-label">Tax Invoice</span>
+      <span>Original for Recipient</span>
+    </div>
+
+    <!-- ── BODY ── -->
+    <div class="inv-body">
+
+      <!-- Info Columns -->
+      <div class="inv-info-grid">
+        <div class="inv-info-col">
+          <div class="inv-info-col-title">Billing Address</div>
+          <div class="inv-info-row"><span class="lbl">Name</span><span class="val"><%= customerDetails.CustomerName %></span></div>
+          <div class="inv-info-row"><span class="lbl">Address</span><span class="val"><%= customerDetails.BillingAddress %></span></div>
+          <div class="inv-info-row"><span class="lbl">District</span><span class="val"><%= customerDetails.BillingDistrict %></span></div>
+          <div class="inv-info-row"><span class="lbl">State</span><span class="val"><%= customerDetails.BillingState %></span></div>
+          <div class="inv-info-row"><span class="lbl">Pincode</span><span class="val"><%= customerDetails.BillingPincode %></span></div>
+          <div class="inv-info-row"><span class="lbl">Phone</span><span class="val"><%= customerDetails.MobileNo %></span></div>
+          <div class="inv-info-row"><span class="lbl">GSTIN</span><span class="val"><%= customerDetails.GstNo %></span></div>
+        </div>
+        <div class="inv-info-col">
+          <div class="inv-info-col-title">Supply Address</div>
+          <div class="inv-info-row"><span class="lbl">Name</span><span class="val"><%= customerDetails.CustomerName %></span></div>
+          <div class="inv-info-row"><span class="lbl">Address</span><span class="val"><%= customerDetails.SupplyAddress %></span></div>
+          <div class="inv-info-row"><span class="lbl">District</span><span class="val"><%= customerDetails.SupplyDistrict %></span></div>
+          <div class="inv-info-row"><span class="lbl">State</span><span class="val"><%= customerDetails.SupplyState %></span></div>
+          <div class="inv-info-row"><span class="lbl">Pincode</span><span class="val"><%= customerDetails.SupplyPincode %></span></div>
+          <div class="inv-info-row"><span class="lbl">Phone</span><span class="val"><%= customerDetails.MobileNo %></span></div>
+          <div class="inv-info-row"><span class="lbl">GSTIN</span><span class="val"><%= customerDetails.GstNo %></span></div>
+        </div>
+        <div class="inv-info-col">
+          <div class="inv-info-col-title">Invoice Details</div>
+          <div class="inv-info-row"><span class="lbl">Invoice No.</span><span class="val"><%= totalSaleDetails[0].InvoiceId %></span></div>
+          <div class="inv-info-row"><span class="lbl">Date</span><span class="val"><%= totalSaleDetails[0].CreatedAt %></span></div>
+          <div class="inv-info-row"><span class="lbl">Challan No.</span><span class="val">—</span></div>
+          <div class="inv-info-row"><span class="lbl">Delivery</span><span class="val">—</span></div>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="inv-table-wrap">
+        <table class="inv-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product / Service</th>
+              <th>HSN / SAC</th>
+              <th>Batch No.</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Taxable Value</th>
+              <th>SGST %</th>
+              <th>SGST Amt</th>
+              <th>CGST %</th>
+              <th>CGST Amt</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% let i = 1; salesData.forEach(function(sales) { %>
+              <tr>
+                <td><%= i++ %></td>
+                <td class="product-name"><%= sales.ProductName %></td>
+                <td><%= sales.Hsn %></td>
+                <td><%= sales.BatchNumber %></td>
+                <td><%= sales.QuantitySold %></td>
+                <td>₹<%= sales.SalePrice %></td>
+                <td>₹<%= sales.TotalValue %></td>
+                <td><span class="tax-chip"><%= sales.Sgst %>%</span></td>
+                <td>₹<%= sales.SgstAmount %></td>
+                <td><span class="tax-chip"><%= sales.Cgst %>%</span></td>
+                <td>₹<%= sales.CgstAmount %></td>
+                <td>₹<%= sales.TotalValueWithTax %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bank + Summary -->
+      <div class="inv-bottom-grid">
+        <div>
+          <div class="inv-section-title">Bank Details</div>
+          <div class="inv-bank-row"><span class="lbl">Account Name</span><span><%= companyDetails.coreCompany %></span></div>
+          <div class="inv-bank-row"><span class="lbl">Bank</span><span><%= companyDetails.coreCompanyBankName %></span></div>
+          <div class="inv-bank-row"><span class="lbl">Branch</span><span><%= companyDetails.coreCompanyBranchName %></span></div>
+          <div class="inv-bank-row"><span class="lbl">Account No.</span><span><%= companyDetails.coreCompanyAccountNo %></span></div>
+          <div class="inv-bank-row"><span class="lbl">IFSC Code</span><span><%= companyDetails.coreCompanyIFSCCode %></span></div>
+        </div>
+        <div>
+          <div class="inv-section-title">Summary</div>
+          <div class="inv-summary-box">
+            <div class="inv-summary-row">
+              <span class="lbl">Taxable Amount</span>
+              <span class="val">₹<%= totalSaleDetails[0].TotalValue %></span>
+            </div>
+            <div class="inv-summary-row">
+              <span class="lbl">Add SGST</span>
+              <span class="val">₹<%= totalSaleDetails[0].TotalSgstAmount %></span>
+            </div>
+            <div class="inv-summary-row">
+              <span class="lbl">Add CGST</span>
+              <span class="val">₹<%= totalSaleDetails[0].TotalCgstAmount %></span>
+            </div>
+            <div class="inv-summary-row inv-total-tax-row">
+              <span class="lbl">Total Tax</span>
+              <span class="val">₹<%= Number(totalSaleDetails[0].TotalCgstAmount) + Number(totalSaleDetails[0].TotalSgstAmount) %></span>
+            </div>
+            <div class="inv-summary-row">
+              <span class="lbl">Total Amount After Tax</span>
+              <span class="val">₹<%= totalSaleDetails[0].TotalValueWithTax %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terms + Signature -->
+      <div class="inv-footer-grid">
+        <div>
+          <div class="inv-section-title">Terms &amp; Conditions</div>
+          <ul class="inv-terms-list">
+            <li>Subject to Patna Jurisdiction.</li>
+            <li>Our responsibility ceases as soon as goods leave our premises.</li>
+            <li>Goods once sold will not be taken back.</li>
+            <li>Delivery ex-premises.</li>
+          </ul>
+        </div>
+        <div class="inv-sig-box">
+          <div class="inv-sig-line"></div>
+          <div class="inv-sig-label">Authorized Signatory &nbsp;·&nbsp; <%= companyDetails.coreCompany %></div>
+        </div>
+      </div>
+
+    </div><!-- /inv-body -->
+  </div><!-- /inv-card -->
+</div>

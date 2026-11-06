@@ -1,0 +1,690 @@
+<style>
+  /* ── Tom Select scoped to return form ── */
+  #returnForm .ts-wrapper { padding:0 !important; }
+  #returnForm .ts-wrapper.single .ts-control {
+      min-height:34px !important;
+      height:34px !important;
+      border:1px solid #dee2e6 !important;
+      border-radius:6px !important;
+      padding:0 10px !important;
+      font-size:13px !important;
+      font-family:inherit !important;
+      background:#fff !important;
+      box-shadow:none !important;
+      display:flex !important;
+      align-items:center !important;
+      box-sizing:border-box !important;
+      overflow:visible !important;
+  }
+  #returnForm .ts-wrapper.single:focus-within .ts-control {
+      border-color:#86b7fe !important;
+      box-shadow:0 0 0 3px rgba(13,110,253,.15) !important;
+  }
+  /* Dropdown appended to body — no scoping needed */
+  .ts-dropdown {
+      font-size:13px !important;
+      z-index:99999 !important;
+  }
+  
+  /* ── Step bar ── */
+  .return-step-bar {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      margin-bottom: 1.5rem;
+  }
+  .return-step {
+      flex: 1;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: #6b7280;
+      background: #F7F8FA;
+      transition: all 0.2s;
+      border-right: 0.5px solid rgba(0,0,0,0.12);
+  }
+  .return-step:last-child { border-right: none; }
+  .return-step .step-icon { display: block; font-size: 15px; margin-bottom: 2px; }
+  .return-step.is-done   { background: #E6F1FB; color: #0C447C; }
+  .return-step.is-active { background: #185FA5; color: #fff; }
+  
+  /* ── Section labels ── */
+  .return-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #6b7280;
+      margin-bottom: 8px;
+  }
+  
+  /* ── Alert box ── */
+  .return-alert {
+      padding: 8px 12px; border-radius: 8px;
+      font-size: 12px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px; border: 0.5px solid;
+  }
+  .return-alert.is-error   { background: #FCEBEB; border-color: #F7C1C1; color: #A32D2D; }
+  .return-alert.is-info    { background: #E6F1FB; border-color: #B5D4F4; color: #0C447C; }
+  .return-alert.is-success { background: #EAF3DE; border-color: #C0DD97; color: #3B6D11; }
+  
+  /* ── Divider ── */
+  .return-divider { height: 0.5px; background: rgba(0,0,0,0.12); margin: 1.25rem 0; }
+  
+  /* ── Stock info pill ── */
+  .return-stock-info {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 4px 10px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      min-height: 25px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
+  .return-stock-info.is-visible  { visibility: visible; opacity: 1; }
+  .return-stock-info.is-low      { color: #854F0B; background: #FAEEDA; border-color: #FAC775; }
+  .return-stock-info.is-expired  { color: #A32D2D; background: #FCEBEB; border-color: #F7C1C1; }
+  
+  /* ── Summary box ── */
+  .return-summary-box {
+      background: #F7F8FA;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 14px 16px;
+  }
+  .return-summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; font-size: 13px;
+  }
+  .return-summary-row.is-total {
+      font-weight: 600; font-size: 15px;
+      padding-top: 8px; margin-top: 4px;
+      border-top: 0.5px solid rgba(0,0,0,0.12);
+  }
+  
+  /* ── Empty state ── */
+  .return-empty-state {
+      text-align: center; padding: 2.5rem 1rem;
+      color: #6b7280; font-size: 13px;
+      border: 2px dashed rgba(0,0,0,0.08);
+      border-radius: 12px;
+      margin: 1rem 0;
+  }
+  .return-empty-state .return-empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+  
+  /* ── Badge count ── */
+  .return-badge-count {
+      background: #185FA5; color: #fff;
+      font-size: 10px; border-radius: 20px; padding: 1px 6px;
+      margin-left: 4px;
+      font-family: 'JetBrains Mono', monospace; vertical-align: middle;
+  }
+  
+  /* compact table inputs */
+  #productTable td { padding:6px 8px !important; vertical-align:middle !important; }
+  #productTable .form-control {
+      height:34px;
+      font-size:13px;
+      padding:4px 10px;
+      border-radius:6px;
+  }
+  
+  /* ── Remove button ── */
+  .return-btn-remove {
+      background: none;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 6px;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: #6b7280;
+      transition: all 0.15s;
+      padding: 0; line-height: 1;
+  }
+  .return-btn-remove:hover { background: #FCEBEB; border-color: #F7C1C1; color: #A32D2D; }
+  
+  /* ── Add row button ── */
+  .return-btn-add {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      background: #EAF3DE;
+      border: 0.5px solid #C0DD97;
+      color: #3B6D11;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px; font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+  }
+  .return-btn-add:hover { background: #C0DD97; color: #173404; }
+  
+  /* ── Row number badge ── */
+  .return-row-num {
+      font-size: 11px;
+      font-weight: 600;
+      color: #185FA5;
+      font-family: 'JetBrains Mono', monospace;
+      background: #E6F1FB;
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 8px;
+  }
+  
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+      #productTable { display: block; overflow-x: auto; }
+  }
+  </style>
+    
+  <section class="py-3">
+    <div class="container-fluid">
+      <div class="card border-0 shadow rounded-4">
+  
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0 fw-bold">
+            <i class="bi bi-arrow-return-right me-2"></i>Sales Return
+          </h4>
+        </div>
+  
+        <div class="card-body p-4">
+  
+          <!-- Step Progress Bar -->
+          <div class="return-step-bar">
+            <div class="return-step is-active" id="returnStep1">
+              <span class="step-icon">①</span>Customer &amp; Details
+            </div>
+            <div class="return-step" id="returnStep2">
+              <span class="step-icon">②</span>Add Products
+            </div>
+            <div class="return-step" id="returnStep3">
+              <span class="step-icon">③</span>Review &amp; Submit
+            </div>
+          </div>
+  
+          <form action="/billing/salesreturn" method="POST" id="returnForm" class="needs-validation" novalidate>
+  
+            <!-- Alert Box -->
+            <div id="returnAlertBox" class="mb-3"></div>
+  
+            <!-- ── SECTION 1: Customer + Date ── -->
+            <div class="return-section-label">Return Details</div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label for="returnCustomer" class="form-label fw-semibold text-dark" style="font-size:13px">
+                  Customer <span class="text-danger">*</span>
+                </label>
+                <select name="Customer" id="returnCustomer" class="form-select" required>
+                  <option value="">Select Customer</option>
+                  <% customers.forEach(function(c){ %>
+                  <option value="<%= c.Id %>"><%= c.CustomerName %></option>
+                  <% }) %>
+                </select>
+                <div class="invalid-feedback">Please select a customer.</div>
+              </div>
+  
+              <div class="col-md-6">
+                <label for="returnDate" class="form-label fw-semibold text-dark" style="font-size:13px">
+                  Return Date <span class="text-danger">*</span>
+                </label>
+                <input type="text" id="returnDate" name="ReturnDate" class="form-control" placeholder="Select date…" required>
+                <div class="invalid-feedback">Please select a return date.</div>
+              </div>
+            </div>
+  
+            <div class="return-divider"></div>
+  
+            <!-- ── SECTION 2: Product Table ── -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <span class="return-section-label" style="display:inline">Products to Return</span>
+                <span class="return-badge-count" id="returnItemCount">0</span>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="button" id="addRow" class="return-btn-add">
+                  <i class="bi bi-plus-circle"></i> Add Product
+                </button>
+              </div>
+            </div>
+  
+            <!-- Product Table -->
+            <div style="overflow:visible">
+              <table class="table table-bordered align-middle mb-0" id="productTable"
+                     style="table-layout:fixed;width:100%">
+                <colgroup>
+                  <col style="width:30%">
+                  <col style="width:16%">
+                  <col style="width:12%">
+                  <col style="width:14%">
+                  <col style="width:22%">
+                  <col style="width:6%">
+                </colgroup>
+                <thead class="table-primary">
+                  <tr>
+                    <th style="font-size:12px">Product</th>
+                    <th style="font-size:12px">Batch No <span class="text-danger">*</span></th>
+                    <th style="font-size:12px">Return Qty</th>
+                    <th style="font-size:12px">Condition</th>
+                    <th style="font-size:12px">Reason</th>
+                    <th style="font-size:12px" class="text-center">Del</th>
+                  </tr>
+                </thead>
+                <tbody id="returnTbody">
+                  <!-- rows added by JS -->
+                </tbody>
+              </table>
+            </div>
+  
+            <!-- Empty state -->
+            <div class="return-empty-state" id="returnEmptyState">
+              <span class="return-empty-icon">📦</span>
+              Click "Add Product" to start adding products to this return
+            </div>
+  
+            <div class="return-divider"></div>
+  
+            <!-- ── SECTION 3: Summary ── -->
+            <div id="returnSummarySection" style="display:none">
+              <div class="return-section-label">Return Summary</div>
+              <div class="return-summary-box">
+                <div class="return-summary-row">
+                  <span class="text-muted">Products</span>
+                  <span id="returnSumItems">0</span>
+                </div>
+                <div class="return-summary-row">
+                  <span class="text-muted">Total Return Qty</span>
+                  <span id="returnSumQty">0</span>
+                </div>
+                <div class="return-summary-row">
+                  <span class="text-muted">Good Items</span>
+                  <span id="returnSumGood">0</span>
+                </div>
+                <div class="return-summary-row">
+                  <span class="text-muted">Defective/Expired</span>
+                  <span id="returnSumDefective">0</span>
+                </div>
+              </div>
+            </div>
+  
+            <div class="row mt-4">
+              <div class="col text-center">
+                <button type="submit" class="btn btn-primary px-5" id="returnSubmitBtn">
+                  <i class="bi bi-arrow-repeat me-2"></i>Submit Return
+                </button>
+              </div>
+            </div>
+  
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <%# Server-side data for JS %>
+  <script>
+  // ── Product data (all products, no filter) ──
+  var RETURN_PRODUCTS = [
+    <% products.forEach(function(p, idx){ %>
+    {
+      id: "<%= p.Id %>",
+      name: "<%= (p.ProductName || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
+      supplierId: "<%= p.SupplierId %>",
+      expiryDate: "<%= p.ExpiryDate || '' %>"
+    }<%= idx < products.length - 1 ? ',' : '' %>
+    <% }) %>
+  ];
+  
+  var RETURN_CONDITIONS = [
+    { value:'Good',             label:'Good' },
+    { value:'Defective',        label:'Defective' },
+    { value:'Expired',          label:'Expired' },
+    { value:'Defective_Expired',label:'Defective & Expired' },
+    { value:'Damaged',          label:'Damaged' }
+  ];
+  
+  // ── ReturnManager ─────────────────────────────────────────────────
+  class ReturnManager {
+    constructor() {
+      this.rowCounter = 0;
+      this.els = {};
+    }
+  
+    init() {
+      this._cacheElements();
+      this._bindEvents();
+      this._initDatepicker();
+      this._updateSteps();
+    }
+  
+    _cacheElements() {
+      const g = id => document.getElementById(id);
+      this.els = {
+        form:           g('returnForm'),
+        alertBox:       g('returnAlertBox'),
+        customerId:     g('returnCustomer'),
+        returnDate:     g('returnDate'),
+        addBtn:         g('addRow'),
+        tbody:          g('returnTbody'),
+        emptyState:     g('returnEmptyState'),
+        itemCount:      g('returnItemCount'),
+        summarySection: g('returnSummarySection'),
+        sumItems:       g('returnSumItems'),
+        sumQty:         g('returnSumQty'),
+        sumGood:        g('returnSumGood'),
+        sumDefective:   g('returnSumDefective'),
+        step1:          g('returnStep1'),
+        step2:          g('returnStep2'),
+        step3:          g('returnStep3'),
+      };
+    }
+  
+    _bindEvents() {
+      this.els.addBtn.addEventListener('click', () => this.addRow());
+  
+      // Remove row delegation
+      this.els.tbody.addEventListener('click', e => {
+        const btn = e.target.closest('.removeRow');
+        if (btn) this._removeRow(btn.closest('tr'));
+      });
+  
+      // Input events for return qty
+      this.els.tbody.addEventListener('input', e => {
+        if (e.target.matches('[data-role="return-qty"]')) {
+          const row = e.target.closest('tr');
+          this._onQtyInput(row);
+        }
+      });
+  
+      this.els.tbody.addEventListener('change', e => {
+        if (e.target.matches('[data-role="condition-select"]')) {
+          this._updateSummary();
+        }
+      });
+  
+      // Customer change updates steps
+      this.els.customerId.addEventListener('change', () => this._updateSteps());
+  
+      this.els.form.addEventListener('submit', e => this._onSubmit(e));
+    }
+  
+    _initDatepicker() {
+      flatpickr(this.els.returnDate, {
+        dateFormat: 'Y-m-d',
+        defaultDate: 'today',
+        allowInput: true,
+        maxDate: 'today',
+      });
+    }
+  
+    /* ── Build product options (all products, no filter) ── */
+    _buildProductOptions() {
+      let html = '<option value="">Select Product</option>';
+      RETURN_PRODUCTS.forEach(p => {
+        const isExpired = p.expiryDate && new Date(p.expiryDate) < new Date();
+        const tag = isExpired ? ' [EXPIRED]' : '';
+        html += `<option value="${p.id}" data-expiry="${p.expiryDate}" data-expired="${isExpired}">${p.name}${tag}</option>`;
+      });
+      return html;
+    }
+  
+    /* ── Add row ── */
+    addRow() {
+      if (this.els.emptyState) {
+        this.els.emptyState.style.display = 'none';
+      }
+  
+      const id = this.rowCounter++;
+      const row = this._buildRow(id);
+      this.els.tbody.appendChild(row);
+  
+      // Init Tom Select
+      const productSel = row.querySelector('[data-role="product-select"]');
+      TomSelectManager.init(productSel, {
+        onChange: (value) => this._onProductChange(row, value)
+      });
+  
+      const conditionSel = row.querySelector('[data-role="condition-select"]');
+      TomSelectManager.init(conditionSel);
+  
+      this._updateItemCount();
+      this._updateSummary();
+      this._updateSteps();
+    }
+  
+    _buildRow(id) {
+      const tr = document.createElement('tr');
+      tr.dataset.rowId = id;
+  
+      tr.innerHTML = `
+        <td style="overflow:visible">
+          <div class="return-row-num">#${id + 1}</div>
+          <select name="Product[]" class="form-select" data-role="product-select" data-row-id="${id}" required>
+            ${this._buildProductOptions()}
+          </select>
+          <div class="invalid-feedback">Select a product.</div>
+          <div class="return-stock-info" id="returnStockInfo_${id}"></div>
+        </td>
+        <td>
+          <input type="text" name="BatchNumber[]" class="form-control" placeholder="Enter batch no" data-role="batch-input" data-row-id="${id}" required>
+          <div class="invalid-feedback">Enter batch number.</div>
+        </td>
+        <td>
+          <input type="number" name="Quantity[]" class="form-control" min="1" placeholder="0" data-role="return-qty" data-row-id="${id}" required>
+          <div class="invalid-feedback">Min 1.</div>
+        </td>
+        <td style="overflow:visible">
+          <select name="Condition[]" class="form-select" data-role="condition-select" data-row-id="${id}" required>
+            ${RETURN_CONDITIONS.map(c => `<option value="${c.value}">${c.label}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="text" name="Reason[]" class="form-control" placeholder="Reason for return" required>
+        </td>
+        <td class="text-center">
+          <button type="button" class="return-btn-remove removeRow" title="Remove row">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      `;
+  
+      return tr;
+    }
+  
+    /* ── Product selected ── */
+    _onProductChange(row, value) {
+      const sel = row.querySelector('[data-role="product-select"]');
+      const opt = sel?.options[sel.selectedIndex];
+      if (!opt || !value) {
+        this._clearRowData(row);
+        return;
+      }
+  
+      const expiry = opt.getAttribute('data-expiry') || '';
+      const isExpired = opt.getAttribute('data-expired') === 'true';
+  
+      // Store on row
+      row.dataset.expiry = expiry;
+      row.dataset.isExpired = isExpired;
+  
+      this._updateStockInfo(row);
+    }
+  
+    /* ── Qty input ── */
+    _onQtyInput(row) {
+      const qtyEl = row.querySelector('[data-role="return-qty"]');
+      if (!qtyEl) return;
+  
+      const val = parseInt(qtyEl.value, 10) || 0;
+      if (val < 1) qtyEl.value = '';
+  
+      this._updateSummary();
+    }
+  
+    /* ── Stock info pill (shows expiry only) ── */
+    _updateStockInfo(row) {
+      const id = row.dataset.rowId;
+      const el = document.getElementById(`returnStockInfo_${id}`);
+      if (!el) return;
+  
+      const expiry = row.dataset.expiry || '';
+      const isExpired = row.dataset.isExpired === 'true';
+  
+      if (!expiry) {
+        el.className = 'return-stock-info';
+        return;
+      }
+  
+      el.className = 'return-stock-info is-visible' + (isExpired ? ' is-expired' : '');
+      el.textContent = `Expiry: ${expiry}` + (isExpired ? ' — EXPIRED' : '');
+    }
+  
+    _clearRowData(row) {
+      const infoEl = row.querySelector('.return-stock-info');
+      if (infoEl) infoEl.className = 'return-stock-info';
+  
+      delete row.dataset.expiry;
+      delete row.dataset.isExpired;
+    }
+  
+    /* ── Remove row ── */
+    _removeRow(row) {
+      if (!row) return;
+      row.remove();
+  
+      const rows = this.els.tbody.querySelectorAll('tr');
+      if (rows.length === 0 && this.els.emptyState) {
+        this.els.emptyState.style.display = 'block';
+      }
+  
+      // Renumber
+      rows.forEach((r, idx) => {
+        const numEl = r.querySelector('.return-row-num');
+        if (numEl) numEl.textContent = `#${idx + 1}`;
+      });
+  
+      this._updateItemCount();
+      this._updateSummary();
+      this._updateSteps();
+    }
+  
+    /* ── Step bar ── */
+    _updateSteps() {
+      const hasItems = this.els.tbody.querySelectorAll('tr').length > 0;
+      const hasCust  = !!this.els.customerId.value;
+      const hasDate  = !!this.els.returnDate.value;
+  
+      const set = (el, done, active) => {
+        el.classList.toggle('is-done', done);
+        el.classList.toggle('is-active', active);
+      };
+  
+      set(this.els.step1, hasCust && hasDate, !(hasCust && hasDate));
+      set(this.els.step2, hasItems, hasCust && hasDate && !hasItems);
+      set(this.els.step3, false, hasItems);
+    }
+  
+    /* ── Item count ── */
+    _updateItemCount() {
+      this.els.itemCount.textContent = this.els.tbody.querySelectorAll('tr').length;
+    }
+  
+    /* ── Summary ── */
+    _updateSummary() {
+      const rows = this.els.tbody.querySelectorAll('tr');
+      const n = rows.length;
+  
+      if (n === 0) {
+        this.els.summarySection.style.display = 'none';
+        return;
+      }
+  
+      let totalQty = 0;
+      let goodCount = 0;
+      let defectiveCount = 0;
+  
+      rows.forEach(row => {
+        const qty = parseInt(row.querySelector('[data-role="return-qty"]')?.value) || 0;
+        const condition = row.querySelector('[data-role="condition-select"]')?.value || '';
+  
+        totalQty += qty;
+        if (condition === 'Good') {
+          goodCount += qty;
+        } else {
+          defectiveCount += qty;
+        }
+      });
+  
+      this.els.summarySection.style.display = 'block';
+      this.els.sumItems.textContent = n;
+      this.els.sumQty.textContent = totalQty;
+      this.els.sumGood.textContent = goodCount;
+      this.els.sumDefective.textContent = defectiveCount;
+    }
+  
+    /* ── Submit validation ── */
+    _onSubmit(e) {
+      let valid = true;
+  
+      if (!this.els.customerId.value) {
+        this._showAlert('Please select a customer.', 'error');
+        this.els.customerId.classList.add('is-invalid');
+        valid = false;
+      }
+      if (!this.els.returnDate.value) {
+        this._showAlert('Please select a return date.', 'error');
+        this.els.returnDate.classList.add('is-invalid');
+        valid = false;
+      }
+  
+      const rows = this.els.tbody.querySelectorAll('tr');
+      if (rows.length === 0) {
+        this._showAlert('Please add at least one product to return.', 'error');
+        valid = false;
+      }
+  
+      rows.forEach(row => {
+        const product = row.querySelector('[data-role="product-select"]');
+        const batch = row.querySelector('[data-role="batch-input"]');
+        const qty = row.querySelector('[data-role="return-qty"]');
+        const reason = row.querySelector('input[name="Reason[]"]');
+  
+        if (!product?.value) { product?.classList.add('is-invalid'); valid = false; }
+        if (!batch?.value) { batch?.classList.add('is-invalid'); valid = false; }
+        if (!qty?.value || parseInt(qty.value) < 1) { qty?.classList.add('is-invalid'); valid = false; }
+        if (!reason?.value) { reason?.classList.add('is-invalid'); valid = false; }
+      });
+  
+      if (!valid) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      this.els.form.classList.add('was-validated');
+    }
+  
+    /* ── Alert ── */
+    _showAlert(msg, type = 'info') {
+      const cls = { error: 'is-error', info: 'is-info', success: 'is-success' }[type] || 'is-info';
+      const el = document.createElement('div');
+      el.className = `return-alert ${cls}`;
+      el.innerHTML = `<i class="bi bi-info-circle-fill"></i>${msg}`;
+      this.els.alertBox.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+  }
+  
+  // ── Boot ─────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    window.returnManager = new ReturnManager();
+    window.returnManager.init();
+  });
+  </script>

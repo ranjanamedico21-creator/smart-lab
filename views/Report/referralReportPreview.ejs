@@ -1,0 +1,725 @@
+<%
+  const fmtAmt = (v) => 'Rs.' + (Number(v)||0).toLocaleString('en-IN', {
+    minimumFractionDigits:2, maximumFractionDigits:2
+  });
+%>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+  /* ── Toolbar ── */
+  .rp-toolbar {
+    background:#185FA5; display:flex; align-items:center;
+    justify-content:space-between; padding:10px 18px;
+    border-radius:14px; margin-bottom:14px;
+  }
+  .rp-toolbar-title { font-size:13px; font-weight:600; color:#fff; }
+  .rp-toolbar-sub   { font-size:10.5px; color:rgba(255,255,255,.7); margin-top:1px; }
+  .rp-tb-btns { display:flex; gap:7px; align-items:center; }
+  .rp-tb-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:6px 13px; border-radius:6px; font-size:11.5px;
+    font-weight:500; cursor:pointer; border:none;
+  }
+  .rp-tb-dl    { background:#fff; color:#185FA5; }
+  .rp-tb-print { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); }
+  .rp-tb-back  { background:transparent; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.2); text-decoration:none; display:inline-flex; align-items:center; gap:5px; padding:6px 13px; border-radius:6px; font-size:11.5px; font-weight:500; }
+  #rp-progress { font-size:11px; color:rgba(255,255,255,.8); display:none; align-items:center; gap:5px; }
+
+  /* ── View toggle ── */
+  .rp-view-toggle {
+    display:flex; align-items:center; gap:0;
+    background:#F8F9FB; border:1px solid rgba(0,0,0,0.12);
+    border-radius:8px; overflow:hidden; margin-bottom:14px;
+    width:fit-content;
+  }
+  .rp-toggle-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 18px; font-size:12.5px; font-weight:500;
+    cursor:pointer; border:none; background:transparent;
+    color:#6B7280; transition:all .15s;
+  }
+  .rp-toggle-btn.active {
+    background:#185FA5; color:#fff;
+  }
+  .rp-toggle-btn:not(.active):hover { background:#E6F1FB; color:#185FA5; }
+  .rp-toggle-divider { width:1px; background:rgba(0,0,0,.1); }
+
+  /* ── Common card ── */
+  .rp-wrapper { padding:0 0 40px; }
+  .rp-doc-card {
+    background:#fff; border-radius:12px;
+    box-shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 0.5px rgba(0,0,0,.08);
+    overflow:hidden; margin-bottom:14px;
+  }
+
+  /* ── LIST VIEW ── */
+  #view-list { display:block; }
+  #view-detail { display:none; }
+
+  .rp-list-card { background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 0.5px rgba(0,0,0,.08); overflow:hidden; margin-bottom:10px; }
+
+  /* Summary table */
+  table.rp-summary { width:100%; border-collapse:collapse; }
+  table.rp-summary thead th {
+    font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.06em; color:#6B7280;
+    padding:10px 14px; border-bottom:1px solid rgba(0,0,0,.1);
+    background:#F8F9FB; text-align:left;
+  }
+  table.rp-summary thead th.ra { text-align:right; }
+  table.rp-summary tbody td {
+    padding:11px 14px; font-size:12.5px;
+    border-bottom:0.5px solid rgba(0,0,0,.06);
+    vertical-align:middle;
+  }
+  table.rp-summary tbody tr:last-child td { border-bottom:none; }
+  table.rp-summary tbody tr:hover { background:#F8F9FB; }
+  .sum-doc-name { font-weight:600; color:#111827; text-transform:capitalize; font-size:13px; }
+  .sum-doc-meta { font-size:10.5px; color:#9CA3AF; margin-top:2px; text-transform:capitalize; }
+  .sum-ra { text-align:right; font-family:'Courier New',monospace; font-weight:500; white-space:nowrap; }
+  .sum-bl { color:#185FA5; }
+  .sum-rd { color:#A32D2D; }
+  .sum-wn { color:#854F0B; font-weight:600; }
+  .sum-gn { color:#3B6D11; font-weight:700; }
+  .sum-gy { color:#9CA3AF; }
+
+  /* Summary totals footer */
+  .rp-sum-footer {
+    background:#111827; padding:11px 14px;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:8px;
+    border-radius:0 0 12px 12px;
+  }
+  .rp-sum-footer-lbl { font-size:11.5px; font-weight:600; color:#fff; }
+  .rp-sum-footer-amts { display:flex; gap:20px; flex-wrap:wrap; }
+  .rp-sfa { text-align:right; }
+  .rp-sfa-l { font-size:9px; color:rgba(255,255,255,.5); display:block; margin-bottom:1px; }
+  .rp-sfa-v { font-size:12.5px; font-weight:600; color:#fff; font-family:'Courier New',monospace; }
+  .rp-sfa.hl { background:rgba(255,255,255,.12); border-radius:5px; padding:3px 10px; }
+
+  /* Patient count badge */
+  .pt-badge {
+    display:inline-block; font-size:10px; font-weight:500;
+    padding:2px 8px; border-radius:99px;
+    background:#E6F1FB; color:#185FA5;
+  }
+
+  /* ── DETAIL VIEW ── */
+  .rp-doc-head {
+    background:#E6F1FB; border-left:4px solid #185FA5;
+    padding:12px 18px; display:flex; align-items:flex-start;
+    justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .rp-doc-name    { font-size:14px; font-weight:600; color:#0C447C; text-transform:capitalize; }
+  .rp-doc-degrees { font-size:11px; color:#185FA5; margin-top:3px; text-transform:capitalize; }
+  .rp-doc-spec    { font-size:11px; color:#6B7280; margin-top:2px; }
+  .rp-pills { display:flex; gap:7px; flex-wrap:wrap; }
+  .rp-pill { text-align:center; padding:5px 12px; border-radius:8px; min-width:72px; }
+  .rp-pill-lbl { display:block; font-size:9px; margin-bottom:1px; font-weight:500; }
+  .rp-pill-val { display:block; font-size:12.5px; font-weight:600; }
+  .rp-pill-info  { background:#E6F1FB; }
+  .rp-pill-info  .rp-pill-lbl { color:#185FA5; }
+  .rp-pill-info  .rp-pill-val { color:#0C447C; }
+  .rp-pill-green { background:#EAF3DE; }
+  .rp-pill-green .rp-pill-lbl { color:#3B6D11; }
+  .rp-pill-green .rp-pill-val { color:#27500A; }
+
+  .rp-tbl-wrap { padding:0 18px 4px; overflow-x:auto; }
+  table.rp-tbl { width:100%; border-collapse:collapse; }
+  table.rp-tbl thead th {
+    font-size:9.5px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.05em; color:#6B7280;
+    padding:6px 4px; border-bottom:1px solid rgba(0,0,0,.12);
+    white-space:nowrap; text-align:left;
+  }
+  table.rp-tbl thead th.ra { text-align:right; }
+  table.rp-tbl tbody td {
+    padding:5px 4px; font-size:11px;
+    border-bottom:0.5px solid rgba(0,0,0,.06); vertical-align:top;
+  }
+  table.rp-tbl tbody tr:last-child td { border-bottom:none; }
+  table.rp-tbl tbody tr.dues-row { background:#FFF8E8; }
+  table.rp-tbl tbody tr.dues-row td { border-bottom-color:rgba(133,79,11,.12); }
+  .rp-pt-name { font-weight:600; color:#111827; text-transform:capitalize; font-size:11px; }
+  .rp-pt-meta { font-size:9.5px; color:#9CA3AF; margin-top:1px; }
+  .rp-test-row { display:flex; justify-content:space-between; gap:4px; font-size:10px; }
+  .rp-test-n { color:#6B7280; }
+  .rp-test-p { font-family:'Courier New',monospace; color:#9CA3AF; white-space:nowrap; }
+  .rp-test-t { color:#3B6D11; font-weight:600; margin-left:4px; }
+  .rp-sub .rp-test-n { padding-left:8px; }
+  .rp-hidden-note { font-size:11px; color:#6B7280; padding:6px 18px 0; }
+  .rp-idx  { color:#9CA3AF; font-size:10px; }
+  .rp-date { color:#374151; font-size:10.5px; font-weight:500; white-space:nowrap; }
+  .ra { text-align:right; font-family:'Courier New',monospace; white-space:nowrap; font-size:10.5px; }
+  .c-bl { color:#185FA5; font-weight:500; }
+  .c-rd { color:#A32D2D; }
+  .c-wn { color:#854F0B; font-weight:600; }
+  .c-gn { color:#3B6D11; font-weight:600; }
+  .c-gy { color:#9CA3AF; }
+
+  .rp-grand {
+    background:#111827; padding:10px 18px;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:8px;
+  }
+  .rp-grand-lbl { font-size:11.5px; font-weight:600; color:#fff; text-transform:capitalize; }
+  .rp-grand-amts { display:flex; gap:16px; flex-wrap:wrap; }
+  .rp-g { text-align:right; }
+  .rp-g-l { font-size:9px; color:rgba(255,255,255,.55); display:block; margin-bottom:1px; }
+  .rp-g-v { font-size:12.5px; font-weight:600; color:#fff; font-family:'Courier New',monospace; }
+  .rp-g.hl { background:rgba(255,255,255,.12); border-radius:5px; padding:3px 10px; }
+
+  .rp-empty { padding:40px; text-align:center; color:#9CA3AF; font-size:13px; }
+</style>
+
+<div class="rp-wrapper">
+
+  <!-- ── Toolbar ── -->
+  <div class="rp-toolbar">
+    <div>
+      <div class="rp-toolbar-title">
+        <i class="bi bi-file-earmark-person me-2"></i>Doctor Thanks Report — <%= clinicName %>
+      </div>
+      <div class="rp-toolbar-sub">
+        Period: <%= fromDate %> to <%= toDate %> &nbsp;·&nbsp; Generated: <%= generatedAt %>
+      </div>
+    </div>
+    <div class="rp-tb-btns">
+      <span id="rp-progress"><i class="bi bi-hourglass-split"></i> Building PDF…</span>
+      <a href="/report/referral" class="rp-tb-back"><i class="bi bi-arrow-left"></i> Back</a>
+      <button class="rp-tb-btn rp-tb-print" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+      <button class="rp-tb-btn rp-tb-dl" id="rp-dl-btn" onclick="downloadPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> Download PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- ── View toggle ── -->
+  <div class="rp-view-toggle">
+    <button class="rp-toggle-btn active" id="btn-list" onclick="switchView('list')">
+      <i class="bi bi-list-ul"></i> Summary
+    </button>
+    <div class="rp-toggle-divider"></div>
+    <button class="rp-toggle-btn" id="btn-detail" onclick="switchView('detail')">
+      <i class="bi bi-table"></i> Detailed
+    </button>
+  </div>
+
+  <% if (!doctors || !doctors.length) { %>
+  <div class="rp-doc-card"><div class="rp-empty">
+    <i class="bi bi-inbox" style="font-size:28px;display:block;margin-bottom:8px;"></i>No data found.
+  </div></div>
+  <% } %>
+
+  <%
+    // Pre-compute grand totals across all doctors
+    const overallGross    = doctors.reduce((a,d)=>a+d.dates.reduce((b,dt)=>b+(Number(dt.dayGross)||0),0),0);
+    const overallDiscount = doctors.reduce((a,d)=>a+d.dates.reduce((b,dt)=>b+(Number(dt.dayDiscount)||0),0),0);
+    const overallDues     = doctors.reduce((a,d)=>a+d.dates.reduce((b,dt)=>b+(Number(dt.dayDues)||0),0),0);
+    const overallThanks   = doctors.reduce((a,d)=>a+(Number(d.totalThanks)||0),0);
+    const overallPatients = doctors.reduce((a,d)=>a+(Number(d.totalPatients)||0),0);
+  %>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- LIST / SUMMARY VIEW                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="view-list">
+
+    <div class="rp-list-card">
+      <table class="rp-summary">
+        <thead>
+          <tr>
+            <th style="width:28px">#</th>
+            <th>Doctor</th>
+            <th class="ra" style="width:70px">Patients</th>
+            <th class="ra" style="width:90px">Gross</th>
+            <th class="ra" style="width:85px">Discount</th>
+            <th class="ra" style="width:85px">Dues</th>
+            <th class="ra" style="width:90px">Thanks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% doctors.forEach(function(doctor, idx) {
+            const gross    = doctor.dates.reduce((a,d)=>a+(Number(d.dayGross)||0),0);
+            const discount = doctor.dates.reduce((a,d)=>a+(Number(d.dayDiscount)||0),0);
+            const dues     = doctor.dates.reduce((a,d)=>a+(Number(d.dayDues)||0),0);
+          %>
+          <tr>
+            <td class="rp-idx"><%= idx+1 %></td>
+            <td>
+              <div class="sum-doc-name"><%= doctor.doctorName %></div>
+              <div class="sum-doc-meta">
+                <% if(doctor.specialistIn){ %><i class="bi bi-clipboard2-pulse me-1"></i><%= doctor.specialistIn %><% } %>
+                <% if(doctor.degrees&&doctor.degrees.filter(Boolean).length){ %>
+                  &nbsp;·&nbsp; <%= doctor.degrees.filter(Boolean).join(' · ') %>
+                <% } %>
+              </div>
+            </td>
+            <td class="sum-ra">
+              <span class="pt-badge"><%= doctor.totalPatients %></span>
+            </td>
+            <td class="sum-ra sum-bl"><%= fmtAmt(gross) %></td>
+            <td class="sum-ra sum-rd"><%= Number(discount)>0 ? fmtAmt(discount) : '—' %></td>
+            <td class="sum-ra <%= Number(dues)>0?'sum-wn':'sum-gy' %>">
+              <%= Number(dues)>0 ? fmtAmt(dues) : '—' %>
+            </td>
+            <td class="sum-ra sum-gn"><%= fmtAmt(doctor.totalThanks) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <!-- Overall footer -->
+      <div class="rp-sum-footer">
+        <span class="rp-sum-footer-lbl">
+          <i class="bi bi-calculator me-1"></i>
+          Overall Total &nbsp;·&nbsp; <%= doctors.length %> doctor<%= doctors.length!==1?'s':'' %> &nbsp;·&nbsp; <%= overallPatients %> patients
+        </span>
+        <div class="rp-sum-footer-amts">
+          <div class="rp-sfa">
+            <span class="rp-sfa-l">Gross</span>
+            <span class="rp-sfa-v"><%= fmtAmt(overallGross) %></span>
+          </div>
+          <div class="rp-sfa">
+            <span class="rp-sfa-l">Discount</span>
+            <span class="rp-sfa-v"><%= fmtAmt(overallDiscount) %></span>
+          </div>
+          <div class="rp-sfa">
+            <span class="rp-sfa-l">Dues</span>
+            <span class="rp-sfa-v"><%= fmtAmt(overallDues) %></span>
+          </div>
+          <div class="rp-sfa hl">
+            <span class="rp-sfa-l">Total Thanks</span>
+            <span class="rp-sfa-v"><%= fmtAmt(overallThanks) %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /view-list -->
+
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- DETAIL VIEW                                                -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="view-detail">
+
+    <% doctors.forEach(function(doctor) {
+      const grandGross    = doctor.dates.reduce((a,d)=>a+(Number(d.dayGross)||0),0);
+      const grandDiscount = doctor.dates.reduce((a,d)=>a+(Number(d.dayDiscount)||0),0);
+      const grandDues     = doctor.dates.reduce((a,d)=>a+(Number(d.dayDues)||0),0);
+      const allPatients   = doctor.dates.flatMap(d => d.patients.map(p => ({ ...p, date: d.date })));
+    %>
+    <div class="rp-doc-card">
+
+      <div class="rp-doc-head">
+        <div>
+          <div class="rp-doc-name"><i class="bi bi-person-badge me-1"></i><%= doctor.doctorName %></div>
+          <% if(doctor.degrees&&doctor.degrees.filter(Boolean).length){ %>
+          <div class="rp-doc-degrees"><i class="bi bi-mortarboard me-1"></i><%= doctor.degrees.filter(Boolean).join(' · ') %></div>
+          <% } %>
+          <% if(doctor.specialistIn){ %>
+          <div class="rp-doc-spec"><i class="bi bi-clipboard2-pulse me-1"></i><%= doctor.specialistIn %></div>
+          <% } %>
+        </div>
+        <div class="rp-pills">
+          <div class="rp-pill rp-pill-info"><span class="rp-pill-lbl">Patients</span><span class="rp-pill-val"><%= doctor.totalPatients %></span></div>
+          <div class="rp-pill rp-pill-info"><span class="rp-pill-lbl">Dates</span><span class="rp-pill-val"><%= doctor.dates.length %></span></div>
+          <div class="rp-pill rp-pill-green"><span class="rp-pill-lbl">Total Thanks</span><span class="rp-pill-val"><%= fmtAmt(doctor.totalThanks) %></span></div>
+        </div>
+      </div>
+
+      <% if (doctor.hiddenSubTests) { %>
+        <div class="rp-hidden-note"><i class="bi bi-eye-slash me-1"></i><%= doctor.hiddenSubTests %> sub-test<%= doctor.hiddenSubTests === 1 ? '' : 's' %> without thanks not shown
+          (<a href="/test/doctorSubTestRates/<%= doctor.doctorId %>">change for this doctor</a>). T = thanks for that item.</div>
+      <% } %>
+      <div class="rp-tbl-wrap">
+        <table class="rp-tbl">
+          <thead><tr>
+            <th style="width:22px">#</th>
+            <th style="width:64px">Date</th>
+            <th>Patient</th>
+            <th>Tests &amp; Prices</th>
+            <th class="ra" style="width:72px">Gross</th>
+            <th class="ra" style="width:65px">Disc</th>
+            <th class="ra" style="width:65px">Dues</th>
+            <th class="ra" style="width:72px">Thanks</th>
+          </tr></thead>
+          <tbody>
+            <% allPatients.forEach(function(pt, idx) {
+              const hasDues = Number(pt.dues) > 0;
+            %>
+            <tr<%= hasDues ? ' class="dues-row"' : '' %>>
+              <td class="rp-idx"><%= idx+1 %></td>
+              <td class="rp-date"><%= pt.date %></td>
+              <td>
+                <div class="rp-pt-name"><%= pt.name||'—' %></div>
+                <div class="rp-pt-meta">
+                  <i class="bi bi-phone" style="font-size:9px;"></i> <%= pt.phone||'—' %> &nbsp;·&nbsp; <%= pt.age||'—' %>
+                </div>
+              </td>
+              <td>
+                <% if(pt.tests&&pt.tests.length){ %>
+                  <% pt.tests.forEach(function(t){ var sub = t.ItemType === 'subtest'; %>
+                  <div class="rp-test-row<%= sub ? ' rp-sub' : '' %>">
+                    <span class="rp-test-n"><%= sub ? '↳' : '•' %> <%= t.Name||t.name||'—' %></span>
+                    <span class="rp-test-p"><%= fmtAmt(t.Price||t.price||0) %><% if (Number(t.Thanks) > 0) { %> <b class="rp-test-t">T <%= fmtAmt(t.Thanks) %></b><% } %></span>
+                  </div>
+                  <% }) %>
+                <% } else { %><span class="c-gy" style="font-size:10px;">—</span><% } %>
+              </td>
+              <td class="ra c-bl"><%= fmtAmt(pt.gross) %></td>
+              <td class="ra c-rd"><%= Number(pt.discount)>0 ? fmtAmt(pt.discount) : '—' %></td>
+              <td class="ra <%= hasDues?'c-wn':'c-gy' %>">
+                <%= hasDues ? fmtAmt(pt.dues) : '—' %>
+              </td>
+              <td class="ra c-gn"><%= fmtAmt(pt.thanks) %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rp-grand">
+        <span class="rp-grand-lbl">
+          <i class="bi bi-calculator me-1"></i>Total — <%= doctor.doctorName %> &nbsp;·&nbsp; <%= doctor.totalPatients %> patients
+        </span>
+        <div class="rp-grand-amts">
+          <div class="rp-g"><span class="rp-g-l">Gross</span><span class="rp-g-v"><%= fmtAmt(grandGross) %></span></div>
+          <div class="rp-g"><span class="rp-g-l">Discount</span><span class="rp-g-v"><%= fmtAmt(grandDiscount) %></span></div>
+          <div class="rp-g"><span class="rp-g-l">Dues</span><span class="rp-g-v"><%= fmtAmt(grandDues) %></span></div>
+          <div class="rp-g hl"><span class="rp-g-l">Total Thanks</span><span class="rp-g-v"><%= fmtAmt(doctor.totalThanks) %></span></div>
+        </div>
+      </div>
+
+    </div>
+    <% }) %>
+
+  </div><!-- /view-detail -->
+
+</div><!-- /rp-wrapper -->
+
+
+<script>
+// ── View switcher ─────────────────────────────────────────────────────────────
+function switchView(v) {
+  document.getElementById('view-list').style.display   = v === 'list'   ? 'block' : 'none';
+  document.getElementById('view-detail').style.display = v === 'detail' ? 'block' : 'none';
+  document.getElementById('btn-list').classList.toggle('active',   v === 'list');
+  document.getElementById('btn-detail').classList.toggle('active', v === 'detail');
+  // Update download button label
+  document.getElementById('rp-dl-btn').innerHTML =
+    v === 'list'
+    ? '<i class="bi bi-file-earmark-pdf"></i> Download Summary PDF'
+    : '<i class="bi bi-file-earmark-pdf"></i> Download Detailed PDF';
+  currentView = v;
+}
+
+let currentView = 'list';
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+const REPORT_DATA = <%- JSON.stringify(doctors || []).replace(/</g, '\\u003c') %>;
+const META = <%- JSON.stringify({ fromDate: String(fromDate), toDate: String(toDate), clinicName: String(clinicName) }).replace(/</g, '\\u003c') %>;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function R(v) { return Number(v) || 0; }
+function amt(v) {
+  return R(v).toLocaleString('en-IN', { minimumFractionDigits:0, maximumFractionDigits:0 });
+}
+function capitalizeWords(str='') {
+  return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+}
+
+const PAGE_W = 210, PAGE_H = 297;
+const ML = 7, MR = 7, MT = 12, MB = 8;
+const CW = PAGE_W - ML - MR;
+const F  = 'helvetica';
+
+let doc, y, page, curDocPage;
+
+const COL = {
+  sr     : { x:7,   w:8  },
+  date   : { x:15,  w:20 },
+  patient: { x:35,  w:42 },
+  tests  : { x:77,  w:60 },
+  gross  : { x:137, w:17 },
+  disc   : { x:154, w:15 },
+  dues   : { x:169, w:15 },
+  thanks : { x:184, w:19 }
+};
+
+// ── Page header ───────────────────────────────────────────────────────────────
+function pageHeader(docIdx) {
+  y = MT;
+  // Only show doctor-relative page number — no clinic name / dates in header
+  if (docIdx) {
+    doc.setFont(F,'normal'); doc.setFontSize(7); doc.setTextColor(150,150,150);
+    doc.text('Doctor ' + docIdx + '  —  Page ' + page, PAGE_W - MR, 5, { align:'right' });
+    doc.setDrawColor(210); doc.setLineWidth(0.15);
+    doc.line(ML, 7, PAGE_W - MR, 7);
+  }
+  doc.setTextColor(0);
+  y = 11;
+}
+
+function newPage(docIdx) {
+  doc.addPage(); page++;
+  pageHeader(docIdx);
+}
+
+function ensure(h, docIdx) {
+  if (y + h > PAGE_H - MB) { newPage(docIdx); drawTableHeader(); }
+}
+
+// ── Table column headers ──────────────────────────────────────────────────────
+function drawTableHeader() {
+  doc.setFillColor(235); doc.rect(ML, y, CW, 7, 'F');
+  doc.setFont(F,'bold'); doc.setFontSize(7.5); doc.setTextColor(40,40,40);
+  [
+    ['#','sr'],['Date','date'],['Patient','patient'],['Tests','tests'],
+    ['Gross','gross'],['Disc','disc'],['Dues','dues'],['Thanks','thanks']
+  ].forEach(([label, key]) => {
+    const c = COL[key];
+    const right = ['gross','disc','dues','thanks'].includes(key);
+    doc.text(label, right ? c.x+c.w-1 : c.x+1, y+4.8, { align: right?'right':'left' });
+  });
+  doc.setTextColor(0);
+  y += 7;
+}
+
+// ── Doctor section header ─────────────────────────────────────────────────────
+function drawDoctorHeader(doctor) {
+  ensure(14, curDocPage);
+  doc.setFont(F,'bold'); doc.setFontSize(11); doc.setTextColor(0);
+  doc.text(capitalizeWords(doctor.doctorName || '-'), PAGE_W/2, y, { align:'center' });
+  y += 5;
+  const deg  = (doctor.degrees||[]).filter(Boolean).join(' · ');
+  const spec = doctor.specialistIn || '';
+  doc.setFont(F,'normal'); doc.setFontSize(8); doc.setTextColor(80,80,80);
+  if (deg || spec) {
+    doc.text((deg||'') + (spec ? (deg?' | ':'')+spec : ''), PAGE_W/2, y, { align:'center' });
+    y += 4;
+  }
+  doc.setFont(F,'normal'); doc.setFontSize(6.5); doc.setTextColor(120,120,120);
+  doc.text('Tests: price, T = thanks for that item, + = sub-test', ML, y);
+  y += 2;
+  doc.setDrawColor(120); doc.setLineWidth(0.3);
+  doc.line(ML, y, PAGE_W-MR, y);
+  y += 3;
+  doc.setTextColor(0);
+}
+
+// ── Patient row ───────────────────────────────────────────────────────────────
+function drawRow(pt, idx) {
+  // "CT Head(2,500 T500), +Contrast(1,500 T200)" — T = thanks earned by that item; sub-tests start with +
+  const testStr = (pt.tests||[]).map(t=>(t.ItemType==='subtest'?'+':'')+(t.Name||t.name||'')+'('+amt(t.Price||t.price||0)+(R(t.Thanks)>0?' T'+amt(t.Thanks):'')+')').join(', ');
+  const patStr  = (pt.name||'-')+' / '+(pt.age||'-');
+  const patLines = doc.splitTextToSize(patStr, COL.patient.w);
+  const tstLines = doc.splitTextToSize(testStr||'-', COL.tests.w);
+  const lines = Math.max(patLines.length, tstLines.length);
+  const rowH  = Math.max(6, lines*3.2+1.5);
+
+  ensure(rowH, curDocPage);
+
+  const hasDues = R(pt.dues) > 0;
+
+  if (hasDues) {
+    doc.setFillColor(230,230,230);   // gray shade for dues row (B&W print)
+    doc.rect(ML, y, CW, rowH, 'F');
+  } else if (idx%2===0) {
+    doc.setFillColor(248,248,248);
+    doc.rect(ML, y, CW, rowH, 'F');
+  }
+
+  doc.setFont(F,'normal'); doc.setFontSize(7.5); doc.setTextColor(0);
+
+  doc.text(String(idx+1), COL.sr.x+1, y+4);
+  doc.text(pt.date||'-', COL.date.x, y+4);
+
+  patLines.forEach((ln,i) => doc.text(ln, COL.patient.x, y+4+(i*3.2)));
+  tstLines.forEach((ln,i) => doc.text(ln, COL.tests.x,   y+4+(i*3.2)));
+
+  const ay = y+4;
+  doc.setFont(F, hasDues?'bold':'normal');
+  [
+    [amt(pt.gross),    'gross'],
+    [amt(pt.discount), 'disc'],
+    [R(pt.dues)>0?amt(pt.dues):'—', 'dues'],
+    [amt(pt.thanks),   'thanks']
+  ].forEach(([v,k]) => {
+    const c = COL[k];
+    doc.text(v, c.x+c.w, ay, { align:'right' });
+  });
+
+  doc.setFont(F,'normal');
+  doc.setDrawColor(220); doc.setLineWidth(0.15);
+  doc.line(ML, y+rowH, PAGE_W-MR, y+rowH);
+  y += rowH;
+}
+
+// ── Doctor section end — thin separator only, no total label ─────────────────
+function drawDoctorEnd() {
+  if (y + 3 > PAGE_H - MB) return;
+  doc.setDrawColor(150); doc.setLineWidth(0.3);
+  doc.line(ML, y + 2, PAGE_W - MR, y + 2);
+  y += 5;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUMMARY PDF
+// ─────────────────────────────────────────────────────────────────────────────
+function buildSummaryPDF() {
+  doc  = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
+  page = 1; y = 13;
+  pageHeader();
+
+  // Report title
+  doc.setFont(F,'bold'); doc.setFontSize(12); doc.setTextColor(0);
+  doc.text('Doctor Thanks Summary', PAGE_W/2, y, { align:'center' });
+  y += 5;
+  doc.setFont(F,'normal'); doc.setFontSize(8); doc.setTextColor(80,80,80);
+  doc.text('Period: ' + META.fromDate + ' to ' + META.toDate, PAGE_W/2, y, { align:'center' });
+  y += 6;
+  doc.setTextColor(0);
+
+  // Column headers for summary table
+  const SC = {
+    sr:       { x:ML,    w:7  },
+    doctor:   { x:ML+7,  w:70 },
+    patients: { x:ML+77, w:16 },
+    gross:    { x:ML+93, w:22 },
+    disc:     { x:ML+115,w:22 },
+    dues:     { x:ML+137,w:22 },
+    thanks:   { x:ML+159,w:35 }
+  };
+
+  const drawSummaryHeader = () => {
+    doc.setFillColor(40,40,40); doc.rect(ML, y, CW, 7, 'F');
+    doc.setFont(F,'bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
+    [
+      ['#','sr','left'],['Doctor','doctor','left'],['Pts','patients','right'],
+      ['Gross','gross','right'],['Discount','disc','right'],['Dues','dues','right'],['Thanks','thanks','right']
+    ].forEach(([label,key,align]) => {
+      const c = SC[key];
+      doc.text(label, align==='right'?c.x+c.w-1:c.x+1, y+4.8, { align });
+    });
+    doc.setTextColor(0); y += 7;
+  };
+
+  drawSummaryHeader();
+
+  let totGross=0, totDisc=0, totDues=0, totThanks=0, totPts=0;
+
+  REPORT_DATA.forEach((doctor, idx) => {
+    const gross    = doctor.dates.reduce((a,d)=>a+R(d.dayGross),0);
+    const disc     = doctor.dates.reduce((a,d)=>a+R(d.dayDiscount),0);
+    const dues     = doctor.dates.reduce((a,d)=>a+R(d.dayDues),0);
+    const rowH = 9;
+
+    if (y + rowH > PAGE_H - MB) {
+      doc.addPage(); page++;
+      pageHeader();
+      drawSummaryHeader();
+    }
+
+    if (idx%2===1) { doc.setFillColor(248,248,248); doc.rect(ML, y, CW, rowH, 'F'); }
+
+    doc.setFont(F,'normal'); doc.setFontSize(7.5); doc.setTextColor(80,80,80);
+    doc.text(String(idx+1), SC.sr.x+1, y+5.5);
+
+    // Doctor name + spec
+    doc.setFont(F,'bold'); doc.setTextColor(0);
+    doc.text(capitalizeWords(doctor.doctorName||'-'), SC.doctor.x+1, y+4.5);
+    if (doctor.specialistIn) {
+      doc.setFont(F,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,100,100);
+      doc.text(doctor.specialistIn, SC.doctor.x+1, y+8);
+      doc.setFontSize(7.5);
+    }
+
+    doc.setFont(F,'normal'); doc.setTextColor(0);
+    doc.text(String(doctor.totalPatients), SC.patients.x+SC.patients.w-1, y+5.5, { align:'right' });
+    doc.text(amt(gross),                  SC.gross.x+SC.gross.w-1,       y+5.5, { align:'right' });
+    doc.text(R(disc)>0?amt(disc):'—',    SC.disc.x+SC.disc.w-1,         y+5.5, { align:'right' });
+    doc.setFont(F, R(dues)>0?'bold':'normal');
+    doc.text(R(dues)>0?amt(dues):'—',    SC.dues.x+SC.dues.w-1,         y+5.5, { align:'right' });
+    doc.setFont(F,'bold');
+    doc.text(amt(doctor.totalThanks),     SC.thanks.x+SC.thanks.w-1,     y+5.5, { align:'right' });
+    doc.setFont(F,'normal');
+
+    doc.setDrawColor(220); doc.setLineWidth(0.15);
+    doc.line(ML, y+rowH, PAGE_W-MR, y+rowH);
+    y += rowH;
+
+    totGross  += gross;
+    totDisc   += disc;
+    totDues   += dues;
+    totThanks += R(doctor.totalThanks);
+    totPts    += R(doctor.totalPatients);
+  });
+
+  // Grand total row
+  if (y + 10 > PAGE_H - MB) { doc.addPage(); page++; pageHeader(); }
+  doc.setDrawColor(40); doc.setLineWidth(0.5);
+  doc.line(ML, y, PAGE_W-MR, y);
+  y += 5;
+  doc.setFont(F,'bold'); doc.setFontSize(8.5); doc.setTextColor(0);
+  doc.text('Grand Total  (' + REPORT_DATA.length + ' doctors,  ' + totPts + ' patients)', ML, y);
+  [
+    [amt(totGross), 'gross'], [amt(totDisc), 'disc'],
+    [R(totDues)>0?amt(totDues):'—','dues'], [amt(totThanks),'thanks']
+  ].forEach(([v,k]) => {
+    const c = SC[k];
+    doc.text(v, c.x+c.w-1, y, { align:'right' });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DETAILED PDF (your existing working code)
+// ─────────────────────────────────────────────────────────────────────────────
+function buildDetailedPDF() {
+  doc  = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
+  page = 1; y = 11; curDocPage = 1;
+  pageHeader(1);
+
+  REPORT_DATA.forEach((doctor, dIdx) => {
+    curDocPage = dIdx + 1;
+    if (dIdx > 0) { newPage(curDocPage); }
+    drawDoctorHeader(doctor);
+    drawTableHeader();
+
+    const patients = doctor.dates.flatMap(d => d.patients.map(p => ({ ...p, date:d.date })));
+
+    patients.forEach((pt, idx) => drawRow(pt, idx));
+
+    drawDoctorEnd();
+  });
+}
+
+// ── Download dispatcher ───────────────────────────────────────────────────────
+function downloadPDF() {
+  const btn  = document.getElementById('rp-dl-btn');
+  const prog = document.getElementById('rp-progress');
+  btn.disabled = true;
+  prog.style.display = 'inline-flex';
+
+  setTimeout(() => {
+    try {
+      if (currentView === 'list') {
+        buildSummaryPDF();
+        doc.save('thanks_summary_' + META.fromDate.replace(/ /g,'_') + '_to_' + META.toDate.replace(/ /g,'_') + '.pdf');
+      } else {
+        buildDetailedPDF();
+        doc.save('thanks_detailed_' + META.fromDate.replace(/ /g,'_') + '_to_' + META.toDate.replace(/ /g,'_') + '.pdf');
+      }
+    } catch(err) {
+      alert('PDF error: ' + err.message);
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      prog.style.display = 'none';
+    }
+  }, 50);
+}
+</script>

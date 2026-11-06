@@ -1,0 +1,633 @@
+<%# Partial view: rendered inside loggedInLayout. Its CSS is scoped to .pkv-delivery so it cannot change the layout navbar / sidebar. Bootstrap CSS+JS come from the layout. %>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .pkv.pkv-delivery *, .pkv.pkv-delivery *::before, .pkv.pkv-delivery *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .pkv.pkv-delivery {
+      --bg:          #f4f6fb;
+      --surface:     #ffffff;
+      --border:      #e3e8f0;
+      --border-hi:   #c8d2e4;
+      --accent:      #3b6ff5;
+      --accent-light:#eef2fe;
+      --success:     #16a85e;
+      --success-bg:  #edfaf4;
+      --warn:        #d97706;
+      --warn-bg:     #fffbeb;
+      --danger:      #dc2626;
+      --danger-bg:   #fff1f1;
+      --text:        #111827;
+      --text-muted:  #6b7280;
+      --text-dim:    #9ca3af;
+      --mono:        'DM Mono', monospace;
+      --body:        'Plus Jakarta Sans', sans-serif;
+      --radius:      8px;
+      --radius-lg:   14px;
+      --shadow:      0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+      --shadow-md:   0 8px 32px rgba(0,0,0,0.12);
+      --trans:       0.15s ease;
+    }
+
+    .pkv.pkv-delivery { background: var(--bg); color: var(--text); font-family: var(--body); font-size: 14px;  }
+
+    /* HEADER */
+    .pkv.pkv-delivery .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .pkv.pkv-delivery .header-left { display: flex; align-items: center; gap: 10px; }
+    .pkv.pkv-delivery .header-icon { width: 34px; height: 34px; background: var(--accent-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+    .pkv.pkv-delivery .header h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+    .pkv.pkv-delivery .header-badges { display: flex; gap: 8px; align-items: center; }
+    .pkv.pkv-delivery .badge { font-family: var(--mono); font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+    .pkv.pkv-delivery .badge-pending { background: var(--warn-bg);    color: var(--warn);    border: 1px solid #fde68a; }
+    .pkv.pkv-delivery .badge-done { background: var(--success-bg); color: var(--success); border: 1px solid #a7f3d0; }
+    .pkv.pkv-delivery .badge-offline { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #fecaca; display: none; }
+    .pkv.pkv-delivery .badge-offline.visible { display: inline-flex; align-items: center; gap: 4px; }
+
+    .pkv.pkv-delivery .main { padding: 24px 28px; max-width: 1100px; margin: 0 auto; }
+
+    /* SYNC BANNER */
+    .pkv.pkv-delivery .sync-banner { display: none; background: var(--warn-bg); border: 1px solid #fde68a; border-radius: var(--radius); padding: 10px 16px; margin-bottom: 16px; font-size: 13px; color: var(--warn); align-items: center; gap: 8px; }
+    .pkv.pkv-delivery .sync-banner.visible { display: flex; }
+
+    /* ACTION BAR */
+    .pkv.pkv-delivery .action-bar {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; box-shadow: var(--shadow); flex-wrap: wrap;
+    }
+    .pkv.pkv-delivery .action-bar-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+    .pkv.pkv-delivery .sel-badge { font-family: var(--mono); font-size: 12px; background: var(--accent-light); color: var(--accent); border: 1px solid #c7d7fd; border-radius: 6px; padding: 3px 10px; min-width: 28px; text-align: center; font-weight: 600; }
+    .pkv.pkv-delivery .action-hint { font-size: 12px; color: var(--text-dim); }
+    .pkv.pkv-delivery .action-bar .btn { margin-left: auto; }
+
+    /* FILTERS */
+    .pkv.pkv-delivery .filters { display: flex; gap: 6px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+    .pkv.pkv-delivery .filter-btn { font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; transition: all var(--trans); }
+    .pkv.pkv-delivery .filter-btn:hover { border-color: var(--border-hi); color: var(--text); }
+    .pkv.pkv-delivery .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .pkv.pkv-delivery .search-wrap { margin-left: auto; }
+    .pkv.pkv-delivery .search-wrap input { width: 220px; }
+
+    /* INPUTS */
+    .pkv.pkv-delivery .iw { position: relative; }
+    .pkv.pkv-delivery .iw .ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 13px; pointer-events: none; }
+    .pkv.pkv-delivery input[type="text"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--text); font-family: var(--body); font-size: 13px; padding: 8px 10px 8px 30px; outline: none;
+      transition: border-color var(--trans), box-shadow var(--trans);
+    }
+    .pkv.pkv-delivery input[type="text"]::placeholder { color: var(--text-dim); }
+    .pkv.pkv-delivery input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,111,245,0.1); background: #fff; }
+
+    /* BUTTONS */
+    .pkv.pkv-delivery .btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--body); font-weight: 600; font-size: 13px; padding: 8px 16px; border-radius: var(--radius); border: none; cursor: pointer; transition: all var(--trans); white-space: nowrap; }
+    .pkv.pkv-delivery .btn-primary { background: var(--accent); color: #fff; }
+    .pkv.pkv-delivery .btn-primary:hover { background: #2855e0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,111,245,0.3); }
+    .pkv.pkv-delivery .btn-primary:active { transform: none; }
+    .pkv.pkv-delivery .btn-primary:disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; transform: none; box-shadow: none; }
+    .pkv.pkv-delivery .btn-ghost { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+    .pkv.pkv-delivery .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
+    .pkv.pkv-delivery .btn-success { background: var(--success); color: #fff; }
+    .pkv.pkv-delivery .btn-success:hover { background: #138a4e; }
+    .pkv.pkv-delivery .btn-sm { font-size: 12px; padding: 6px 12px; }
+
+    /* TABLE */
+    .pkv.pkv-delivery .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+    .pkv.pkv-delivery table { width: 100%; border-collapse: collapse; }
+    .pkv.pkv-delivery thead tr { background: #f9fafb; border-bottom: 1px solid var(--border); }
+    .pkv.pkv-delivery th { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; padding: 11px 16px; text-align: left; }
+    .pkv.pkv-delivery tbody tr { border-bottom: 1px solid var(--border); transition: background var(--trans); }
+    .pkv.pkv-delivery tbody tr:last-child { border-bottom: none; }
+    .pkv.pkv-delivery tbody tr:hover { background: #fafbff; }
+    .pkv.pkv-delivery tbody tr.delivered { opacity: 0.7; }
+    .pkv.pkv-delivery td { padding: 12px 16px; vertical-align: middle; }
+
+    .pkv.pkv-delivery input[type="checkbox"] { appearance: none; width: 16px; height: 16px; border: 1.5px solid var(--border-hi); border-radius: 4px; background: #fff; cursor: pointer; position: relative; transition: all var(--trans); flex-shrink: 0; }
+    .pkv.pkv-delivery input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+    .pkv.pkv-delivery input[type="checkbox"]:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg); }
+
+    .pkv.pkv-delivery .packet-code { font-family: var(--mono); font-size: 12px; color: var(--accent); background: var(--accent-light); padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+    .pkv.pkv-delivery .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+    .pkv.pkv-delivery .status-pill.pending { background: var(--warn-bg); color: var(--warn); border: 1px solid #fde68a; }
+    .pkv.pkv-delivery .status-pill.done { background: var(--success-bg); color: var(--success); border: 1px solid #a7f3d0; }
+    .pkv.pkv-delivery .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .pkv.pkv-delivery .delivered-info { display: flex; flex-direction: column; gap: 2px; }
+    .pkv.pkv-delivery .delivered-name { font-size: 13px; font-weight: 600; }
+    .pkv.pkv-delivery .delivered-phone { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+
+    .pkv.pkv-delivery .single-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .pkv.pkv-delivery .single-form .iw { flex: 1; min-width: 110px; }
+
+    /* MODALS */
+    .pkv.pkv-delivery .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity var(--trans); padding: 16px;
+    }
+    .pkv.pkv-delivery .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .pkv.pkv-delivery .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      width: 700px; max-width: 100%; max-height: 90vh;
+      display: flex; flex-direction: column; box-shadow: var(--shadow-md);
+      transform: translateY(12px); transition: transform var(--trans);
+    }
+    .pkv.pkv-delivery .modal-overlay.open .modal { transform: translateY(0); }
+
+    .pkv.pkv-delivery .modal-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .pkv.pkv-delivery .modal-head h2 { font-size: 16px; font-weight: 800; }
+    .pkv.pkv-delivery .modal-head p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+    .pkv.pkv-delivery .modal-body { overflow-y: auto; flex: 1; }
+
+    /* BULK ROWS inside modal */
+    .pkv.pkv-delivery .bulk-table { width: 100%; border-collapse: collapse; }
+    .pkv.pkv-delivery .bulk-table thead tr { background: #f9fafb; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+    .pkv.pkv-delivery .bulk-table th { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 9px 16px; text-align: left; }
+    .pkv.pkv-delivery .bulk-table tbody tr { border-bottom: 1px solid var(--border); }
+    .pkv.pkv-delivery .bulk-table tbody tr:last-child { border-bottom: none; }
+    .pkv.pkv-delivery .bulk-table td { padding: 10px 16px; vertical-align: middle; }
+    .pkv.pkv-delivery .bulk-pkt-code { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+    .pkv.pkv-delivery .bulk-pkt-name { font-size: 12px; font-weight: 600; margin-top: 1px; }
+    .pkv.pkv-delivery .bulk-row-err input { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.1) !important; }
+
+    /* GPS strip */
+    .pkv.pkv-delivery .modal-gps { padding: 10px 24px; background: #f9fafb; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .pkv.pkv-delivery .gps-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+    .pkv.pkv-delivery .gps-dot.acquired { background: var(--success); }
+
+    .pkv.pkv-delivery .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+
+    /* SINGLE modal */
+    .pkv.pkv-delivery .smodal { width: 400px; }
+    .pkv.pkv-delivery .sfield { padding: 14px 24px 0; }
+    .pkv.pkv-delivery .sfield label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+    /* TOAST */
+    .pkv.pkv-delivery #toasts { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 999; }
+    .pkv.pkv-delivery .toast { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 16px; font-size: 13px; min-width: 240px; box-shadow: var(--shadow-md); animation: tIn 0.2s ease forwards; }
+    .pkv.pkv-delivery .toast.success { border-left: 3px solid var(--success); }
+    .pkv.pkv-delivery .toast.error { border-left: 3px solid var(--danger); }
+    .pkv.pkv-delivery .toast.info { border-left: 3px solid var(--accent); }
+    @keyframes tIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:none; } }
+
+    .pkv.pkv-delivery .empty-state { text-align: center; padding: 52px 20px; color: var(--text-muted); }
+    .pkv.pkv-delivery .empty-state .eico { font-size: 34px; margin-bottom: 10px; }
+
+    .pkv.pkv-delivery .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 660px) {
+      .pkv.pkv-delivery .main { padding: 14px; }
+      .pkv.pkv-delivery .header { padding: 12px 16px; }
+      .pkv.pkv-delivery th:nth-child(4), .pkv.pkv-delivery td:nth-child(4) { display: none; }
+      .pkv.pkv-delivery .bulk-table th:last-child, .pkv.pkv-delivery .bulk-table td:last-child { display: none; }
+    }
+  </style>
+
+<style>
+  /* Inside loggedInLayout: the layout navbar is the only sticky bar (page header scrolls away) */
+  .pkv.pkv-delivery .header{position:relative;top:auto;z-index:20}
+</style>
+<div class="pkv pkv-delivery">
+<header class="header">
+  <div class="header-left">
+    <div class="header-icon">📦</div>
+    <h1>Delivery Panel</h1>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-pending" id="pendingBadge">—</span>
+    <span class="badge badge-done"    id="doneBadge">—</span>
+    <span class="badge badge-offline" id="offlineBadge">⚡ Offline</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="sync-banner" id="syncBanner">
+    🕐 <span><b id="syncCount">0</b> deliveries queued offline — will sync on reconnect</span>
+  </div>
+
+  <div class="action-bar">
+    <span class="action-bar-label">Bulk Deliver</span>
+    <span class="sel-badge" id="selCount">0</span>
+    <span class="action-hint">Select packets → enter each receiver separately in the popup</span>
+    <button class="btn btn-primary" id="bulkBtn" onclick="openBulkModal()" disabled>
+      🚀 Deliver Selected
+    </button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn"        onclick="setFilter('pending',this)">⏳ Pending</button>
+    <button class="filter-btn"        onclick="setFilter('delivered',this)">✅ Delivered</button>
+    <div class="search-wrap">
+      <div class="iw">
+        <span class="ico">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by code or name…" oninput="render()">
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40px">
+            <input type="checkbox" id="selectAll" onchange="toggleAll(this)" title="Select all pending">
+          </th>
+          <th>Packet Code</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Deliver</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- ══ BULK MODAL ══ -->
+<div class="modal-overlay" id="bulkModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="bulkModalTitle">Bulk Delivery</h2>
+      <p>Enter a different receiver name &amp; phone for each packet</p>
+    </div>
+    <div class="modal-body">
+      <table class="bulk-table">
+        <thead>
+          <tr>
+            <th style="width:160px">Packet</th>
+            <th>Receiver Name</th>
+            <th>Phone Number</th>
+          </tr>
+        </thead>
+        <tbody id="bulkRows"></tbody>
+      </table>
+    </div>
+    <div class="modal-gps">
+      <span class="gps-dot" id="bulkGpsDot"></span>
+      <span id="bulkGpsText">Acquiring GPS location…</span>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost"   onclick="closeModal('bulkModal')">Cancel</button>
+      <button class="btn btn-success" id="bulkConfirmBtn" onclick="confirmBulk()">✅ Confirm All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SINGLE MODAL ══ -->
+<div class="modal-overlay" id="singleModal">
+  <div class="modal smodal">
+    <div class="modal-head">
+      <h2 id="sMTitle">Confirm Delivery</h2>
+      <p  id="sMSub"></p>
+    </div>
+    <div class="sfield">
+      <label>Receiver Name</label>
+      <div class="iw"><span class="ico">👤</span><input type="text" id="sName" placeholder="Full name"></div>
+    </div>
+    <div class="sfield" style="padding-bottom:4px">
+      <label>Phone Number</label>
+      <div class="iw"><span class="ico">📞</span><input type="text" id="sPhone" placeholder="Phone number"></div>
+    </div>
+    <div class="modal-gps" style="margin-top:10px;border-top:1px solid var(--border);border-radius:0">
+      <span class="gps-dot" id="sGpsDot"></span>
+      <span id="sGpsText">Acquiring GPS…</span>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost"   onclick="closeModal('singleModal')">Cancel</button>
+      <button class="btn btn-primary" id="sConfirmBtn" onclick="confirmSingle()">Confirm Delivery</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+const packets = <%- (typeof safeJson === 'function' ? safeJson(packets || []) : JSON.stringify(packets || []).replace(/</g, '\\u003c')) %>;   /* ★ safeJson */
+
+let selected     = new Set();
+let activeFilter = 'all';
+let capturedGPS  = null;
+let pendingId    = null;
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+  updateBadges(); updateSyncBanner(); render(); updateNetworkBadge();
+  window.addEventListener('online',  () => { updateNetworkBadge(); syncOffline(); });
+  window.addEventListener('offline', () =>   updateNetworkBadge());
+  if (navigator.onLine) syncOffline();
+});
+
+/* ── RENDER ── */
+const drafts = {};   // typed name / phone stay when the list is filtered
+function saveDrafts() {
+  document.querySelectorAll('#tbody input[type=text]').forEach(i => { drafts[i.id] = i.value; });
+}
+function render() {
+  saveDrafts();
+  const tbody  = document.getElementById('tbody');
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+  const rows = packets.filter(p => {
+    const mf = activeFilter === 'pending' ? !p.receiverName : activeFilter === 'delivered' ? !!p.receiverName : true;
+    const ms = !search || (p.PacketCode||'').toLowerCase().includes(search) || (p.Name||'').toLowerCase().includes(search) || (p.receiverName||'').toLowerCase().includes(search);
+    return mf && ms;
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="eico">📭</div><p>No packets match your filter</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(p => {
+    const done = !!p.receiverName;
+    return `
+    <tr class="${done?'delivered':''}">
+      <td>${!done ? `<input type="checkbox" data-id="${p.Id}" ${selected.has(p.Id)?'checked':''} onchange="toggle(${p.Id},this)">` : ''}</td>
+      <td><span class="packet-code">${esc(p.PacketCode)}</span></td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${esc(p.Name||'—')}</div>
+        ${p.Address?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${esc(p.Address)}</div>`:''}
+      </td>
+      <td>${done
+        ? `<span class="status-pill done"><span class="status-dot"></span>Delivered</span>`
+        : `<span class="status-pill pending"><span class="status-dot"></span>Pending</span>`}
+      </td>
+      <td>${done
+        ? `<div class="delivered-info">
+             <span class="delivered-name">👤 ${esc(p.receiverName)}</span>
+             <span class="delivered-phone">📞 ${esc(p.receiverPhone||'—')}</span>
+           </div>`
+        : `<div class="single-form">
+             <div class="iw"><span class="ico">👤</span><input type="text" id="n_${p.Id}" placeholder="Receiver name" value="${esc(drafts['n_'+p.Id]||'')}"></div>
+             <div class="iw"><span class="ico">📞</span><input type="text" id="ph_${p.Id}" placeholder="Phone" value="${esc(drafts['ph_'+p.Id]||'')}"></div>
+             <button class="btn btn-primary btn-sm" onclick="openSingleModal(${p.Id})">Deliver</button>
+           </div>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── SELECT ── */
+function toggle(id, cb) { cb.checked ? selected.add(id) : selected.delete(id); updateSelCount(); }
+function toggleAll(cb) {
+  packets.forEach(p => { if (!p.receiverName) cb.checked ? selected.add(p.Id) : selected.delete(p.Id); });
+  updateSelCount(); render();
+}
+function updateSelCount() {
+  document.getElementById('selCount').textContent = selected.size;
+  document.getElementById('bulkBtn').disabled = selected.size === 0;
+}
+
+/* ── FILTER ── */
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); render();
+}
+
+/* ── GPS ── */
+function getGPS() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => resolve(null), { timeout: 7000 }
+    );
+  });
+}
+function startGPS(dotId, txtId) {
+  capturedGPS = null;
+  document.getElementById(dotId).className = 'gps-dot';
+  document.getElementById(txtId).textContent = 'Acquiring GPS location…';
+  getGPS().then(gps => {
+    capturedGPS = gps;
+    document.getElementById(dotId).className = 'gps-dot' + (gps ? ' acquired' : '');
+    document.getElementById(txtId).textContent = gps ? `📍 ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}` : '📍 Location unavailable';
+  });
+}
+
+/* ── BULK MODAL ── */
+function openBulkModal() {
+  if (!selected.size) return;
+  const ids = [...selected];
+  document.getElementById('bulkModalTitle').textContent = `Deliver ${ids.length} Packet${ids.length>1?'s':''}`;
+
+  document.getElementById('bulkRows').innerHTML = ids.map(id => {
+    const p = packets.find(x => x.Id === id);
+    const prefillName  = document.getElementById(`n_${id}`)?.value  || '';
+    const prefillPhone = document.getElementById(`ph_${id}`)?.value || '';
+    return `
+    <tr id="brow_${id}">
+      <td>
+        <div class="bulk-pkt-code">${esc(p?.PacketCode||'')}</div>
+        <div class="bulk-pkt-name">${esc(p?.Name||'—')}</div>
+      </td>
+      <td>
+        <div class="iw"><span class="ico">👤</span>
+          <input type="text" id="b_n_${id}" placeholder="Receiver name" value="${esc(prefillName)}">
+        </div>
+      </td>
+      <td>
+        <div class="iw"><span class="ico">📞</span>
+          <input type="text" id="b_ph_${id}" placeholder="Phone number" value="${esc(prefillPhone)}">
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  openModal('bulkModal');
+  startGPS('bulkGpsDot', 'bulkGpsText');
+}
+
+async function confirmBulk() {
+  const ids = [...selected];
+  const deliveries = [];
+  let firstErr = null;
+
+  // Clear previous error highlights
+  ids.forEach(id => document.getElementById(`brow_${id}`)?.classList.remove('bulk-row-err'));
+
+  for (const id of ids) {
+    const name  = document.getElementById(`b_n_${id}`)?.value.trim()  || '';
+    const phone = document.getElementById(`b_ph_${id}`)?.value.trim() || '';
+    if (!name || !phone) {
+      document.getElementById(`brow_${id}`)?.classList.add('bulk-row-err');
+      if (!firstErr) firstErr = id;
+    } else {
+      deliveries.push({ packetId: id, receiverName: name, receiverPhone: phone, gps: capturedGPS, timestamp: new Date().toISOString() });
+    }
+  }
+
+  // ✅ Block if ANY selected packet is missing receiver details
+  if (firstErr) {
+    toast(`All selected packets must have a receiver name & phone`, 'error');
+    document.getElementById(`b_n_${firstErr}`)?.focus();
+    return;
+  }
+
+  const btn = document.getElementById('bulkConfirmBtn');
+  btn.innerHTML = '<span class="spinner"></span> Sending…';
+  btn.disabled  = true;
+
+  // ✅ Send ALL deliveries in ONE request (matches your controller: req.body = deliveries array)
+  const ok = await sendOrStoreBatch(deliveries);
+  if (ok === 'stored') selected.clear();
+
+  btn.innerHTML = '✅ Confirm All';
+  btn.disabled  = false;
+
+  /* refused packets stay selected with what was typed; the popup closes only when nothing is left */
+  if (!selected.size || !navigator.onLine) closeModal('bulkModal');
+  updateSelCount(); updateBadges(); render();
+}
+
+/* ── SINGLE MODAL ── */
+function openSingleModal(id) {
+  const p = packets.find(x => x.Id === id);
+  document.getElementById('sMTitle').textContent = `Deliver: ${p?.PacketCode||''}`;
+  document.getElementById('sMSub').textContent   = p?.Name || '';
+  document.getElementById('sName').value  = document.getElementById(`n_${id}`)?.value  || '';
+  document.getElementById('sPhone').value = document.getElementById(`ph_${id}`)?.value || '';
+  pendingId = id;
+  openModal('singleModal');
+  startGPS('sGpsDot', 'sGpsText');
+}
+
+async function confirmSingle() {
+  const name  = document.getElementById('sName').value.trim();
+  const phone = document.getElementById('sPhone').value.trim();
+  if (!name)  { toast('Receiver name is required', 'error'); return; }
+  if (!phone) { toast('Phone number is required',  'error'); return; }
+
+  const btn = document.getElementById('sConfirmBtn');
+  btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
+
+  // ✅ Wrap single delivery in array — controller expects: deliveries = req.body (array)
+  const ok = await sendOrStoreBatch([{ packetId: pendingId, receiverName: name, receiverPhone: phone, gps: capturedGPS, timestamp: new Date().toISOString() }]);
+  if (ok) closeModal('singleModal');   // refused: stays open so the number can be corrected
+
+  btn.innerHTML = 'Confirm Delivery'; btn.disabled = false;
+  updateBadges(); render();
+}
+
+/* ── SEND / OFFLINE (batch — matches controller: req.body = deliveries[]) ── */
+async function sendOrStoreBatch(deliveries) {
+  if (navigator.onLine) {
+    try {
+      const res = await fetch('/packet/deliverPacket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(deliveries)
+      });
+      if (res.status >= 500 || res.status === 0) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      /* ★ only what the server really saved is shown as delivered; refusals are shown, not queued */
+      const done = new Set([...(data.deliveredNow || []), ...(data.alreadyDelivered || [])]);
+      deliveries.forEach(d => {
+        if (!done.has(d.packetId)) return;
+        const p = packets.find(x => x.Id === d.packetId);
+        if (p) { p.receiverName = d.receiverName; p.receiverPhone = d.receiverPhone; }
+        selected.delete(d.packetId);
+      });
+      if ((data.deliveredNow || []).length) toast(`${data.deliveredNow.length} delivered ✅`, 'success');
+      (data.rejected || []).forEach(r => toast(r.reason || 'Refused', 'error'));
+      if (data.error) toast(data.error, 'error');
+      return done.size > 0;
+
+    } catch (err) {
+      // Store entire batch as one offline entry
+      storeOffline(deliveries);
+      toast('Server error — saved offline', 'error');
+      return 'stored';
+    }
+  } else {
+    storeOffline(deliveries);
+    toast('Saved offline — syncs on reconnect', 'info');
+    return 'stored';
+  }
+}
+
+/* The queue is shared with My Packets (which stores a flat list): always read through this. */
+function readQueue() {
+  try { const q = JSON.parse(localStorage.getItem('deliveryQueue') || '[]'); return Array.isArray(q) ? q.flat() : []; }
+  catch (e) { return []; }
+}
+function storeOffline(deliveries) {
+  localStorage.setItem('deliveryQueue', JSON.stringify(readQueue().concat(deliveries)));
+  updateSyncBanner();
+}
+
+async function syncOffline() {
+  const q = readQueue();
+  if (!q.length) return;
+
+  toast(`Syncing ${q.length} offline deliveries…`, 'info');
+
+  const failed = [];
+  for (let i = 0; i < q.length; i += 100) {
+    const batch = q.slice(i, i + 100);
+    try {
+      const res = await fetch('/packet/deliverPacket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(batch)
+      });
+      if (res.status >= 500) throw new Error();
+      const data = await res.json();          /* ★ a redirect / login page is not "synced" */
+      (data.rejected || []).forEach(r => toast(r.reason || 'Refused', 'error'));
+      if (data.error && !(data.rejected || []).length) throw new Error(data.error);
+    } catch {
+      failed.push(...batch);
+    }
+  }
+
+  if (!failed.length) {
+    localStorage.removeItem('deliveryQueue');
+    toast('All offline deliveries synced ✅', 'success');
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    localStorage.setItem('deliveryQueue', JSON.stringify(failed));
+    toast(`${failed.length} deliveries failed to sync`, 'error');
+  }
+  updateSyncBanner();
+}
+
+/* ── HELPERS ── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+['bulkModal','singleModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) { if (e.target===this) closeModal(id); });
+});
+function updateBadges() {
+  document.getElementById('pendingBadge').textContent = packets.filter(p=>!p.receiverName).length + ' pending';
+  document.getElementById('doneBadge').textContent    = packets.filter(p=> p.receiverName).length + ' done';
+}
+function updateNetworkBadge() {
+  document.getElementById('offlineBadge').classList.toggle('visible', !navigator.onLine);
+}
+function updateSyncBanner() {
+  const total = readQueue().length;
+  document.getElementById('syncCount').textContent = total;
+  document.getElementById('syncBanner').classList.toggle('visible', total > 0);
+}
+function toast(msg, type='info') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`; t.textContent = msg; c.appendChild(t);
+  setTimeout(() => t.remove(), 3800);
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</div>

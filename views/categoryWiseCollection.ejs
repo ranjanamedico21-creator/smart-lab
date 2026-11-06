@@ -1,0 +1,406 @@
+<style>
+  .cw-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius-lg,14px);overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .cw-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border,#e2e8f0)}
+  .cw-head-left{display:flex;align-items:center;gap:10px}
+  .cw-icon{width:32px;height:32px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;color:#185FA5;font-size:14px;flex-shrink:0}
+  .cw-title{font-size:14px;font-weight:600;color:var(--text-primary,#111);margin:0}
+  .cw-sub{font-size:12px;color:var(--text-secondary,#666);margin-top:2px}
+  .cw-filter{padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface,#f8f9fb)}
+  .cw-filter-row{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .cw-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:130px}
+  .cw-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666)}
+  .cw-input{height:36px;border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;color:var(--text-primary,#111);font-family:inherit;width:100%}
+  .cw-btn{height:36px;padding:0 16px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;text-decoration:none}
+  .btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}
+  .btn-primary:hover{background:#0C447C;color:#fff}
+  .btn-ol-blue{background:#fff;color:#185FA5;border-color:#B5D4F4}
+  .btn-ol-blue:hover{background:#E6F1FB}
+  .btn-ol-gray{background:#fff;color:var(--text-secondary,#666);border-color:var(--border,#e2e8f0)}
+  .btn-ol-gray:hover{background:var(--surface,#f8f9fb)}
+  .cw-summary{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border,#e2e8f0)}
+  .cw-sum-cell{padding:13px 18px;border-right:1px solid var(--border,#e2e8f0)}
+  .cw-sum-cell:last-child{border-right:none}
+  .cw-sum-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666);margin-bottom:5px}
+  .cw-sum-val{font-size:20px;font-weight:600;font-family:'DM Mono',monospace}
+  .cw-table{width:100%;border-collapse:collapse}
+  .cw-table thead th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666);padding:9px 16px;border-bottom:1px solid var(--border);text-align:left;background:var(--surface,#f8f9fb);white-space:nowrap}
+  .cw-table thead th.r{text-align:right}
+  .cw-table tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+  .cw-table tbody tr:last-child{border-bottom:none}
+  .cw-table tbody tr:hover td,.cw-table tbody tr.active-row td{background:#E6F1FB}
+  .cw-table tbody td{padding:11px 16px;font-size:13px;color:var(--text-primary,#111);vertical-align:middle}
+  .cw-table tbody td.r{text-align:right;font-family:'DM Mono',monospace}
+  .cat-wrap{display:flex;align-items:center;gap:10px}
+  .cat-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;flex-shrink:0}
+  .cat-main{font-weight:600;font-size:13px}
+  .cat-meta{font-size:11px;color:var(--text-secondary,#666);margin-top:2px}
+  .pct-wrap{display:flex;align-items:center;gap:8px}
+  .pct-bar{height:5px;border-radius:99px;background:var(--surface,#e2e8f0);flex:1;overflow:hidden}
+  .pct-fill{height:100%;border-radius:99px;background:#185FA5;transition:width .4s}
+  .pct-txt{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-secondary,#555);min-width:34px;text-align:right}
+  .view-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;background:#E6F1FB;color:#0C447C;border:1px solid #B5D4F4}
+  .test-panel{display:none}
+  .test-panel.open{display:block}
+  .test-panel-head{padding:11px 18px;background:#f0f6ff;border-top:1px solid #B5D4F4;border-bottom:1px solid #B5D4F4;display:flex;align-items:center;justify-content:space-between}
+  .test-panel-title{font-size:12px;font-weight:600;color:#0C447C;display:flex;align-items:center;gap:7px}
+  .close-panel{font-size:12px;color:#185FA5;cursor:pointer;background:none;border:none;font-weight:600}
+  .cw-footer{padding:11px 20px;border-top:1px solid var(--border,#e2e8f0);display:flex;align-items:center;justify-content:space-between;background:var(--surface,#f8f9fb)}
+  .cw-footer-info{font-size:12px;color:var(--text-secondary,#666)}
+  .export-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;background:#EAF3DE;color:#27500A;border:1px solid #C0DD97;text-decoration:none}
+  .export-btn:hover{background:#C0DD97}
+  @media(max-width:768px){.cw-summary{grid-template-columns:1fr 1fr}.cw-sum-cell:nth-child(2){border-right:none}.cw-sum-cell:nth-child(3){border-top:1px solid var(--border)}.cw-filter-row{flex-direction:column}.cw-field{min-width:100%}}
+  </style>
+  
+  <%
+    const _cols = typeof categoryWiseCollections !== 'undefined' ? categoryWiseCollections : [];
+    const _tests = typeof testWiseCollections   !== 'undefined' ? testWiseCollections    : [];
+    const _from  = typeof FromDate !== 'undefined' ? FromDate : '';
+    const _to    = typeof ToDate   !== 'undefined' ? ToDate   : '';
+  
+    const totalTests    = _cols.reduce((s,c) => s + (c.TestCount    || 0), 0);
+    const totalGross    = _cols.reduce((s,c) => s + parseFloat(c.TotalPrice    || 0), 0);
+    const totalDiscount = _cols.reduce((s,c) => s + parseFloat(c.TotalDiscount || 0), 0);
+  
+    const catColors = [
+      { bg:'#E6F1FB', tc:'#0C447C' },
+      { bg:'#EAF3DE', tc:'#27500A' },
+      { bg:'#EEEDFE', tc:'#3C3489' },
+      { bg:'#FAEEDA', tc:'#633806' },
+      { bg:'#FCEBEB', tc:'#791F1F' },
+      { bg:'#E1F5EE', tc:'#085041' },
+    ];
+  %>
+  
+  <div class="cw-card">
+  
+    <%# Header %>
+    <div class="cw-head">
+      <div class="cw-head-left">
+        <div class="cw-icon"><i class="bi bi-bar-chart-line"></i></div>
+        <div>
+          <p class="cw-title">Category Wise Collection</p>
+          <p class="cw-sub">Revenue breakdown by test category — click a row to see tests</p>
+        </div>
+      </div>
+      <% if(_from && _to) { %>
+        <span style="font-size:11px;padding:3px 10px;border-radius:99px;background:#E6F1FB;color:#185FA5;font-weight:600">
+          <%= _from %> → <%= _to %>
+        </span>
+      <% } %>
+    </div>
+  
+    <%# Filter %>
+    <div class="cw-filter">
+      <%- include("./partials/messages") %>
+      <form action="/report/getCategoryWiseCollection" method="GET">
+        <div class="cw-filter-row">
+          <div class="cw-field">
+            <label class="cw-label">From Date</label>
+            <input type="text" id="FromDate" name="FromDate"
+                   class="cw-input" placeholder="DD-MM-YYYY"
+                   value="<%= _from %>" autocomplete="off" readonly>
+          </div>
+          <div class="cw-field">
+            <label class="cw-label">To Date</label>
+            <input type="text" id="ToDate" name="ToDate"
+                   class="cw-input" placeholder="DD-MM-YYYY"
+                   value="<%= _to %>" autocomplete="off" readonly>
+          </div>
+          <a href="/patient/getPatientListView" class="cw-btn btn-ol-blue" style="margin-top:20px">
+            <i class="bi bi-people" style="font-size:12px"></i> Patient list
+          </a>
+          <a href="/patient/registerPatient" class="cw-btn btn-ol-gray" style="margin-top:20px">
+            <i class="bi bi-person-plus" style="font-size:12px"></i> Register
+          </a>
+          <button type="submit" class="cw-btn btn-primary" style="margin-top:20px">
+            <i class="bi bi-search" style="font-size:12px"></i> Search
+          </button>
+        </div>
+      </form>
+    </div>
+  
+    <%# Summary strip %>
+    <% if(_cols.length > 0) { %>
+    <div class="cw-summary">
+      <div class="cw-sum-cell">
+        <div class="cw-sum-label">Categories</div>
+        <div class="cw-sum-val" style="color:#185FA5"><%= _cols.length %></div>
+      </div>
+      <div class="cw-sum-cell">
+        <div class="cw-sum-label">Total tests</div>
+        <div class="cw-sum-val"><%= totalTests.toLocaleString('en-IN') %></div>
+      </div>
+      <div class="cw-sum-cell">
+        <div class="cw-sum-label">Gross revenue</div>
+        <div class="cw-sum-val" style="color:#27500A">
+          ₹ <%= totalGross.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+        </div>
+      </div>
+      <div class="cw-sum-cell">
+        <div class="cw-sum-label">Total discount</div>
+        <div class="cw-sum-val" style="color:#A32D2D">
+          ₹ <%= totalDiscount.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  
+    <%# Category table %>
+    <div style="overflow-x:auto">
+      <table class="cw-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Category</th>
+            <th class="r">Tests</th>
+            <th class="r">Gross (₹)</th>
+            <th class="r">Discount (₹)</th>
+            <th class="r">Net (₹)</th>
+            <th style="min-width:110px">Share</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if(_cols.length > 0) { %>
+            <% _cols.forEach(function(cat, idx) {
+              const gross    = parseFloat(cat.TotalPrice    || 0);
+              const discount = parseFloat(cat.TotalDiscount || 0);
+              const net      = gross - discount;
+              const pct      = totalGross > 0 ? Math.round((gross / totalGross) * 100) : 0;
+              const pal      = catColors[idx % catColors.length];
+              const initials = (cat.CategoryName||'').slice(0,2).toUpperCase();
+            %>
+            <tr id="catRow_<%= cat.CategoryId %>"
+                onclick="toggleTestPanel('<%= cat.CategoryId %>', '<%= cat.CategoryName %>')">
+              <td style="color:var(--text-muted,#aaa);font-size:12px">
+                <%= String(idx+1).padStart(2,'0') %>
+              </td>
+              <td>
+                <div class="cat-wrap">
+                  <div class="cat-avatar"
+                       style="background:<%= pal.bg %>;color:<%= pal.tc %>">
+                    <%= initials %>
+                  </div>
+                  <div>
+                    <div class="cat-main text-capitalize"><%= cat.CategoryName || 'N/A' %></div>
+                    <div class="cat-meta"><%= cat.TestCount || 0 %> tests registered</div>
+                  </div>
+                </div>
+              </td>
+              <td class="r"><%= (cat.TestCount || 0).toLocaleString('en-IN') %></td>
+              <td class="r">₹ <%= gross.toLocaleString('en-IN', {minimumFractionDigits:2}) %></td>
+              <td class="r" style="color:#A32D2D">
+                ₹ <%= discount.toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+              </td>
+              <td class="r" style="color:#27500A;font-weight:600">
+                ₹ <%= net.toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+              </td>
+              <td>
+                <div class="pct-wrap">
+                  <div class="pct-bar">
+                    <div class="pct-fill" style="width:<%= pct %>%"></div>
+                  </div>
+                  <span class="pct-txt"><%= pct %>%</span>
+                </div>
+              </td>
+              <td>
+                <span class="view-btn">
+                  <i class="bi bi-chevron-down" style="font-size:10px" id="chevron_<%= cat.CategoryId %>"></i>
+                  Tests
+                </span>
+              </td>
+            </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary,#666)">
+                <i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>
+                No data — select a date range and click Search
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  
+    <%# Test drill-down panel — inline below table %>
+    <div class="test-panel" id="testPanel">
+      <div class="test-panel-head">
+        <span class="test-panel-title" id="testPanelTitle">
+          <i class="bi bi-list-ul" style="font-size:12px"></i>
+          Tests
+        </span>
+        <button class="close-panel" onclick="closeTestPanel()">
+          ✕ Close
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="cw-table" id="testTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Test Name</th>
+              <th class="r">Count</th>
+              <th class="r">Gross (₹)</th>
+              <th class="r">Discount (₹)</th>
+              <th class="r">Net (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="testTableBody">
+            <% if(typeof testWiseCollections !== 'undefined' && testWiseCollections.length > 0) { %>
+              <% testWiseCollections.forEach(function(test, ti) {
+                const g = parseFloat(test.TotalPrice || 0);
+                const d = parseFloat(test.TotalDiscount || 0);
+              %>
+              <tr>
+                <td style="color:var(--text-muted,#aaa);font-size:12px">
+                  <%= String(ti+1).padStart(2,'0') %>
+                </td>
+                <td style="font-weight:500" class="text-capitalize"><%= test.TestName || 'N/A' %></td>
+                <td class="r"><%= (test.TestCount || 0).toLocaleString('en-IN') %></td>
+                <td class="r">₹ <%= g.toLocaleString('en-IN', {minimumFractionDigits:2}) %></td>
+                <td class="r" style="color:#A32D2D">
+                  ₹ <%= d.toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+                </td>
+                <td class="r" style="color:#27500A;font-weight:600">
+                  ₹ <%= (g-d).toLocaleString('en-IN', {minimumFractionDigits:2}) %>
+                </td>
+              </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  
+    <%# Footer %>
+    <div class="cw-footer">
+      <span class="cw-footer-info">
+        <% if(_from && _to) { %>
+          <%= _from %> to <%= _to %>
+          <% if(_cols.length > 0) { %> · <%= _cols.length %> categories<% } %>
+        <% } else { %>
+          Select a date range to generate the report
+        <% } %>
+      </span>
+      <% if(_cols.length > 0) { %>
+        <a href="/report/downloadCategoryCollectionExcel/<%= _from %>/<%= _to %>"
+           class="export-btn" target="_blank">
+          <i class="bi bi-file-earmark-excel" style="font-size:12px"></i> Export Excel
+        </a>
+      <% } %>
+    </div>
+  
+  </div>
+  
+  <script>
+  (function () {
+  
+    let activeCatId = null;
+  
+    window.toggleTestPanel = function (catId, catName) {
+      const panel = document.getElementById("testPanel");
+  
+      // If same row clicked → close
+      if (activeCatId === catId) {
+        closeTestPanel();
+        return;
+      }
+  
+      // Reset all chevrons
+      document.querySelectorAll('[id^="chevron_"]').forEach(el => {
+        el.className = "bi bi-chevron-down";
+        el.style.fontSize = "10px";
+      });
+      document.querySelectorAll('.cw-table tbody tr').forEach(r => {
+        r.classList.remove("active-row");
+      });
+  
+      // Set active
+      activeCatId = catId;
+      const chevron = document.getElementById("chevron_" + catId);
+      if (chevron) chevron.className = "bi bi-chevron-up";
+  
+      const row = document.getElementById("catRow_" + catId);
+      if (row) row.classList.add("active-row");
+  
+      document.getElementById("testPanelTitle").innerHTML =
+        `<i class="bi bi-list-ul" style="font-size:12px"></i> ${catName} — Test Breakdown`;
+  
+      // Fetch test data for this category
+      // The panel body shows loading, then redirects to server for data
+      const from = "<%= _from %>";
+      const to   = "<%= _to %>";
+  
+      if (from && to) {
+        document.getElementById("testTableBody").innerHTML =
+          `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-secondary,#666)">
+             <i class="bi bi-arrow-repeat"></i> Loading...
+           </td></tr>`;
+        panel.classList.add("open");
+  
+        fetch(`/report/getTestWiseCollectionJson/${catId}/${from}/${to}`)
+          .then(r => r.json())
+          .then(data => {
+            if (!data.success || !data.tests.length) {
+              document.getElementById("testTableBody").innerHTML =
+                `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-secondary,#666)">
+                  No tests found for this category in the selected period.
+                 </td></tr>`;
+              return;
+            }
+            document.getElementById("testTableBody").innerHTML =
+              data.tests.map((t, i) => {
+                const g = parseFloat(t.TotalPrice    || 0);
+                const d = parseFloat(t.TotalDiscount || 0);
+                const n = g - d;
+                return `<tr>
+                  <td style="color:#aaa;font-size:12px">${String(i+1).padStart(2,'0')}</td>
+                  <td style="font-weight:500;text-transform:capitalize">${t.TestName || 'N/A'}</td>
+                  <td style="text-align:right;font-family:monospace">${(t.TestCount||0).toLocaleString('en-IN')}</td>
+                  <td style="text-align:right;font-family:monospace">₹ ${g.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                  <td style="text-align:right;font-family:monospace;color:#A32D2D">₹ ${d.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                  <td style="text-align:right;font-family:monospace;color:#27500A;font-weight:600">₹ ${n.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+                </tr>`;
+              }).join('');
+          })
+          .catch(() => {
+            document.getElementById("testTableBody").innerHTML =
+              `<tr><td colspan="6" style="text-align:center;padding:20px;color:#A32D2D">
+                Failed to load test data.
+               </td></tr>`;
+          });
+      } else {
+        panel.classList.add("open");
+      }
+  
+      // Scroll panel into view
+      setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "nearest" }), 100);
+    };
+  
+    window.closeTestPanel = function () {
+      activeCatId = null;
+      document.getElementById("testPanel").classList.remove("open");
+      document.querySelectorAll('[id^="chevron_"]').forEach(el => {
+        el.className = "bi bi-chevron-down";
+      });
+      document.querySelectorAll('.cw-table tbody tr').forEach(r => {
+        r.classList.remove("active-row");
+      });
+    };
+  
+    // Auto-open panel if testWiseCollections came from server (page refresh via link)
+    <% if(typeof testWiseCollections !== 'undefined' && testWiseCollections.length > 0 && typeof selectedCategoryId !== 'undefined') { %>
+      document.addEventListener("DOMContentLoaded", function () {
+        const row = document.getElementById("catRow_<%= selectedCategoryId %>");
+        if (row) {
+          document.getElementById("testPanel").classList.add("open");
+          row.classList.add("active-row");
+          const ch = document.getElementById("chevron_<%= selectedCategoryId %>");
+          if (ch) ch.className = "bi bi-chevron-up";
+        }
+      });
+    <% } %>
+  
+  })();
+  </script>

@@ -1,0 +1,213 @@
+<%
+  /* ════════════════════════════════════════════════════════════════════
+     views/home.ejs
+     Optional locals (page works without them):
+       user   – logged-in user  { Name / FirstName / Email }
+       stats  – { todayPatients, todayCollection, pendingReports, activeTests }
+     ► Edit the QUICK_LINKS paths below to match your routes.
+  ════════════════════════════════════════════════════════════════════ */
+  var brand = (typeof BRAND_NAME !== 'undefined' && BRAND_NAME) ? BRAND_NAME : 'SmartLab';
+  var u     = (typeof user !== 'undefined' && user) ? user : null;
+  var name  = u ? (u.FirstName || u.Name || u.UserName || (u.Email || '').split('@')[0] || '') : '';
+  var st    = (typeof stats !== 'undefined' && stats) ? stats : null;
+
+  var QUICK_LINKS = [
+    { group: 'Front desk', items: [
+      { href: '/patient/registerPatient',  icon: 'bi-person-plus',       title: 'New Patient',      sub: 'Register & bill',          color: 'blue'   },
+      { href: '/patient/getPatientListView',   icon: 'bi-people',            title: 'Patient List',     sub: 'Search, print, reprint',   color: 'teal'   },
+    ]},
+    { group: 'Reporting', items: [
+      { href: '/report/pending',           icon: 'bi-file-earmark-medical', title: 'Pending Reports', sub: 'Write & finalise',       color: 'amber'  },
+    ]},
+    { group: 'Test master', items: [
+      { href: '/test/getTestListView',     icon: 'bi-clipboard2-pulse',  title: 'Test List',        sub: 'Prices, status, templates', color: 'indigo' },
+      { href: '/test/createTest',          icon: 'bi-plus-square',       title: 'Create Test',      sub: 'Add a new test',           color: 'green'  },
+      { href: '/test/getSubTestListView',  icon: 'bi-diagram-2',         title: 'Sub Tests',        sub: 'Add-ons & packages',       color: 'purple' },
+      { href: '/test/getSubParamaterView', icon: 'bi-diagram-3',         title: 'Sub Parameters',   sub: 'Pathology ranges',         color: 'rose'   },
+    ]},
+  ];
+
+  var STAT_CARDS = st ? [
+    { label: "Today's patients",   value: st.todayPatients,   icon: 'bi-people',           color: 'blue'  },
+    { label: "Today's collection", value: st.todayCollection != null ? '₹ ' + Number(st.todayCollection).toLocaleString('en-IN') : null, icon: 'bi-currency-rupee', color: 'green' },
+    { label: 'Reports pending',    value: st.pendingReports,  icon: 'bi-hourglass-split',  color: 'amber' },
+    { label: 'Active tests',       value: st.activeTests,     icon: 'bi-clipboard2-check', color: 'indigo'},
+  ].filter(function (c) { return c.value !== undefined && c.value !== null; }) : [];
+%>
+
+<style>
+  .hm { --hm-bg:#f0f4f8; --hm-card:#fff; --hm-border:#e2e8f0; --hm-text:#1a202c; --hm-text2:#4a5568; --hm-text3:#94a3b8;
+        padding: 20px; background: var(--hm-bg); min-height: 100%; font-family: 'DM Sans','Segoe UI',sans-serif; }
+  .hm-wrap { max-width: 1200px; margin: 0 auto; }
+
+  /* Hero */
+  .hm-hero { background: linear-gradient(135deg,#3b6ef6 0%,#2a55d4 60%,#1e3a8a 100%); color:#fff; border-radius:16px;
+             padding: 24px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+             box-shadow: 0 8px 24px rgba(59,110,246,.25); margin-bottom: 20px; position: relative; overflow: hidden; }
+  .hm-hero::after { content:''; position:absolute; right:-60px; top:-60px; width:220px; height:220px; border-radius:50%;
+                    background: rgba(255,255,255,.08); pointer-events:none; }
+  .hm-greet { font-size: 13px; opacity: .85; margin: 0 0 2px; }
+  .hm-name  { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -.3px; }
+  .hm-brand { font-size: 13px; opacity: .8; margin: 4px 0 0; }
+  .hm-clock { text-align: right; position: relative; z-index: 1; }
+  .hm-time  { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .hm-date  { font-size: 13px; opacity: .85; }
+
+  /* Stats */
+  .hm-stats { display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .hm-stat  { background: var(--hm-card); border:1px solid var(--hm-border); border-radius: 14px; padding: 16px;
+              display:flex; align-items:center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+  .hm-stat-val { font-size: 22px; font-weight: 700; color: var(--hm-text); line-height: 1.1; }
+  .hm-stat-lbl { font-size: 12px; color: var(--hm-text3); }
+
+  /* Section */
+  .hm-sec-title { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:.7px;
+                  text-transform:uppercase; color: var(--hm-text3); margin: 0 0 12px; }
+  .hm-sec-title::after { content:''; flex:1; height:1px; background: var(--hm-border); }
+  .hm-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+
+  /* Tiles */
+  .hm-tile { display:flex; align-items:center; gap: 14px; padding: 16px; background: var(--hm-card);
+             border: 1px solid var(--hm-border); border-radius: 14px; text-decoration: none; color: var(--hm-text);
+             transition: transform .15s, box-shadow .15s, border-color .15s; min-height: 76px; }
+  .hm-tile:hover, .hm-tile:focus-visible { transform: translateY(-2px); border-color: #c7d2fe;
+             box-shadow: 0 8px 20px rgba(15,23,42,.08); color: var(--hm-text); outline: none; }
+  .hm-tile-title { font-weight: 600; font-size: 14px; }
+  .hm-tile-sub   { font-size: 12px; color: var(--hm-text3); }
+  .hm-tile .bi-chevron-right { margin-left: auto; color: var(--hm-text3); transition: transform .15s; }
+  .hm-tile:hover .bi-chevron-right { transform: translateX(3px); color: #3b6ef6; }
+
+  .hm-ic { width: 44px; height: 44px; border-radius: 12px; display:flex; align-items:center; justify-content:center;
+           font-size: 20px; flex-shrink: 0; }
+  .c-blue  { background:#E6F1FB; color:#185FA5; }   .c-teal  { background:#E0F5F8; color:#0E7490; }
+  .c-amber { background:#FAEEDA; color:#854F0B; }   .c-indigo{ background:#EEEDFE; color:#534AB7; }
+  .c-green { background:#EAF3DE; color:#3B6D11; }   .c-purple{ background:#F3E8FF; color:#7C3AED; }
+  .c-rose  { background:#FCEBEB; color:#A32D2D; }
+
+  .hm-search { position: relative; margin-bottom: 22px; }
+  .hm-search i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color: var(--hm-text3); }
+  .hm-search input { height: 46px; border-radius: 12px; padding-left: 40px; font-size: 15px; border-color: var(--hm-border); }
+  .hm-empty { display:none; text-align:center; color: var(--hm-text3); padding: 20px; }
+
+  @media (max-width: 991.98px) { .hm-stats { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 575.98px) {
+    .hm { padding: 12px; }
+    .hm-hero { padding: 18px; border-radius: 14px; }
+    .hm-name { font-size: 20px; }
+    .hm-clock { text-align: left; width: 100%; }
+    .hm-time { font-size: 22px; }
+    .hm-grid { grid-template-columns: 1fr; gap: 10px; }
+    .hm-stats { gap: 10px; }
+    .hm-stat { padding: 12px; }
+    .hm-stat-val { font-size: 18px; }
+    .hm-ic { width: 40px; height: 40px; font-size: 18px; }
+  }
+</style>
+
+<section class="hm">
+  <div class="hm-wrap">
+
+    <!-- Hero -->
+    <div class="hm-hero">
+      <div style="position:relative;z-index:1">
+        <p class="hm-greet" id="hmGreet">Welcome</p>
+        <h1 class="hm-name"><%= name ? name : 'Welcome back' %></h1>
+        <p class="hm-brand"><i class="bi bi-hospital"></i> <%= brand %></p>
+      </div>
+      <div class="hm-clock" aria-live="off">
+        <div class="hm-time" id="hmTime">--:--</div>
+        <div class="hm-date" id="hmDate"></div>
+      </div>
+    </div>
+
+    <%- include("./partials/messages"); %>
+
+    <!-- Stats (only shown if the controller passes `stats`) -->
+    <% if (STAT_CARDS.length) { %>
+      <div class="hm-stats">
+        <% STAT_CARDS.forEach(function (c) { %>
+          <div class="hm-stat">
+            <div class="hm-ic c-<%= c.color %>"><i class="bi <%= c.icon %>"></i></div>
+            <div>
+              <div class="hm-stat-val"><%= c.value %></div>
+              <div class="hm-stat-lbl"><%= c.label %></div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <!-- Search -->
+    <div class="hm-search">
+      <i class="bi bi-search"></i>
+      <input type="search" class="form-control" id="hmFilter" placeholder="Find a page… (press / to focus)"
+             autocomplete="off" aria-label="Find a page">
+    </div>
+
+    <!-- Quick links -->
+    <% QUICK_LINKS.forEach(function (g) { %>
+      <div class="hm-group">
+        <div class="hm-sec-title"><%= g.group %></div>
+        <div class="hm-grid">
+          <% g.items.forEach(function (it) { %>
+            <a class="hm-tile" href="<%= it.href %>" data-search="<%= (it.title + ' ' + it.sub + ' ' + g.group).toLowerCase() %>">
+              <div class="hm-ic c-<%= it.color %>"><i class="bi <%= it.icon %>"></i></div>
+              <div>
+                <div class="hm-tile-title"><%= it.title %></div>
+                <div class="hm-tile-sub"><%= it.sub %></div>
+              </div>
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+    <div class="hm-empty" id="hmEmpty"><i class="bi bi-search"></i> No matching page.</div>
+
+  </div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  // Greeting + live clock (India time format)
+  function tick() {
+    var now = new Date(), h = now.getHours();
+    document.getElementById('hmGreet').textContent =
+      h < 12 ? 'Good morning' : (h < 17 ? 'Good afternoon' : 'Good evening');
+    document.getElementById('hmTime').textContent =
+      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    document.getElementById('hmDate').textContent =
+      now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  tick(); setInterval(tick, 15000);
+
+  // Quick filter
+  var input = document.getElementById('hmFilter');
+  input.addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase(), any = false;
+    document.querySelectorAll('.hm-group').forEach(function (g) {
+      var shown = 0;
+      g.querySelectorAll('.hm-tile').forEach(function (t) {
+        var ok = !q || t.dataset.search.indexOf(q) !== -1;
+        t.style.display = ok ? '' : 'none'; if (ok) shown++;
+      });
+      g.style.display = shown ? '' : 'none'; if (shown) any = true;
+    });
+    document.getElementById('hmEmpty').style.display = any ? 'none' : 'block';
+  });
+  // Enter opens the first visible match
+  input.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var first = Array.prototype.find.call(document.querySelectorAll('.hm-tile'), function (t) { return t.offsetParent !== null; });
+    if (first) window.location.href = first.href;
+  });
+  // "/" focuses the search (desktop shortcut)
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault(); input.focus();
+    }
+  });
+})();
+</script>

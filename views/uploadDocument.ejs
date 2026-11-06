@@ -1,0 +1,107 @@
+<!-- Breadcrumb Section -->
+<section class="py-4 bg-light">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="p-3 bg-white rounded-3 shadow-sm border">
+      <ol class="breadcrumb mb-0 fw-medium">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Upload Document</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Form Section -->
+<section class="container-fluid py-4">
+  <div class="row justify-content-center ">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white text-center p-3 rounded-top-3">
+          <h5 class="mb-0 fw-semibold">Upload Document</h5>
+        </div>
+        <div class="card-body p-4">
+          <%- include ("./partials/messages"); %>
+          
+          <form action="/report/uploadDocument" method="post" class="needs-validation" enctype="multipart/form-data" novalidate>
+            <!-- Category Selection -->
+            <div class="row">
+                <div class="col">
+                  <label for="documentCategory" class="form-label fw-medium text-dark">Document Category</label>
+                  <select class="form-control rounded-3 shadow-sm" name="documentCategory" id="documentCategory" required>
+                    <option value="">Select Category</option>
+                    <% DocumentCategoryDetails.forEach(function(category){ %>
+                      <option id="category<%= category.Id %>" value="<%= category.Id %>" data-category-id="<%=category.Id%>">
+                        <%= category.Name %>
+                      </option>
+                    <% }) %>
+                  </select>
+                  <div class="invalid-feedback">Please select a document category.</div>
+                </div>
+              <div class="col">
+               <!-- File Upload -->
+                
+                  <label for="documentUpload" class="form-label fw-medium text-dark">Upload Document</label>
+                  <input 
+                    type="file" 
+                    class="form-control rounded-3 shadow-sm" 
+                    id="documentUpload" 
+                    name="documentUpload" 
+                    accept="image/png, image/jpeg, image/jpg" 
+                    required
+                  >
+                  <div class="invalid-feedback">Please upload a document (PNG, JPEG, JPG).</div>
+                </div>  
+            </div>
+
+            <!-- Date Fields -->
+            <div class="row g-3 mt-3 mb-3">
+              <div class="col-md-6">
+                <label for="FromDate" class="form-label fw-medium text-dark">Valid From</label>
+                <input 
+                  type="text" 
+                  class="form-control rounded-3 shadow-sm" 
+                  id="FromDate" 
+                  name="validFrom" 
+                  placeholder="Document is Valid from" 
+                  value="<%= typeof validFrom!= 'undefined' ? validFrom : '' %>" 
+                  autocomplete="off" 
+                  required
+                >
+                <div class="invalid-feedback">Please enter a valid from date.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="ToDate" class="form-label fw-medium text-dark">Valid Until</label>
+                <input 
+                  type="text" 
+                  class="form-control rounded-3 shadow-sm" 
+                  id="ToDate" 
+                  name="validUpto" 
+                  placeholder="To Date" 
+                  value="<%= typeof validUpto!= 'undefined' ? validUpto : '' %>" 
+                  autocomplete="off" 
+                  required
+                >
+                <div class="invalid-feedback">Please enter a valid to date.</div>
+              </div>
+            </div>
+
+           
+
+            <!-- Submit Button -->
+            <div class="text-end">
+              <button 
+                type="submit" 
+                class="btn btn-primary rounded-3 shadow-sm fw-medium px-4 py-2" 
+                id="uplodDocument" 
+                data-bs-title="Upload Document"
+              >
+                Upload Document
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

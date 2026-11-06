@@ -1,0 +1,152 @@
+<%# Packet report. Everyone sees his own; admin and /packet/reportAll see everyone. %>
+<%- include("pickers") %>
+<style>
+  .pkr { --line:#e2e8f0; --muted:#64748b; color:#0f172a; padding:16px 4px 48px; }
+  .pkr h1 { font-size:20px; font-weight:700; margin:0 auto 0 0; }
+  .pkr .head { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .pkr .box { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:14px; }
+  .pkr .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+  .pkr label { font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px; display:block; }
+  .pkr .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; margin-bottom:14px; }
+  .pkr .card-n { background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .pkr .card-n b { display:block; font-size:22px; line-height:1.2; }
+  .pkr .card-n span { font-size:12px; color:var(--muted); }
+  .pkr table { width:100%; border-collapse:collapse; font-size:13px; }
+  .pkr th { font-size:11px; text-transform:uppercase; color:var(--muted); padding:8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  .pkr td { padding:8px; border-bottom:1px solid #f1f5f9; vertical-align:top; overflow-wrap:anywhere; }
+  .pkr .code { font-family:ui-monospace,Menlo,monospace; font-size:12px; font-weight:600; color:#2563eb; }
+  .pkr .sub { font-size:12px; color:var(--muted); }
+  .pkr .pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:#f1f5f9; white-space:nowrap; }
+  .pkr .s-DELIVERED { background:#dcfce7; color:#15803d; } .pkr .s-ASSIGNED { background:#fef3c7; color:#b45309; }
+  .pkr .s-UPLOADED { background:#dbeafe; color:#1d4ed8; } .pkr .s-RETURNED { background:#ede9fe; color:#7c3aed; } .pkr .s-DISABLED { background:#fee2e2; color:#b91c1c; }
+  @media (max-width:767px) {
+    .pkr .rows thead { display:none; }
+    .pkr .rows tr { display:block; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; padding:6px 2px; }
+    .pkr .rows td { display:block; border:0; padding:3px 10px; }
+    .pkr .rows td[data-label]::before { content:attr(data-label); display:block; font-size:10px; text-transform:uppercase; color:var(--muted); }
+    .pkr .rows td:empty { display:none; }
+    .pkr .box.rows-box { padding:8px; }
+  }
+</style>
+<%
+  var LABEL = { UPLOADED:'To assign', ASSIGNED:'With staff', DELIVERED:'Delivered', RETURNED:'Returned', DISABLED:'Disabled' };
+  var rangeValue = filters.from ? (filters.from === filters.to ? filters.from : filters.from + ' to ' + filters.to) : '';
+%>
+<div class="pkr">
+  <div class="head">
+    <h1><%= perms.reportAll ? 'Packet report' : 'My packet report' %></h1>
+    <a class="btn btn-sm btn-outline-success" href="/packet/report?<%= qs %>&format=csv"><i class="bi bi-download"></i> Excel (CSV)</a>
+    <% if (perms.manage || perms.isAdmin) { %><a class="btn btn-sm btn-outline-secondary" href="/packet/packets">Assign page</a><% } %>
+  </div>
+  <%- include("../partials/messages") %>
+
+  <form class="box" method="GET" action="/packet/report" id="reportForm">
+    <div class="grid">
+      <div><label for="fMonth">Month</label><input type="text" class="form-control form-control-sm" id="fMonth" name="month" value="<%= filters.month %>"></div>
+      <div><label for="fRange">Or dates</label><input type="text" class="form-control form-control-sm" id="fRange" value="<%= rangeValue %>" placeholder="Pick from – to"></div>
+      <div><label for="fBy">Dates mean</label>
+        <select class="form-select form-select-sm" id="fBy" name="dateBy">
+          <option value="uploaded" <%= filters.dateBy === 'uploaded' ? 'selected' : '' %>>Uploaded on</option>
+          <option value="assigned" <%= filters.dateBy === 'assigned' ? 'selected' : '' %>>Assigned on</option>
+          <option value="delivered" <%= filters.dateBy === 'delivered' ? 'selected' : '' %>>Delivered on</option>
+          <option value="returned" <%= filters.dateBy === 'returned' ? 'selected' : '' %>>Returned on</option>
+        </select></div>
+      <div><label for="fStatus">Status</label>
+        <select class="form-select form-select-sm" id="fStatus" name="status">
+          <option value="">All</option>
+          <% Object.keys(LABEL).forEach(function (k) { %><option value="<%= k %>" <%= filters.status === k ? 'selected' : '' %>><%= LABEL[k] %></option><% }) %>
+          <option value="EVER_RETURNED" <%= filters.status === 'EVER_RETURNED' ? 'selected' : '' %>>Returned at any time</option>
+        </select></div>
+      <% if (perms.reportAll) { %>
+      <div><label for="fUser">Staff</label>
+        <select id="fUser" name="userId"><option value="">All staff</option>
+          <% users.forEach(function (u) { %><option value="<%= u.id %>" <%= Number(filters.userId) === Number(u.id) ? 'selected' : '' %>><%= u.name %></option><% }) %>
+        </select></div>
+      <% } %>
+      <div><label for="fType">Type</label>
+        <select class="form-select form-select-sm" id="fType" name="type"><option value="">All</option>
+          <% types.forEach(function (t) { %><option value="<%= t %>" <%= filters.type === t ? 'selected' : '' %>><%= t %></option><% }) %>
+        </select></div>
+      <div><label for="fQ">Search</label><input type="search" class="form-control form-control-sm" id="fQ" name="q" value="<%= filters.q %>" placeholder="Code, name, receiver, phone"></div>
+    </div>
+    <input type="hidden" name="from" id="fFrom" value="<%= filters.from %>">
+    <input type="hidden" name="to" id="fTo" value="<%= filters.to %>">
+    <div class="mt-3 d-flex gap-2">
+      <button class="btn btn-sm btn-primary" type="submit">Show</button>
+      <a class="btn btn-sm btn-light" href="/packet/report">Reset</a>
+    </div>
+  </form>
+
+  <div class="cards">
+    <div class="card-n"><b><%= summary.total %></b><span>Total</span></div>
+    <div class="card-n"><b><%= summary.delivered %></b><span>Delivered</span></div>
+    <div class="card-n"><b><%= summary.assigned %></b><span>With staff</span></div>
+    <div class="card-n"><b><%= summary.returned %></b><span>Returned</span></div>
+    <div class="card-n"><b><%= summary.uploaded %></b><span>To assign</span></div>
+    <div class="card-n"><b><%= summary.disabled %></b><span>Disabled</span></div>
+  </div>
+
+  <% if (perms.reportAll && people.length) { %>
+  <div class="box table-responsive">
+    <table>
+      <thead><tr><th>Staff</th><th>With them</th><th>Delivered</th><th>Returned</th></tr></thead>
+      <tbody>
+        <% people.forEach(function (p) { %><tr><td><%= p.name %></td><td><%= p.pending %></td><td><%= p.delivered %></td><td><%= p.returned %></td></tr><% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+
+  <div class="box rows-box">
+    <% if (!rows.length) { %>
+      <div class="text-center text-muted py-4">No packets match these filters.</div>
+    <% } else { %>
+    <table class="rows">
+      <thead><tr><th>Packet</th><th>Name</th><th>Status</th><th>With</th><th>Delivered</th><th>Returned / disabled</th></tr></thead>
+      <tbody>
+      <% rows.forEach(function (r) { %>
+        <tr>
+          <td><span class="code"><%= r.PacketCode %></span><div class="sub"><%= r.Type %> · <%= r.Month %></div></td>
+          <td data-label="Name"><%= r.Name || '—' %></td>
+          <td data-label="Status"><span class="pill s-<%= r.Status %>"><%= LABEL[r.Status] || r.Status %></span></td>
+          <td data-label="With"><%= r.AssignedTo || '—' %><% if (r.AssignedOn) { %><div class="sub"><%= r.AssignedOn %></div><% } %></td>
+          <td data-label="Delivered"><% if (r.DeliveredOn) { %><%= r.ReceiverName %><div class="sub"><%= r.ReceiverPhone %> · <%= r.DeliveredOn %><% if (r.DeliveredBy) { %> · by <%= r.DeliveredBy %><% } %></div><% } else { %>—<% } %></td>
+          <td data-label="Returned / disabled">
+            <% if (r.DisabledReason) { %><%= r.DisabledReason %><div class="sub">Disabled by <%= r.DisabledBy %></div><% } %>
+            <% if (r.ReturnedOn) { %><%= r.ReturnReason %><% if (r.ReturnNote) { %> · <%= r.ReturnNote %><% } %><div class="sub"><%= r.ReturnedBy %> · <%= r.ReturnedOn %><% if (Number(r.TimesReturned) > 1) { %> · <%= r.TimesReturned %> times<% } %></div><% } %>
+            <% if (!r.DisabledReason && !r.ReturnedOn) { %>—<% } %>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+    <% if (pages > 1) { %>
+    <div class="d-flex gap-2 justify-content-end align-items-center pt-2">
+      <span class="sub">Page <%= page %> of <%= pages %></span>
+      <% if (page > 1) { %><a class="btn btn-sm btn-outline-secondary" href="/packet/report?<%= qs %>&page=<%= page - 1 %>">Previous</a><% } %>
+      <% if (page < pages) { %><a class="btn btn-sm btn-outline-secondary" href="/packet/report?<%= qs %>&page=<%= page + 1 %>">Next</a><% } %>
+    </div>
+    <% } %>
+    <% } %>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var month = document.getElementById('fMonth'), from = document.getElementById('fFrom'), to = document.getElementById('fTo');
+  var range;
+  var monthPicker = pkvMonthPicker(month, function () { from.value = ''; to.value = ''; if (range) range.clear(false); });
+  range = flatpickr('#fRange', {
+    mode: 'range', dateFormat: 'Y-m-d', disableMobile: true,
+    onChange: function (dates, str, fp) {
+      from.value = dates[0] ? fp.formatDate(dates[0], 'Y-m-d') : '';
+      to.value = dates[1] ? fp.formatDate(dates[1], 'Y-m-d') : from.value;
+      if (dates[0]) monthPicker.clear(false);
+    }
+  });
+  if (document.getElementById('fUser')) new TomSelect('#fUser', { maxOptions: null, refreshThrottle: 0 });
+  document.getElementById('reportForm').addEventListener('submit', function () {
+    [month, from, to, document.getElementById('fQ'), document.getElementById('fStatus'), document.getElementById('fType')].forEach(function (el) { if (!el.value) el.disabled = true; });
+    var u = document.getElementById('fUser'); if (u && !u.value) u.disabled = true;
+  });
+});
+</script>

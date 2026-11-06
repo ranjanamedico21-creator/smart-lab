@@ -1,0 +1,397 @@
+<%
+/*
+  Profit & Loss report
+  Expects (from BillingController.renderProfitLoss):
+    rows, summary, writeOffs, suppliers, products, customers,
+    supplierId, productId, customerId, fromDate, toDate
+  summary.expiryWriteOff / netProfit / netMarginPercent and writeOffs are new; the page still works without them.
+*/
+const inr   = v => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const inr0  = v => Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const tableRows = rows || [];
+const wo        = (typeof writeOffs !== 'undefined' && writeOffs) ? writeOffs : { rows: [], totals: { qty: 0, taxable: 0, gst: 0, total: 0 } };
+const woTotal   = Number(summary.expiryWriteOff != null ? summary.expiryWriteOff : wo.totals.total) || 0;
+const gross     = Number(summary.totalGrossProfit) || 0;
+const net       = summary.netProfit != null ? Number(summary.netProfit) : gross - woTotal;
+const sales     = Number(summary.totalNetSales) || 0;
+const netMargin = summary.netMarginPercent != null ? Number(summary.netMarginPercent) : (sales > 0 ? Math.round(net / sales * 10000) / 100 : 0);
+const lossRows  = tableRows.filter(r => r.GrossProfit < 0);
+const best      = tableRows.length ? tableRows.reduce((a, b) => (b.GrossProfit > a.GrossProfit ? b : a)) : null;
+const worst     = tableRows.length ? tableRows.reduce((a, b) => (b.GrossProfit < a.GrossProfit ? b : a)) : null;
+const maxAbsMargin = Math.max(20, ...tableRows.map(r => Math.abs(Number(r.GrossMarginPercent) || 0)));
+const customerFilterOn = !!customerId;
+%>
+
+<style>
+  .pl-page { --pl-ink:#0f172a; --pl-muted:#64748b; --pl-line:#e2e8f0; --pl-soft:#f8fafc;
+             --pl-blue:#2563eb; --pl-amber:#d97706; --pl-green:#059669; --pl-red:#dc2626; --pl-radius:14px; }
+  .pl-page .pl-card { background:#fff; border:1px solid var(--pl-line); border-radius:var(--pl-radius); box-shadow:0 1px 2px rgba(15,23,42,.04); }
+  .pl-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .pl-eyebrow { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--pl-muted); font-weight:600; }
+  .pl-title { font-size:24px; font-weight:700; color:var(--pl-ink); margin:2px 0 6px; letter-spacing:-.01em; }
+  .pl-period { display:inline-flex; align-items:center; gap:6px; background:#eff6ff; color:#1d4ed8; border-radius:999px; padding:3px 12px; font-size:12.5px; font-weight:600; }
+  .pl-tools { display:flex; gap:8px; }
+  .pl-btn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--pl-line); background:#fff; color:var(--pl-ink); border-radius:10px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+  .pl-btn:hover { background:var(--pl-soft); }
+
+  .pl-filter { padding:16px 18px; margin-bottom:18px; }
+  .pl-filter .form-label { font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--pl-muted); font-weight:600; margin-bottom:4px; }
+  .pl-filter .form-control, .pl-filter .form-select { border-radius:10px; font-size:14px; }
+
+  /* the statement strip: Net sales - COGS = Gross profit - Write-off = Net profit */
+  .pl-flow { display:grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1.25fr; align-items:stretch; gap:10px; margin-bottom:14px; }
+  .pl-op { display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:300; color:#94a3b8; }
+  .pl-tile { padding:14px 16px; position:relative; overflow:hidden; }
+  .pl-tile::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent,#94a3b8); }
+  .pl-tile .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--pl-muted); font-weight:600; }
+  .pl-tile .val { font-size:21px; font-weight:700; color:var(--pl-ink); margin-top:4px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .pl-tile .sub { font-size:12px; color:var(--pl-muted); margin-top:2px; }
+  .pl-tile.sales { --accent:var(--pl-blue); }
+  .pl-tile.cogs  { --accent:var(--pl-amber); }
+  .pl-tile.gross { --accent:var(--pl-green); }
+  .pl-tile.gross.neg { --accent:var(--pl-red); } .pl-tile.gross.neg .val { color:var(--pl-red); }
+  .pl-tile.wo    { --accent:var(--pl-red); } .pl-tile.wo .val { color:var(--pl-red); }
+  .pl-tile.net   { color:#fff; border:0; background:linear-gradient(135deg,#059669,#047857); }
+  .pl-tile.net.neg { background:linear-gradient(135deg,#dc2626,#b91c1c); }
+  .pl-tile.net::before { display:none; }
+  .pl-tile.net .lbl, .pl-tile.net .sub { color:rgba(255,255,255,.85); }
+  .pl-tile.net .val { color:#fff; font-size:25px; }
+  @media (max-width: 1199px) { .pl-flow { grid-template-columns: 1fr 1fr; } .pl-op { display:none; } .pl-tile.net { grid-column: 1 / -1; } }
+  @media (max-width: 575px)  { .pl-flow { grid-template-columns: 1fr; } }
+
+  .pl-chips { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; margin-bottom:18px; }
+  .pl-chip { padding:11px 14px; display:flex; flex-direction:column; gap:2px; }
+  .pl-chip .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--pl-muted); font-weight:600; }
+  .pl-chip .val { font-size:16px; font-weight:700; color:var(--pl-ink); }
+  .pl-chip .sub { font-size:12px; color:var(--pl-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .pl-sec-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding:14px 18px; border-bottom:1px solid var(--pl-line); }
+  .pl-sec-head h6 { margin:0; font-size:15px; font-weight:700; color:var(--pl-ink); }
+  .pl-search { max-width:260px; border-radius:10px; font-size:13.5px; }
+  .pl-table { margin:0; font-size:13.5px; }
+  .pl-table thead th { background:var(--pl-soft); color:var(--pl-muted); font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; border-bottom:1px solid var(--pl-line); white-space:nowrap; position:sticky; top:0; }
+  .pl-table thead th.sortable { cursor:pointer; user-select:none; }
+  .pl-table thead th.sortable:hover { color:var(--pl-ink); }
+  .pl-table thead th.sortable::after { content:'\2195'; margin-left:5px; opacity:.35; font-size:11px; }
+  .pl-table thead th.asc::after  { content:'\2191'; opacity:1; }
+  .pl-table thead th.desc::after { content:'\2193'; opacity:1; }
+  .pl-table td { vertical-align:middle; font-variant-numeric:tabular-nums; border-color:#f1f5f9; }
+  .pl-table tbody tr:hover { background:#f8fafc; }
+  .pl-table tr.loss td { background:#fef2f2; }
+  .pl-table tfoot td { background:var(--pl-soft); font-weight:700; border-top:2px solid var(--pl-line); }
+  .pl-prod { font-weight:600; color:var(--pl-ink); }
+  .pl-sup  { font-size:12px; color:var(--pl-muted); }
+  .pl-pos { color:var(--pl-green); font-weight:700; } .pl-neg { color:var(--pl-red); font-weight:700; }
+  .pl-margin { display:flex; align-items:center; gap:8px; justify-content:flex-end; min-width:130px; }
+  .pl-bar { flex:0 0 64px; height:6px; border-radius:99px; background:#eef2f7; overflow:hidden; }
+  .pl-bar > i { display:block; height:100%; border-radius:99px; }
+  .pl-empty { padding:36px 12px; text-align:center; color:var(--pl-muted); }
+  .pl-note { font-size:12.5px; color:var(--pl-muted); padding:10px 18px; border-top:1px solid var(--pl-line); background:var(--pl-soft); border-radius:0 0 var(--pl-radius) var(--pl-radius); }
+  .pl-wo-sec .pl-sec-head h6 { color:var(--pl-red); }
+
+  .ts-wrapper { border:none; padding:0; background:transparent; }
+  .ts-control { border:1px solid #ced4da; border-radius:10px; min-height:calc(1.5em + .75rem + 2px); padding:.375rem .75rem; }
+
+  @media print {
+    .pl-tools, .pl-filter, .pl-search { display:none !important; }
+    .pl-page .pl-card { box-shadow:none; }
+  }
+</style>
+
+<div class="container-fluid py-4 pl-page">
+
+  <!-- header -->
+  <div class="pl-head">
+    <div>
+      <div class="pl-eyebrow">Reports</div>
+      <h4 class="pl-title"><i class="bi bi-graph-up-arrow me-2" style="color:var(--pl-blue)"></i>Profit &amp; Loss</h4>
+      <span class="pl-period"><i class="bi bi-calendar3"></i><%= fromDate %> &nbsp;to&nbsp; <%= toDate %></span>
+    </div>
+    <div class="pl-tools">
+      <button type="button" class="pl-btn" id="plExport"><i class="bi bi-download"></i> Export CSV</button>
+      <button type="button" class="pl-btn" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+    </div>
+  </div>
+
+  <!-- filters -->
+  <div class="pl-card pl-filter">
+    <form action="/billing/profitLossReport" method="POST" id="filterForm">
+      <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-2">
+          <label class="form-label" for="fromDate">From</label>
+          <input type="text" class="form-control flatpickr-date" name="fromDate" id="fromDate" value="<%= fromDate %>" placeholder="DD-MM-YYYY" autocomplete="off">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label" for="toDate">To</label>
+          <input type="text" class="form-control flatpickr-date" name="toDate" id="toDate" value="<%= toDate %>" placeholder="DD-MM-YYYY" autocomplete="off">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="supplierId">Supplier</label>
+          <select class="form-select" name="supplierId" id="supplierId">
+            <option value="">All suppliers</option>
+            <% suppliers.forEach(function(s) { %>
+              <option value="<%= s.Id %>" <%= (String(supplierId) === String(s.Id)) ? 'selected' : '' %>><%= s.Name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="productId">Product</label>
+          <select class="form-select" name="productId" id="productId">
+            <option value="">All products</option>
+            <% products.forEach(function(p) { %>
+              <option value="<%= p.Id %>" <%= (String(productId) === String(p.Id)) ? 'selected' : '' %>><%= p.ProductName %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary" style="border-radius:10px"><i class="bi bi-search me-1"></i> Show report</button>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="customerId">Customer (optional)</label>
+          <select class="form-select" name="customerId" id="customerId">
+            <option value="">All customers</option>
+            <% customers.forEach(function(c) { %>
+              <option value="<%= c.Id %>" <%= (String(customerId) === String(c.Id)) ? 'selected' : '' %>><%= c.CustomerName %></option>
+            <% }); %>
+          </select>
+        </div>
+        <% if (customerFilterOn) { %>
+        <div class="col-md-8">
+          <div class="small text-muted"><i class="bi bi-info-circle me-1"></i>Expiry write-offs are not tied to a customer, so they are left out while a customer is selected.</div>
+        </div>
+        <% } %>
+      </div>
+    </form>
+  </div>
+
+  <!-- statement strip -->
+  <div class="pl-flow">
+    <div class="pl-card pl-tile sales">
+      <div class="lbl">Net sales</div>
+      <div class="val">₹<%= inr(sales) %></div>
+      <div class="sub"><%= summary.totalQtySold %> units sold (net of returns)</div>
+    </div>
+    <div class="pl-op">&minus;</div>
+    <div class="pl-card pl-tile cogs">
+      <div class="lbl">Cost of goods sold</div>
+      <div class="val">₹<%= inr(summary.totalCOGS) %></div>
+      <div class="sub">At each batch's purchase price</div>
+    </div>
+    <div class="pl-op">=</div>
+    <div class="pl-card pl-tile gross <%= gross < 0 ? 'neg' : '' %>">
+      <div class="lbl"><%= gross >= 0 ? 'Gross profit' : 'Gross loss' %></div>
+      <div class="val">₹<%= inr(Math.abs(gross)) %></div>
+      <div class="sub">Margin <%= summary.totalGrossMarginPercent %>%</div>
+    </div>
+    <div class="pl-op">&minus;</div>
+    <div class="pl-card pl-tile wo">
+      <div class="lbl">Expiry write-off</div>
+      <div class="val">₹<%= inr(woTotal) %></div>
+      <div class="sub"><%= wo.totals.qty %> unit(s) the supplier refused</div>
+    </div>
+    <div class="pl-op">=</div>
+    <div class="pl-tile net <%= net < 0 ? 'neg' : '' %> pl-card">
+      <div class="lbl"><%= net >= 0 ? 'Net profit' : 'Net loss' %></div>
+      <div class="val">₹<%= inr(Math.abs(net)) %></div>
+      <div class="sub">Net margin <%= netMargin %>%</div>
+    </div>
+  </div>
+
+  <!-- quick facts -->
+  <div class="pl-chips">
+    <div class="pl-card pl-chip">
+      <span class="lbl">Products sold</span>
+      <span class="val"><%= tableRows.length %></span>
+      <span class="sub"><%= lossRows.length ? lossRows.length + ' at a loss' : 'none at a loss' %></span>
+    </div>
+    <div class="pl-card pl-chip">
+      <span class="lbl">Best product</span>
+      <span class="val pl-pos"><%= best ? '₹' + inr0(best.GrossProfit) : '-' %></span>
+      <span class="sub" title="<%= best ? best.ProductName : '' %>"><%= best ? best.ProductName : 'No sales' %></span>
+    </div>
+    <div class="pl-card pl-chip">
+      <span class="lbl">Weakest product</span>
+      <span class="val <%= worst && worst.GrossProfit < 0 ? 'pl-neg' : '' %>"><%= worst ? (worst.GrossProfit < 0 ? '-₹' + inr0(Math.abs(worst.GrossProfit)) : '₹' + inr0(worst.GrossProfit)) : '-' %></span>
+      <span class="sub" title="<%= worst ? worst.ProductName : '' %>"><%= worst ? worst.ProductName : 'No sales' %></span>
+    </div>
+    <div class="pl-card pl-chip">
+      <span class="lbl">Write-off share of gross profit</span>
+      <span class="val <%= woTotal > 0 ? 'pl-neg' : '' %>"><%= gross > 0 ? (Math.round(woTotal / gross * 1000) / 10) : 0 %>%</span>
+      <span class="sub">of what the sales earned</span>
+    </div>
+  </div>
+
+  <!-- product table -->
+  <div class="pl-card mb-4">
+    <div class="pl-sec-head">
+      <h6><i class="bi bi-box-seam me-2"></i>Product-wise profit / loss</h6>
+      <input type="search" id="plSearch" class="form-control form-control-sm pl-search" placeholder="Search product or supplier...">
+    </div>
+    <div class="table-responsive" style="max-height:620px">
+      <table class="table pl-table align-middle" id="plTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-type="num">#</th>
+            <th class="sortable" data-type="text">Product</th>
+            <th class="text-end sortable" data-type="num">Sold</th>
+            <th class="text-end sortable" data-type="num">Returned</th>
+            <th class="text-end sortable" data-type="num">Net qty</th>
+            <th class="text-end sortable" data-type="num">Avg sale</th>
+            <th class="text-end sortable" data-type="num">Avg cost</th>
+            <th class="text-end sortable" data-type="num">Net sales</th>
+            <th class="text-end sortable" data-type="num">COGS</th>
+            <th class="text-end sortable" data-type="num">Profit / loss</th>
+            <th class="text-end sortable" data-type="num">Margin</th>
+          </tr>
+        </thead>
+        <tbody>
+        <% if (tableRows.length) { tableRows.forEach(function (r, i) {
+             const m = Number(r.GrossMarginPercent) || 0;
+             const w = Math.min(100, Math.abs(m) / maxAbsMargin * 100); %>
+          <tr class="<%= r.GrossProfit < 0 ? 'loss' : '' %>" data-search="<%= (r.ProductName + ' ' + r.SupplierName).toLowerCase() %>">
+            <td data-v="<%= i + 1 %>"><%= i + 1 %></td>
+            <td data-v="<%= r.ProductName %>"><div class="pl-prod"><%= r.ProductName %></div><div class="pl-sup"><%= r.SupplierName %></div></td>
+            <td class="text-end" data-v="<%= r.TotalQtySold %>"><%= r.TotalQtySold %></td>
+            <td class="text-end" data-v="<%= r.TotalQtyReturned %>"><%= r.TotalQtyReturned %></td>
+            <td class="text-end fw-semibold" data-v="<%= r.NetQtySold %>"><%= r.NetQtySold %></td>
+            <td class="text-end" data-v="<%= r.AvgSalePrice %>"><%= inr(r.AvgSalePrice) %></td>
+            <td class="text-end" data-v="<%= r.AvgPurchasePrice %>"><%= inr(r.AvgPurchasePrice) %></td>
+            <td class="text-end" data-v="<%= r.NetSalesValue %>"><%= inr(r.NetSalesValue) %></td>
+            <td class="text-end" data-v="<%= r.CostOfGoodsSold %>"><%= inr(r.CostOfGoodsSold) %></td>
+            <td class="text-end <%= r.GrossProfit >= 0 ? 'pl-pos' : 'pl-neg' %>" data-v="<%= r.GrossProfit %>"><%= r.GrossProfit < 0 ? '-' : '' %><%= inr(Math.abs(r.GrossProfit)) %></td>
+            <td data-v="<%= m %>">
+              <div class="pl-margin">
+                <span class="<%= m >= 0 ? 'pl-pos' : 'pl-neg' %>"><%= m %>%</span>
+                <span class="pl-bar"><i style="width:<%= w %>%;background:<%= m >= 0 ? 'var(--pl-green)' : 'var(--pl-red)' %>"></i></span>
+              </div>
+            </td>
+          </tr>
+        <% }); } else { %>
+          <tr><td colspan="11" class="pl-empty"><i class="bi bi-inbox fs-3 d-block mb-2"></i>No sales found for the selected filters.</td></tr>
+        <% } %>
+        </tbody>
+        <% if (tableRows.length) { %>
+        <tfoot>
+          <tr>
+            <td colspan="7" class="text-end">Total</td>
+            <td class="text-end"><%= inr(sales) %></td>
+            <td class="text-end"><%= inr(summary.totalCOGS) %></td>
+            <td class="text-end <%= gross >= 0 ? 'pl-pos' : 'pl-neg' %>"><%= gross < 0 ? '-' : '' %><%= inr(Math.abs(gross)) %></td>
+            <td class="text-end"><%= summary.totalGrossMarginPercent %>%</td>
+          </tr>
+        </tfoot>
+        <% } %>
+      </table>
+    </div>
+    <div class="pl-note">Profit = net sales &minus; the purchase price of the exact batch that was sold. Returned quantity is taken out of both.</div>
+  </div>
+
+  <!-- write-offs -->
+  <div class="pl-card pl-wo-sec">
+    <div class="pl-sec-head">
+      <h6><i class="bi bi-exclamation-octagon me-2"></i>Expiry write-offs (stock the supplier did not take back)</h6>
+      <span class="badge rounded-pill text-bg-danger fs-6">₹<%= inr(woTotal) %></span>
+    </div>
+    <% if (wo.rows.length) { %>
+    <div class="table-responsive">
+      <table class="table pl-table align-middle" id="plWoTable">
+        <thead>
+          <tr><th>Date</th><th>Return</th><th>Product / batch</th><th class="text-end">Qty</th><th class="text-end">Rate</th><th class="text-end">Cost</th><th class="text-end">GST</th><th class="text-end">Loss</th></tr>
+        </thead>
+        <tbody>
+          <% wo.rows.forEach(function (w) { %>
+          <tr>
+            <td><%= new Date(w.CreatedAt).toISOString().slice(0, 10) %></td>
+            <td><a href="/billing/individualSupplierExpProductSettlement/<%= w.ExpiryReturnId %>" class="fw-semibold text-decoration-none"><%= w.ReturnNumber %></a><div class="pl-sup"><%= w.SupplierName %></div></td>
+            <td><div class="pl-prod"><%= w.ProductName %></div><div class="pl-sup">Batch <%= w.BatchNumber %></div></td>
+            <td class="text-end"><%= w.RejectedQty %></td>
+            <td class="text-end"><%= inr(w.Rate) %></td>
+            <td class="text-end"><%= inr(w.Amount) %></td>
+            <td class="text-end"><%= inr(w.GSTAmount) %> <span class="pl-sup">(<%= w.GSTPercent %>%)</span></td>
+            <td class="text-end pl-neg"><%= inr(w.TotalAmount) %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="3" class="text-end">Total</td><td class="text-end"><%= wo.totals.qty %></td><td></td>
+              <td class="text-end"><%= inr(wo.totals.taxable) %></td><td class="text-end"><%= inr(wo.totals.gst) %></td><td class="text-end pl-neg">₹<%= inr(wo.totals.total) %></td></tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="pl-note">A write-off is created when a settlement is finalized and some units were not approved by the supplier. The loss is the cost of those units plus their GST.</div>
+    <% } else { %>
+      <div class="pl-empty"><i class="bi bi-check2-circle fs-3 d-block mb-2 text-success"></i><%= customerFilterOn ? 'Write-offs are hidden while a customer is selected.' : 'No expiry write-offs in this period.' %></div>
+    <% } %>
+  </div>
+
+</div>
+
+<!-- Flatpickr -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+
+<!-- TomSelect -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.2.2/css/tom-select.bootstrap5.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.2.2/js/tom-select.complete.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* filters (same as before) */
+  if (window.flatpickr) flatpickr('.flatpickr-date', { dateFormat: 'd-m-Y', allowInput: true });
+  if (window.TomSelect) {
+    new TomSelect('#supplierId', { create: false, placeholder: 'Search supplier...' });
+    new TomSelect('#productId',  { create: false, placeholder: 'Search product...' });
+    new TomSelect('#customerId', { create: false, placeholder: 'Search customer...' });
+  }
+
+  var table = document.getElementById('plTable');
+  if (!table) return;
+  var tbody = table.querySelector('tbody');
+  var dataRows = function () { return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-search]')); };
+
+  /* search */
+  var search = document.getElementById('plSearch');
+  if (search) search.addEventListener('input', function () {
+    var t = search.value.trim().toLowerCase();
+    dataRows().forEach(function (tr) { tr.style.display = !t || tr.getAttribute('data-search').indexOf(t) !== -1 ? '' : 'none'; });
+  });
+
+  /* sort by clicking a heading */
+  Array.prototype.forEach.call(table.querySelectorAll('thead th.sortable'), function (th, idx) {
+    th.addEventListener('click', function () {
+      var asc = !th.classList.contains('asc');
+      Array.prototype.forEach.call(table.querySelectorAll('thead th'), function (h) { h.classList.remove('asc', 'desc'); });
+      th.classList.add(asc ? 'asc' : 'desc');
+      var num = th.getAttribute('data-type') === 'num';
+      var rows = dataRows();
+      rows.sort(function (a, b) {
+        var x = a.children[idx].getAttribute('data-v'), y = b.children[idx].getAttribute('data-v');
+        if (num) { x = parseFloat(x) || 0; y = parseFloat(y) || 0; return asc ? x - y : y - x; }
+        return asc ? String(x).localeCompare(String(y)) : String(y).localeCompare(String(x));
+      });
+      rows.forEach(function (r) { tbody.appendChild(r); });
+    });
+  });
+
+  /* export what is on screen (product table + write-offs) as CSV */
+  var exp = document.getElementById('plExport');
+  if (exp) exp.addEventListener('click', function () {
+    var esc = function (v) { v = String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = [];
+    var grab = function (tbl, skipHidden) {
+      Array.prototype.forEach.call(tbl.querySelectorAll('tr'), function (tr) {
+        if (skipHidden && tr.style.display === 'none') return;
+        lines.push(Array.prototype.map.call(tr.children, function (c) { return esc(c.innerText); }).join(','));
+      });
+    };
+    lines.push('Product-wise profit / loss,<%= fromDate %> to <%= toDate %>');
+    grab(table, true);
+    var wt = document.getElementById('plWoTable');
+    if (wt) { lines.push(''); lines.push('Expiry write-offs'); grab(wt, false); }
+    var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'profit-loss_<%= fromDate %>_to_<%= toDate %>.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+});
+</script>

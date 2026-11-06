@@ -1,0 +1,320 @@
+<%# views/Challan/viewChallan.ejs %>
+
+<style>
+:root {
+  --brand:#185FA5; --brand-dark:#0C447C;
+  --surface:#fff; --surface-alt:#F8F9FB;
+  --border:rgba(0,0,0,0.08); --border-strong:rgba(0,0,0,0.13);
+  --text-primary:#111827; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px;
+  --shadow-card:0 2px 12px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.05);
+}
+
+/* Page wrapper */
+.vc-page { padding:16px 0 48px; }
+
+/* Main card */
+.vc-card {
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-card);
+  overflow:hidden;
+  max-width:1100px;
+  margin:0 auto;
+}
+
+/* ── Header band ── */
+.vc-header {
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  padding:24px 32px;
+  color:#fff;
+}
+.vc-header-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.vc-company-name { font-size:20px; font-weight:800; letter-spacing:-.2px; margin:0 0 4px; }
+.vc-company-sub  { font-size:12.5px; opacity:.85; margin:0; line-height:1.6; }
+.vc-logo { height:64px; object-fit:contain; filter:brightness(0) invert(1) opacity(.9); }
+.vc-download-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:99px;
+  border:1.5px solid rgba(255,255,255,.6);
+  color:#fff; font-size:12.5px; font-weight:600;
+  text-decoration:none; white-space:nowrap;
+  transition:background .15s;
+}
+.vc-download-btn:hover { background:rgba(255,255,255,.15); color:#fff; }
+
+/* ── Sub-header strip ── */
+.vc-strip {
+  display:flex; justify-content:space-between; align-items:center;
+  background:#EBF2FA; padding:8px 32px; border-bottom:1px solid var(--border-strong);
+  font-size:12px; font-weight:600; color:var(--brand-dark); letter-spacing:.03em;
+}
+.vc-strip-center { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; }
+
+/* ── Three-panel info row ── */
+.vc-info-grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid var(--border);
+}
+.vc-info-panel {
+  padding:20px 24px;
+  border-right:1px solid var(--border);
+}
+.vc-info-panel:last-child { border-right:none; }
+.vc-panel-title {
+  font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--brand); margin-bottom:12px;
+  padding-bottom:6px; border-bottom:2px solid var(--brand);
+  display:inline-block;
+}
+.vc-info-row { display:flex; gap:6px; font-size:12.5px; color:var(--text-primary); margin-bottom:5px; line-height:1.4; }
+.vc-info-row .lbl { color:var(--text-secondary); min-width:72px; flex-shrink:0; }
+.vc-info-row .val { font-weight:500; text-transform:capitalize; }
+.vc-challan-no { font-size:18px; font-weight:800; color:var(--brand); font-family:'DM Mono',monospace; }
+
+/* ── Items table ── */
+.vc-table-wrap { padding:0 24px 4px; }
+.vc-section-title {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--text-secondary);
+  padding:16px 0 8px;
+}
+.vc-table { width:100%; border-collapse:collapse; }
+.vc-table thead th {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--text-secondary);
+  padding:10px 14px; background:var(--surface-alt);
+  border-bottom:2px solid var(--border-strong);
+  text-align:left; white-space:nowrap;
+}
+.vc-table thead th:first-child { border-radius:var(--radius-sm) 0 0 0; }
+.vc-table thead th:last-child  { border-radius:0 var(--radius-sm) 0 0; }
+.vc-table tbody td {
+  padding:12px 14px; font-size:13px; color:var(--text-primary);
+  border-bottom:1px solid var(--border); vertical-align:middle;
+}
+.vc-table tbody tr:last-child td { border-bottom:none; }
+.vc-table tbody tr:hover td { background:#fafbfd; }
+.vc-sr { color:var(--text-hint); font-size:12px; font-weight:600; }
+.vc-product-name { font-weight:600; }
+.vc-batch { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-secondary); }
+.vc-qty { font-weight:700; font-family:'DM Mono',monospace; color:var(--brand); }
+
+/* ── Bottom two-panel row ── */
+.vc-bottom-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  border-top:1px solid var(--border);
+  margin-top:8px;
+}
+.vc-bottom-panel { padding:20px 24px; }
+.vc-bottom-panel:first-child { border-right:1px solid var(--border); }
+.vc-bottom-title {
+  font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--brand); margin-bottom:12px;
+  padding-bottom:6px; border-bottom:2px solid var(--brand);
+  display:inline-block;
+}
+.vc-bank-row { font-size:12.5px; color:var(--text-primary); margin-bottom:5px; }
+.vc-bank-row .lbl { color:var(--text-secondary); }
+.vc-bank-row .val { font-weight:600; }
+
+/* Terms */
+.vc-terms { list-style:none; padding:0; margin:0; }
+.vc-terms li { font-size:12px; color:var(--text-secondary); padding:3px 0; display:flex; gap:6px; }
+.vc-terms li::before { content:'•'; color:var(--brand); flex-shrink:0; }
+
+/* Signature box */
+.vc-sig-box {
+  border:1.5px dashed var(--border-strong);
+  border-radius:var(--radius-sm);
+  height:64px; margin-top:12px;
+  display:flex; align-items:flex-end; justify-content:center;
+  padding-bottom:8px; font-size:11px; color:var(--text-hint);
+}
+
+/* Footer strip */
+.vc-footer {
+  background:var(--surface-alt);
+  border-top:1px solid var(--border);
+  padding:10px 24px;
+  text-align:center;
+  font-size:11px; color:var(--text-hint);
+}
+
+@media print {
+  .vc-download-btn { display:none; }
+  body { background:#fff !important; }
+}
+@media (max-width:768px) {
+  .vc-info-grid    { grid-template-columns:1fr; }
+  .vc-info-panel   { border-right:none; border-bottom:1px solid var(--border); }
+  .vc-bottom-grid  { grid-template-columns:1fr; }
+  .vc-header       { padding:20px; }
+  .vc-strip        { flex-direction:column; gap:4px; text-align:center; padding:10px 16px; }
+}
+</style>
+
+<!-- Breadcrumb -->
+<section class="py-3">
+  <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="p-2 bg-light rounded-3 shadow-sm">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="/user/home" class="text-decoration-none text-primary">Home</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="/billing/viewChallans" class="text-decoration-none text-primary">Challans</a>
+        </li>
+        <li class="breadcrumb-item active fw-bold">View Challan</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<%- include("../partials/messages") %>
+
+<div class="vc-page">
+<div class="container-fluid">
+<div class="vc-card">
+
+  <!-- ── Header ── -->
+  <div class="vc-header">
+    <div class="vc-header-inner">
+      <div>
+        <p class="vc-company-name"><%= companyDetails.coreCompany %></p>
+        <p class="vc-company-sub">
+          <%= companyDetails.coreCompanyAddress %><br>
+          Email: <%= companyDetails.coreCompanyEmail %> &nbsp;|&nbsp;
+          Phone: <%= companyDetails.coreCompanyPhoneNumber %>
+        </p>
+      </div>
+      <img src="/RanjanaImaging.PNG" alt="Logo" class="vc-logo">
+      <a href="/billing/downloadChallan/<%= challanId %>/<%= customerDetails.Id %>"
+         class="vc-download-btn" id="downloadPdf">
+        <i class="bi bi-download"></i> Download PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Strip ── -->
+  <div class="vc-strip">
+    <span>GSTIN: <%= companyDetails.coreCompanyGstNo %></span>
+    <span class="vc-strip-center">Delivery Challan</span>
+    <span>Original for Recipient</span>
+  </div>
+
+  <!-- ── Info panels ── -->
+  <div class="vc-info-grid">
+
+    <!-- Customer billing -->
+    <div class="vc-info-panel">
+      <div class="vc-panel-title">Bill To</div>
+      <div class="vc-info-row"><span class="lbl">Name</span><span class="val"><%= customerDetails.CustomerName %></span></div>
+      <div class="vc-info-row"><span class="lbl">Address</span><span class="val"><%= customerDetails.BillingAddress %></span></div>
+      <div class="vc-info-row"><span class="lbl">City</span><span class="val"><%= customerDetails.BillingDistrict %>, <%= customerDetails.BillingState %> — <%= customerDetails.BillingPincode %></span></div>
+      <div class="vc-info-row"><span class="lbl">Phone</span><span class="val"><%= customerDetails.MobileNo %></span></div>
+      <div class="vc-info-row"><span class="lbl">GSTIN</span><span class="val" style="text-transform:uppercase"><%= customerDetails.GstNo %></span></div>
+    </div>
+
+    <!-- Customer supply -->
+    <div class="vc-info-panel">
+      <div class="vc-panel-title">Ship To</div>
+      <div class="vc-info-row"><span class="lbl">Name</span><span class="val"><%= customerDetails.CustomerName %></span></div>
+      <div class="vc-info-row"><span class="lbl">Address</span><span class="val"><%= customerDetails.SupplyAddress %></span></div>
+      <div class="vc-info-row"><span class="lbl">City</span><span class="val"><%= customerDetails.SupplyDistrict %>, <%= customerDetails.SupplyState %> — <%= customerDetails.SupplyPincode %></span></div>
+      <div class="vc-info-row"><span class="lbl">Phone</span><span class="val"><%= customerDetails.MobileNo %></span></div>
+      <div class="vc-info-row"><span class="lbl">GSTIN</span><span class="val" style="text-transform:uppercase"><%= customerDetails.GstNo %></span></div>
+    </div>
+
+    <!-- Challan details -->
+    <div class="vc-info-panel">
+      <div class="vc-panel-title">Challan Details</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">Challan No.</div>
+        <div class="vc-challan-no">#<%= challanId %></div>
+      </div>
+      <div class="vc-info-row">
+        <span class="lbl">Date</span>
+        <span class="val">
+          <%= new Date(challans[0].ChallanDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %>
+        </span>
+      </div>
+      <div class="vc-info-row"><span class="lbl">Items</span><span class="val"><%= challans.length %> item<%= challans.length > 1 ? 's' : '' %></span></div>
+    </div>
+
+  </div>
+
+  <!-- ── Items table ── -->
+  <div class="vc-table-wrap">
+    <div class="vc-section-title">Items</div>
+    <table class="vc-table">
+      <thead>
+        <tr>
+          <th style="width:48px">#</th>
+          <th>Product Name</th>
+          <th>Batch No.</th>
+          <th>Expiry Date</th>
+          <th style="text-align:center">Qty</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% challans.forEach(function(challan, idx){ %>
+        <tr>
+          <td class="vc-sr"><%= idx + 1 %></td>
+          <td class="vc-product-name"><%= challan.ProductName %></td>
+          <td class="vc-batch"><%= challan.BatchNumber %></td>
+          <td style="font-size:12.5px">
+            <%= new Date(challan.ExpiryDate).toLocaleDateString('en-IN', { month:'short', year:'numeric' }) %>
+          </td>
+          <td class="vc-qty" style="text-align:center"><%= challan.QuantitySold %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Bank + Terms ── -->
+  <div class="vc-bottom-grid">
+
+    <div class="vc-bottom-panel">
+      <div class="vc-bottom-title">Bank Details</div>
+      <div class="vc-bank-row"><span class="lbl">Bank: </span><span class="val"><%= companyDetails.coreCompanyBankName %></span></div>
+      <div class="vc-bank-row"><span class="lbl">Branch: </span><span class="val"><%= companyDetails.coreCompanyBranchName %></span></div>
+      <div class="vc-bank-row"><span class="lbl">Acc No: </span><span class="val" style="font-family:'DM Mono',monospace"><%= companyDetails.coreCompanyAccountNo %></span></div>
+      <div class="vc-bank-row"><span class="lbl">IFSC: </span><span class="val" style="font-family:'DM Mono',monospace"><%= companyDetails.coreCompanyIFSCCode %></span></div>
+    </div>
+
+    <div class="vc-bottom-panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+
+        <div style="flex:1">
+          <div class="vc-bottom-title">Terms &amp; Conditions</div>
+          <ul class="vc-terms">
+            <li>Subject to Patna Jurisdiction.</li>
+            <li>Our responsibility ceases as soon as goods leave our premises.</li>
+            <li>Goods once sold will not be taken back.</li>
+            <li>Delivery ex-premises.</li>
+          </ul>
+        </div>
+
+        <div style="text-align:center;flex-shrink:0;width:140px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-secondary);margin-bottom:6px">
+            Authorized Signatory
+          </div>
+          <div class="vc-sig-box">Signature</div>
+          <div style="font-size:10px;color:var(--text-hint);margin-top:4px"><%= companyDetails.coreCompany %></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="vc-footer">
+    This is a computer-generated document. No signature required if digitally authenticated.
+  </div>
+
+</div><!-- /vc-card -->
+</div>
+</div>

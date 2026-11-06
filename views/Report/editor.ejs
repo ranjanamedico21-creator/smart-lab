@@ -1,0 +1,263 @@
+<!-- views/report/editor.ejs — uses reportLayout (no sidebar) -->
+<style>
+    .re-wrap        { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    .re-bar         { height:52px; background:#185FA5; display:flex; align-items:center;
+                      justify-content:space-between; padding:0 20px; flex-shrink:0; gap:12px; }
+    .re-bar-left    { display:flex; flex-direction:column; justify-content:center; min-width:0; }
+    .re-bar-title   { color:#fff; font-size:14px; font-weight:600;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .re-bar-sub     { color:rgba(255,255,255,.65); font-size:11px; margin-top:1px;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .re-bar-right   { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .re-btn         { display:flex; align-items:center; gap:5px; padding:7px 14px;
+                      border-radius:7px; font-size:12px; font-weight:600;
+                      border:none; cursor:pointer; white-space:nowrap; }
+    .re-btn-draft   { background:rgba(255,255,255,.15); color:#fff;
+                      border:1px solid rgba(255,255,255,.3); }
+    .re-btn-draft:hover  { background:rgba(255,255,255,.25); }
+    .re-btn-ready   { background:#EAF3DE; color:#27500A; }
+    .re-btn-ready:hover  { background:#C0DD97; }
+    .re-btn-ready:disabled { background:#f1f5f9; color:#94a3b8; cursor:default; }
+    .re-autosave    { display:flex; align-items:center; gap:5px;
+                      font-size:11px; color:rgba(255,255,255,.6); }
+    .re-dot         { width:6px; height:6px; border-radius:50%; background:#27500A; flex-shrink:0; }
+    .re-dot.saving  { background:#FAC775; animation:pulse .8s infinite; }
+    .re-dot.error   { background:#F7C1C1; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+    
+    .re-editor-area { flex:1; overflow:hidden; padding:10px;
+                      display:flex; flex-direction:column; }
+    .re-editor-area .jodit-container { flex:1!important; min-height:0!important;
+        border-radius:10px!important; border:1px solid #e2e8f0!important; overflow:hidden; }
+    .jodit-wysiwyg  { font-family:Arial,sans-serif!important; font-size:13px!important;
+                      line-height:1.8!important; }
+    </style>
+    
+    <div class="re-wrap">
+    
+      <%# ── Top bar ── %>
+      <div class="re-bar">
+        <div class="re-bar-left">
+          <div class="re-bar-title" id="reTitleEl">Loading…</div>
+          <div class="re-bar-sub"   id="reSubEl"></div>
+        </div>
+        <div class="re-bar-right">
+          <div class="re-autosave">
+            <div class="re-dot" id="reDot"></div>
+            <span id="reAutoText">Auto-saved</span>
+          </div>
+          <button class="re-btn re-btn-draft" id="btnDraft">
+            <i class="bi bi-floppy"></i> Save Draft
+          </button>
+          <button class="re-btn re-btn-ready" id="btnReady">
+            <i class="bi bi-check-circle"></i> Mark Report Ready
+          </button>
+        </div>
+      </div>
+    
+      <%# ── Editor ── %>
+      <div class="re-editor-area">
+        <textarea id="joditEditor"><%- content %></textarea>
+      </div>
+    
+    </div>
+    
+    <%# Hidden form data %>
+    <input type="hidden" id="hPatientId"   value="<%= patientId %>">
+    <input type="hidden" id="hTestId"      value="<%= testId %>">
+    <input type="hidden" id="hTestRefId"   value="<%= testRefId %>">
+    <input type="hidden" id="hReportId"    value="<%= reportId %>">
+    <input type="hidden" id="hTemplateId"  value="<%= templateId %>">
+    <input type="hidden" id="hTemplateType" value="<%= templateType %>">
+    
+    <script>
+    (function () {
+    
+      // ─────────────────────────────────────────────────────────────
+// JODIT CONFIG — fixes Word copy-paste formatting
+// Replace your existing Jodit.make() call with this
+// ─────────────────────────────────────────────────────────────
+
+const editor = Jodit.make("#joditEditor", {
+    height:          "100%",
+    minHeight:       300,
+    toolbarAdaptive: false,
+    spellcheck:      true,
+    language:        "en",
+
+    // ✅ KEY SETTINGS FOR WORD PASTE
+    askBeforePasteHTML:       false,   // don't show "paste as HTML/text" dialog
+    askBeforePasteFromWord:   false,   // don't show Word-specific dialog
+    processPasteHTML:         true,    // clean up pasted HTML
+    processPasteFromWord:     true,    // ✅ enable Word paste processor
+
+    // ✅ What to keep from Word paste
+    // 'keep_format' = keep bold/italic/tables/lists/font sizes
+    // 'insert_as_text' = strips everything
+    // 'insert_clear_html' = keeps structure but not styles
+    defaultActionOnPaste:           "insert_as_html",
+    defaultActionOnPasteFromWord:   "insert_as_html",
+
+    // ✅ Clean Word's junk XML but keep visible formatting
+    cleanHTML: {
+        fillEmptyParagraph:     false,
+        replaceNBSP:            false,   // keep &nbsp; (Word uses these for spacing)
+        allowTags: {
+            // Block elements
+            p:          true,
+            div:        true,
+            br:         true,
+            h1: true, h2: true, h3: true, h4: true, h5: true, h6: true,
+            // Inline formatting
+            strong: true, b: true,
+            em:     true, i: true,
+            u:      true, s: true,
+            sup: true, sub: true,
+            span:       { style: true },
+            // Tables — critical for radiology reports
+            table: { border: true, cellspacing: true, cellpadding: true, width: true, style: true },
+            tbody: true, thead: true, tfoot: true,
+            tr:    true,
+            td:    { colspan: true, rowspan: true, width: true, style: true, align: true, valign: true },
+            th:    { colspan: true, rowspan: true, width: true, style: true, align: true },
+            // Lists
+            ul: true, ol: true, li: true,
+            // Other
+            hr:  true,
+            img: { src: true, alt: true, width: true, height: true, style: true },
+        },
+        // ✅ Keep these inline styles from Word
+        allowInlineStyles: {
+            span:  ["font-weight", "font-style", "font-size", "font-family",
+                    "color", "background-color", "text-decoration",
+                    "vertical-align"],
+            p:     ["text-align", "margin-left", "margin-right",
+                    "margin-top", "margin-bottom", "line-height"],
+            td:    ["width", "border", "background-color",
+                    "text-align", "vertical-align", "padding"],
+            th:    ["width", "border", "background-color",
+                    "text-align", "vertical-align", "padding"],
+            table: ["width", "border-collapse", "border"],
+            div:   ["text-align", "margin-left"],
+        },
+    },
+
+    buttons: [
+        "bold","italic","underline","strikethrough","superscript","subscript","|",
+        "font","fontsize","brush","paragraph","|",
+        "align","ul","ol","indent","outdent","|",
+        "table","hr","|",
+        "undo","redo","|",
+        "print","fullsize"
+    ],
+
+    // ✅ Handle paste event — additional cleanup after Jodit's own processing
+    events: {
+        afterPaste: function(event) {
+            // Remove Word's mso- prefixed inline styles that Jodit misses
+            const content = this.value;
+            const cleaned = content
+                .replace(/mso-[a-zA-Z-]+:[^;"]+(;)?/g, "")   // strip mso-* CSS
+                .replace(/\s*style=""/g, "")                   // remove empty style attrs
+                .replace(/<o:p>.*?<\/o:p>/gi, "")              // remove Word <o:p> tags
+                .replace(/<w:[^>]+>.*?<\/w:[^>]+>/gi, "")      // remove Word XML tags
+                .replace(/class="Mso[^"]*"/gi, "");            // remove Word CSS classes
+
+            if (cleaned !== content) {
+                this.value = cleaned;
+            }
+        }
+    },
+
+    uploader: { insertImageAsBase64URI: true }
+});
+    
+    
+      // ── Load title bar info ──
+      const patientId = document.getElementById("hPatientId").value;
+      const testId    = document.getElementById("hTestId").value;
+    
+      fetch(`/report/getReportMeta?patientId=${patientId}&testId=${testId}`)
+        .then(r => r.json())
+        .then(d => {
+          if (!d.success) return;
+          const p = d.patient;
+          document.getElementById("reTitleEl").textContent =
+            `${p.Title || ""} ${p.Name} — ${p.TestName}`.trim();
+          document.getElementById("reSubEl").textContent =
+            `${p.age} · ${p.gender} · ${p.registeredOn}`;
+        })
+        .catch(() => {});
+    
+    
+      // ── Save logic ──
+      const dot      = document.getElementById("reDot");
+      const autoText = document.getElementById("reAutoText");
+      let   _timer   = null;
+      let   _isDirty = false;
+    
+      async function saveReport(markReady) {
+        dot.className = "re-dot saving";
+        autoText.textContent = "Saving…";
+    
+        try {
+          const res = await fetch("/report/saveReport", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              patientId:   document.getElementById("hPatientId").value,
+              testId:      document.getElementById("hTestId").value,
+              testRefId:   document.getElementById("hTestRefId").value,
+              reportId:    document.getElementById("hReportId").value,
+              templateId:  document.getElementById("hTemplateId").value,
+              templateType:document.getElementById("hTemplateType").value,
+              content:     editor.value,
+              markReady:   markReady ? 1 : 0,
+            })
+          });
+    
+          const data = await res.json();
+          _isDirty = false;
+    
+          if (data.success) {
+            dot.className  = "re-dot";
+            // Persist reportId for subsequent saves
+            if (data.reportId) document.getElementById("hReportId").value = data.reportId;
+    
+            if (markReady) {
+              autoText.textContent = "Report marked ready ✓";
+              document.getElementById("btnReady").disabled = true;
+              document.getElementById("btnReady").textContent = "✓ Report Ready";
+            } else {
+              autoText.textContent = "Saved";
+              setTimeout(() => { autoText.textContent = "Auto-saved"; }, 3000);
+            }
+          } else {
+            dot.className  = "re-dot error";
+            autoText.textContent = "Save failed";
+          }
+    
+        } catch {
+          dot.className  = "re-dot error";
+          autoText.textContent = "Save failed";
+        }
+      }
+    
+      // Auto-save after 30 s of inactivity
+      editor.events.on("change", () => {
+        _isDirty = true;
+        clearTimeout(_timer);
+        _timer = setTimeout(() => { if (_isDirty) saveReport(false); }, 30000);
+      });
+    
+      // Warn before close if unsaved
+      window.addEventListener("beforeunload", (e) => {
+        if (_isDirty) { e.preventDefault(); e.returnValue = ""; }
+      });
+    
+      document.getElementById("btnDraft").addEventListener("click",  () => saveReport(false));
+      document.getElementById("btnReady").addEventListener("click",  () => saveReport(true));
+    
+    })();
+    </script>
+    

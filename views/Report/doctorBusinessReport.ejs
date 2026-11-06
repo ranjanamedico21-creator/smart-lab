@@ -1,0 +1,868 @@
+<!-- ============================================================ -->
+<!-- views/Report/doctorBusinessReport.ejs                        -->
+<!-- Doctor Business Tracker — marketing view of referral business -->
+<!-- Data comes from models/DoctorBusiness.js (getReport).         -->
+<!-- ============================================================ -->
+<%
+  const _r = typeof report !== 'undefined' ? report : null;
+  const _f = _r ? _r.filters : { from: '', to: '', cutoff: 0, cats: [], mr: '', today: new Date().getDate() };
+  const _cutoffs = [0, _f.today, 5, 10, 15, 20, 25].filter(function (v, i, a) { return a.indexOf(v) === i; });
+  if (_f.cutoff && _cutoffs.indexOf(_f.cutoff) < 0) _cutoffs.push(_f.cutoff);
+%>
+<style>
+  .dbt{--b:#185FA5;--b2:#0C447C;--bl:#E6F1FB;--g:#27500A;--gl:#EAF3DE;--r:#A32D2D;--rl:#FCEBEB;--a:#8a5a00;--al:#FFF4DB;
+       --line:var(--border,#e2e8f0);--muted:var(--text-secondary,#64748b);--ink:var(--text-primary,#111827);--card-bg:var(--card,#fff);--soft:var(--surface,#f8f9fb);
+       width:100%;container:dbt / inline-size;color:var(--ink);font-size:13px}
+  .dbt *{box-sizing:border-box}
+  .dbt-card{background:var(--card-bg);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+  .dbt-pad{padding:14px 18px}
+  .dbt-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .dbt-title{display:flex;align-items:center;gap:10px}
+  .dbt-ico{width:34px;height:34px;border-radius:9px;background:var(--bl);color:var(--b);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .dbt-title h1{font-size:15px;font-weight:700;margin:0}
+  .dbt-title p{font-size:12px;color:var(--muted);margin:2px 0 0}
+  .dbt-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .dbt-btn:hover{border-color:var(--b);color:var(--b)}
+  .dbt-btn.pri{background:var(--b);border-color:var(--b);color:#fff}
+  .dbt-btn.pri:hover{background:var(--b2);color:#fff}
+  .dbt-btn.sm{height:28px;padding:0 10px;font-size:12px}
+
+  /* filters — no overflow:hidden here, so dropdowns are never clipped */
+  .dbt-filters{padding:14px 18px;background:var(--soft);border-radius:0 0 14px 14px}
+  .dbt-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .dbt-chip{height:30px;padding:0 12px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;user-select:none}
+  .dbt-chip:hover{border-color:var(--b)}
+  .dbt-chip.on{background:var(--b);border-color:var(--b);color:#fff}
+  .dbt-chip .n{font-weight:700;opacity:.75}
+  .dbt-fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:10px;align-items:end}
+  .dbt-field label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+  .dbt-field select{width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-size:13px;background:#fff;color:var(--ink);font-family:inherit}
+  .dbt-cats{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .dbt-cats .lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:4px}
+  .dbt-cats input{position:absolute;opacity:0;pointer-events:none}
+  .dbt-cats input:checked + span{background:var(--b);border-color:var(--b);color:#fff}
+  .dbt-cats input:focus-visible + span{outline:2px solid var(--b);outline-offset:2px}
+
+  /* KPIs */
+  .dbt-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+  .dbt-kpi{background:var(--card-bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+  .dbt-kpi .k{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .dbt-kpi .v{font-size:21px;font-weight:700;margin:4px 0 2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dbt-kpi .d{font-size:11.5px;color:var(--muted)}
+  .up{color:var(--g)} .dn{color:var(--r)}
+  .dbt-note{font-size:12px;color:var(--a);background:var(--al);border:1px solid #f3dca4;border-radius:10px;padding:8px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
+
+  /* toolbar + tabs */
+  .dbt-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .dbt-seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .dbt-seg button{border:0;background:transparent;padding:7px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-right:1px solid var(--line)}
+  .dbt-seg button:last-child{border-right:0}
+  .dbt-seg button.on{background:var(--b);color:#fff}
+  .dbt-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+  .dbt-tabs::-webkit-scrollbar{display:none}
+  .dbt-tabs button{border:0;background:transparent;padding:9px 14px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
+  .dbt-tabs button.on{color:var(--b);border-bottom-color:var(--b)}
+  .dbt-badge{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--rl);color:var(--r)}
+  .dbt-panel{display:none}
+  .dbt-panel.on{display:block}
+
+  /* overview */
+  .dbt-g2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px}
+  .dbt-g2 > *{min-width:0}
+  .dbt-h{font-size:13px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .dbt-h small{font-weight:500;color:var(--muted);font-size:11.5px}
+  .dbt-chart svg{width:100%;height:auto;display:block}
+  .dbt-legend{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+  .dbt-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .dbt-segtiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+  .dbt-st{border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;background:#fff;text-align:left}
+  .dbt-st:hover{border-color:var(--b)}
+  .dbt-st .n{font-size:20px;font-weight:700}
+  .dbt-st .l{font-size:11.5px;font-weight:600}
+  .dbt-st .s{font-size:11px;color:var(--muted)}
+  .dbt-insights{margin:0;padding:0;list-style:none}
+  .dbt-insights li{padding:8px 0;border-bottom:1px dashed var(--line);display:flex;gap:9px;line-height:1.45}
+  .dbt-insights li:last-child{border-bottom:0}
+  .dbt-insights i{color:var(--b);margin-top:2px}
+  .dbt-hbar{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:8px;align-items:center;padding:5px 0;font-size:12.5px}
+  .dbt-hbar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dbt-hbar .tr{height:8px;background:var(--soft);border-radius:99px;overflow:hidden}
+  .dbt-hbar .tr b{display:block;height:100%;background:var(--b);border-radius:99px}
+  .dbt-hbar .vl{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .dbt-link{color:var(--ink);text-decoration:none;cursor:pointer}
+  .dbt-link:hover{color:var(--b);text-decoration:underline}
+
+  /* tables */
+  .dbt-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .dbt-ctl input[type=search]{height:32px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;min-width:200px;flex:1;max-width:320px}
+  .dbt-ctl select{height:32px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-size:12.5px;background:#fff}
+  .dbt-tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card-bg)}
+  .dbt-t{width:100%;border-collapse:collapse;font-size:12.5px}
+  .dbt-t th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--soft);padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;position:sticky;top:0}
+  .dbt-t th.l,.dbt-t td.l{text-align:left}
+  .dbt-t td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dbt-t tbody tr:last-child td{border-bottom:0}
+  .dbt-t tbody tr.click{cursor:pointer}
+  .dbt-t tbody tr.click:hover td{background:#f5f9ff}
+  .dbt-t tfoot td{font-weight:700;background:var(--soft);border-top:1px solid var(--line)}
+  .dbt-t .nm{font-weight:600;white-space:normal;min-width:160px}
+  .dbt-t .sub{font-size:11px;color:var(--muted);font-weight:400}
+  .dbt-t .proj{color:var(--muted);font-size:10.5px;display:block}
+  .c-spark{display:none}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+  .p-lost{background:var(--rl);color:var(--r)} .p-risk{background:var(--al);color:var(--a)} .p-new{background:#EEE8FB;color:#5B3FA8}
+  .p-growing{background:var(--gl);color:var(--g)} .p-steady{background:rgba(0,0,0,.06);color:#475569}
+  .abc{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+  .abc-A{background:var(--b);color:#fff} .abc-B{background:var(--bl);color:var(--b2)} .abc-C{background:rgba(0,0,0,.06);color:#64748b}
+  .dbt-empty{padding:40px 16px;text-align:center;color:var(--muted)}
+
+  /* action list */
+  .dbt-acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  .dbt-act{background:var(--card-bg);border:1px solid var(--line);border-radius:12px;min-width:0}
+  .dbt-act > summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+  .dbt-act > summary::-webkit-details-marker{display:none}
+  .dbt-act .ai{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .dbt-act .at{font-weight:700;font-size:13px}
+  .dbt-act .ad{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .dbt-act .cnt{margin-left:auto;font-weight:800;font-size:16px}
+  .dbt-items{border-top:1px solid var(--line);max-height:420px;overflow:auto}
+  .dbt-it{display:flex;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line)}
+  .dbt-it:last-child{border-bottom:0}
+  .dbt-it .mn{flex:1;min-width:0}
+  .dbt-it .mn b{font-size:12.5px}
+  .dbt-it .mn div{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+  .dbt-it .ac{display:flex;gap:4px;flex-shrink:0}
+  .dbt-ib{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;background:#fff}
+  .dbt-ib:hover{border-color:var(--b);color:var(--b)}
+  .dbt-ib.wa:hover{border-color:#1f9d55;color:#1f9d55}
+
+  /* drill-down sheet */
+  .dbt-sheet{position:fixed;inset:0;z-index:1060;display:none}
+  .dbt-sheet.on{display:block}
+  .dbt-sheet .bg{position:absolute;inset:0;background:rgba(15,23,42,.45)}
+  .dbt-sheet .pn{position:absolute;top:0;right:0;bottom:0;width:min(760px,100%);background:#fff;overflow:auto;box-shadow:-8px 0 30px rgba(0,0,0,.15);display:flex;flex-direction:column}
+  .dbt-sheet .ph{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:14px 18px;display:flex;gap:10px;align-items:flex-start;z-index:1}
+  .dbt-sheet .pb{padding:16px 18px}
+  .dbt-mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px}
+  .dbt-mini div{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .dbt-mini b{display:block;font-size:16px}
+  .dbt-mini span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .dbt-guide h3{font-size:13px;font-weight:700;margin:16px 0 6px}
+  .dbt-guide p,.dbt-guide li{font-size:12.5px;line-height:1.55;color:#334155}
+  .dbt-guide ul{padding-left:18px;margin:0}
+
+  @container dbt (max-width: 1100px){ .dbt-kpis{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @container dbt (max-width: 900px){
+    .dbt-fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .dbt-fgrid .go{grid-column:1 / -1}
+    .dbt-g2,.dbt-acts{grid-template-columns:1fr}
+    .dbt-segtiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  @container dbt (max-width: 760px){
+    .c-m,.c-hide-sm{display:none}
+    .c-spark{display:table-cell}
+  }
+  @container dbt (max-width: 520px){
+    .dbt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .dbt-kpi .v{font-size:18px}
+    .dbt-fgrid{grid-template-columns:1fr 1fr}
+    .dbt-segtiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .dbt-mini{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .dbt-head,.dbt-filters,.dbt-pad{padding-left:12px;padding-right:12px}
+    .dbt-ctl input[type=search]{min-width:0;max-width:none;width:100%}
+    .dbt-sheet .pn{top:auto;height:92vh;border-radius:16px 16px 0 0}
+  }
+  @media print{
+    .dbt-filters,.dbt-tabs,.dbt-bar .dbt-seg,.dbt-noprint,.dbt-ctl{display:none !important}
+    .dbt-panel{display:none !important} .dbt-panel.on{display:block !important}
+    .dbt-tw{overflow:visible;border:0} .dbt-t th{position:static}
+    .dbt-items{max-height:none}
+    .dbt-card,.dbt-kpi,.dbt-act{box-shadow:none;break-inside:avoid}
+  }
+</style>
+
+<div class="dbt" id="dbt">
+
+  <div class="dbt-card">
+    <div class="dbt-head">
+      <div class="dbt-title">
+        <div class="dbt-ico"><i class="bi bi-graph-up-arrow"></i></div>
+        <div>
+          <h1>Doctor Business Tracker</h1>
+          <p><%= _r ? _f.rangeLabel : 'Referral business by doctor, MR and category' %></p>
+        </div>
+      </div>
+      <div class="dbt-noprint" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="dbt-btn" id="dbtCsv"><i class="bi bi-file-earmark-spreadsheet"></i> Excel (CSV)</button>
+        <button type="button" class="dbt-btn" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+      </div>
+    </div>
+
+    <form method="GET" action="" class="dbt-filters" id="dbtForm">
+      <div class="dbt-presets">
+        <% (_r ? _r.presets : []).forEach(function (p) { %>
+          <button type="button" class="dbt-chip <%= (p.from === _f.from && p.to === _f.to) ? 'on' : '' %>"
+                  data-from="<%= p.from %>" data-to="<%= p.to %>"><%= p.label %></button>
+        <% }) %>
+      </div>
+
+      <div class="dbt-fgrid">
+        <div class="dbt-field">
+          <label for="dbtFrom">From month</label>
+          <select name="from" id="dbtFrom">
+            <% (_r ? _r.monthOptions : []).forEach(function (m) { %>
+              <option value="<%= m.key %>" <%= m.key === _f.from ? 'selected' : '' %>><%= m.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="dbt-field">
+          <label for="dbtTo">To month</label>
+          <select name="to" id="dbtTo">
+            <% (_r ? _r.monthOptions : []).forEach(function (m) { %>
+              <option value="<%= m.key %>" <%= m.key === _f.to ? 'selected' : '' %>><%= m.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="dbt-field">
+          <label for="dbtCut">Compare</label>
+          <select name="cutoff" id="dbtCut">
+            <% _cutoffs.forEach(function (c) { %>
+              <option value="<%= c %>" <%= c === _f.cutoff ? 'selected' : '' %>>
+                <%= c === 0 ? 'Full months' : (c === _f.today ? `Same days: 1–${c} (today)` : `Same days: 1–${c}`) %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="dbt-field">
+          <label for="dbtMr">Marketing person</label>
+          <select name="mr" id="dbtMr">
+            <option value="" <%= _f.mr === '' ? 'selected' : '' %>>All (incl. walk-in)</option>
+            <% (_r ? _r.mrOptions : []).forEach(function (u) { %>
+              <option value="<%= u.id %>" <%= String(_f.mr) === String(u.id) ? 'selected' : '' %>><%= u.name %></option>
+            <% }) %>
+            <option value="none" <%= _f.mr === 'none' ? 'selected' : '' %>>Doctors without MR</option>
+          </select>
+        </div>
+        <div class="go"><button type="submit" class="dbt-btn pri" style="width:100%;height:36px;justify-content:center"><i class="bi bi-arrow-repeat"></i> Show</button></div>
+      </div>
+
+      <div class="dbt-cats">
+        <span class="lbl">Category</span>
+        <label><input type="checkbox" id="dbtAllCats" <%= !_f.cats.length ? 'checked' : '' %>><span class="dbt-chip">All</span></label>
+        <% (_r ? _r.categories : []).forEach(function (c) { %>
+          <label><input type="checkbox" name="cat" value="<%= c.id %>" class="dbt-cat" <%= _f.cats.indexOf(c.id) >= 0 ? 'checked' : '' %>><span class="dbt-chip"><%= c.name %></span></label>
+        <% }) %>
+      </div>
+    </form>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="dbt-note" style="color:var(--r);background:var(--rl);border-color:#f1c4c4"><i class="bi bi-exclamation-triangle-fill"></i><span><%= error %></span></div>
+  <% } %>
+
+  <% if (_r) { %>
+    <div id="dbtNote"></div>
+    <div class="dbt-kpis" id="dbtKpis"></div>
+
+    <div class="dbt-bar">
+      <div class="dbt-seg" id="dbtMetric" role="group" aria-label="Measure">
+        <button type="button" data-m="patients">Patients</button>
+        <button type="button" data-m="revenue">Revenue</button>
+        <button type="button" data-m="thanks">Thanks</button>
+        <button type="button" data-m="tests">Tests</button>
+      </div>
+      <span style="font-size:11.5px;color:var(--muted)" id="dbtAsOf"></span>
+    </div>
+
+    <div class="dbt-tabs" role="tablist" id="dbtTabs">
+      <button type="button" data-t="overview"><i class="bi bi-speedometer2"></i> Overview</button>
+      <button type="button" data-t="doctors"><i class="bi bi-person-badge"></i> Doctors</button>
+      <button type="button" data-t="actions"><i class="bi bi-lightning-charge"></i> Action list <span class="dbt-badge" id="dbtActCount"></span></button>
+      <button type="button" data-t="team"><i class="bi bi-people"></i> MR team</button>
+      <button type="button" data-t="cats"><i class="bi bi-grid-3x3-gap"></i> Categories</button>
+      <button type="button" data-t="guide"><i class="bi bi-question-circle"></i> How to use</button>
+    </div>
+
+    <section class="dbt-panel" data-p="overview">
+      <div class="dbt-g2">
+        <div class="dbt-card dbt-pad">
+          <div class="dbt-h"><span id="dbtChartTitle">Month by month</span><small id="dbtChartSub"></small></div>
+          <div class="dbt-chart" id="dbtChart"></div>
+          <div class="dbt-legend" id="dbtLegend"></div>
+        </div>
+        <div class="dbt-card dbt-pad">
+          <div class="dbt-h">In one glance</div>
+          <ul class="dbt-insights" id="dbtInsights"></ul>
+        </div>
+      </div>
+      <div class="dbt-card dbt-pad">
+        <div class="dbt-h">Doctor health <small>tap a box to see those doctors</small></div>
+        <div class="dbt-segtiles" id="dbtSegTiles"></div>
+      </div>
+      <div class="dbt-g2">
+        <div class="dbt-card dbt-pad">
+          <div class="dbt-h"><span>Top 10 doctors</span><small id="dbtTopSub"></small></div>
+          <div id="dbtTop"></div>
+        </div>
+        <div class="dbt-card dbt-pad">
+          <div class="dbt-h">Category mix</div>
+          <div id="dbtMix"></div>
+          <div class="dbt-h" style="margin-top:16px">Biggest movers <small>latest month vs their usual</small></div>
+          <div id="dbtMovers"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dbt-panel" data-p="doctors">
+      <div class="dbt-ctl">
+        <input type="search" id="dbtSearch" placeholder="Search doctor, speciality, area, MR…" aria-label="Search doctors">
+        <span id="dbtSegChips" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <select id="dbtAbc" aria-label="Class">
+          <option value="">Class: all</option><option value="A">Class A</option><option value="B">Class B</option><option value="C">Class C</option>
+        </select>
+        <select id="dbtSort" aria-label="Sort">
+          <option value="total">Sort: highest first</option>
+          <option value="trend">Sort: biggest drop first</option>
+          <option value="growth">Sort: biggest growth first</option>
+          <option value="days">Sort: longest without patient</option>
+          <option value="name">Sort: name A–Z</option>
+        </select>
+      </div>
+      <div class="dbt-tw"><table class="dbt-t" id="dbtDocTable"></table></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px" id="dbtDocFoot"></div>
+    </section>
+
+    <section class="dbt-panel" data-p="actions">
+      <div class="dbt-acts" id="dbtActs"></div>
+    </section>
+
+    <section class="dbt-panel" data-p="team">
+      <div class="dbt-tw"><table class="dbt-t" id="dbtTeam"></table></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px">
+        Doctors are counted under their <b>current</b> marketing person (Doctor page → assign MR). Visits come from My Visits; rejected visits are not counted.
+      </div>
+    </section>
+
+    <section class="dbt-panel" data-p="cats">
+      <div class="dbt-tw"><table class="dbt-t" id="dbtCatTable"></table></div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Tap a category to see only that category's doctors.</div>
+    </section>
+
+    <section class="dbt-panel dbt-guide" data-p="guide">
+      <div class="dbt-card dbt-pad">
+        <h3 style="margin-top:0">Weekly routine (15 minutes)</h3>
+        <ul>
+          <li><b>Monday:</b> open <b>Action list</b> with “Last 3 months” + “Same days”. Give every MR his Lost and At-risk doctors to call or visit this week.</li>
+          <li><b>Every visit:</b> MR checks the doctor here first (tap the name) — what he sends, what he never sends (cross-sell), last patient.</li>
+          <li><b>Month end:</b> “Last 6 months”, Full months → <b>MR team</b> tab. Compare visits with business. Print for the meeting.</li>
+          <li><b>Quarterly:</b> <b>Prospects</b> — doctors who never referred. Pick the ones near your centre and plan a meeting.</li>
+        </ul>
+        <h3>What the words mean</h3>
+        <ul>
+          <li><span class="pill p-lost">Lost</span> no patient for more than <span id="gLost"></span> days.</li>
+          <li><span class="pill p-risk">At risk</span> no patient for more than <span id="gRisk"></span> days, <i>or</i> this month is below <span id="gDrop"></span>% of his usual month.</li>
+          <li><span class="pill p-new">New</span> first patient ever is inside the selected months.</li>
+          <li><span class="pill p-growing">Growing</span> this month is at least <span id="gGrow"></span>% above his usual month (and 2+ patients more).</li>
+          <li><b>Usual</b> = his average month in the selected range, not counting the latest month. The running month is <b>projected</b> to month-end (e.g. 6 patients by the 15th ≈ 12 for the month).</li>
+          <li><span class="abc abc-A">A</span> doctors who together make the first 70% of revenue — your most important doctors. <span class="abc abc-B">B</span> the next 20%. <span class="abc abc-C">C</span> the rest.</li>
+          <li><b>Same days</b> compares only day 1 to N of every month, so the running month is fair against past months.</li>
+          <li><b>Revenue</b> is the billed amount after discount (cancelled patients are not counted). A bill with several categories is split by price share. <b>Thanks</b> is the saved thanks of each referral.</li>
+          <li><b>Business at stake</b> = the usual monthly revenue of the doctors who are Lost or At risk.</li>
+          <li><b>Cross-sell:</b> at least half of the doctors of the same speciality send this category, and this doctor sent none.</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="dbt-sheet" id="dbtSheet" aria-hidden="true">
+      <div class="bg" data-close></div>
+      <div class="pn" role="dialog" aria-modal="true" aria-labelledby="dbtSheetTitle">
+        <div class="ph">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:700" id="dbtSheetTitle"></div>
+            <div style="font-size:12px;color:var(--muted)" id="dbtSheetSub"></div>
+          </div>
+          <div id="dbtSheetAct" style="display:flex;gap:6px"></div>
+          <button type="button" class="dbt-ib" data-close aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="pb" id="dbtSheetBody"></div>
+      </div>
+    </div>
+
+    <script type="application/json" id="dbtData"><%- JSON.stringify(_r).replace(/</g, '\\u003c') %></script>
+  <% } %>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var vp = document.querySelector('meta[name=viewport]');
+  if (!vp) { vp = document.createElement('meta'); vp.name = 'viewport'; vp.content = 'width=device-width, initial-scale=1'; document.head.appendChild(vp); }
+
+  // ── filters ──
+  var form = document.getElementById('dbtForm');
+  if (form) {
+    form.querySelectorAll('.dbt-presets [data-from]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.getElementById('dbtFrom').value = b.dataset.from;
+        document.getElementById('dbtTo').value = b.dataset.to;
+        form.submit();
+      });
+    });
+    var all = document.getElementById('dbtAllCats'), cats = form.querySelectorAll('.dbt-cat');
+    all.addEventListener('change', function () { if (all.checked) cats.forEach(function (c) { c.checked = false; }); else if (![].some.call(cats, function (c) { return c.checked; })) all.checked = true; });
+    cats.forEach(function (c) { c.addEventListener('change', function () { all.checked = ![].some.call(cats, function (x) { return x.checked; }); }); });
+  }
+
+  var island = document.getElementById('dbtData');
+  if (!island) return;
+  var R = JSON.parse(island.textContent);
+  var M = R.months, NM = M.length, IX = { patients: 0, tests: 1, revenue: 2, thanks: 3 };
+  var NAMES = { patients: 'Patients', tests: 'Tests', revenue: 'Revenue', thanks: 'Thanks' };
+  var SEG = { lost: 'Lost', risk: 'At risk', new: 'New', growing: 'Growing', steady: 'Steady' };
+  var store = { get: function (k) { try { return localStorage.getItem('dbt.' + k); } catch (e) { return null; } },
+                set: function (k, v) { try { localStorage.setItem('dbt.' + k, v); } catch (e) {} } };
+  var metric = IX[store.get('metric')] != null ? store.get('metric') : 'patients';
+  var tab = (location.hash || '').replace('#', '') || store.get('tab') || 'overview';
+  var docFilter = { q: '', seg: '', abc: '', sort: 'total' };
+
+  // ── helpers ──
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function money(m) { return m === 'revenue' || m === 'thanks'; }
+  function int(n) { return Math.round(n || 0).toLocaleString('en-IN'); }
+  function fmt(n, m) { return (money(m || metric) ? '₹' : '') + int(n); }
+  function compact(n, isMoney) {
+    var a = Math.abs(n || 0), s;
+    if (a >= 1e7) s = (n / 1e7).toFixed(2) + ' Cr'; else if (a >= 1e5) s = (n / 1e5).toFixed(a >= 1e6 ? 1 : 2) + ' L'; else s = int(n);
+    return (isMoney ? '₹' : '') + s;
+  }
+  function pct(a, b) { return b ? Math.round((a - b) / b * 100) : null; }
+  function delta(p, neutral) {
+    if (p == null) return '<span>—</span>';
+    var cls = neutral ? '' : (p > 0 ? 'up' : p < 0 ? 'dn' : '');
+    return '<span class="' + cls + '">' + (p > 0 ? '▲ ' : p < 0 ? '▼ ' : '') + Math.abs(p) + '%</span>';
+  }
+  function v(arr) { return arr ? arr[IX[metric]] : 0; }
+  function dayText(n) { return n == null ? '—' : n === 0 ? 'today' : n === 1 ? 'yesterday' : n + ' days ago'; }
+  function dmy(s) { if (!s) return '—'; var p = s.split('-'); return p[2] + '-' + p[1] + '-' + p[0]; }
+  function phoneLinks(phone, name) {
+    if (!phone) return '';
+    var p = phone.length === 10 ? '91' + phone : phone;
+    return '<a class="dbt-ib" href="tel:+' + esc(p) + '" title="Call" aria-label="Call Dr. ' + esc(name) + '" onclick="event.stopPropagation()"><i class="bi bi-telephone"></i></a>' +
+           '<a class="dbt-ib wa" href="https://wa.me/' + esc(p) + '" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Dr. ' + esc(name) + '" onclick="event.stopPropagation()"><i class="bi bi-whatsapp"></i></a>';
+  }
+  function segPill(s) { return '<span class="pill p-' + s + '">' + SEG[s] + '</span>'; }
+  function abc(c) { return '<span class="abc abc-' + c + '" title="Class ' + c + '">' + c + '</span>'; }
+  function lastIsPartial() { return NM && M[NM - 1].partial; }
+  function usualRevenue(d) {
+    if (NM < 2) return d.tot[2];
+    var s = 0; for (var i = 0; i < NM - 1; i++) s += d.m[i][2]; return s / (NM - 1);
+  }
+  function spark(vals, w, h) {
+    var mx = Math.max.apply(null, vals.concat([1])), bw = w / vals.length;
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">' + vals.map(function (x, i) {
+      var bh = Math.max(1, x / mx * (h - 2));
+      return '<rect x="' + (i * bw + 1) + '" y="' + (h - bh) + '" width="' + Math.max(1, bw - 2) + '" height="' + bh + '" rx="1" fill="' + (i === vals.length - 1 ? '#185FA5' : '#9cc2e8') + '"/>';
+    }).join('') + '</svg>';
+  }
+
+  // ── KPIs ──
+  function renderKpis() {
+    var c = R.kpi.cur, p = R.kpi.prev, mrFilter = R.filters.mr !== '';
+    var thanksPct = c.revenue ? (c.thanks / c.revenue * 100) : 0;
+    var cards = [
+      ['Patients', int(c.patients), delta(pct(c.patients, p.patients)) + ' vs ' + int(p.patients)],
+      ['Revenue', compact(c.revenue, true), delta(pct(c.revenue, p.revenue)) + ' vs ' + compact(p.revenue, true)],
+      ['Thanks', compact(c.thanks, true), thanksPct.toFixed(1) + '% of revenue'],
+      ['Per patient', '₹' + int(c.patients ? c.revenue / c.patients : 0), delta(pct(c.patients ? c.revenue / c.patients : 0, p.patients ? p.revenue / p.patients : 0)) + ' avg bill'],
+      ['Active doctors', int(c.doctors), (c.newDoctors ? '<span class="up">+' + c.newDoctors + ' new</span> · ' : '') + 'was ' + int(p.doctors)],
+      mrFilter ? ['Visits', int(R.mrs.reduce(function (a, m) { return a + m.visits; }, 0)), int(R.doctors.filter(function (d) { return d.visits; }).length) + ' doctors visited']
+               : ['Walk-in / self', (c.patients ? Math.round(c.walkin / c.patients * 100) : 0) + '%', int(c.walkin) + ' patients without doctor'],
+    ];
+    document.getElementById('dbtKpis').innerHTML = cards.map(function (k) {
+      return '<div class="dbt-kpi"><div class="k">' + k[0] + '</div><div class="v" title="' + esc(k[1]) + '">' + k[1] + '</div><div class="d">' + k[2] + '</div></div>';
+    }).join('');
+    document.getElementById('dbtAsOf').textContent = 'Compared with ' + R.filters.prevLabel + ' · data up to ' + dmy(R.filters.asOf);
+    var note = '';
+    if (lastIsPartial() && !R.filters.cutoff) {
+      note = '<div class="dbt-note dbt-noprint"><i class="bi bi-info-circle-fill"></i><span><b>' + esc(M[NM - 1].label) + '</b> is still running (' + M[NM - 1].covered + ' of ' + M[NM - 1].expected +
+             ' days), so the totals above compare a part month with full months. For a fair comparison choose <b>Compare → Same days: 1–' + R.filters.today + '</b>. Doctor status already projects the running month.</span></div>';
+    }
+    document.getElementById('dbtNote').innerHTML = note;
+  }
+
+  // ── overview ──
+  function renderChart() {
+    var W = 640, H = 230, padL = 46, padB = 26, padT = 18, cw = (W - padL - 8) / Math.max(NM, 1);
+    var doc = R.monthTotals.map(function (t, i) { return v(t) - v(R.walkinMonths[i]); });
+    var walk = R.walkinMonths.map(v);
+    var tot = doc.map(function (d, i) { return d + walk[i]; });
+    var proj = tot.map(function (t, i) { return M[i].partial ? t * M[i].factor : t; });
+    var mx = Math.max.apply(null, proj.concat([1])) * 1.08;
+    var y = function (val) { return padT + (H - padT - padB) * (1 - val / mx); };
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + NAMES[metric] + ' by month">';
+    for (var g = 0; g <= 4; g++) {
+      var gv = mx / 4 * g, gy = y(gv);
+      s += '<line x1="' + padL + '" x2="' + W + '" y1="' + gy + '" y2="' + gy + '" stroke="#e2e8f0" stroke-width="1"/>' +
+           '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10" fill="#94a3b8">' + compact(gv, money(metric)) + '</text>';
+    }
+    for (var i = 0; i < NM; i++) {
+      var x = padL + i * cw + cw * 0.18, bw = cw * 0.64;
+      if (M[i].partial && proj[i] > tot[i]) s += '<rect x="' + x + '" y="' + y(proj[i]) + '" width="' + bw + '" height="' + (y(tot[i]) - y(proj[i])) + '" fill="none" stroke="#185FA5" stroke-dasharray="3 3" rx="2"><title>Projected ' + fmt(proj[i]) + '</title></rect>';
+      s += '<rect x="' + x + '" y="' + y(doc[i]) + '" width="' + bw + '" height="' + Math.max(0, y(0) - y(doc[i])) + '" fill="#185FA5" rx="2"><title>' + esc(M[i].label) + ' · doctors: ' + fmt(doc[i]) + '</title></rect>';
+      if (walk[i]) s += '<rect x="' + x + '" y="' + y(tot[i]) + '" width="' + bw + '" height="' + Math.max(0, y(doc[i]) - y(tot[i])) + '" fill="#cbd5e1" rx="2"><title>' + esc(M[i].label) + ' · walk-in: ' + fmt(walk[i]) + '</title></rect>';
+      if (NM <= 14) s += '<text x="' + (x + bw / 2) + '" y="' + (y(Math.max(tot[i], proj[i])) - 5) + '" text-anchor="middle" font-size="10" font-weight="600" fill="#334155">' + compact(tot[i], money(metric)) + '</text>';
+      var showLbl = NM <= 13 || i % Math.ceil(NM / 12) === 0;
+      if (showLbl) s += '<text x="' + (x + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10.5" fill="#64748b">' + esc(M[i].label) + '</text>';
+    }
+    s += '</svg>';
+    document.getElementById('dbtChart').innerHTML = s;
+    document.getElementById('dbtChartTitle').textContent = NAMES[metric] + ' month by month';
+    document.getElementById('dbtChartSub').textContent = R.filters.cutoff ? 'day 1–' + R.filters.cutoff + ' of each month' : '';
+    document.getElementById('dbtLegend').innerHTML = '<span><i style="background:#185FA5"></i>From doctors</span>' +
+      (walk.some(Boolean) ? '<span><i style="background:#cbd5e1"></i>Walk-in / self</span>' : '') +
+      (lastIsPartial() ? '<span><i style="border:1px dashed #185FA5;background:none"></i>Running month, projected</span>' : '');
+  }
+
+  function renderInsights() {
+    var c = R.kpi.cur, p = R.kpi.prev, D = R.doctors, out = [];
+    var rp = pct(c.revenue, p.revenue), pp = pct(c.patients, p.patients);
+    if (rp != null) out.push(['bi-cash-coin', 'Revenue is <b class="' + (rp >= 0 ? 'up' : 'dn') + '">' + (rp >= 0 ? 'up ' : 'down ') + Math.abs(rp) + '%</b> and patients ' + (pp >= 0 ? 'up ' : 'down ') + Math.abs(pp) + '% compared with ' + esc(R.filters.prevLabel) + (lastIsPartial() && !R.filters.cutoff ? ' <i>(part month — see note above)</i>' : '') + '.']);
+    var tot = D.reduce(function (a, d) { return a + d.tot[2]; }, 0);
+    if (tot > 0 && D.length >= 5) {
+      var top5 = D.slice().sort(function (a, b) { return b.tot[2] - a.tot[2]; }).slice(0, 5).reduce(function (a, d) { return a + d.tot[2]; }, 0);
+      var share = Math.round(top5 / tot * 100);
+      out.push(['bi-pie-chart', 'Top 5 doctors bring <b>' + share + '%</b> of doctor revenue' + (share >= 50 ? ' — high dependence: keep them very close and grow the next ones.' : '.')]);
+    }
+    var stake = D.filter(function (d) { return d.seg === 'lost' || d.seg === 'risk'; });
+    if (stake.length) {
+      var amt = stake.reduce(function (a, d) { return a + usualRevenue(d); }, 0);
+      out.push(['bi-exclamation-triangle', '<b class="dn">' + compact(amt, true) + '/month</b> business at stake: ' + stake.length + ' doctor' + (stake.length > 1 ? 's are' : ' is') + ' Lost or At risk. <a class="dbt-link" data-goto="actions"><b>Open the action list →</b></a>']);
+    }
+    var nw = D.filter(function (d) { return d.seg === 'new'; });
+    if (nw.length) out.push(['bi-stars', '<b>' + nw.length + ' new doctor' + (nw.length > 1 ? 's' : '') + '</b> started referring: ' + nw.slice(0, 3).map(function (d) { return 'Dr. ' + esc(d.name); }).join(', ') + (nw.length > 3 ? '…' : '') + '. Visit within a week to build the habit.']);
+    if (R.catRows.length >= 2 && NM >= 2) {
+      var best = null;
+      R.catRows.forEach(function (cr) {
+        var last = cr.m[NM - 1][2] * M[NM - 1].factor, prior = 0;
+        for (var i = 0; i < NM - 1; i++) prior += cr.m[i][2];
+        prior = prior / (NM - 1);
+        var g = prior > 0 ? (last - prior) / prior : null;
+        if (g != null && prior > 0 && (best === null || g > best.g)) best = { n: cr.name, g: g };
+      });
+      if (best) out.push(['bi-graph-up', '<b>' + esc(best.n) + '</b> is the fastest-moving category this month (' + (best.g >= 0 ? '+' : '') + Math.round(best.g * 100) + '% vs usual).']);
+    }
+    if (R.filters.mr === '' && c.patients) out.push(['bi-door-open', '<b>' + Math.round(c.walkin / c.patients * 100) + '%</b> of patients came without a doctor (walk-in / self).']);
+    if (R.prospects.length) out.push(['bi-binoculars', '<b>' + R.prospects.length + ' registered doctor' + (R.prospects.length > 1 ? 's have' : ' has') + '</b> not referred in over a year or never — your prospect list.']);
+    document.getElementById('dbtInsights').innerHTML = out.map(function (o) { return '<li><i class="bi ' + o[0] + '"></i><span>' + o[1] + '</span></li>'; }).join('') || '<li>No data for these filters.</li>';
+  }
+
+  function renderSegTiles() {
+    var counts = {}, revs = {};
+    R.doctors.forEach(function (d) { counts[d.seg] = (counts[d.seg] || 0) + 1; revs[d.seg] = (revs[d.seg] || 0) + usualRevenue(d); });
+    var sub = { lost: 'call or visit now', risk: 'slipping — act this week', new: 'say thank you', growing: 'keep the momentum', steady: 'regular contact' };
+    document.getElementById('dbtSegTiles').innerHTML = ['lost', 'risk', 'new', 'growing', 'steady'].map(function (s) {
+      return '<button type="button" class="dbt-st" data-seg="' + s + '"><div class="l">' + segPill(s) + '</div><div class="n">' + (counts[s] || 0) + '</div><div class="s">' + sub[s] +
+             (counts[s] && (s === 'lost' || s === 'risk') ? '<br>usual ' + compact(revs[s], true) + '/mo' : '') + '</div></button>';
+    }).join('');
+  }
+
+  function hbars(list, total) {
+    var mx = Math.max.apply(null, list.map(function (x) { return x.v; }).concat([1]));
+    return list.map(function (x) {
+      return '<div class="dbt-hbar"><span class="nm">' + x.label + '</span><span class="tr"><b style="width:' + (x.v / mx * 100).toFixed(1) + '%"></b></span><span class="vl">' + fmt(x.v) +
+             (total ? ' <span style="color:var(--muted);font-weight:500">' + Math.round(x.v / total * 100) + '%</span>' : '') + '</span></div>';
+    }).join('') || '<div class="dbt-empty">No data</div>';
+  }
+
+  function renderTop() {
+    var list = R.doctors.filter(function (d) { return v(d.tot) > 0; }).sort(function (a, b) { return v(b.tot) - v(a.tot); });
+    var total = R.doctors.reduce(function (a, d) { return a + v(d.tot); }, 0);
+    document.getElementById('dbtTop').innerHTML = hbars(list.slice(0, 10).map(function (d) {
+      return { v: v(d.tot), label: '<a class="dbt-link" data-doc="' + d.id + '">Dr. ' + esc(d.name) + '</a>' };
+    }), total);
+    document.getElementById('dbtTopSub').textContent = 'by ' + NAMES[metric].toLowerCase();
+    var ctot = R.catRows.reduce(function (a, c) { return a + v(c.tot); }, 0);
+    document.getElementById('dbtMix').innerHTML = hbars(R.catRows.filter(function (c) { return v(c.tot) > 0; }).map(function (c) { return { v: v(c.tot), label: esc(c.name) }; }), ctot);
+    var mv = R.doctors.filter(function (d) { return d.usual != null && (d.usual >= 2 || d.latest >= 3); }).map(function (d) { return { d: d, ch: d.latest - d.usual }; });
+    var ups = mv.filter(function (x) { return x.ch >= 1; }).sort(function (a, b) { return b.ch - a.ch; }).slice(0, 4);
+    var dns = mv.filter(function (x) { return x.ch <= -1; }).sort(function (a, b) { return a.ch - b.ch; }).slice(0, 4);
+    var row = function (x) {
+      return '<div class="dbt-hbar" style="grid-template-columns:1fr auto"><span class="nm"><a class="dbt-link" data-doc="' + x.d.id + '">Dr. ' + esc(x.d.name) + '</a></span><span class="vl ' + (x.ch > 0 ? 'up' : 'dn') + '">' +
+             (x.ch > 0 ? '▲ +' : '▼ ') + Math.round(x.ch) + ' <span style="color:var(--muted);font-weight:500">(' + Math.round(x.d.latest) + ' vs ' + Math.round(x.d.usual) + ' patients)</span></span></div>';
+    };
+    document.getElementById('dbtMovers').innerHTML = (ups.map(row).join('') + dns.map(row).join('')) || '<div style="color:var(--muted)">Choose at least 2 months to see movers.</div>';
+  }
+
+  // ── doctors ──
+  function filteredDocs() {
+    var q = docFilter.q.toLowerCase();
+    var list = R.doctors.filter(function (d) {
+      if (docFilter.seg && d.seg !== docFilter.seg) return false;
+      if (docFilter.abc && d.abc !== docFilter.abc) return false;
+      if (q && (d.name + ' ' + d.spec + ' ' + d.area + ' ' + d.mr).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    var by = {
+      total: function (a, b) { return v(b.tot) - v(a.tot) || a.name.localeCompare(b.name); },
+      trend: function (a, b) { return (a.trend == null ? 1e9 : a.trend) - (b.trend == null ? 1e9 : b.trend); },
+      growth: function (a, b) { return (b.trend == null ? -1e9 : b.trend) - (a.trend == null ? -1e9 : a.trend); },
+      days: function (a, b) { return (b.daysSince || 0) - (a.daysSince || 0); },
+      name: function (a, b) { return a.name.localeCompare(b.name); },
+    }[docFilter.sort];
+    return list.sort(by);
+  }
+
+  function renderSegChips() {
+    var counts = {}; R.doctors.forEach(function (d) { counts[d.seg] = (counts[d.seg] || 0) + 1; });
+    document.getElementById('dbtSegChips').innerHTML = [''].concat(['lost', 'risk', 'new', 'growing', 'steady']).map(function (s) {
+      return '<button type="button" class="dbt-chip ' + (docFilter.seg === s ? 'on' : '') + '" data-segf="' + s + '">' + (s ? SEG[s] : 'All') + ' <span class="n">' + (s ? counts[s] || 0 : R.doctors.length) + '</span></button>';
+    }).join('');
+  }
+
+  function renderDoctors() {
+    renderSegChips();
+    var list = filteredDocs(), all = R.doctors.reduce(function (a, d) { return a + v(d.tot); }, 0);
+    var cellMax = 1; list.forEach(function (d) { d.m.forEach(function (x) { cellMax = Math.max(cellMax, v(x)); }); });
+    var h = '<thead><tr><th class="l">Doctor</th><th class="l c-hide-sm">Status</th>' +
+            M.map(function (m) { return '<th class="c-m">' + esc(m.label) + (m.partial ? '*' : '') + '</th>'; }).join('') +
+            '<th class="c-spark l">Trend</th><th>Total</th><th class="c-hide-sm">Share</th><th class="c-hide-sm" title="Latest month (projected) vs his usual month">vs usual</th><th class="c-hide-sm">Last patient</th>' +
+            (R.visitsAvailable ? '<th class="c-hide-sm">Visits</th>' : '') + '</tr></thead><tbody>';
+    if (!list.length) h += '<tr><td colspan="' + (NM + 8) + '" class="dbt-empty">No doctor matches.</td></tr>';
+    list.forEach(function (d) {
+      h += '<tr class="click" data-doc="' + d.id + '"><td class="l nm">' + abc(d.abc) + ' Dr. ' + esc(d.name) +
+           '<div class="sub">' + esc([d.spec, d.area].filter(Boolean).join(' · ')) + (d.mr ? ' · <i class="bi bi-person"></i> ' + esc(d.mr) : ' · <span class="dn">no MR</span>') + '</div>' +
+           '<td class="l c-hide-sm">' + segPill(d.seg) + (d.why ? '<div class="sub" style="white-space:normal;max-width:190px">' + esc(d.why) + '</div>' : '') + '</td>';
+      d.m.forEach(function (x, i) {
+        var val = v(x), a = val / cellMax;
+        var proj = M[i].partial && val ? '<span class="proj">≈' + compact(val * M[i].factor, money(metric)) + '</span>' : '';
+        h += '<td class="c-m" style="background:rgba(24,95,165,' + (val ? (0.06 + a * 0.32).toFixed(2) : 0) + ')">' + (val ? fmt(val) : '<span style="color:#cbd5e1">0</span>') + proj + '</td>';
+      });
+      h += '<td class="c-spark l">' + spark(d.m.map(v), Math.min(NM * 9, 90), 26) + '<div>' + segPill(d.seg) + '</div></td>';
+      h += '<td><b>' + fmt(v(d.tot)) + '</b></td><td class="c-hide-sm">' + (all ? (v(d.tot) / all * 100).toFixed(1) + '%' : '—') + '</td>' +
+           '<td class="c-hide-sm">' + delta(d.trend) + '</td><td class="c-hide-sm">' + dayText(d.daysSince) + '</td>' +
+           (R.visitsAvailable ? '<td class="c-hide-sm">' + (d.visits || '<span class="dn">0</span>') + '<div class="sub">' + (d.daysSinceVisit == null ? 'never' : dayText(d.daysSinceVisit)) + '</div></td>' : '') + '</tr>';
+    });
+    h += '</tbody>';
+    if (list.length) {
+      var colTot = M.map(function (m, i) { return list.reduce(function (a, d) { return a + v(d.m[i]); }, 0); });
+      h += '<tfoot><tr><td class="l">' + list.length + ' doctor' + (list.length > 1 ? 's' : '') + '</td><td class="c-hide-sm"></td>' +
+           colTot.map(function (t) { return '<td class="c-m">' + fmt(t) + '</td>'; }).join('') + '<td class="c-spark"></td><td>' + fmt(colTot.reduce(function (a, b) { return a + b; }, 0)) + '</td>' +
+           '<td class="c-hide-sm"></td><td class="c-hide-sm"></td><td class="c-hide-sm"></td>' + (R.visitsAvailable ? '<td class="c-hide-sm"></td>' : '') + '</tr></tfoot>';
+    }
+    document.getElementById('dbtDocTable').innerHTML = h;
+    document.getElementById('dbtDocFoot').textContent = (lastIsPartial() ? '* running month — "≈" is the projection to month end. ' : '') +
+      'Doctors who stopped within the last year are listed too (with 0). Tap a doctor for details.';
+  }
+
+  // ── action list ──
+  function item(d, line, extra) {
+    return '<div class="dbt-it"><div class="mn"><b><a class="dbt-link" data-doc="' + (d.id || '') + '"' + (d.noDrill ? ' data-nodrill' : '') + '>Dr. ' + esc(d.name) + '</a></b> ' + (d.abc ? abc(d.abc) : '') +
+           '<div>' + line + '</div><div>' + esc([d.spec, d.area].filter(Boolean).join(' · ')) + (d.mr ? ' · MR: ' + esc(d.mr) : ' · <span class="dn">no MR</span>') + (extra || '') + '</div></div>' +
+           '<div class="ac">' + phoneLinks(d.phone, d.name) + '</div></div>';
+  }
+  function visitTxt(d) { return R.visitsAvailable ? ' · last visit ' + (d.lastVisit ? dmy(d.lastVisit) : 'never') : ''; }
+
+  function buildActions() {
+    var D = R.doctors, rules = R.rules;
+    var byStake = function (a, b) { return usualRevenue(b) - usualRevenue(a); };
+    var lost = D.filter(function (d) { return d.seg === 'lost'; }).sort(byStake);
+    var risk = D.filter(function (d) { return d.seg === 'risk'; }).sort(byStake);
+    var fresh = D.filter(function (d) { return d.seg === 'new'; }).sort(function (a, b) { return b.tot[0] - a.tot[0]; });
+    var neglected = R.visitsAvailable ? D.filter(function (d) { return d.abc === 'A' && (d.daysSinceVisit == null || d.daysSinceVisit > rules.NO_VISIT_DAYS); }) : [];
+    var waste = R.visitsAvailable ? D.filter(function (d) { return d.visits >= 3 && d.tot[0] === 0; }).concat(R.prospects.filter(function (p) { return p.visits >= 3; })) : [];
+    return [
+      { id: 'lost', icon: 'bi-telephone-x', c: 'var(--r)', bg: 'var(--rl)', t: 'Lost doctors — call or visit now', d: 'No patient for ' + rules.LOST_DAYS + '+ days. Biggest usual business first.', list: lost,
+        row: function (d) { return item(d, '<span class="dn">' + esc(d.why) + '</span> · usual ' + compact(usualRevenue(d), true) + '/mo', visitTxt(d)); } },
+      { id: 'risk', icon: 'bi-exclamation-triangle', c: 'var(--a)', bg: 'var(--al)', t: 'At risk — act this week', d: 'Slowing down or quiet for ' + rules.RISK_DAYS + '+ days. Ask if anything went wrong (report delay, staff, rates).', list: risk,
+        row: function (d) { return item(d, '<span style="color:var(--a)">' + esc(d.why) + '</span> · usual ' + compact(usualRevenue(d), true) + '/mo', visitTxt(d)); } },
+      { id: 'neglect', icon: 'bi-calendar-x', c: 'var(--b)', bg: 'var(--bl)', t: 'Top doctors not visited for ' + rules.NO_VISIT_DAYS + '+ days', d: 'Class A doctors — they make most of your revenue. Never let them go unvisited.', list: neglected, hide: !R.visitsAvailable,
+        row: function (d) { return item(d, 'Last visit ' + (d.lastVisit ? dmy(d.lastVisit) + ' (' + dayText(d.daysSinceVisit) + ')' : '<span class="dn">never</span>') + ' · ' + compact(d.tot[2], true) + ' in period'); } },
+      { id: 'new', icon: 'bi-stars', c: '#5B3FA8', bg: '#EEE8FB', t: 'New doctors — say thank you', d: 'First patients in this period. A visit in the first weeks builds the habit.', list: fresh,
+        row: function (d) { return item(d, esc(d.why) + ' · ' + d.tot[0] + ' patient' + (d.tot[0] !== 1 ? 's' : '') + ' so far', visitTxt(d)); } },
+      { id: 'cross', icon: 'bi-arrow-left-right', c: 'var(--g)', bg: 'var(--gl)', t: 'Cross-sell — what they never send', d: 'They trust you for some tests. Most of their peers also send these.', list: R.crossSell, hide: !!R.filters.cats.length,
+        row: function (d) { return item(d, 'Never sent: <b>' + d.missing.map(function (m) { return esc(m.name) + ' <span style="font-weight:400">(' + m.share + '% of ' + esc(d.peerLabel) + ')</span>'; }).join(', ') + '</b>', ' · sends ' + esc(d.sends.slice(0, 3).join(', '))); } },
+      { id: 'waste', icon: 'bi-hourglass-split', c: '#475569', bg: 'rgba(0,0,0,.06)', t: 'Visits not converting', d: '3+ visits in this period but no patient. Change the approach or the doctor.', list: waste, hide: !R.visitsAvailable,
+        row: function (d) { return item(d, d.visits + ' visits · 0 patients in period', d.lastOn ? ' · last patient ' + dmy(d.lastOn) : ''); } },
+      { id: 'prospect', icon: 'bi-binoculars', c: 'var(--b2)', bg: 'var(--bl)', t: 'Prospects — never referred / dormant 1 yr+', d: 'Registered doctors with no patients. Plan introductions, starting near your centre.', list: R.prospects,
+        row: function (d) { return item(d, d.everReferred ? 'Last patient ' + dmy(d.lastOn) : 'Never referred', R.visitsAvailable ? ' · ' + d.visits + ' visits in period' : ''); } },
+    ].filter(function (s) { return !s.hide; });
+  }
+
+  function renderActions() {
+    var S = buildActions(), urgent = 0;
+    document.getElementById('dbtActs').innerHTML = S.map(function (s) {
+      if (s.id === 'lost' || s.id === 'risk' || s.id === 'neglect') urgent += s.list.length;
+      var open = s.list.length && s.list.length <= 12 ? ' open' : (s.id === 'lost' || s.id === 'risk') && s.list.length ? ' open' : '';
+      return '<details class="dbt-act"' + open + '><summary><span class="ai" style="background:' + s.bg + ';color:' + s.c + '"><i class="bi ' + s.icon + '"></i></span>' +
+             '<span><div class="at">' + s.t + '</div><div class="ad">' + s.d + '</div></span><span class="cnt" style="color:' + s.c + '">' + s.list.length + '</span></summary>' +
+             '<div class="dbt-items">' + (s.list.length ? s.list.map(s.row).join('') : '<div class="dbt-empty" style="padding:16px">Nothing here.</div>') + '</div></details>';
+    }).join('');
+    var b = document.getElementById('dbtActCount'); b.textContent = urgent || ''; b.style.display = urgent ? '' : 'none';
+  }
+
+  // ── team ──
+  function renderTeam() {
+    var all = R.mrs.reduce(function (a, m) { return a + m.tot[2]; }, 0), vis = R.visitsAvailable;
+    var h = '<thead><tr><th class="l">Marketing person</th><th>Doctors</th><th>Active</th><th>Patients</th><th>Revenue</th><th class="c-hide-sm">Share</th><th class="c-hide-sm">Thanks</th>' +
+            (vis ? '<th>Visits</th><th class="c-hide-sm">Doctors visited</th><th class="c-hide-sm" title="Patients from his doctors per visit made">Patients / visit</th>' : '') +
+            '<th class="c-hide-sm">Lost</th><th class="c-hide-sm">At risk</th><th class="c-hide-sm">New</th><th class="c-hide-sm">Prospects</th></tr></thead><tbody>';
+    R.mrs.forEach(function (m) {
+      var link = m.id ? '?' + new URLSearchParams(Object.assign(baseParams(), { mr: m.id })).toString() + '#doctors' : '?' + new URLSearchParams(Object.assign(baseParams(), { mr: 'none' })).toString() + '#doctors';
+      h += '<tr><td class="l nm"><a class="dbt-link" href="' + link + '">' + esc(m.name) + '</a></td><td>' + m.assigned + '</td><td>' + m.active + (m.assigned ? ' <span class="sub">(' + Math.round(m.active / m.assigned * 100) + '%)</span>' : '') + '</td>' +
+           '<td>' + int(m.tot[0]) + '</td><td><b>' + compact(m.tot[2], true) + '</b></td><td class="c-hide-sm">' + (all ? Math.round(m.tot[2] / all * 100) + '%' : '—') + '</td><td class="c-hide-sm">' + compact(m.tot[3], true) + '</td>' +
+           (vis ? '<td>' + (m.id ? int(m.visits) : '—') + '</td><td class="c-hide-sm">' + (m.id ? m.visited : '—') + '</td><td class="c-hide-sm">' + (m.id && m.visits ? (m.tot[0] / m.visits).toFixed(1) : '—') + '</td>' : '') +
+           '<td class="c-hide-sm ' + (m.segs.lost ? 'dn' : '') + '">' + m.segs.lost + '</td><td class="c-hide-sm" style="' + (m.segs.risk ? 'color:var(--a)' : '') + '">' + m.segs.risk + '</td><td class="c-hide-sm">' + m.segs.new + '</td><td class="c-hide-sm">' + m.prospects + '</td></tr>';
+    });
+    if (!R.mrs.length) h += '<tr><td colspan="14" class="dbt-empty">No marketing persons assigned yet.</td></tr>';
+    document.getElementById('dbtTeam').innerHTML = h + '</tbody>';
+  }
+
+  // ── categories ──
+  function baseParams() {
+    var p = { from: R.filters.from, to: R.filters.to, cutoff: R.filters.cutoff };
+    if (R.filters.mr !== '') p.mr = R.filters.mr;
+    return p;
+  }
+  function renderCats() {
+    var all = R.catRows.reduce(function (a, c) { return a + v(c.tot); }, 0);
+    var h = '<thead><tr><th class="l">Category</th>' + M.map(function (m) { return '<th class="c-m">' + esc(m.label) + (m.partial ? '*' : '') + '</th>'; }).join('') +
+            '<th class="c-spark l">Trend</th><th>Total</th><th>Share</th><th class="c-hide-sm">vs usual</th></tr></thead><tbody>';
+    R.catRows.forEach(function (c) {
+      var last = v(c.m[NM - 1]) * (NM ? M[NM - 1].factor : 1), prior = 0;
+      for (var i = 0; i < NM - 1; i++) prior += v(c.m[i]);
+      prior = NM > 1 ? prior / (NM - 1) : null;
+      var p = new URLSearchParams(baseParams()); if (c.id) p.append('cat', c.id);
+      h += '<tr><td class="l nm"><a class="dbt-link" href="?' + p.toString() + '#doctors">' + esc(c.name) + '</a></td>' +
+           c.m.map(function (x) { return '<td class="c-m">' + fmt(v(x)) + '</td>'; }).join('') +
+           '<td class="c-spark l">' + spark(c.m.map(v), Math.min(NM * 9, 90), 22) + '</td><td><b>' + fmt(v(c.tot)) + '</b></td><td>' + (all ? Math.round(v(c.tot) / all * 100) + '%' : '—') + '</td>' +
+           '<td class="c-hide-sm">' + delta(prior ? pct(last, prior) : null) + '</td></tr>';
+    });
+    if (!R.catRows.length) h += '<tr><td colspan="' + (NM + 5) + '" class="dbt-empty">No data.</td></tr>';
+    else {
+      h += '</tbody><tfoot><tr><td class="l">Total</td>' + M.map(function (m, i) { return '<td class="c-m">' + fmt(R.catRows.reduce(function (a, c) { return a + v(c.m[i]); }, 0)) + '</td>'; }).join('') +
+           '<td class="c-spark"></td><td>' + fmt(all) + '</td><td>100%</td><td class="c-hide-sm"></td></tr></tfoot>';
+      if (metric === 'patients') h += '<caption style="caption-side:bottom;font-size:11.5px;color:var(--muted);padding:6px 10px;text-align:left">A patient with tests of 2 categories is counted in both, so the patient total here can be higher than the patient KPI.</caption>';
+    }
+    document.getElementById('dbtCatTable').innerHTML = h;
+  }
+
+  // ── drill-down ──
+  var sheet = document.getElementById('dbtSheet'), lastFocus = null;
+  function openDoctor(id) {
+    var d = R.doctors.filter(function (x) { return String(x.id) === String(id); })[0] ||
+            R.prospects.filter(function (x) { return String(x.id) === String(id); })[0];
+    if (!d) return;
+    lastFocus = document.activeElement;
+    document.getElementById('dbtSheetTitle').textContent = 'Dr. ' + d.name;
+    document.getElementById('dbtSheetSub').textContent = [d.spec, d.area, d.mr ? 'MR: ' + d.mr : 'No MR'].filter(Boolean).join(' · ');
+    document.getElementById('dbtSheetAct').innerHTML = phoneLinks(d.phone, d.name) + '<a class="dbt-ib" href="/doctor/getDoctorDetail?doctorId=' + encodeURIComponent(d.id) + '" title="Open doctor page" aria-label="Open doctor page"><i class="bi bi-box-arrow-up-right"></i></a>';
+    var head = '';
+    if (d.tot) {
+      head = '<div style="margin-bottom:10px">' + segPill(d.seg) + ' ' + abc(d.abc) + ' <span style="color:var(--muted);font-size:12px">' + esc(d.why || '') + '</span></div>' +
+        '<div class="dbt-mini"><div><span>Patients</span><b>' + int(d.tot[0]) + '</b></div><div><span>Revenue</span><b>' + compact(d.tot[2], true) + '</b></div><div><span>Thanks</span><b>' + compact(d.tot[3], true) + '</b></div>' +
+        '<div><span>Last patient</span><b style="font-size:13px">' + dayText(d.daysSince) + '</b></div></div>' +
+        (R.visitsAvailable ? '<div style="font-size:12px;color:var(--muted);margin-bottom:12px"><i class="bi bi-geo-alt"></i> ' + d.visits + ' visit' + (d.visits !== 1 ? 's' : '') + ' in this period · last visit ' + (d.lastVisit ? dmy(d.lastVisit) : 'never') +
+          (d.firstOn ? ' · first patient ever ' + dmy(d.firstOn) : '') + '</div>' : '');
+    } else {
+      head = '<div class="dbt-note" style="color:#334155;background:var(--soft);border-color:var(--line)">' + (d.everReferred ? 'Last patient ' + dmy(d.lastOn) + '. Nothing in the selected months.' : 'This doctor has never referred a patient.') + '</div>';
+    }
+    document.getElementById('dbtSheetBody').innerHTML = head + '<div id="dbtSheetData"><div class="dbt-empty">Loading…</div></div>';
+    sheet.classList.add('on'); sheet.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden';
+    sheet.querySelector('[data-close].dbt-ib').focus();
+    if (!d.tot) { document.getElementById('dbtSheetData').innerHTML = ''; return; }
+    fetch('/report/api/doctorBusiness/' + encodeURIComponent(d.id) + location.search, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.success) throw new Error(j.message || 'Could not load');
+        var box = document.getElementById('dbtSheetData'); if (!box) return;
+        var ms = j.months;
+        var h = '<div class="dbt-h">' + NAMES[metric] + ' by category</div><div class="dbt-tw" style="margin-bottom:16px"><table class="dbt-t"><thead><tr><th class="l">Category</th>' +
+                ms.map(function (m) { return '<th>' + esc(m.label) + (m.partial ? '*' : '') + '</th>'; }).join('') + '<th>Total</th></tr></thead><tbody>';
+        j.rows.forEach(function (r) {
+          var t = r.m.reduce(function (a, x) { return a + v(x); }, 0);
+          h += '<tr><td class="l nm">' + esc(r.name) + '</td>' + r.m.map(function (x) { return '<td>' + (v(x) ? fmt(v(x)) : '<span style="color:#cbd5e1">0</span>') + '</td>'; }).join('') + '<td><b>' + fmt(t) + '</b></td></tr>';
+        });
+        if (!j.rows.length) h += '<tr><td class="dbt-empty" colspan="' + (ms.length + 2) + '">No patients in these months.</td></tr>';
+        h += '</tbody></table></div><div class="dbt-h">Latest patients <small>' + (j.recent.length >= 30 ? 'last 30' : j.recent.length) + '</small></div>' +
+             '<div class="dbt-tw"><table class="dbt-t"><thead><tr><th class="l">Date</th><th class="l">Patient</th><th class="l">Tests</th><th>Bill</th><th>Thanks</th></tr></thead><tbody>' +
+             (j.recent.map(function (p) {
+               return '<tr><td class="l">' + esc(p.date) + '</td><td class="l">' + esc(p.name) + '</td><td class="l" style="white-space:normal">' + esc(p.tests) + '</td><td>₹' + int(p.amount) + '</td><td>₹' + int(p.thanks) + '</td></tr>';
+             }).join('') || '<tr><td colspan="5" class="dbt-empty">No patients.</td></tr>') + '</tbody></table></div>';
+        box.innerHTML = h;
+      })
+      .catch(function (e) { var box = document.getElementById('dbtSheetData'); if (box) box.innerHTML = '<div class="dbt-note" style="color:var(--r);background:var(--rl)">' + esc(e.message || 'Could not load') + '</div>'; });
+  }
+  function closeSheet() {
+    sheet.classList.remove('on'); sheet.setAttribute('aria-hidden', 'true'); document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  sheet.addEventListener('click', function (e) { if (e.target.closest('[data-close]')) closeSheet(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('on')) closeSheet(); });
+
+  // ── CSV ──
+  function csvCell(x) {
+    var t = String(x == null ? '' : x);
+    if (/^[=+\-@]/.test(t)) t = "'" + t;
+    return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  function download(name, rows) {
+    var blob = new Blob(['﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  document.getElementById('dbtCsv').addEventListener('click', function () {
+    var tag = R.filters.from + '_' + R.filters.to + (R.filters.cutoff ? '_d1-' + R.filters.cutoff : '');
+    if (tab === 'team') {
+      download('mr_team_' + tag + '.csv', [['MR', 'Doctors', 'Active', 'Patients', 'Tests', 'Revenue', 'Thanks', 'Visits', 'Doctors visited', 'Lost', 'At risk', 'New', 'Prospects']].concat(
+        R.mrs.map(function (m) { return [m.name, m.assigned, m.active, m.tot[0], m.tot[1], m.tot[2], m.tot[3], m.visits, m.visited, m.segs.lost, m.segs.risk, m.segs.new, m.prospects]; })));
+    } else if (tab === 'cats') {
+      download('categories_' + metric + '_' + tag + '.csv', [['Category'].concat(M.map(function (m) { return m.label; }), ['Total'])].concat(
+        R.catRows.map(function (c) { return [c.name].concat(c.m.map(v), [v(c.tot)]); })));
+    } else if (tab === 'actions') {
+      var rows = [['List', 'Doctor', 'Speciality', 'Area', 'MR', 'Phone', 'Reason', 'Patients in period', 'Revenue in period', 'Last patient', 'Last visit']];
+      buildActions().forEach(function (s) {
+        s.list.forEach(function (d) {
+          rows.push([s.t, 'Dr. ' + d.name, d.spec, d.area || '', d.mr, d.phone, d.why || (d.missing ? 'Never sent: ' + d.missing.map(function (m) { return m.name; }).join(', ') : (d.everReferred ? 'Dormant' : (d.tot ? '' : 'Never referred'))),
+                     d.tot ? d.tot[0] : (d.patients || 0), d.tot ? d.tot[2] : '', d.lastOn || '', d.lastVisit || '']);
+        });
+      });
+      download('action_list_' + tag + '.csv', rows);
+    } else {
+      download('doctors_' + metric + '_' + tag + '.csv', [['Doctor', 'Speciality', 'Area', 'MR', 'Phone', 'Class', 'Status', 'Reason'].concat(M.map(function (m) { return m.label + ' ' + NAMES[metric]; }),
+        ['Patients', 'Tests', 'Revenue', 'Thanks', 'vs usual %', 'Last patient', 'Visits in period', 'Last visit'])].concat(
+        filteredDocs().map(function (d) {
+          return ['Dr. ' + d.name, d.spec, d.area, d.mr, d.phone, d.abc, SEG[d.seg], d.why].concat(d.m.map(v), d.tot, [d.trend == null ? '' : d.trend, d.lastOn || '', d.visits, d.lastVisit || '']);
+        })));
+    }
+  });
+
+  // ── wiring ──
+  function setMetric(m) {
+    metric = m; store.set('metric', m);
+    document.querySelectorAll('#dbtMetric button').forEach(function (b) { b.classList.toggle('on', b.dataset.m === m); });
+    renderChart(); renderTop(); renderDoctors(); renderCats();
+  }
+  function setTab(t) {
+    if (!document.querySelector('.dbt-panel[data-p="' + t + '"]')) t = 'overview';
+    tab = t; store.set('tab', t);
+    document.querySelectorAll('#dbtTabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); b.setAttribute('aria-selected', b.dataset.t === t); });
+    document.querySelectorAll('.dbt-panel').forEach(function (p) { p.classList.toggle('on', p.dataset.p === t); });
+    if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#' + t);
+  }
+  document.getElementById('dbtMetric').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setMetric(b.dataset.m); });
+  document.getElementById('dbtTabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
+  document.getElementById('dbt').addEventListener('click', function (e) {
+    var g = e.target.closest('[data-goto]'); if (g) { setTab(g.dataset.goto); return; }
+    var s = e.target.closest('[data-seg]'); if (s) { docFilter.seg = s.dataset.seg; setTab('doctors'); renderDoctors(); return; }
+    var sf = e.target.closest('[data-segf]'); if (sf) { docFilter.seg = sf.dataset.segf; renderDoctors(); return; }
+    var d = e.target.closest('[data-doc]'); if (d && !e.target.closest('a[href]') && d.dataset.doc) openDoctor(d.dataset.doc);
+  });
+  var t0; document.getElementById('dbtSearch').addEventListener('input', function (e) { clearTimeout(t0); t0 = setTimeout(function () { docFilter.q = e.target.value.trim(); renderDoctors(); }, 120); });
+  document.getElementById('dbtAbc').addEventListener('change', function (e) { docFilter.abc = e.target.value; renderDoctors(); });
+  document.getElementById('dbtSort').addEventListener('change', function (e) { docFilter.sort = e.target.value; renderDoctors(); });
+  ['gLost', 'gRisk', 'gDrop', 'gGrow'].forEach(function (id, i) { document.getElementById(id).textContent = [R.rules.LOST_DAYS, R.rules.RISK_DAYS, R.rules.DROP, R.rules.GROW][i]; });
+
+  renderKpis(); renderInsights(); renderSegTiles(); renderActions(); renderTeam();
+  setMetric(metric); setTab(tab);
+})();
+</script>

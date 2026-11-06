@@ -1,0 +1,719 @@
+<%
+  /* ════════════════════════════════════════════════════════════════════
+     views/Test/testForm.ejs — shared Create + Edit Test form
+     Locals: mode ('create'|'edit'), testId, values, errors[], notifications[],
+             categories[{Id,Name,bucket}], lockedCategory, filmTypes,
+             specimenTypes, containers
+  ════════════════════════════════════════════════════════════════════ */
+  var isEdit   = (mode === 'edit');
+  var vals     = (typeof values !== 'undefined' && values) ? values : {};
+  var v        = function (k, d) { var x = vals[k]; return (x === undefined || x === null || x === '') ? (d === undefined ? '' : d) : x; };
+  var same     = function (a, b) { return String(a) === String(b); };
+  var errList  = (typeof errors !== 'undefined' && errors) ? errors : [];
+  var noteList = (typeof notifications !== 'undefined' && notifications) ? notifications : [];
+
+  var IMAGING  = ['radiology','ct','mri','mammography','opg'];
+  var selectedCat = null;
+  if (isEdit) selectedCat = lockedCategory;
+  else (categories || []).forEach(function (c) { if (same(c.Id, v('MainCategory'))) selectedCat = c; });
+  var bucket   = selectedCat ? selectedCat.bucket : null;
+  var isPath   = bucket === 'pathology';
+  var reportOn = !!vals.reportRequired;
+  var tMode    = v('templateMode', 'common');
+
+  var pillCls  = function (b) { return b === 'pathology' ? 'sel-path' : (b === 'usg' ? 'sel-usg' : (b === 'other' ? 'sel-other' : 'sel-rad')); };
+  var specName = function (s) { return s.Name || s.TypeName || s.SpecimenTypeName || ('Specimen #' + s.Id); };
+  var contName = function (c) { return (c.ContainerName || c.Name || ('Container #' + c.Id)) + (c.CapColor ? ' — ' + c.CapColor + ' cap' : ''); };
+  var contSpec = function (c) { var s = c.SpecimenTypeId != null ? c.SpecimenTypeId : (c.specimenTypeId != null ? c.specimenTypeId : c.specimen_type_id); return s == null ? '' : s; };
+  var jsonSafe = function (o) { return JSON.stringify(o).replace(/</g, '\\u003c'); };
+%>
+
+<style>
+  .ct-page{--ct-bg:#f0f4f8;--ct-surface:#fff;--ct-surface-2:#f8fafc;--ct-border:#e2e8f0;--ct-primary:#3b6ef6;--ct-primary-dark:#2a55d4;--ct-primary-light:#ebf0ff;--ct-text:#1a202c;--ct-text-2:#4a5568;--ct-text-3:#94a3b8;--ct-danger:#e53e3e;--ct-warning:#d97706;--ct-shadow:0 4px 16px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04);font-family:'DM Sans','Segoe UI',sans-serif;padding:24px;background:var(--ct-bg);min-height:100%}
+  .ct-page .ct-title{font-size:22px;font-weight:700;color:var(--ct-text);letter-spacing:-.4px;margin-bottom:3px}
+  .ct-page .ct-subtitle{font-size:13px;color:var(--ct-text-3);margin-bottom:20px}
+  .ct-page .ct-card{background:var(--ct-surface);border-radius:16px;box-shadow:var(--ct-shadow);border:1px solid var(--ct-border);overflow:hidden;max-width:1100px}
+  .ct-page .ct-section{padding:22px 28px;border-bottom:1px solid var(--ct-border)}
+  .ct-page .ct-section-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--ct-text-3);margin-bottom:18px}
+  .ct-page .ct-section-label::after{content:'';flex:1;height:1px;background:var(--ct-border)}
+  .ct-page .ct-sec-icon{width:26px;height:26px;border-radius:6px;background:var(--ct-primary-light);display:flex;align-items:center;justify-content:center;color:var(--ct-primary);font-size:13px}
+  .ct-page .ct-path-section{background:linear-gradient(135deg,#fffbf0,#fff8ed);border-left:3px solid var(--ct-warning)}
+  .ct-page .ct-path-section .ct-sec-icon{background:#fef3c7;color:var(--ct-warning)}
+  .ct-page .ct-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .ct-page .ct-row:last-child{margin-bottom:0}
+  .ct-page .ct-row.ct-row-3{grid-template-columns:1fr 1fr 1fr}
+  @media (max-width:900px){.ct-page .ct-row.ct-row-3{grid-template-columns:1fr 1fr}}
+  @media (max-width:600px){.ct-page .ct-row,.ct-page .ct-row.ct-row-3{grid-template-columns:1fr}.ct-page{padding:12px}.ct-page .ct-section{padding:16px}}
+  .ct-page .ct-fg{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .ct-page .ct-fg>label,.ct-page .ct-lbl{font-size:13px;font-weight:600;color:var(--ct-text-2)}
+  .ct-page .req{color:var(--ct-danger);margin-left:2px}
+  .ct-page .ct-input{font-family:inherit;font-size:14px;color:var(--ct-text);background:var(--ct-surface-2);border:1.5px solid var(--ct-border);border-radius:8px;padding:9px 13px;outline:none;width:100%;transition:border-color .16s,box-shadow .16s,background .16s}
+  .ct-page .ct-input:focus{border-color:var(--ct-primary);background:#fff;box-shadow:0 0 0 3px rgba(59,110,246,.10)}
+  .ct-page select.ct-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+  .ct-page .ct-fg.ct-error .ct-input,.ct-page .ct-fg.ct-error .ts-control,.ct-page .ct-fg.ct-error .ct-stepper{border-color:var(--ct-danger)!important;box-shadow:0 0 0 3px rgba(229,62,62,.08)}
+  .ct-page .ct-err-msg{font-size:12px;color:var(--ct-danger);display:none}
+  .ct-page .ct-fg.ct-error .ct-err-msg{display:block}
+  .ct-page .ct-hint{font-size:12px;color:var(--ct-text-3)}
+  .ct-page .ct-pills{display:flex;flex-wrap:wrap;gap:9px}
+  .ct-page .ct-pill{padding:7px 16px;border-radius:50px;font-size:13px;font-weight:500;border:1.5px solid var(--ct-border);background:var(--ct-surface-2);color:var(--ct-text-2);cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+  .ct-page button.ct-pill:hover{border-color:var(--ct-primary);color:var(--ct-primary);background:var(--ct-primary-light)}
+  .ct-page .ct-pill.sel-rad{border-color:var(--ct-primary);background:var(--ct-primary);color:#fff}
+  .ct-page .ct-pill.sel-path{border-color:#b45309;background:#d97706;color:#fff}
+  .ct-page .ct-pill.sel-usg{border-color:#0891b2;background:#0e7490;color:#fff}
+  .ct-page .ct-pill.sel-other{border-color:#7c3aed;background:#7c3aed;color:#fff}
+  .ct-page .ct-pill.ct-locked{cursor:default;width:fit-content}
+  .ct-page .ct-pills.ct-error .ct-pill{border-color:var(--ct-danger)}
+  .ct-page .ct-stepper{display:flex;align-items:center;background:var(--ct-surface-2);border:1.5px solid var(--ct-border);border-radius:8px;overflow:hidden;height:40px}
+  .ct-page .ct-stepper button{background:none;border:none;width:38px;height:100%;font-size:17px;color:var(--ct-text-3)}
+  .ct-page .ct-stepper button:hover{background:var(--ct-border);color:var(--ct-text)}
+  .ct-page .ct-stepper input{flex:1;border:none;background:transparent;text-align:center;font-weight:600;font-size:14px;min-width:0;outline:none}
+  .ct-page .ct-blood-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start}
+  .ct-page .ct-blood-sep{padding-top:10px;color:var(--ct-text-3);font-weight:600}
+  .ct-page .ct-toggle-wrap{display:flex;align-items:center;gap:11px;padding:9px 13px;background:var(--ct-surface-2);border:1.5px solid var(--ct-border);border-radius:8px;cursor:pointer;height:40px;margin:0}
+  .ct-page .ct-track{width:36px;height:20px;background:var(--ct-border);border-radius:99px;position:relative;transition:background .2s;flex-shrink:0}
+  .ct-page .ct-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+  .ct-page .ct-toggle-input{position:absolute;opacity:0;pointer-events:none}
+  .ct-page .ct-toggle-input:checked+.ct-toggle-wrap .ct-track{background:var(--ct-primary)}
+  .ct-page .ct-toggle-input:checked+.ct-toggle-wrap .ct-thumb{transform:translateX(16px)}
+  .ct-page .ct-toggle-input:focus-visible+.ct-toggle-wrap{box-shadow:0 0 0 3px rgba(59,110,246,.25)}
+  .ct-page .ct-note{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;font-size:13px}
+  .ct-page .ct-note.warn{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+  .ct-page .ct-note.info{background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
+  .ct-page .ct-note.ok{background:#EAF3DE;color:#27500A;border:1px solid #C0DD97}
+  .ct-page .ct-modes{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .ct-page .ct-mode{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:1.5px solid var(--ct-border);background:#fff;font-size:13px;cursor:pointer;font-weight:500;margin:0}
+  .ct-page .ct-mode small{display:block;font-weight:400;color:var(--ct-text-3);font-size:11px}
+  .ct-page .ct-mode.active{background:var(--ct-primary-light);border-color:var(--ct-primary);color:var(--ct-primary);font-weight:600}
+  .ct-page .ct-upload{border:2px dashed var(--ct-border);border-radius:10px;padding:18px;text-align:center;background:var(--ct-surface-2);cursor:pointer;transition:all .2s}
+  .ct-page .ct-upload:hover,.ct-page .ct-upload:focus{border-color:var(--ct-primary);background:var(--ct-primary-light);outline:none}
+  .ct-page .ct-upload.ct-upload-err{border-color:var(--ct-danger);background:#fff5f5}
+  .ct-page .ct-upload.busy{opacity:.6;pointer-events:none}
+  .ct-page .ct-tpl-status{font-size:12px;margin-top:6px;min-height:16px}
+  .ct-page .ct-tpl-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .ct-page .ct-preview{display:none;margin-top:10px;border:1.5px solid var(--ct-border);border-radius:10px;padding:14px;background:#fff;max-height:280px;overflow:auto;font-size:12px}
+  .ct-page .ct-footer{padding:18px 28px;display:flex;align-items:center;justify-content:flex-end;gap:10px;background:var(--ct-surface-2)}
+  .ct-page .ct-d-none{display:none!important}
+  .ct-page code.ph{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:3px;margin-right:3px;font-size:11px}
+  .ts-wrapper.ct-select .ts-control{border:1.5px solid var(--ct-border);border-radius:8px;padding:9px 13px;background:var(--ct-surface-2,#f8fafc);font-size:14px;min-height:40px;box-shadow:none}
+  .ts-wrapper.ct-select.focus .ts-control{border-color:#3b6ef6;background:#fff;box-shadow:0 0 0 3px rgba(59,110,246,.10)}
+  .ts-wrapper.ct-select.disabled .ts-control{opacity:.55;background:#f1f5f9}
+  #ctToastStack{position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:400px;width:calc(100vw - 40px)}
+  .ct-toast{display:flex;gap:12px;padding:14px 16px;border-radius:12px;background:#fff;box-shadow:0 8px 32px rgba(0,0,0,.14);border-left:4px solid #3b82f6;pointer-events:all;animation:ctIn .25s ease-out;transition:opacity .2s,transform .2s}
+  .ct-toast.danger{border-color:#e53e3e}.ct-toast.success{border-color:#38a169}.ct-toast.warning{border-color:#d97706}
+  .ct-toast i{font-size:18px;line-height:1}
+  .ct-toast.danger i{color:#e53e3e}.ct-toast.success i{color:#38a169}.ct-toast.warning i{color:#d97706}.ct-toast.info i{color:#3b82f6}
+  .ct-toast-body{flex:1;min-width:0}
+  .ct-toast-title{font-size:13px;font-weight:700;margin-bottom:2px}
+  .ct-toast ul{margin:4px 0 0;padding-left:18px;font-size:13px;color:#4a5568}
+  .ct-toast-msg{font-size:13px;color:#4a5568;word-break:break-word}
+  .ct-toast-close{background:none;border:none;color:#94a3b8;font-size:18px;line-height:1;padding:0}
+  .ct-toast.out{opacity:0;transform:translateX(24px)}
+  @keyframes ctIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+</style>
+
+<div id="ctToastStack" aria-live="polite"></div>
+<div class="ct-page">
+  <div class="ct-title"><%= isEdit ? 'Edit Test' : 'Create New Test' %></div>
+  <div class="ct-subtitle">Fields adjust to the category — Pathology shows sample details; imaging shows film details.</div>
+
+  <% if (errList.length) { %>
+    <div class="alert alert-danger" role="alert" style="max-width:1100px">
+      <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>
+        The test was not saved. Please fix <%= errList.length === 1 ? 'this' : 'these ' + errList.length %>:
+      </div>
+      <ul class="mb-0 ps-3"><% errList.forEach(function (m) { %><li><%= m %></li><% }) %></ul>
+    </div>
+  <% } %>
+
+  <div class="ct-card">
+    <form id="ctForm" method="post" enctype="multipart/form-data" novalidate
+          action="<%= isEdit ? '/test/updateTest/' + testId : '/test/registerTest' %>">
+
+      <!-- ── 1. Basic ─────────────────────────────────────────────── -->
+      <div class="ct-section">
+        <div class="ct-section-label"><div class="ct-sec-icon"><i class="bi bi-clipboard2"></i></div>Basic Information</div>
+
+        <div class="ct-fg" style="margin-bottom:18px" id="fgCategory">
+          <span class="ct-lbl">Category <% if (!isEdit) { %><span class="req">*</span><% } %></span>
+          <input type="hidden" id="ctMainCategory" name="MainCategory" value="<%= selectedCat ? selectedCat.Id : '' %>">
+          <% if (isEdit) { %>
+            <span class="ct-pill ct-locked <%= pillCls(bucket) %>"><i class="bi bi-lock-fill"></i><%= selectedCat.Name %></span>
+            <span class="ct-hint">Category can't be changed after a test is created (billing & commissions depend on it).</span>
+          <% } else { %>
+            <div class="ct-pills" id="ctPills" role="radiogroup" aria-label="Category">
+              <% (categories || []).forEach(function (c) { %>
+                <button type="button" role="radio"
+                        class="ct-pill <%= (selectedCat && same(selectedCat.Id, c.Id)) ? pillCls(c.bucket) : '' %>"
+                        aria-checked="<%= (selectedCat && same(selectedCat.Id, c.Id)) ? 'true' : 'false' %>"
+                        data-value="<%= c.Id %>" data-bucket="<%= c.bucket %>"><%= c.Name %></button>
+              <% }) %>
+            </div>
+            <div class="ct-err-msg">Please select a category.</div>
+          <% } %>
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label for="ctName">Test Name <span class="req">*</span></label>
+            <input class="ct-input" type="text" id="ctName" name="Name" maxlength="200" autocomplete="off"
+                   placeholder="e.g., Complete Blood Count" value="<%= v('Name') %>" data-required="Test name">
+            <div class="ct-err-msg">Please enter a test name.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctPrice">Price (₹) <span class="req">*</span></label>
+            <input class="ct-input" type="number" id="ctPrice" name="Price" min="0" max="1000000" step="0.01"
+                   inputmode="decimal" placeholder="e.g., 500" value="<%= v('Price') %>" data-required="Price">
+            <div class="ct-err-msg">Enter a price between 0 and 10,00,000.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 2. Timing & Media ─────────────────────────────────────── -->
+      <div class="ct-section">
+        <div class="ct-section-label"><div class="ct-sec-icon"><i class="bi bi-clock"></i></div>Timing &amp; Media</div>
+
+        <%
+          /* Reporting Day — saved in MainTestTable.ReportingDay (number of days) */
+          var REPORT_DAYS = [[0,'Same day'],[1,'1 day'],[2,'2 days'],[7,'7 days'],[14,'14 days'],[21,'21 days']];
+          var curDay = v('ReportingDay', 0);
+          var dayInList = REPORT_DAYS.some(function (o) { return same(o[0], curDay); });
+        %>
+        <div class="ct-row ct-row-3">
+          <div class="ct-fg">
+            <label for="ctReportingTime">Reporting Time <span class="req">*</span></label>
+            <input class="ct-input" type="text" id="ctReportingTime" name="TimeTakenForReporting" maxlength="100"
+                   list="ctReportingTimeList" placeholder="e.g., 2 hours / Same day"
+                   value="<%= v('TimeTakenForReporting') %>" data-required="Reporting time">
+            <datalist id="ctReportingTimeList">
+              <option value="30 minutes"><option value="1 hour"><option value="2 hours"><option value="4 hours">
+              <option value="Same day"><option value="Next day"><option value="2 days"><option value="3-5 days">
+            </datalist>
+            <div class="ct-err-msg">Please enter reporting time.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctReportingDay">Reporting Day <span class="req">*</span></label>
+            <select class="ct-input" id="ctReportingDay" name="ReportingDay" data-required="Reporting day">
+              <% REPORT_DAYS.forEach(function (o) { %>
+                <option value="<%= o[0] %>" <%= same(o[0], curDay) ? 'selected' : '' %>><%= o[1] %></option>
+              <% }) %>
+              <% if (!dayInList) { %>
+                <option value="<%= curDay %>" selected><%= curDay %> days (current value)</option>
+              <% } %>
+            </select>
+            <div class="ct-err-msg">Please select a reporting day.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctDay">Test Duration (minutes) <span class="req">*</span></label>
+            <input class="ct-input" type="number" id="ctDay" name="TimeToComplete" min="1" max="1440" step="1"
+                   inputmode="numeric" placeholder="e.g., 30" value="<%= v('TimeToComplete') %>" data-required="Test duration">
+            <div class="ct-err-msg">Enter 1 to 1440 minutes.</div>
+          </div>
+        </div>
+
+        <div class="ct-row <%= isPath ? 'ct-d-none' : '' %>" id="ctFilmRow" style="margin-top:16px">
+          <div class="ct-fg" id="fgFilm">
+            <label for="ctFilmType">Film Type <span class="req ct-film-req <%= IMAGING.indexOf(bucket) === -1 ? 'ct-d-none' : '' %>">*</span></label>
+            <select class="ct-input" id="ctFilmType" name="FilmType">
+              <option value="">— No film —</option>
+              <% (filmTypes || []).forEach(function (f) { %>
+                <option value="<%= f.Id %>" <%= same(f.Id, v('FilmType')) ? 'selected' : '' %>><%= f.Name %></option>
+              <% }) %>
+            </select>
+            <div class="ct-err-msg">Film type is required for imaging tests.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctNoOfFilms">Number of Films</label>
+            <div class="ct-stepper">
+              <button type="button" data-step="ctNoOfFilms" data-delta="-1" aria-label="Decrease">−</button>
+              <input type="number" id="ctNoOfFilms" name="NoOfFilms" value="<%= v('NoOfFilms', 0) %>" min="0" max="50" inputmode="numeric">
+              <button type="button" data-step="ctNoOfFilms" data-delta="1" aria-label="Increase">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ct-note warn <%= isPath ? '' : 'ct-d-none' %>" id="ctFilmPathMsg" style="margin-top:16px">
+          <i class="bi bi-info-circle"></i> Film / imaging media is not applicable for Pathology tests.
+        </div>
+      </div>
+
+      <!-- ── 3. Report settings ────────────────────────────────────── -->
+      <div class="ct-section">
+        <div class="ct-section-label"><div class="ct-sec-icon"><i class="bi bi-file-earmark-text"></i></div>Report Settings</div>
+        <div class="ct-row">
+          <div class="ct-fg">
+            <span class="ct-lbl">Report</span>
+            <div style="position:relative">
+              <input type="checkbox" class="ct-toggle-input" id="ctReportToggle" name="reportRequired" value="1" <%= reportOn ? 'checked' : '' %>>
+              <label for="ctReportToggle" class="ct-toggle-wrap">
+                <span class="ct-track"><span class="ct-thumb"></span></span>
+                <span class="ct-toggle-lbl" id="ctReportLbl"><%= reportOn ? 'Report required' : 'No report required' %></span>
+              </label>
+            </div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctDesc">Description</label>
+            <textarea class="ct-input" id="ctDesc" name="Description" rows="2" maxlength="1000"
+                      placeholder="Brief description of this test…"><%= v('Description') %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 4. Pathology ──────────────────────────────────────────── -->
+      <div class="ct-section ct-path-section <%= isPath ? '' : 'ct-d-none' %>" id="ctPathologySection">
+        <div class="ct-section-label"><div class="ct-sec-icon"><i class="bi bi-droplet-half"></i></div>Pathology Details</div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label for="ctType">Pathology Test Type</label>
+            <select class="ct-input" id="ctType" name="Type">
+              <option value="1" <%= same(v('Type', 1), 1) ? 'selected' : '' %>>Normal</option>
+              <option value="2" <%= same(v('Type', 1), 2) ? 'selected' : '' %>>Special</option>
+            </select>
+          </div>
+          <div class="ct-fg">
+            <label for="ctParameter">Number of Parameters <span class="req">*</span></label>
+            <div class="ct-stepper">
+              <button type="button" data-step="ctParameter" data-delta="-1" aria-label="Decrease">−</button>
+              <input type="number" id="ctParameter" name="Parameter" value="<%= v('Parameter', 1) %>" min="1" max="500" inputmode="numeric">
+              <button type="button" data-step="ctParameter" data-delta="1" aria-label="Increase">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <span class="ct-lbl" style="display:block;margin-bottom:7px">Sample Volume (ml) <span class="req">*</span></span>
+          <div class="ct-blood-row">
+            <div class="ct-fg">
+              <input class="ct-input" type="number" id="ctMinBlood" name="MinAmountOfBlood" min="0" max="100" step="0.1"
+                     placeholder="Min e.g. 2" value="<%= v('MinAmountOfBlood') %>" data-path-required="Minimum sample volume">
+              <span class="ct-hint">Minimum</span>
+              <div class="ct-err-msg">Enter 0–100 ml.</div>
+            </div>
+            <div class="ct-blood-sep">–</div>
+            <div class="ct-fg">
+              <input class="ct-input" type="number" id="ctMaxBlood" name="MaxAmountOfBlood" min="0" max="100" step="0.1"
+                     placeholder="Max e.g. 5" value="<%= v('MaxAmountOfBlood') %>" data-path-required="Maximum sample volume">
+              <span class="ct-hint">Maximum</span>
+              <div class="ct-err-msg">Enter 0–100 ml (not less than minimum).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ct-row">
+          <div class="ct-fg">
+            <label for="ctSpecimenType">Specimen Type <span class="req">*</span></label>
+            <select id="ctSpecimenType" name="SpecimenTypeId" class="ct-input ct-select" data-path-required="Specimen type">
+              <option value="">Select specimen</option>
+              <% (specimenTypes || []).forEach(function (s) { %>
+                <option value="<%= s.Id %>" <%= same(s.Id, v('SpecimenTypeId')) ? 'selected' : '' %>><%= specName(s) %></option>
+              <% }) %>
+            </select>
+            <div class="ct-err-msg">Please select a specimen type.</div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctContainerType">Sample Container <span class="req">*</span></label>
+            <select id="ctContainerType" name="ContainerTypeId" class="ct-input ct-select" data-path-required="Sample container">
+              <option value="">Select container</option>
+              <% (containers || []).forEach(function (c) { %>
+                <option value="<%= c.Id %>" data-specimen="<%= contSpec(c) %>" <%= same(c.Id, v('ContainerTypeId')) ? 'selected' : '' %>><%= contName(c) %></option>
+              <% }) %>
+            </select>
+            <div class="ct-err-msg">Please select a container.</div>
+            <span class="ct-hint">List is filtered by the selected specimen.</span>
+          </div>
+        </div>
+
+        <div class="ct-row" style="margin-top:16px">
+          <div class="ct-fg">
+            <label for="ctInversion">Tube Inversions</label>
+            <div class="ct-stepper">
+              <button type="button" data-step="ctInversion" data-delta="-1" aria-label="Decrease">−</button>
+              <input type="number" id="ctInversion" name="Inversion" value="<%= v('Inversion', 0) %>" min="0" max="50" inputmode="numeric">
+              <button type="button" data-step="ctInversion" data-delta="1" aria-label="Increase">+</button>
+            </div>
+          </div>
+          <div class="ct-fg">
+            <label for="ctFasting">Fasting Required</label>
+            <select class="ct-input" id="ctFasting" name="FastingRequired">
+              <% [['0','Not required'],['1','8 hours fasting'],['2','12 hours fasting'],['3','Overnight fasting']].forEach(function (o) { %>
+                <option value="<%= o[0] %>" <%= same(v('FastingRequired', 0), o[0]) ? 'selected' : '' %>><%= o[1] %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 5. Templates ──────────────────────────────────────────── -->
+      <div class="ct-section <%= (reportOn && !isPath) ? '' : 'ct-d-none' %>" id="ctTemplateSection">
+        <div class="ct-section-label"><div class="ct-sec-icon"><i class="bi bi-pencil-square"></i></div>Default Report Template</div>
+
+        <div class="ct-modes" role="radiogroup" aria-label="Template option">
+          <label class="ct-mode <%= tMode === 'common' ? 'active' : '' %>">
+            <input type="radio" name="templateMode" value="common" <%= tMode === 'common' ? 'checked' : '' %>>
+            <span>⚥ Common<small>Same for male &amp; female</small></span>
+          </label>
+          <label class="ct-mode <%= tMode === 'separate' ? 'active' : '' %>">
+            <input type="radio" name="templateMode" value="separate" <%= tMode === 'separate' ? 'checked' : '' %>>
+            <span>♂♀ Separate<small>Gender specific</small></span>
+          </label>
+          <label class="ct-mode <%= tMode === 'later' ? 'active' : '' %>">
+            <input type="radio" name="templateMode" value="later" <%= tMode === 'later' ? 'checked' : '' %>>
+            <span>⏱ Add template later<small>Save now, upload from Edit Test</small></span>
+          </label>
+        </div>
+
+        <div class="ct-note warn <%= tMode === 'later' ? '' : 'ct-d-none' %>" id="ctLaterNote">
+          <i class="bi bi-hourglass-split"></i>
+          <div>The test will be saved with <strong>Template pending</strong>. It shows a yellow badge in the Test List until you upload a template.
+          <% if (isEdit) { %>Any template already saved is kept unchanged.<% } %></div>
+        </div>
+
+        <%
+          var slots = [
+            { key: 'Common', field: 'templateCommon', group: 'common',   title: 'Common template (male & female)', color: 'var(--ct-primary)' },
+            { key: 'Male',   field: 'templateMale',   group: 'separate', title: '♂ Male template',                 color: 'var(--ct-primary)' },
+            { key: 'Female', field: 'templateFemale', group: 'separate', title: '♀ Female template',               color: '#A32D2D' }
+          ];
+        %>
+        <div class="ct-row" id="ctTplSlots" style="margin-bottom:0">
+          <% slots.forEach(function (s) { var has = !!(vals[s.field] && String(vals[s.field]).trim()); %>
+            <div class="ct-fg ct-tpl-slot <%= tMode === s.group ? '' : 'ct-d-none' %>" data-group="<%= s.group %>" data-key="<%= s.key %>"
+                 style="<%= s.group === 'common' ? 'grid-column:1 / -1' : '' %>">
+              <span class="ct-lbl" style="color:<%= s.color %>"><%= s.title %></span>
+
+              <div class="ct-note ok ct-has-tpl <%= has ? '' : 'ct-d-none' %>" style="margin-bottom:8px">
+                <i class="bi bi-check-circle-fill"></i>
+                <div><strong>Template attached.</strong> Upload a new .docx below to replace it.</div>
+              </div>
+
+              <div class="ct-upload" tabindex="0" role="button" aria-label="Upload <%= s.title %>" data-pick="<%= s.key %>">
+                <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+                <i class="bi bi-cloud-arrow-up" style="font-size:26px;color:<%= s.color %>"></i>
+                <div style="font-size:13px;font-weight:600;color:<%= s.color %>" class="ct-upload-lbl">
+                  <%= has ? 'Click to replace template (.docx)' : 'Click to upload template (.docx)' %>
+                </div>
+                <div class="ct-hint">Word .docx only · max 10 MB</div>
+              </div>
+
+              <div class="ct-tpl-status" aria-live="polite"></div>
+              <div class="ct-tpl-actions <%= has ? '' : 'ct-d-none' %>">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-act="preview"><i class="bi bi-eye"></i> Preview</button>
+                <button type="button" class="btn btn-sm btn-outline-danger"   data-act="remove"><i class="bi bi-trash"></i> Remove</button>
+              </div>
+              <div class="ct-preview"></div>
+              <textarea name="<%= s.field %>" hidden><%= vals[s.field] || '' %></textarea>
+            </div>
+          <% }) %>
+        </div>
+
+        <div class="ct-note info" style="margin-top:16px;display:block;font-size:12px">
+          <strong>Placeholders:</strong>
+          <code class="ph">{{PatientName}}</code><code class="ph">{{Age}}</code><code class="ph">{{Gender}}</code><code class="ph">{{Date}}</code>
+          <code class="ph">{{TestName}}</code><code class="ph">{{DoctorName}}</code><code class="ph">{{ReportingDoctor}}</code>
+        </div>
+      </div>
+
+      <div class="ct-footer">
+        <a href="/test/getTestListView" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Cancel</a>
+        <button type="submit" class="btn btn-primary" id="ctSubmit">
+          <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+          <i class="bi bi-check2"></i> <span class="ct-submit-lbl"><%= isEdit ? 'Update Test' : 'Create Test' %></span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="application/json" id="ctBoot"><%- jsonSafe({
+  mode: mode,
+  bucket: bucket,
+  errors: errList,
+  notifications: noteList.map(function (n) { return { type: n.type, message: n.messages }; })
+}) %></script>
+
+<script>
+(function () {
+  'use strict';
+
+  var BOOT     = JSON.parse(document.getElementById('ctBoot').textContent || '{}');
+  var IMAGING  = ['radiology','ct','mri','mammography','opg'];
+  var PILL_CLS = { pathology:'sel-path', usg:'sel-usg', other:'sel-other' };
+  var form     = document.getElementById('ctForm');
+  var bucket   = BOOT.bucket || null;
+  var pending  = 0;          // template conversions in progress
+  var dirty    = false;
+  var $        = function (id) { return document.getElementById(id); };
+  var isPath   = function () { return bucket === 'pathology'; };
+
+  /* ── Toasts ─────────────────────────────────────────────────────────── */
+  var ICON  = { danger:'bi-exclamation-octagon-fill', success:'bi-check-circle-fill', warning:'bi-exclamation-triangle-fill', info:'bi-info-circle-fill' };
+  var TITLE = { danger:'Error', success:'Success', warning:'Attention', info:'Info' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function toast(type, title, msg, ms) {
+    var lines = Array.isArray(msg) ? msg : String(msg || '').split('\n').filter(Boolean);
+    var body  = lines.length > 1 ? '<ul>' + lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>'
+                                 : '<div class="ct-toast-msg">' + esc(lines[0] || '') + '</div>';
+    var t = document.createElement('div');
+    t.className = 'ct-toast ' + type;
+    t.setAttribute('role', type === 'danger' ? 'alert' : 'status');
+    t.innerHTML = '<i class="bi ' + (ICON[type] || ICON.info) + '"></i><div class="ct-toast-body"><div class="ct-toast-title">' +
+                  esc(title || TITLE[type]) + '</div>' + body + '</div><button type="button" class="ct-toast-close" aria-label="Close">&times;</button>';
+    $('ctToastStack').appendChild(t);
+    var close = function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 220); };
+    t.querySelector('.ct-toast-close').onclick = close;
+    if (ms !== 0) setTimeout(close, ms || 5000);
+  }
+  function clearToasts() { document.querySelectorAll('#ctToastStack .ct-toast').forEach(function (t) { t.remove(); }); }
+
+  /* ── TomSelect (falls back to native select if library is missing) ──── */
+  var hasTS = typeof window.TomSelect === 'function';
+  var spec  = $('ctSpecimenType'), cont = $('ctContainerType');
+  var allContainers = Array.prototype.map.call(cont.options, function (o) {
+    return { value: o.value, text: o.textContent.trim(), specimen: o.getAttribute('data-specimen') || '' };
+  }).filter(function (o) { return o.value; });
+
+  var tsSpec = null, tsCont = null;
+  if (hasTS) {
+    tsSpec = new TomSelect(spec, { allowEmptyOption: true, maxItems: 1, placeholder: 'Select specimen' });
+    tsCont = new TomSelect(cont, { allowEmptyOption: true, maxItems: 1, placeholder: 'Select container' });
+  }
+  var getVal = function (el) { return el.tomselect ? String(el.tomselect.getValue() || '') : el.value; };
+
+  function filterContainers(keepValue) {
+    var sid  = getVal(spec);
+    var cur  = keepValue ? getVal(cont) : '';
+    var list = sid ? allContainers.filter(function (c) { return c.specimen === sid; }) : allContainers;
+    if (sid && !list.length) list = allContainers;            // no mapping → show everything
+    if (cur && !list.some(function (c) { return c.value === cur; })) cur = '';
+
+    if (tsCont) {
+      tsCont.clear(true); tsCont.clearOptions();
+      list.forEach(function (c) { tsCont.addOption({ value: c.value, text: c.text }); });
+      tsCont.refreshOptions(false);
+      if (cur) tsCont.setValue(cur, true);
+    } else {
+      cont.innerHTML = '<option value="">Select container</option>' + list.map(function (c) {
+        return '<option value="' + esc(c.value) + '"' + (c.value === cur ? ' selected' : '') + '>' + esc(c.text) + '</option>';
+      }).join('');
+    }
+  }
+  filterContainers(true);
+  (tsSpec ? tsSpec.on.bind(tsSpec, 'change') : function (fn) { spec.addEventListener('change', fn); })(function () {
+    filterContainers(false); markOk(spec);
+  });
+  if (tsCont) tsCont.on('change', function () { markOk(cont); });
+
+  /* ── Category rules ─────────────────────────────────────────────────── */
+  function applyRules() {
+    var path = isPath(), imaging = IMAGING.indexOf(bucket) !== -1;
+    $('ctFilmRow').classList.toggle('ct-d-none', path);
+    $('ctFilmPathMsg').classList.toggle('ct-d-none', !path);
+    document.querySelector('.ct-film-req').classList.toggle('ct-d-none', !imaging);
+    $('ctPathologySection').classList.toggle('ct-d-none', !path);
+    $('ctTemplateSection').classList.toggle('ct-d-none', path || !$('ctReportToggle').checked);
+  }
+
+  var pills = $('ctPills');
+  if (pills) {
+    pills.addEventListener('click', function (e) {
+      var el = e.target.closest('.ct-pill'); if (!el) return;
+      pills.querySelectorAll('.ct-pill').forEach(function (p) {
+        p.classList.remove('sel-rad','sel-path','sel-usg','sel-other'); p.setAttribute('aria-checked','false');
+      });
+      bucket = el.dataset.bucket || 'other';
+      el.classList.add(PILL_CLS[bucket] || 'sel-rad'); el.setAttribute('aria-checked','true');
+      $('ctMainCategory').value = el.dataset.value;
+      $('fgCategory').classList.remove('ct-error'); pills.classList.remove('ct-error');
+      dirty = true; applyRules();
+    });
+  }
+
+  /* ── Steppers ───────────────────────────────────────────────────────── */
+  form.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-step]'); if (!b) return;
+    var el = $(b.dataset.step), mn = +el.min || 0, mx = +el.max || 999;
+    el.value = Math.max(mn, Math.min(mx, (parseInt(el.value, 10) || 0) + (+b.dataset.delta)));
+    dirty = true;
+  });
+
+  /* ── Report toggle & template mode ──────────────────────────────────── */
+  $('ctReportToggle').addEventListener('change', function () {
+    $('ctReportLbl').textContent = this.checked ? 'Report required' : 'No report required';
+    applyRules();
+  });
+
+  function setMode(mode) {
+    document.querySelectorAll('.ct-mode').forEach(function (m) { m.classList.toggle('active', m.querySelector('input').value === mode); });
+    document.querySelectorAll('.ct-tpl-slot').forEach(function (s) { s.classList.toggle('ct-d-none', s.dataset.group !== mode); });
+    $('ctLaterNote').classList.toggle('ct-d-none', mode !== 'later');
+  }
+  document.querySelectorAll('input[name="templateMode"]').forEach(function (r) {
+    r.addEventListener('change', function () { setMode(this.value); dirty = true; });
+  });
+  var currentMode = function () { var r = document.querySelector('input[name="templateMode"]:checked'); return r ? r.value : 'common'; };
+
+  /* ── Template upload / preview / remove ─────────────────────────────── */
+  function slotParts(slot) {
+    return {
+      zone: slot.querySelector('.ct-upload'), file: slot.querySelector('input[type=file]'),
+      lbl: slot.querySelector('.ct-upload-lbl'), status: slot.querySelector('.ct-tpl-status'),
+      actions: slot.querySelector('.ct-tpl-actions'), preview: slot.querySelector('.ct-preview'),
+      html: slot.querySelector('textarea'), has: slot.querySelector('.ct-has-tpl')
+    };
+  }
+  function refreshSlot(slot) {
+    var p = slotParts(slot), has = !!p.html.value.trim();
+    p.actions.classList.toggle('ct-d-none', !has);
+    p.has.classList.toggle('ct-d-none', !has);
+    p.lbl.textContent = has ? 'Click to replace template (.docx)' : 'Click to upload template (.docx)';
+    if (!has) p.preview.style.display = 'none';
+  }
+  function setStatus(p, text, color) { p.status.textContent = text; p.status.style.color = color || ''; }
+
+  async function uploadTemplate(slot) {
+    var p = slotParts(slot), f = p.file.files[0];
+    if (!f) return;
+    if (!/\.docx$/i.test(f.name)) { setStatus(p, 'Only .docx files are accepted.', '#A32D2D'); toast('danger', 'Wrong file type', '"' + f.name + '" is not a .docx file. Old .doc files must be saved as .docx in Word first.', 0); p.file.value = ''; return; }
+    if (f.size > 10 * 1024 * 1024) { setStatus(p, 'File is larger than 10 MB.', '#A32D2D'); toast('danger', 'File too large', 'Reduce image sizes in the Word file (max 10 MB).', 0); p.file.value = ''; return; }
+
+    var fd = new FormData(); fd.append('docxFile', f);
+    pending++; p.zone.classList.add('busy'); p.zone.classList.remove('ct-upload-err');
+    setStatus(p, 'Converting "' + f.name + '"…', '#633806');
+    try {
+      var res  = await fetch('/test/previewTemplate', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+      var type = res.headers.get('content-type') || '';
+      if (res.redirected || type.indexOf('application/json') === -1) {
+        throw new Error(res.status === 401 || res.redirected
+          ? 'Your session has expired. Log in again in a new tab, then upload the file again (your form is still here).'
+          : 'Server returned an unexpected response (HTTP ' + res.status + ').');
+      }
+      var data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Conversion failed.');
+
+      p.html.value = data.html;          // previous template is replaced only on success
+      setStatus(p, '✓ "' + f.name + '" ready' + (data.sizeKb ? ' (' + data.sizeKb + ' KB)' : '') + ' — will be saved when you click ' + (BOOT.mode === 'edit' ? 'Update' : 'Create') + '.', '#27500A');
+      dirty = true;
+      toast('success', 'Template converted', f.name, 3000);
+    } catch (err) {
+      // keep whatever template was there before — never wipe on failure
+      setStatus(p, err.message, '#A32D2D');
+      toast('danger', 'Template upload failed', err.message, 0);
+    } finally {
+      pending--; p.zone.classList.remove('busy'); p.file.value = '';   // allow re-selecting the same file
+      refreshSlot(slot);
+    }
+  }
+
+  document.querySelectorAll('.ct-tpl-slot').forEach(function (slot) {
+    var p = slotParts(slot);
+    p.zone.addEventListener('click', function () { p.file.click(); });
+    p.zone.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); p.file.click(); } });
+    p.file.addEventListener('change', function () { uploadTemplate(slot); });
+    slot.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-act]'); if (!b) return;
+      if (b.dataset.act === 'preview') {
+        var show = p.preview.style.display !== 'block';
+        p.preview.style.display = show ? 'block' : 'none';
+        if (show) p.preview.innerHTML = p.html.value;
+      } else if (b.dataset.act === 'remove') {
+        if (!confirm('Remove this template? (It is only removed when you save.)')) return;
+        p.html.value = ''; setStatus(p, 'Template removed — save to apply, or choose "Add template later".', '#92400e');
+        dirty = true; refreshSlot(slot);
+      }
+    });
+  });
+
+  /* ── Validation ─────────────────────────────────────────────────────── */
+  function fgOf(el) { return el.closest('.ct-fg'); }
+  function markErr(el) { var fg = fgOf(el); if (fg) fg.classList.add('ct-error'); }
+  function markOk(el)  { var fg = fgOf(el); if (fg) fg.classList.remove('ct-error'); }
+  function num(id)     { var s = $(id).value.trim(); return s === '' ? null : Number(s); }
+
+  function validate() {
+    var errs = [];
+    form.querySelectorAll('.ct-fg.ct-error').forEach(function (fg) { fg.classList.remove('ct-error'); });
+    document.querySelectorAll('.ct-upload-err').forEach(function (z) { z.classList.remove('ct-upload-err'); });
+
+    if (!$('ctMainCategory').value) { errs.push('Select a category.'); $('fgCategory').classList.add('ct-error'); if (pills) pills.classList.add('ct-error'); }
+
+    form.querySelectorAll('[data-required]').forEach(function (el) {
+      if (!el.value.trim()) { errs.push(el.dataset.required + ' is required.'); markErr(el); }
+    });
+
+    var price = num('ctPrice');
+    if (price !== null && (isNaN(price) || price < 0 || price > 1000000)) { errs.push('Price must be between 0 and 10,00,000.'); markErr($('ctPrice')); }
+    var day = num('ctDay');
+    if (day !== null && (isNaN(day) || day < 1 || day > 1440 || day % 1)) { errs.push('Test duration must be a whole number from 1 to 1440 minutes.'); markErr($('ctDay')); }
+
+    if (IMAGING.indexOf(bucket) !== -1 && !$('ctFilmType').value) { errs.push('Film type is required for imaging tests.'); markErr($('ctFilmType')); }
+
+    if (isPath()) {
+      form.querySelectorAll('[data-path-required]').forEach(function (el) {
+        if (!getVal(el).trim()) { errs.push(el.dataset.pathRequired + ' is required.'); markErr(el); }
+      });
+      var mn = num('ctMinBlood'), mx = num('ctMaxBlood');
+      if (mn !== null && mx !== null) {
+        if (mn < 0 || mx < 0 || mn > 100 || mx > 100) { errs.push('Sample volume must be between 0 and 100 ml.'); markErr($('ctMinBlood')); markErr($('ctMaxBlood')); }
+        else if (mn > mx) { errs.push('Minimum sample volume cannot be more than maximum.'); markErr($('ctMaxBlood')); }
+      }
+    }
+
+    if (!isPath() && $('ctReportToggle').checked) {
+      var mode = currentMode();
+      var txt  = function (n) { return (form.querySelector('textarea[name="' + n + '"]').value || '').trim(); };
+      if (mode === 'common' && !txt('templateCommon')) {
+        errs.push('Upload the common template — or choose "Add template later".');
+        document.querySelector('.ct-tpl-slot[data-key="Common"] .ct-upload').classList.add('ct-upload-err');
+      } else if (mode === 'separate' && !txt('templateMale') && !txt('templateFemale')) {
+        errs.push('Upload at least one gender template — or choose "Add template later".');
+        document.querySelectorAll('.ct-tpl-slot[data-group="separate"] .ct-upload').forEach(function (z) { z.classList.add('ct-upload-err'); });
+      }
+    }
+    return errs;
+  }
+
+  form.addEventListener('input',  function (e) { dirty = true; markOk(e.target); });
+  form.addEventListener('change', function (e) { dirty = true; markOk(e.target); });
+
+  var submitting = false;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (submitting) return;
+    clearToasts();
+
+    if (pending > 0) { toast('warning', 'Please wait', 'A template is still being converted. Save again in a moment.', 4000); return; }
+
+    var errs = validate();
+    if (errs.length) {
+      toast('danger', 'Please fix ' + errs.length + ' issue' + (errs.length > 1 ? 's' : ''), errs, 0);
+      var first = form.querySelector('.ct-fg.ct-error, .ct-upload-err');
+      if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); var inp = first.querySelector('input:not([type=hidden]),select,textarea:not([hidden])'); if (inp) setTimeout(function () { inp.focus({ preventScroll: true }); }, 300); }
+      return;
+    }
+
+    // Don't send hidden-section data that doesn't apply (keeps server checks simple)
+    if (!isPath()) { if (tsSpec) tsSpec.clear(true); else spec.value = ''; if (tsCont) tsCont.clear(true); else cont.value = ''; }
+
+    submitting = true; dirty = false;
+    var btn = $('ctSubmit');
+    btn.disabled = true;
+    btn.querySelector('.spinner-border').classList.remove('d-none');
+    btn.querySelector('.bi').classList.add('d-none');
+    btn.querySelector('.ct-submit-lbl').textContent = 'Saving…';
+    form.submit();
+  });
+
+  window.addEventListener('beforeunload', function (e) {
+    if (dirty && !submitting) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* ── Init ───────────────────────────────────────────────────────────── */
+  applyRules();
+  setMode(currentMode());
+  (BOOT.notifications || []).forEach(function (n) { toast(n.type || 'info', null, n.message, n.type === 'danger' ? 0 : 6000); });
+  if ((BOOT.errors || []).length) {   // server-side errors: alert box is at the top; make sure user sees it
+    dirty = true;                      // their input is back in the form — warn before leaving
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+})();
+</script>

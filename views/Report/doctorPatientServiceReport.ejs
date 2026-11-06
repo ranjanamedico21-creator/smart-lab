@@ -1,0 +1,408 @@
+<!-- ============================================================ -->
+<!-- views/Report/doctorPatientReport.ejs                        -->
+<!-- Doctor Patient Reference Report                             -->
+<!-- ============================================================ -->
+
+<style>
+  .dpr-card{background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:var(--radius-lg,14px);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .dpr-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border,#e2e8f0)}
+  .dpr-header-left{display:flex;align-items:center;gap:10px}
+  .dpr-icon{width:32px;height:32px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;color:#185FA5;font-size:14px;flex-shrink:0}
+  .dpr-title{font-size:14px;font-weight:600;color:var(--text-primary,#111);margin:0}
+  .dpr-sub{font-size:12px;color:var(--text-secondary,#666);margin-top:2px}
+  .dpr-mode-badge{font-size:11px;padding:3px 10px;border-radius:99px;background:#E6F1FB;color:#185FA5;font-weight:600}
+  
+  .dpr-filter{padding:16px 20px;border-bottom:1px solid var(--border,#e2e8f0);background:var(--surface,#f8f9fb)}
+  .dpr-mode-toggle{display:flex;border:1px solid var(--border,#e2e8f0);border-radius:9px;overflow:hidden;margin-bottom:14px;width:fit-content}
+  .dpr-mode-btn{padding:7px 20px;font-size:13px;font-weight:500;border:none;background:var(--surface,#f8f9fb);color:var(--text-secondary,#666);cursor:pointer;transition:all .15s;border-right:1px solid var(--border,#e2e8f0)}
+  .dpr-mode-btn:last-child{border-right:none}
+  .dpr-mode-btn.active{background:#185FA5;color:#fff}
+  .dpr-fields{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .dpr-field{display:flex;flex-direction:column;gap:5px;min-width:140px;flex:1}
+  .dpr-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666)}
+  .dpr-input,.dpr-select{height:36px;border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;color:var(--text-primary,#111);font-family:inherit;width:100%}
+  .dpr-go-btn{height:36px;padding:0 22px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .dpr-go-btn:hover{background:#0C447C}
+  
+  .dpr-summary{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border,#e2e8f0)}
+  .dpr-sum-cell{padding:14px 20px;border-right:1px solid var(--border,#e2e8f0)}
+  .dpr-sum-cell:last-child{border-right:none}
+  .dpr-sum-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666);margin-bottom:5px}
+  .dpr-sum-val{font-size:22px;font-weight:600;font-family:'DM Mono',monospace}
+  
+  .dpr-table-wrap{overflow-x:auto}
+  .dpr-table{width:100%;border-collapse:collapse;min-width:600px}
+  .dpr-table thead th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary,#666);padding:10px 14px;border-bottom:1px solid var(--border,#e2e8f0);text-align:center;background:var(--surface,#f8f9fb);white-space:nowrap}
+  .dpr-table thead th:first-child,.dpr-table thead th:nth-child(2){text-align:left}
+  .dpr-table tbody tr{border-bottom:1px solid var(--border,#e2e8f0)}
+  .dpr-table tbody tr:last-child{border-bottom:none}
+  .dpr-table tbody tr:hover td{background:#f8fbff}
+  .dpr-table tbody td{padding:11px 14px;font-size:13px;text-align:center;vertical-align:middle;color:var(--text-primary,#111)}
+  .dpr-table tbody td:first-child{text-align:left}
+  .dpr-table tbody td:nth-child(2){text-align:left}
+  
+  .dpr-avatar{width:30px;height:30px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#0C447C;flex-shrink:0}
+  .dpr-dr-name{font-weight:600;font-size:13px;color:var(--text-primary,#111);text-decoration:none}
+  .dpr-dr-name:hover{color:#185FA5}
+  .dpr-dr-spec{font-size:11px;color:var(--text-secondary,#666);margin-top:2px}
+  
+  .dpr-trend-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+  .trend-up{background:#EAF3DE;color:#27500A}
+  .trend-dn{background:#FCEBEB;color:#A32D2D}
+  .trend-eq{background:rgba(0,0,0,0.06);color:var(--text-secondary,#555)}
+  
+  .dpr-cell-val{display:inline-flex;align-items:center;justify-content:center;gap:3px;font-family:'DM Mono',monospace;font-size:13px}
+  .arr-up{color:#27500A;font-size:10px}
+  .arr-dn{color:#A32D2D;font-size:10px}
+  
+  .dpr-total-cell{font-weight:600;font-family:'DM Mono',monospace}
+  .dpr-footer{padding:12px 20px;border-top:1px solid var(--border,#e2e8f0);display:flex;align-items:center;justify-content:space-between;background:var(--surface,#f8f9fb)}
+  .dpr-export-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:#EAF3DE;color:#27500A;border:1px solid #C0DD97;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none}
+  .dpr-export-btn:hover{background:#C0DD97}
+  .dpr-info{font-size:12px;color:var(--text-secondary,#666)}
+  
+  .dpr-empty{padding:60px 20px;text-align:center;color:var(--text-secondary,#666)}
+  .dpr-empty-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+  
+  @media(max-width:768px){
+    .dpr-summary{grid-template-columns:1fr 1fr}
+    .dpr-sum-cell:nth-child(2){border-right:none}
+    .dpr-sum-cell:nth-child(3){border-top:1px solid var(--border,#e2e8f0)}
+    .dpr-fields{flex-direction:column}
+    .dpr-field{min-width:100%}
+  }
+  </style>
+  
+  <%
+    // ── Computed values ───────────────────────────────────────
+    const _months      = typeof months !== 'undefined' ? months : [];
+    const _reportData  = typeof reportData !== 'undefined' ? reportData : [];
+    const _mode        = typeof mode !== 'undefined' ? mode : 'month';
+    const _periodEnd   = typeof periodEnd !== 'undefined' ? periodEnd : '10';
+    const _categoryId  = typeof categoryId !== 'undefined' ? categoryId : '';
+    const _startDate   = typeof startDate !== 'undefined' ? startDate : '';
+    const _endDate     = typeof endDate !== 'undefined' ? endDate : '';
+  
+    // Trend helper
+    const getTrend = (doc) => {
+      const vals  = _months.map(m => doc[m] || 0);
+      if (!vals.length) return { isUp: false, isDn: false, pct: 0 };
+      const half  = Math.ceil(vals.length / 2);
+      const avg1  = vals.slice(0, half).reduce((a,b)=>a+b,0) / half;
+      const avg2  = vals.slice(Math.floor(vals.length/2)).reduce((a,b)=>a+b,0) / Math.ceil(vals.length/2);
+      const pct   = avg1 > 0 ? Math.round(((avg2 - avg1) / avg1) * 100) : 0;
+      return { isUp: pct > 5, isDn: pct < -5, pct };
+    };
+  
+    // Initials from name
+    const initials = (name) => {
+      const parts = (name||'').trim().split(' ').filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+      return (parts[0]||'?').slice(0,2).toUpperCase();
+    };
+  
+    // Summary counts
+    const _increasing = _reportData.filter(d => getTrend(d).isUp).length;
+    const _decreasing = _reportData.filter(d => getTrend(d).isDn).length;
+    const _grandTotal = _reportData.reduce((sum, d) =>
+      sum + _months.reduce((s, m) => s + (d[m] || 0), 0), 0);
+  %>
+  
+  <!-- ── Filter Card ──────────────────────────────────────────── -->
+  <div class="dpr-card">
+    <div class="dpr-header">
+      <div class="dpr-header-left">
+        <div class="dpr-icon"><i class="bi bi-graph-up"></i></div>
+        <div>
+          <p class="dpr-title">Doctor Patient Reference Report</p>
+          <p class="dpr-sub">Track patient referral trends by doctor — month-wise or same-period comparison</p>
+        </div>
+      </div>
+      <% if(_mode && _reportData.length > 0) { %>
+        <span class="dpr-mode-badge">
+          <%= _mode === 'period'
+              ? `1st – ${_periodEnd}th of each month`
+              : 'Month-wise' %>
+        </span>
+      <% } %>
+    </div>
+  
+    <div class="dpr-filter">
+  
+      <!-- Mode toggle -->
+      <div class="dpr-mode-toggle" id="modeToggle">
+        <button type="button" class="dpr-mode-btn <%= _mode !== 'period' ? 'active' : '' %>"
+                onclick="setMode('month')" id="btnMonth">
+          <i class="bi bi-calendar3" style="font-size:12px"></i> Month-wise
+        </button>
+        <button type="button" class="dpr-mode-btn <%= _mode === 'period' ? 'active' : '' %>"
+                onclick="setMode('period')" id="btnPeriod">
+          <i class="bi bi-calendar-range" style="font-size:12px"></i> Same period / month
+        </button>
+      </div>
+  
+      <form method="POST" action="/report/doctorPatientServiceReport">
+  
+        <input type="hidden" name="mode" id="modeInput"
+               value="<%= _mode !== 'period' ? 'month' : 'period' %>">
+  
+        <div class="dpr-fields">
+  
+          <div class="dpr-field">
+            <label class="dpr-label">Category</label>
+            <select name="categoryId" class="dpr-select" required>
+              <% categories.forEach(cat => { %>
+                <option value="<%= cat.Id %>"
+                  <%= (String(_categoryId) === String(cat.Id)) ? 'selected' : '' %>>
+                  <%= cat.Name %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+  
+          <div class="dpr-field">
+            <label class="dpr-label">From Date</label>
+            <input type="text" id="FromDate" name="startDate"
+                   class="dpr-input" required
+                   value="<%= _startDate %>"
+                   placeholder="DD-MM-YYYY" autocomplete="off" readonly>
+          </div>
+  
+          <div class="dpr-field">
+            <label class="dpr-label">To Date</label>
+            <input type="text" id="ToDate" name="endDate"
+                   class="dpr-input" required
+                   value="<%= _endDate %>"
+                   placeholder="DD-MM-YYYY" autocomplete="off" readonly>
+          </div>
+  
+          <!-- Period field — shown only in period mode -->
+          <div class="dpr-field" id="periodWrap"
+               style="display:<%= _mode === 'period' ? '' : 'none' %>;max-width:160px">
+            <label class="dpr-label">Period (1 to day)</label>
+            <select name="periodEnd" class="dpr-select" id="periodEndSelect">
+              <% [5,10,15,20,25].forEach(d => { %>
+                <option value="<%= d %>"
+                  <%= (String(_periodEnd) === String(d)) ? 'selected' : '' %>>
+                  1st – <%= d %>th
+                </option>
+              <% }) %>
+            </select>
+          </div>
+  
+          <button type="submit" class="dpr-go-btn">
+            <i class="bi bi-search" style="font-size:12px"></i> Generate
+          </button>
+  
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  
+  <!-- ── Results ──────────────────────────────────────────────── -->
+  <% if(_reportData.length > 0) { %>
+  
+  <!-- Summary strip -->
+  <div class="dpr-card">
+    <div class="dpr-summary">
+      <div class="dpr-sum-cell">
+        <div class="dpr-sum-label">Total Doctors</div>
+        <div class="dpr-sum-val" style="color:#185FA5"><%= _reportData.length %></div>
+      </div>
+      <div class="dpr-sum-cell">
+        <div class="dpr-sum-label">Increasing ↑</div>
+        <div class="dpr-sum-val" style="color:#27500A"><%= _increasing %></div>
+      </div>
+      <div class="dpr-sum-cell">
+        <div class="dpr-sum-label">Decreasing ↓</div>
+        <div class="dpr-sum-val" style="color:#A32D2D"><%= _decreasing %></div>
+      </div>
+      <div class="dpr-sum-cell">
+        <div class="dpr-sum-label">Total Patients</div>
+        <div class="dpr-sum-val"><%= _grandTotal.toLocaleString('en-IN') %></div>
+      </div>
+    </div>
+  
+    <!-- Table -->
+    <div class="dpr-table-wrap">
+      <table class="dpr-table">
+        <thead>
+          <tr>
+            <th style="min-width:190px">Doctor</th>
+            <th style="min-width:110px">Trend</th>
+            <% _months.forEach(m => { %><th><%= m %></th><% }) %>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% _reportData.forEach(function(doc) {
+            const vals  = _months.map(m => doc[m] || 0);
+            const total = vals.reduce((a,b) => a+b, 0);
+            const t     = getTrend(doc);
+            const init  = initials(doc.DoctorName || '');
+          %>
+          <tr>
+            <!-- Doctor -->
+            <td>
+              <div style="display:flex;align-items:center;gap:9px">
+                <div class="dpr-avatar"><%= init %></div>
+                <div>
+                  <a href="/doctor/getDoctorDetail?doctorId=<%= doc.DoctorId %>"
+                     class="dpr-dr-name">
+                    Dr. <%= doc.DoctorName %>
+                  </a>
+                  <% if(doc.SpecialistIn) { %>
+                    <div class="dpr-dr-spec"><%= doc.SpecialistIn %></div>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+  
+            <!-- Trend badge -->
+            <td>
+              <% if(t.isUp) { %>
+                <span class="dpr-trend-badge trend-up">↑ +<%= t.pct %>%</span>
+              <% } else if(t.isDn) { %>
+                <span class="dpr-trend-badge trend-dn">↓ <%= t.pct %>%</span>
+              <% } else { %>
+                <span class="dpr-trend-badge trend-eq">→ Stable</span>
+              <% } %>
+            </td>
+  
+            <!-- Monthly / period values -->
+            <% vals.forEach(function(v, vi) {
+              const prev = vals[vi - 1];
+              let arrowHtml = '';
+              if(vi > 0 && v > prev) arrowHtml = '<span class="arr-up">↑</span>';
+              if(vi > 0 && v < prev) arrowHtml = '<span class="arr-dn">↓</span>';
+            %>
+            <td>
+              <span class="dpr-cell-val"><%= v %><%- arrowHtml %></span>
+            </td>
+            <% }) %>
+  
+            <!-- Total -->
+            <td class="dpr-total-cell"><%= total.toLocaleString('en-IN') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  
+    <!-- Footer -->
+    <div class="dpr-footer">
+      <span class="dpr-info">
+        Showing <%= _reportData.length %> doctor<%= _reportData.length !== 1 ? 's' : '' %>
+        · <%= _startDate %> to <%= _endDate %>
+        <% if(_mode === 'period') { %> · 1st–<%= _periodEnd %>th of each month<% } %>
+      </span>
+      <a href="/report/downloadDoctorPatientReportExcel/<%= _categoryId %>/<%= _startDate %>/<%= _endDate %>/<%= _mode %>/<%= _periodEnd %>"
+         class="dpr-export-btn" target="_blank">
+        <i class="bi bi-file-earmark-excel" style="font-size:13px"></i> Download Excel
+      </a>
+    </div>
+  </div>
+  
+  
+  <!-- Doctor cards (mobile-friendly view) -->
+  <div class="row g-3 d-md-none">
+    <% _reportData.forEach(function(doc) {
+      const vals  = _months.map(m => doc[m] || 0);
+      const total = vals.reduce((a,b) => a+b, 0);
+      const t     = getTrend(doc);
+      const init  = initials(doc.DoctorName || '');
+    %>
+    <div class="col-12">
+      <div class="dpr-card" style="margin-bottom:0">
+        <div class="dpr-header">
+          <div class="dpr-header-left">
+            <div class="dpr-avatar" style="width:36px;height:36px;font-size:12px"><%= init %></div>
+            <div>
+              <a href="/doctor/getDoctorDetail?doctorId=<%= doc.DoctorId %>"
+                 class="dpr-dr-name" style="font-size:14px">
+                Dr. <%= doc.DoctorName %>
+              </a>
+              <% if(doc.SpecialistIn) { %>
+                <div class="dpr-dr-spec"><%= doc.SpecialistIn %></div>
+              <% } %>
+            </div>
+          </div>
+          <% if(t.isUp) { %>
+            <span class="dpr-trend-badge trend-up">↑ +<%= t.pct %>%</span>
+          <% } else if(t.isDn) { %>
+            <span class="dpr-trend-badge trend-dn">↓ <%= t.pct %>%</span>
+          <% } else { %>
+            <span class="dpr-trend-badge trend-eq">→ Stable</span>
+          <% } %>
+        </div>
+        <div style="padding:12px 16px">
+          <% _months.forEach(function(m, mi) {
+            const v    = doc[m] || 0;
+            const prev = mi > 0 ? (doc[_months[mi-1]] || 0) : null;
+            let arrow  = '';
+            if(prev !== null && v > prev) arrow = '<span class="arr-up">↑</span>';
+            if(prev !== null && v < prev) arrow = '<span class="arr-dn">↓</span>';
+          %>
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:6px 0;border-bottom:0.5px solid var(--border,#e2e8f0)">
+            <span style="font-size:12px;color:var(--text-secondary,#666)">
+              <i class="bi bi-calendar3" style="font-size:11px;margin-right:5px"></i>
+              <%= m %>
+            </span>
+            <span class="dpr-cell-val"><%= v %><%- arrow %></span>
+          </div>
+          <% }) %>
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      padding:8px 0 0;font-weight:600">
+            <span style="font-size:12px">Total Patients</span>
+            <span class="dpr-total-cell" style="color:#185FA5">
+              <%= total.toLocaleString('en-IN') %>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  
+  <% } else if(typeof reportData !== 'undefined') { %>
+  
+  <!-- Empty state — form was submitted but no data -->
+  <div class="dpr-card">
+    <div class="dpr-empty">
+      <div class="dpr-empty-icon"><i class="bi bi-inbox" style="font-size:36px"></i></div>
+      <div style="font-size:14px;font-weight:500;color:var(--text-primary,#111);margin-bottom:6px">
+        No data found
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary,#666)">
+        No patient referrals found for the selected date range and category.
+        Try adjusting your filters.
+      </div>
+    </div>
+  </div>
+  
+  <% } %>
+  
+  
+  <script>
+  (function () {
+  
+    // ── Mode toggle ──────────────────────────────────────────
+    window.setMode = function(mode) {
+      document.getElementById("modeInput").value = mode;
+      document.getElementById("btnMonth").classList.toggle("active",  mode === "month");
+      document.getElementById("btnPeriod").classList.toggle("active", mode === "period");
+      document.getElementById("periodWrap").style.display =
+        mode === "period" ? "" : "none";
+    };
+  
+    // Restore mode from server on page load
+    (function(){
+      const m = document.getElementById("modeInput").value;
+      if (m) setMode(m);
+    })();
+  
+  })();
+  </script>
+  

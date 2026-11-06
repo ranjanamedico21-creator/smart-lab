@@ -1,0 +1,306 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; color: #1a202c; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  .page-header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .page-header h1 { font-size: 24px; color: #2c5282; }
+  .page-header p { color: #718096; font-size: 14px; }
+  .param-badge { display: inline-block; background: #ebf8ff; color: #2c5282; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-left: 10px; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
+  .card-header { background: #2c5282; color: white; padding: 15px 20px; font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .card-body { padding: 20px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+  .form-group { display: flex; flex-direction: column; }
+  .form-group label { font-size: 12px; color: #4a5568; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; }
+  .form-control { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
+  .form-control:focus { outline: none; border-color: #2c5282; }
+  .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #2c5282; color: white; }
+  .btn-success { background: #38a169; color: white; }
+  .btn-danger { background: #c53030; color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f7fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #4a5568; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 12px 16px; border-bottom: 1px solid #edf2f7; font-size: 14px; }
+  .range-row:hover { background: #f7fafc; }
+  .critical-tag { color: #c53030; font-weight: 700; }
+  .normal-tag { color: #38a169; }
+  .gender-badge { font-size: 10px; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
+  .age-display { font-family: monospace; font-size: 13px; color: #4a5568; }
+  .actions { display: flex; gap: 6px; }
+  .add-form { display: none; }
+  .add-form.show { display: block; }
+  .back-link { color: #2c5282; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .back-link:hover { text-decoration: underline; }
+
+  /* ─── Tom Select: remove double border + fix dropdown overflow ─── */
+  .ts-wrapper.form-control {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .ts-wrapper.form-control .ts-control {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: white;
+    font-size: 14px;
+    min-height: 42px;
+    box-shadow: none;
+    color: #1a202c;
+  }
+  .ts-wrapper.form-control.focus .ts-control {
+    border-color: #2c5282;
+    box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+  }
+  .ts-wrapper.form-control .ts-control .ts-input {
+    padding: 0;
+    min-height: 20px;
+    line-height: 20px;
+  }
+  /* Dropdown attached to body (escapes overflow:hidden) */
+  .ts-dropdown {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    z-index: 99999;
+  }
+  .ts-dropdown .option {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  .ts-dropdown .active {
+    background: #ebf8ff !important;
+    color: #2c5282 !important;
+  }
+  .ts-dropdown .create {
+    font-size: 14px;
+    padding: 10px 12px;
+    color: #2c5282;
+  }
+</style>
+
+<%
+  var fmt = function(v) { return (v === null || v === undefined || v === '') ? '' : String(Number(Number(v).toFixed(4))); };
+  var rangeTxt = function(r) {
+    var mn = fmt(r.MinValue), mx = fmt(r.MaxValue);
+    if (mn !== '' && mx !== '') return mn + ' - ' + mx;
+    if (mx !== '') return '< ' + mx;
+    if (mn !== '') return '> ' + mn;
+    return '-';
+  };
+  var deptName = function(id) { for (var i = 0; i < departments.length; i++) if (departments[i].Id == id) return departments[i].DepartmentName; return null; };
+%>
+<div class="container">
+  <div class="page-header">
+    <div>
+      <a href="/pathology/admin/parameters" class="back-link">← Back to Parameters</a>
+      <h1 style="margin-top:10px;">📏 Reference Ranges <span class="param-badge"><%= parameter.ParameterName %> (<%= parameter.ShortName %>)</span></h1>
+    </div>
+    <p>Unit: <%= parameter.Unit || 'N/A' %> | Method: <%= parameter.Method || 'N/A' %></p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span id="formTitle">+ Add New Range</span>
+      <button class="btn btn-success btn-sm" onclick="toggleAdd()">Add Range</button>
+    </div>
+    <div class="card-body add-form" id="addFormCard">
+      <form id="addForm" onsubmit="return createRange(event)">
+        <input type="hidden" name="ParameterId" value="<%= parameter.Id %>">
+        <input type="hidden" name="Id" value="">
+        <p style="font-size:12px;color:#718096;margin-bottom:12px;">Age band is <strong>From (inclusive) → To (exclusive)</strong>: e.g. 12-18 years covers 12 up to 17 years 11 months. Use 999 years for "no upper limit". Leave Min or Max empty for "&lt; max" / "&gt; min" ranges.</p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Department</label>
+            <select class="form-control" name="DepartmentId">
+              <option value="">All Departments</option>
+              <% departments.forEach(d => { %>
+                <option value="<%= d.Id %>"><%= d.DepartmentName %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Method</label>
+            <input type="text" class="form-control" name="Method" placeholder="e.g. Automated Counter">
+          </div>
+          <div class="form-group">
+            <label>Gender</label>
+            <select class="form-control" name="Gender">
+              <option value="all">All</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Age From</label>
+            <input type="number" class="form-control" name="AgeFrom" value="0" step="0.001">
+          </div>
+          <div class="form-group">
+            <label>Age To</label>
+            <input type="number" class="form-control" name="AgeTo" value="999" step="0.001">
+          </div>
+          <div class="form-group">
+            <label>Age Unit</label>
+            <select class="form-control" name="AgeUnit">
+              <option value="years">Years</option>
+              <option value="months">Months</option>
+              <option value="days">Days</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Min Value</label>
+            <input type="number" class="form-control" name="MinValue" step="0.0001">
+          </div>
+          <div class="form-group">
+            <label>Max Value</label>
+            <input type="number" class="form-control" name="MaxValue" step="0.0001">
+          </div>
+          <div class="form-group">
+            <label>Critical Low</label>
+            <input type="number" class="form-control" name="CriticalLow" step="0.0001">
+          </div>
+          <div class="form-group">
+            <label>Critical High</label>
+            <input type="number" class="form-control" name="CriticalHigh" step="0.0001">
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <input type="number" class="form-control" name="Priority" value="0">
+          </div>
+        </div>
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>Normal Interpretation</label>
+            <input type="text" class="form-control" name="InterpretationNormal" placeholder="e.g. Normal hemoglobin level">
+          </div>
+          <div class="form-group">
+            <label>Abnormal Interpretation</label>
+            <input type="text" class="form-control" name="InterpretationAbnormal" placeholder="e.g. Anemia or polycythemia">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-success" style="margin-top:15px;">Save Range</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Existing Ranges (<%= ranges.length %>)</div>
+    <div class="card-body" style="padding:0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Gender</th>
+            <th>Age Range</th>
+            <th>Normal Range</th>
+            <th>Critical</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% ranges.forEach(r => { %>
+            <tr class="range-row">
+              <td><%= deptName(r.DepartmentId) || 'All Departments' %></td>
+              <td><span class="gender-badge"><%= r.Gender %></span></td>
+              <td class="age-display"><%= fmt(r.AgeFrom) %> - <%= Number(r.AgeTo) >= 999 ? '∞' : fmt(r.AgeTo) %> <%= r.AgeUnit %></td>
+              <td><strong><%= rangeTxt(r) %></strong> <%= parameter.Unit || '' %></td>
+              <td>
+                <% if (fmt(r.CriticalLow) !== '') { %><span class="critical-tag">↓ <%= fmt(r.CriticalLow) %></span><% } %>
+                <% if (fmt(r.CriticalHigh) !== '') { %><span class="critical-tag">↑ <%= fmt(r.CriticalHigh) %></span><% } %>
+              </td>
+              <td><%= r.Priority %></td>
+              <td><%= r.ActiveStatus %></td>
+              <td style="text-align:right;">
+                <div class="actions">
+                  <button class="btn btn-primary btn-sm" onclick='editRange(<%- JSON.stringify(r).replace(/'/g, "&#39;") %>)'>Edit</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteRange('<%= r.Id %>')">Delete</button>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+          <% if (ranges.length === 0) { %>
+            <tr><td colspan="8" style="text-align:center;color:#718096;padding:30px;">No reference ranges defined yet. Add one above.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleAdd() {
+  document.getElementById('addFormCard').classList.toggle('show');
+}
+function numOrNull(v) { return (v === '' || v === null || v === undefined || isNaN(parseFloat(v))) ? null : parseFloat(v); }
+function setField(form, name, value) {
+  var el = form.elements[name]; if (!el) return;
+  if (el.tomselect) el.tomselect.setValue(value == null ? '' : String(value), true); else el.value = value == null ? '' : value;
+}
+function editRange(r) {
+  var f = document.getElementById('addForm');
+  ['Id','DepartmentId','Method','Gender','AgeUnit','Priority','InterpretationNormal','InterpretationAbnormal'].forEach(function(k) { setField(f, k, r[k]); });
+  ['AgeFrom','AgeTo','MinValue','MaxValue','CriticalLow','CriticalHigh'].forEach(function(k) {
+    setField(f, k, r[k] == null ? '' : Number(r[k]));
+  });
+  document.getElementById('formTitle').textContent = 'Edit Range #' + r.Id;
+  document.getElementById('addFormCard').classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function createRange(e) {
+  e.preventDefault();
+  var raw = Object.fromEntries(new FormData(e.target));
+  var id = raw.Id; delete raw.Id;
+  var data = {
+    ParameterId: parseInt(raw.ParameterId, 10),
+    DepartmentId: raw.DepartmentId ? parseInt(raw.DepartmentId, 10) : null,
+    Method: raw.Method || null,
+    Gender: raw.Gender || 'all',
+    AgeFrom: numOrNull(raw.AgeFrom) == null ? 0 : numOrNull(raw.AgeFrom),
+    AgeTo: numOrNull(raw.AgeTo) == null ? 999 : numOrNull(raw.AgeTo),
+    AgeUnit: raw.AgeUnit || 'years',
+    MinValue: numOrNull(raw.MinValue),
+    MaxValue: numOrNull(raw.MaxValue),
+    CriticalLow: numOrNull(raw.CriticalLow),
+    CriticalHigh: numOrNull(raw.CriticalHigh),
+    Priority: parseInt(raw.Priority, 10) || 0,
+    InterpretationNormal: raw.InterpretationNormal || null,
+    InterpretationAbnormal: raw.InterpretationAbnormal || null
+  };
+  if (data.MinValue === null && data.MaxValue === null) { alert('Enter a Min or a Max value.'); return false; }
+  fetch(id ? '/pathology/reference-ranges/' + id : '/pathology/reference-ranges', {
+    method: id ? 'PUT' : 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); }).then(function(res) {
+    if (res.success) location.reload();
+    else alert(res.message + (res.errors ? ': ' + res.errors.map(function(x) { return x.msg; }).join(', ') : ''));
+  });
+  return false;
+}
+function deleteRange(id) {
+  if (!confirm('Delete this reference range?')) return;
+  fetch('/pathology/reference-ranges/' + id, {method: 'DELETE'})
+    .then(r => r.json()).then(res => {
+      if (res.success) location.reload();
+      else alert(res.message);
+    });
+}
+
+/* ---------- TOM SELECT INITIALIZATION ---------- */
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('select.form-control').forEach(function(select) {
+    if (!select.tomselect) {
+      new TomSelect(select, {
+        dropdownParent: 'body'   // escapes overflow:hidden
+      });
+    }
+  });
+});
+</script>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tax Invoice</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 10px;
+      line-height: 1.4;
+      color: #111;
+      background: #fff;
+      /* A4 at 96dpi = 794px wide, 1123px tall */
+    }
+
+    html, body { height: 1123px; }
+
+    .outer-wrap {
+      width: 100%;
+      height: 830px; /* 1123 - top(30px) - bottom(30px) padding approx */
+      border-collapse: collapse;
+    }
+
+    /* Row 1: top content */
+    .top-cell {
+      vertical-align: top;
+      padding: 8mm 10mm 0;
+    }
+
+    /* Row 2: spacer — this stretches to fill empty space */
+    .spacer-cell {
+      height: 100%;
+    }
+
+    /* Row 3: footer pinned to bottom */
+    .bottom-cell {
+      vertical-align: bottom;
+      padding: 0 10mm 6mm;
+    }
+
+    /* Accent bar */
+    .accent-bar {
+      height: 4px;
+      background: #1a56db;
+      margin: -8mm -10mm 0;
+      margin-bottom: 4mm;
+    }
+
+    /* Header */
+    .inv-header { width: 100%; border-bottom: 1.5px solid #111; padding-bottom: 3mm; margin-bottom: 2mm; }
+    .company-name { font-size: 13px; font-weight: bold; text-transform: capitalize; }
+    .company-addr { font-size: 9.5px; color: #555; text-transform: capitalize; }
+    .company-meta { font-size: 9px; color: #888; margin-top: 1px; }
+
+    /* GST banner */
+    .gst-banner {
+      width: 100%;
+      background-color: #eef3fd;
+      border: 1px solid #c7d8f8;
+      border-radius: 3px;
+      margin-bottom: 2mm;
+      border-collapse: collapse;
+    }
+    .gst-banner td { padding: 2px 8px; vertical-align: middle; }
+    .inv-title {
+      text-align: center; font-size: 11px; font-weight: bold;
+      text-transform: uppercase; letter-spacing: 1px; color: #1a56db;
+    }
+    .original-copy { text-align: right; font-size: 9px; color: #888; font-style: italic; }
+
+    /* Info grid */
+    .info-grid {
+      width: 100%; border: 1px solid #d8dce8; border-radius: 3px;
+      margin-bottom: 2mm; border-collapse: collapse;
+    }
+    .info-grid td { padding: 3px 7px; vertical-align: top; width: 50%; }
+    .info-grid .divider-col { border-left: 1px solid #d8dce8; }
+    .pane-label {
+      font-size: 8px; font-weight: bold; letter-spacing: 0.8px;
+      text-transform: uppercase; color: #1a56db;
+      border-bottom: 1px solid #eef3fd; padding-bottom: 2px; margin-bottom: 2px;
+    }
+    .info-line { color: #555; font-size: 9.5px; line-height: 1.45; }
+    .info-line b { color: #111; }
+
+    /* Items table */
+    .items-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 9.5px; table-layout: fixed;
+    }
+    .items-table thead tr { background-color: #1a3a6e; color: #fff; }
+    .items-table thead th {
+      padding: 4px 2px; font-size: 8px; font-weight: bold;
+      text-align: center; text-transform: uppercase; overflow: hidden;
+    }
+    .items-table thead th.left { text-align: left; padding-left: 4px; }
+
+    .col-sr    { width: 3%; }
+    .col-prod  { width: 20%; }
+    .col-hsn   { width: 7%; }
+    .col-batch { width: 8%; }
+    .col-mrp   { width: 8%; }
+    .col-exp   { width: 7%; }
+    .col-qty   { width: 4%; }
+    .col-rate  { width: 8%; }
+    .col-tax   { width: 8%; }
+    .col-sgst  { width: 6%; }
+    .col-cgst  { width: 6%; }
+    .col-total { width: 8%; }
+
+    .items-table tbody tr { background: #fff; }
+    .items-table tbody tr.alt { background: #f7f8fc; }
+    .items-table tbody td {
+      padding: 3px 2px; text-align: center; color: #555;
+      border-bottom: 1px solid #e0e3ed; vertical-align: middle; overflow: hidden;
+    }
+    .items-table tbody td.left { text-align: left; padding-left: 4px; }
+    .product-main {
+      font-weight: bold; color: #111; text-transform: capitalize;
+      display: block; white-space: normal; word-break: break-word; line-height: 1.3;
+    }
+    .product-sub { font-size: 8.5px; color: #999; text-transform: lowercase; word-break: break-word; }
+    .total-cell { font-weight: bold; color: #111; }
+
+    /* Section rule */
+    .section-rule { border: none; border-top: 1.5px solid #111; margin: 2mm 0; }
+
+    /* Bank + Summary */
+    .bottom-grid {
+      width: 100%; border: 1px solid #d8dce8; border-radius: 3px;
+      border-collapse: collapse; margin-bottom: 2mm;
+    }
+    .bottom-grid td { padding: 3px 7px 4px; vertical-align: top; width: 50%; }
+    .bottom-grid .divider-col { border-left: 1px solid #d8dce8; }
+
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .summary-table td { padding: 1.5px 2px; color: #555; }
+    .summary-table td.amt { text-align: right; }
+    .summary-table tr.total-row td {
+      border-top: 1.5px solid #111; font-weight: bold;
+      color: #111; font-size: 11px; padding-top: 3px;
+    }
+
+    /* Footer */
+    .footer-table {
+      width: 100%; border-collapse: collapse;
+      border-top: 1px dashed #d8dce8; margin-top: 3mm;
+    }
+    .footer-table td { vertical-align: bottom; padding: 3mm 5px 0; }
+    .col-terms { width: 46%; }
+    .col-sig   { width: 27%; text-align: center; }
+    .footer-label {
+      font-size: 8px; font-weight: bold; letter-spacing: 0.7px;
+      text-transform: uppercase; color: #999; margin-bottom: 2px;
+    }
+    .footer-terms { font-size: 9px; color: #888; line-height: 1.55; }
+    .sig-area {
+      border-top: 1px solid #111; margin-top: 14mm;
+      padding-top: 2px; font-size: 9px; color: #888;
+    }
+
+    @media print { .no-print { display: none !important; } }
+    .no-print { text-align: right; padding: 8px 10mm 4px; }
+    .btn-print {
+      background: #1a56db; color: #fff; border: none;
+      padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print">
+    <button class="btn-print" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <table class="outer-wrap" cellpadding="0" cellspacing="0">
+    <tbody>
+
+      <!-- ROW 1: all top content -->
+      <tr>
+        <td class="top-cell">
+
+          <div class="accent-bar"></div>
+
+          <!-- HEADER -->
+          <table class="inv-header" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="width:120px;">
+                <img src="<%=imageBase64%>" alt="Logo" style="max-height:46px;max-width:120px;">
+              </td>
+              <td style="text-align:right;">
+                <div class="company-name"><%= companyDetails.coreCompany || "Company Name" %></div>
+                <div class="company-addr"><%= companyDetails.coreCompanyAddress || "Company Address" %></div>
+                <div class="company-meta">
+                  <%= companyDetails.coreCompanyEmail || "N/A" %> &nbsp;&middot;&nbsp;
+                  <%= companyDetails.coreCompanyPhoneNumber || "N/A" %> &nbsp;&middot;&nbsp;
+                  DL: <%= companyDetails.coreCompanyDLNo || "NA" %>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- GST BANNER -->
+          <table class="gst-banner" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="width:33%;"><span style="font-size:9.5px;color:#444;"><b>GSTIN:</b> <%= companyDetails.coreCompanyGstNo || "N/A" %></span></td>
+              <td style="width:34%;" class="inv-title">Tax Invoice</td>
+              <td style="width:33%;" class="original-copy">Original for Recipient</td>
+            </tr>
+          </table>
+
+          <!-- CUSTOMER + INVOICE DETAILS -->
+          <table class="info-grid" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <div class="pane-label">Customer Details</div>
+                <div class="info-line"><b>Name:</b> <span style="text-transform:capitalize"><%= customerDetails?.CustomerName || "N/A" %></span> &nbsp;&middot;&nbsp; <b>Contact:</b> <%= customerDetails?.MobileNo || "N/A" %></div>
+                <div class="info-line"><b>Address:</b> <span style="text-transform:capitalize"><%= customerDetails?.BillingAddress || "N/A" %></span>, <span style="text-transform:capitalize"><%= customerDetails?.BillingDistrict || "N/A" %></span>, <%= customerDetails?.BillingState || "N/A" %> - <%= customerDetails?.BillingPincode || "N/A" %></div>
+                <div class="info-line"><b>GST:</b> <%= customerDetails?.GstNo || "N/A" %> &nbsp;&middot;&nbsp; <b>DL:</b> <span style="text-transform:uppercase"><%= customerDetails?.DlNo || "N/A" %></span></div>
+              </td>
+              <td class="divider-col">
+                <div class="pane-label">Invoice Details</div>
+                <div class="info-line"><b>Invoice No.:</b> <%= totalSaleDetails[0]?.InvoiceId || "N/A" %> &nbsp;&middot;&nbsp; <b>Date:</b> <%= totalSaleDetails[0]?.CreatedAt || "N/A" %></div>
+                <div class="info-line"><b>Challan No.:</b> <%= totalSaleDetails[0]?.ChallanNo || "N/A" %> &nbsp;&middot;&nbsp; <b>Delivery:</b> <%= totalSaleDetails[0]?.DeliveryDate || "N/A" %></div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- ITEMS TABLE -->
+          <table class="items-table" cellpadding="0" cellspacing="0">
+            <colgroup>
+              <col class="col-sr"><col class="col-prod"><col class="col-hsn">
+              <col class="col-batch"><col class="col-mrp"><col class="col-exp">
+              <col class="col-qty"><col class="col-rate"><col class="col-tax">
+              <col class="col-sgst"><col class="col-cgst"><col class="col-total">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>#</th><th class="left">Product</th><th>HSN</th>
+                <th>Batch</th><th>MRP</th><th>Expiry</th>
+                <th>Qty</th><th>Rate</th><th>Taxable</th>
+                <th>SGST%</th><th>CGST%</th><th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% salesData.forEach((sales, i) => { %>
+              <tr class="<%= i % 2 !== 0 ? 'alt' : '' %>">
+                <td><%= i + 1 %></td>
+                <td class="left">
+                  <span class="product-main"><%= sales.KnownAs %></span>
+                  <span class="product-sub"><%= sales.ProductName || "" %></span>
+                </td>
+                <td><%= sales.Hsn || "-" %></td>
+                <td><%= sales.BatchNumber || "-" %></td>
+                <td><%= sales.MRP || "-" %></td>
+                <td><%= sales.ExpiryDate || "-" %></td>
+                <td><%= sales.QuantitySold || 0 %></td>
+                <td><%= sales.SalePrice || 0 %></td>
+                <td><%= sales.TotalValue || 0 %></td>
+                <td><%= sales.sgst || 0 %></td>
+                <td><%= sales.cgst || 0 %></td>
+                <td class="total-cell"><%= sales.TotalValueWithTax || 0 %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+
+        </td>
+      </tr>
+
+      <!-- ROW 2: spacer — absorbs all empty space between items and footer -->
+      <tr>
+        <td class="spacer-cell">&nbsp;</td>
+      </tr>
+
+      <!-- ROW 3: bank + summary + terms + signatures — always at bottom -->
+      <tr>
+        <td class="bottom-cell">
+
+          <hr class="section-rule">
+
+          <!-- BANK + SUMMARY -->
+          <table class="bottom-grid" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <div class="pane-label">Bank Details</div>
+                <div class="info-line"><b>Holder:</b> <%= companyDetails.coreCompany || "N/A" %> &nbsp;&middot;&nbsp; <b>Bank:</b> <%= companyDetails.coreCompanyBankName || "N/A" %> &nbsp;&middot;&nbsp; <b>Branch:</b> <%= companyDetails.coreCompanyBranchName || "N/A" %></div>
+                <div class="info-line"><b>Account No.:</b> <%= companyDetails.coreCompanyAccountNo || "N/A" %> &nbsp;&middot;&nbsp; <b>IFSC:</b> <%= companyDetails.coreCompanyIFSCCode || "N/A" %></div>
+              </td>
+              <td class="divider-col">
+                <div class="pane-label">Summary</div>
+                <table class="summary-table" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td>Taxable Amount</td><td class="amt">Rs. <%= totalSaleDetails[0]?.TotalValue || 0 %></td>
+                    <td style="padding-left:10px;">SGST</td><td class="amt">Rs. <%= totalSaleDetails[0]?.TotalSgstAmount || 0 %></td>
+                    <td style="padding-left:10px;">CGST</td><td class="amt">Rs. <%= totalSaleDetails[0]?.TotalCgstAmount || 0 %></td>
+                  </tr>
+                  <tr class="total-row">
+                    <td colspan="4">Grand Total</td>
+                    <td colspan="2" class="amt">Rs. <%= totalSaleDetails[0]?.TotalValueWithTax || 0 %></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- FOOTER: Terms + Signatures -->
+          <table class="footer-table" cellpadding="0" cellspacing="0">
+            <tr>
+              <td class="col-terms">
+                <div class="footer-label">Terms &amp; Conditions</div>
+                <div class="footer-terms">
+                  1. Goods once sold will not be taken back.<br>
+                  2. All disputes subject to Patna jurisdiction only.<br>
+                  3. Payment due within 30 days of receipt of goods.
+                </div>
+              </td>
+              <td class="col-sig">
+                <div class="sig-area">Recipient Signature</div>
+              </td>
+              <td class="col-sig">
+                <div class="sig-area">Authorised Signatory</div>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+
+    </tbody>
+  </table>
+
+</body>
+</html>

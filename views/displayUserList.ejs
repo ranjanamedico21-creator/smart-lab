@@ -1,0 +1,250 @@
+<section style="padding: 0 0 2rem">
+
+  <%- include("./partials/messages") %>
+
+  <!-- Breadcrumb -->
+  <nav style="display:flex;align-items:center;gap:6px;padding:0 0 1.25rem;font-size:13px;color:#888">
+    <a href="/user/home" style="color:#888;text-decoration:none">Home</a>
+    <span style="font-size:11px">›</span>
+    <span style="color:#111;font-weight:500">User list</span>
+  </nav>
+
+  <style>
+    #userTable { width:100%; border-collapse:collapse; table-layout:auto; }
+    #userTable th, #userTable td { white-space:nowrap; }
+    .col-regdate, .col-phone { }
+    @media (max-width: 900px) {
+      .col-regdate { display:none; }
+    }
+    @media (max-width: 700px) {
+      .col-phone { display:none; }
+    }
+    @media (max-width: 560px) {
+      .col-userid { display:none; }
+    }
+    .action-menu {
+      position:relative;
+      display:inline-block;
+    }
+    .action-menu-btn {
+      width:30px;height:30px;border-radius:6px;border:0.5px solid rgba(0,0,0,0.15);
+      background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    .action-menu-list {
+      display:none;
+      position:absolute;
+      right:0; top:calc(100% + 4px);
+      background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.12);
+      min-width:180px;
+      z-index:20;
+      overflow:hidden;
+    }
+    .action-menu-list.open { display:block; }
+    .action-menu-list a, .action-menu-list button {
+      display:flex;align-items:center;gap:8px;width:100%;
+      padding:9px 12px;font-size:12.5px;text-align:left;
+      background:none;border:none;cursor:pointer;text-decoration:none;color:#333;
+    }
+    .action-menu-list a:hover, .action-menu-list button:hover { background:#f7f7f7; }
+    .action-menu-list form { margin:0; }
+  </style>
+
+  <!-- Card -->
+  <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;overflow:hidden">
+
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:15px;font-weight:500">Users</span>
+        <span style="font-size:12px;font-weight:500;padding:3px 9px;border-radius:20px;background:#E6F1FB;color:#0C447C">
+          <%= users.length %> user<%= users.length !== 1 ? 's' : '' %>
+        </span>
+      </div>
+      <div style="position:relative;max-width:240px;width:100%">
+        <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:#999;pointer-events:none" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/>
+        </svg>
+        <input type="text" id="searchInp" placeholder="Search users…" oninput="filterUsers()"
+          style="width:100%;height:32px;border:0.5px solid rgba(0,0,0,0.18);border-radius:8px;padding:0 10px 0 30px;font-size:13px;background:#f7f7f7;outline:none">
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow-x:auto">
+      <table id="userTable">
+        <thead>
+          <tr style="background:#f7f7f7">
+            <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:10px 16px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">Name</th>
+            <th class="col-userid" style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:10px 16px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">User ID</th>
+            <th class="col-regdate" style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:10px 16px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">Registered on</th>
+            <th class="col-phone" style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:10px 16px;text-align:left;border-bottom:0.5px solid rgba(0,0,0,0.08)">Phone</th>
+            <th style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#888;padding:10px 16px;text-align:right;border-bottom:0.5px solid rgba(0,0,0,0.08)">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTbody">
+          <% users.forEach(user => {
+            const initials = ((user.FirstName||'')[0]+(user.LastName||'')[0]).toUpperCase();
+            const fullName = user.FirstName + ' ' + user.LastName;
+            const isActive = user.IsActive == 1;
+          %>
+          <tr class="user-row" data-search="<%= (fullName + user.Email + user.PhoneNumber).toLowerCase() %>"
+            style="border-bottom:0.5px solid rgba(0,0,0,0.07);transition:background 0.1s"
+            onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+            <td style="padding:13px 16px;vertical-align:middle">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:32px;height:32px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">
+                  <%= initials %>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:500"><%= fullName %></div>
+                  <% if (!isActive) { %>
+                    <span style="font-size:10.5px;font-weight:500;color:#9A3B12;background:#FBEAE0;padding:1px 7px;border-radius:10px;display:inline-block;margin-top:2px">Deactivated</span>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+            <td class="col-userid" style="padding:13px 16px;vertical-align:middle">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#666"><%= user.Email %></span>
+            </td>
+            <td class="col-regdate" style="padding:13px 16px;vertical-align:middle">
+              <span style="font-size:12px;color:#888"><%= user.DateOfJoining %></span>
+            </td>
+            <td class="col-phone" style="padding:13px 16px;vertical-align:middle">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#666"><%= user.PhoneNumber %></span>
+            </td>
+            <td style="padding:13px 16px;vertical-align:middle;text-align:right">
+              <div class="action-menu">
+                <button type="button" class="action-menu-btn" onclick="toggleMenu(this)">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="8" cy="3" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="8" cy="13" r="1.3"/>
+                  </svg>
+                </button>
+                <div class="action-menu-list">
+                  <a href="/user/access/<%= user.Id %>">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+                    Authorisation
+                  </a>
+                  <button type="button" onclick="openRoleModal('<%= user.Id %>','<%= fullName %>','<%= user.Email %>')">
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="2.5"/><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5"/></svg>
+                    Assign role
+                  </button>
+                  <% if (isActive) { %>
+                    <form action="/user/toggleStatus/<%= user.Id %>/0" method="POST">
+                      <button type="submit" style="color:#9A3B12">
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M5 8h6"/></svg>
+                        Deactivate
+                      </button>
+                    </form>
+                  <% } else { %>
+                    <form action="/user/toggleStatus/<%= user.Id %>/1" method="POST">
+                      <button type="submit" style="color:#27500A">
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+                        Activate
+                      </button>
+                    </form>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Assign Role Modal (unchanged) ── -->
+<div class="modal fade" id="assignRole" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content" style="border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.12)">
+
+      <div class="modal-header" style="padding:16px 20px;border-bottom:0.5px solid rgba(0,0,0,0.08);background:#fff;border-radius:12px 12px 0 0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:8px;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.31 2.69-6 6-6s6 2.69 6 6"/></svg>
+          </div>
+          <span style="font-size:14px;font-weight:500">Assign a role</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="width:24px;height:24px"></button>
+      </div>
+
+      <form method="POST" action="/user/assignRole" id="assignRoleForm" class="needs-validation" novalidate>
+        <input type="hidden" id="modalUserId" name="UserId">
+
+        <div class="modal-body" style="padding:20px;background:#fff">
+          <div style="display:flex;align-items:center;gap:10px;background:#f7f7f7;border:0.5px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;margin-bottom:16px">
+            <div id="modalAv" style="width:32px;height:32px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">—</div>
+            <div>
+              <div id="modalName" style="font-size:13px;font-weight:500">—</div>
+              <div id="modalEmail" style="font-size:11px;color:#888;margin-top:1px">—</div>
+            </div>
+          </div>
+
+          <label style="font-size:11px;font-weight:500;letter-spacing:0.6px;text-transform:uppercase;color:#888;margin-bottom:6px;display:block">Select role *</label>
+          <select class="form-select" name="Role" required
+            style="height:38px;border:0.5px solid rgba(0,0,0,0.18);border-radius:8px;font-size:13px;outline:none">
+            <option value="">— select role —</option>
+            <% roles.forEach(function(role) { %>
+              <option value="<%= role.Id %>"><%= role.Name %></option>
+            <% }) %>
+          </select>
+          <div class="invalid-feedback">Please select a role.</div>
+        </div>
+
+        <div class="modal-footer" style="padding:14px 20px;border-top:0.5px solid rgba(0,0,0,0.08);background:#fff;border-radius:0 0 12px 12px;display:flex;justify-content:flex-end;gap:8px">
+          <button type="button" data-bs-dismiss="modal"
+            style="padding:7px 16px;border-radius:7px;border:0.5px solid rgba(0,0,0,0.18);background:transparent;font-size:13px;cursor:pointer;color:#666">
+            Cancel
+          </button>
+          <button type="submit"
+            style="padding:7px 18px;border-radius:7px;border:none;background:#27500A;color:#EAF3DE;font-size:13px;font-weight:500;cursor:pointer">
+            Confirm
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function filterUsers() {
+  const q = document.getElementById('searchInp').value.toLowerCase().trim();
+  document.querySelectorAll('.user-row').forEach(row => {
+    row.style.display = (!q || row.dataset.search.includes(q)) ? '' : 'none';
+  });
+}
+
+function toggleMenu(btn) {
+  const menu = btn.nextElementSibling;
+  const wasOpen = menu.classList.contains('open');
+  document.querySelectorAll('.action-menu-list.open').forEach(m => m.classList.remove('open'));
+  if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.action-menu')) {
+    document.querySelectorAll('.action-menu-list.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+function openRoleModal(id, name, email) {
+  document.getElementById('modalUserId').value = id;
+  document.getElementById('modalName').textContent = name;
+  document.getElementById('modalEmail').textContent = email;
+  const ini = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('modalAv').textContent = ini;
+  new bootstrap.Modal(document.getElementById('assignRole')).show();
+}
+
+(function() {
+  const form = document.getElementById('assignRoleForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+      form.classList.add('was-validated');
+    });
+  }
+})();
+</script>

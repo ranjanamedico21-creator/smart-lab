@@ -1,0 +1,224 @@
+<%
+  var STATUS = {
+    OPEN:             { label: 'Open',              icon: 'bi-hourglass-split' },
+    WITH_MR:          { label: 'With MR',           icon: 'bi-person-badge' },
+    PARTIAL:          { label: 'Part settled',      icon: 'bi-pie-chart' },
+    AWAITING_INVOICE: { label: 'Awaiting invoice',  icon: 'bi-receipt' },
+    SETTLED:          { label: 'Settled',           icon: 'bi-check2-circle' },
+    ALL:              { label: 'All',               icon: 'bi-collection' }
+  };
+  var STATUS_CLASS = {
+    WITH_MR: 'bg-warning-subtle text-warning-emphasis', PARTIAL: 'bg-info-subtle text-info-emphasis',
+    AWAITING_INVOICE: 'bg-danger-subtle text-danger-emphasis', SETTLED: 'bg-success-subtle text-success-emphasis'
+  };
+  var SEGMENTS = [
+    ['RemainingQty', 'With MR', 'mrs-with'], ['PendingBillQty', 'Awaiting invoice', 'mrs-pending'],
+    ['BilledQty', 'Billed', 'mrs-billed'], ['ReturnedQty', 'Returned', 'mrs-returned'],
+    ['ReplacedQty', 'Replaced', 'mrs-replaced'], ['SampleQty', 'Sample', 'mrs-sample'],
+    ['LostQty', 'Lost', 'mrs-lost'], ['TransferredOutQty', 'Transferred', 'mrs-moved']
+  ];
+  var rupee = function (v) { return '₹' + Number(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); };
+  var qs = function (o) {
+    var p = { tab: tab, status: status, search: search, holderId: holderId };
+    Object.keys(o || {}).forEach(function (k) { p[k] = o[k]; });
+    return Object.keys(p).filter(function (k) { return p[k]; })
+      .map(function (k) { return k + '=' + encodeURIComponent(p[k]); }).join('&');
+  };
+%>
+<style>
+  .mrs-page { max-width: 1400px; }
+  .mrs-icon { width: 46px; height: 46px; border-radius: 13px; background: #185FA5; color: #fff; }
+  .mrs-kpi { border: 1px solid var(--bs-border-color-translucent); border-radius: 14px; background: var(--bs-body-bg); height: 100%; padding: 1rem; display: block; color: inherit; text-decoration: none; }
+  a.mrs-kpi:hover { border-color: #185FA5; }
+  .mrs-num { font-variant-numeric: tabular-nums; }
+  .mrs-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--bs-tertiary-bg); min-width: 130px; }
+  .mrs-with { background: #e0a100; } .mrs-pending { background: #d9480f; } .mrs-billed { background: #2f9e44; }
+  .mrs-returned { background: #1c7ed6; } .mrs-replaced { background: #0ca678; } .mrs-sample { background: #9c36b5; }
+  .mrs-lost { background: #c92a2a; } .mrs-moved { background: #868e96; }
+  .mrs-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+  .mrs-table thead th { background: var(--bs-tertiary-bg); font-size: .74rem; letter-spacing: .03em; text-transform: uppercase; color: var(--bs-secondary-color); font-weight: 600; white-space: nowrap; }
+  .mrs-pill { border-radius: 99px; font-size: .82rem; }
+  @media (max-width: 767.98px) {
+    .mrs-table thead { display: none; }
+    .mrs-table tr { display: block; padding: .75rem 1rem; border-bottom: 1px solid var(--bs-border-color); }
+    .mrs-table td { display: block; border: 0; padding: .15rem 0; text-align: left !important; }
+    .mrs-search { width: 100% !important; }
+  }
+</style>
+
+<div class="container-fluid mrs-page py-4 mb-5 px-3 px-lg-4">
+  <%- include('../partials/messages') %>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 mt-2">
+    <div class="d-flex align-items-center gap-3">
+      <span class="mrs-icon d-inline-flex align-items-center justify-content-center"><i class="bi bi-box-seam fs-5"></i></span>
+      <div>
+        <h4 class="mb-0 fw-bold">MR stock</h4>
+        <div class="text-secondary small">Where every unit given to a medical representative is right now</div>
+      </div>
+    </div>
+    <a href="/mrStockIssue/new" class="btn btn-primary rounded-3 px-3"><i class="bi bi-plus-lg me-1"></i>Issue products to MR</a>
+  </div>
+
+  <% if (brokenLinks.length) { %>
+    <div class="alert alert-danger rounded-3" role="alert">
+      <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>An invoice changed after it was linked</div>
+      <div class="small mb-1">Open the issue, undo the invoice link, then link the correct invoice.</div>
+      <% brokenLinks.forEach(function (b) { %>
+        <a class="small d-block" href="/mrStockIssue/<%= b.IssueId %>">Issue #<%= b.IssueId %>: invoice <%= b.InvoiceId || 'line removed' %>, <%= Number(b.LinkedQty) %> linked, <%= Number(b.InvoiceQty) %> now on the invoice</a>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <a class="mrs-kpi" href="/mrStockIssue?tab=holders">
+        <div class="text-secondary small">With MRs now</div>
+        <div class="fs-4 fw-bold mrs-num"><%= Number(summary.WithMrUnits) %> units</div>
+        <div class="text-secondary small"><%= rupee(summary.WithMrValue) %> at cost, <%= Number(summary.MrCount) %> MR<%= Number(summary.MrCount) === 1 ? '' : 's' %></div>
+      </a>
+    </div>
+    <div class="col-6 col-lg-3">
+      <a class="mrs-kpi" href="/mrStockIssue?status=AWAITING_INVOICE">
+        <div class="text-secondary small">Awaiting invoice</div>
+        <div class="fs-4 fw-bold mrs-num <%= Number(summary.AwaitingInvoiceUnits) ? 'text-danger' : '' %>"><%= Number(summary.AwaitingInvoiceUnits) %> units</div>
+        <div class="text-secondary small">Released, invoice not linked</div>
+      </a>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="mrs-kpi">
+        <div class="text-secondary small">Out over <%= overdueDays %> days</div>
+        <div class="fs-4 fw-bold mrs-num <%= Number(summary.OverdueLines) ? 'text-danger' : '' %>"><%= Number(summary.OverdueLines) %> line<%= Number(summary.OverdueLines) === 1 ? '' : 's' %></div>
+        <div class="text-secondary small">Need follow-up</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="mrs-kpi">
+        <div class="text-secondary small">Samples and losses</div>
+        <div class="fs-4 fw-bold mrs-num"><%= Number(summary.WrittenOffUnits) %> units</div>
+        <div class="text-secondary small"><%= rupee(summary.WrittenOffValue) %> at cost, all time</div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link <%= tab === 'issues' ? 'active' : '' %>" href="/mrStockIssue?<%= qs({ tab: 'issues' }) %>">Issues</a></li>
+    <li class="nav-item"><a class="nav-link <%= tab === 'holders' ? 'active' : '' %>" href="/mrStockIssue?tab=holders">Who holds what</a></li>
+  </ul>
+
+  <% if (tab === 'holders') { %>
+    <% if (!holdings.length) { %>
+      <div class="text-center text-secondary py-5"><i class="bi bi-inbox fs-3 d-block mb-2"></i>No MR is holding any stock.</div>
+    <% } %>
+    <div class="row g-3">
+      <% holdings.forEach(function (h) { %>
+        <div class="col-12 col-xl-6">
+          <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-3 px-4 d-flex justify-content-between align-items-center gap-2">
+              <strong class="text-capitalize"><i class="bi bi-person-badge me-1 text-secondary"></i><%= h.Name %></strong>
+              <span class="text-secondary small mrs-num text-nowrap"><%= h.Units %> units, <%= rupee(h.Value) %></span>
+            </div>
+            <div class="table-responsive px-2 pb-2">
+              <table class="table table-sm align-middle mb-0">
+                <thead><tr class="small text-secondary"><th>Product</th><th>Batch</th><th>Expiry</th><th class="text-end">Units</th><th class="text-end">Oldest</th></tr></thead>
+                <tbody>
+                  <% h.items.forEach(function (r) { %>
+                    <tr>
+                      <td><a class="text-decoration-none" href="/mrStockIssue?search=<%= encodeURIComponent(r.BatchNumber) %>&status=OPEN&holderId=<%= h.Id %>"><%= r.ProductName %></a></td>
+                      <td class="font-monospace small"><%= r.BatchNumber %></td>
+                      <td class="small text-nowrap <%= Number(r.IsExpired) ? 'text-danger fw-semibold' : 'text-secondary' %>"><%= r.ExpiryText %><%= Number(r.IsExpired) ? ' expired' : '' %></td>
+                      <td class="text-end mrs-num fw-semibold"><%= Number(r.Units) %></td>
+                      <td class="text-end small text-nowrap <%= Number(r.OldestDays) > overdueDays ? 'text-danger' : 'text-secondary' %>"><%= Number(r.OldestDays) %>d</td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <div class="d-flex flex-wrap gap-1">
+        <% Object.keys(STATUS).forEach(function (s) { %>
+          <a href="/mrStockIssue?<%= qs({ status: s, page: '' }) %>" class="btn btn-sm mrs-pill <%= status === s ? 'btn-primary' : 'btn-outline-secondary' %>">
+            <i class="bi <%= STATUS[s].icon %> me-1"></i><%= STATUS[s].label %>
+          </a>
+        <% }) %>
+      </div>
+      <form class="d-flex flex-wrap gap-2" method="get" action="/mrStockIssue" role="search">
+        <input type="hidden" name="status" value="<%= status %>">
+        <select name="holderId" class="form-select form-select-sm" style="width:170px" aria-label="Filter by MR" onchange="this.form.submit()">
+          <option value="">All MRs</option>
+          <% mrOptions.forEach(function (u) { %><option value="<%= u.Id %>" <%= Number(holderId) === Number(u.Id) ? 'selected' : '' %>><%= u.Name %></option><% }) %>
+        </select>
+        <div class="input-group input-group-sm mrs-search" style="width:260px">
+          <input type="search" name="search" value="<%= search %>" class="form-control" placeholder="Product, batch, MR, customer">
+          <button class="btn btn-outline-secondary" aria-label="Search"><i class="bi bi-search"></i></button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 mrs-table">
+          <thead>
+            <tr>
+              <th class="ps-4">Product</th><th>With</th><th>Customer</th><th>Issued</th>
+              <th class="text-end">Issued qty</th><th class="text-end">With MR</th><th>Where it went</th><th>Status</th><th class="pe-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% list.rows.forEach(function (i) { var issued = Number(i.IssuedQty) || 1; var open = Number(i.RemainingQty) > 0; %>
+              <tr>
+                <td class="ps-4">
+                  <a class="fw-semibold text-decoration-none text-body" href="/mrStockIssue/<%= i.Id %>"><%= i.ProductName %></a>
+                  <div class="small text-secondary">Batch <span class="font-monospace"><%= i.BatchNumber %></span>
+                    <% if (Number(i.IsExpired)) { %><span class="text-danger fw-semibold">expired</span><% } %></div>
+                </td>
+                <td class="text-capitalize text-nowrap"><%= i.CurrentHolderName %></td>
+                <td class="text-capitalize"><%= i.CustomerName || '-' %></td>
+                <td class="text-nowrap small">
+                  <%= i.IssuedOnDisplay %>
+                  <% if (open) { %><div class="<%= Number(i.DaysOutstanding) > overdueDays ? 'text-danger fw-semibold' : 'text-secondary' %>"><%= Number(i.DaysOutstanding) %> days out</div><% } %>
+                </td>
+                <td class="text-end mrs-num"><%= Number(i.IssuedQty) %></td>
+                <td class="text-end mrs-num fw-semibold"><%= Number(i.RemainingQty) %></td>
+                <td>
+                  <div class="mrs-bar" role="img" aria-label="<%= SEGMENTS.filter(function (s) { return Number(i[s[0]]) > 0; }).map(function (s) { return s[1] + ' ' + Number(i[s[0]]); }).join(', ') %>"
+                       title="<%= SEGMENTS.filter(function (s) { return Number(i[s[0]]) > 0; }).map(function (s) { return s[1] + ': ' + Number(i[s[0]]); }).join(', ') %>">
+                    <% SEGMENTS.forEach(function (s) { var n = Number(i[s[0]]); if (n > 0) { %><span class="<%= s[2] %>" style="width:<%= (n / issued) * 100 %>%"></span><% } }) %>
+                  </div>
+                </td>
+                <td><span class="badge rounded-pill text-nowrap <%= STATUS_CLASS[i.Status] %>"><%= STATUS[i.Status] ? STATUS[i.Status].label : i.Status %></span></td>
+                <td class="pe-4 text-end"><a href="/mrStockIssue/<%= i.Id %>" class="btn btn-sm btn-outline-primary rounded-pill text-nowrap"><%= (open || Number(i.PendingBillQty) > 0) ? 'Settle' : 'View' %></a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% if (!list.rows.length) { %>
+        <div class="text-center text-secondary py-5">
+          <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+          <%= (search || holderId || status !== 'OPEN') ? 'Nothing matches these filters.' : 'No stock is out with MRs.' %>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (list.pages > 1) { %>
+      <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Pages">
+        <span class="small text-secondary"><%= list.total %> records, page <%= list.page %> of <%= list.pages %></span>
+        <div class="btn-group btn-group-sm">
+          <a class="btn btn-outline-secondary <%= list.page <= 1 ? 'disabled' : '' %>" href="/mrStockIssue?<%= qs({ page: list.page - 1 }) %>">Previous</a>
+          <a class="btn btn-outline-secondary <%= list.page >= list.pages ? 'disabled' : '' %>" href="/mrStockIssue?<%= qs({ page: list.page + 1 }) %>">Next</a>
+        </div>
+      </nav>
+    <% } %>
+
+    <div class="d-flex flex-wrap gap-3 mt-3 small text-secondary">
+      <% SEGMENTS.forEach(function (s) { %><span><span class="mrs-dot <%= s[2] %>"></span><%= s[1] %></span><% }) %>
+    </div>
+  <% } %>
+</div>

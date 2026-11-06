@@ -1,0 +1,455 @@
+<style>
+    /* Layout */
+    .tf-container{max-width:auto;margin:20px auto}
+    .tf-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+    
+    /* Header */
+    .tf-header{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid #e2e8f0;background:#f8f9fb}
+    .tf-icon{width:36px;height:36px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;color:#185FA5;font-size:16px}
+    .tf-header-text{flex:1}
+    .tf-title{font-size:15px;font-weight:600;color:#111;margin-bottom:2px}
+    .tf-subtitle{font-size:11px;color:#666}
+    
+    /* Body */
+    .tf-body{padding:28px 24px}
+    .tf-section{margin-bottom:24px}
+    .tf-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#666;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .tf-section-title::after{content:'';flex:1;height:1px;background:#e2e8f0}
+    
+    /* Form Fields */
+    .tf-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    @media(max-width:768px){.tf-row{grid-template-columns:1fr}}
+    .tf-field{display:flex;flex-direction:column;gap:6px}
+    .tf-label{font-size:11px;font-weight:600;color:#374151}
+    .tf-required{color:#DC2626}
+    .tf-note{font-size:11px;color:#888;margin-top:4px}
+    
+    /* Mode Toggle */
+    .mode-toggle{display:flex;gap:12px;margin-bottom:20px}
+    .mode-btn{display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+    .mode-btn.active{background:#E6F1FB;border-color:#B5D4F4;color:#0C447C;font-weight:600}
+    .mode-btn input[type=radio]{accent-color:#185FA5}
+    
+    /* Gender Pills */
+    .gender-pills{display:flex;gap:10px;flex-wrap:wrap}
+    .gender-pill{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+    .gender-pill:has(input:checked){background:#E6F1FB;border-color:#B5D4F4;color:#0C447C}
+    .gender-pill input[type=radio]{accent-color:#185FA5;margin:0}
+    
+    /* Upload Areas */
+    .upload-area{border:2px dashed #B5D4F4;border-radius:12px;padding:32px 24px;text-align:center;background:#f8fbff;cursor:pointer;transition:all .2s}
+    .upload-area:hover{border-color:#185FA5;background:#EEF5FF}
+    .upload-icon{font-size:36px;color:#185FA5;margin-bottom:12px;display:block}
+    .upload-label{font-size:14px;font-weight:600;color:#185FA5;margin-bottom:4px}
+    .upload-hint{font-size:11px;color:#888}
+    
+    /* Upload Grid (for male/female) */
+    .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+    @media(max-width:768px){.upload-grid{grid-template-columns:1fr}}
+    .upload-card{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff}
+    .upload-card-header{padding:10px 16px;background:#f8f9fb;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+    .upload-card-body{padding:16px}
+    .upload-area-small{border:2px dashed #B5D4F4;border-radius:10px;padding:24px 16px;text-align:center;background:#f8fbff;cursor:pointer;transition:all .2s}
+    .upload-area-small:hover{border-color:#185FA5;background:#EEF5FF}
+    
+    /* Preview */
+    .preview-box{border:1px solid #e2e8f0;border-radius:10px;padding:16px;background:#fff;max-height:320px;overflow-y:auto;font-size:12px;line-height:1.7;margin-top:12px;display:none}
+    .preview-box.visible{display:block}
+    
+    /* Buttons */
+    .btn-preview{padding:8px 18px;background:#E6F1FB;color:#0C447C;border:1px solid #B5D4F4;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+    .btn-preview:hover{background:#0C447C;color:#fff;border-color:#0C447C}
+    .btn-preview:disabled{opacity:.5;cursor:default}
+    
+    /* Status Messages */
+    .status-success{color:#27500A;font-size:11px;font-weight:600;margin-top:8px}
+    .status-error{color:#DC2626;font-size:11px;font-weight:600;margin-top:8px}
+    
+    /* Badges */
+    .existing-badge{padding:10px 16px;background:#EAF3DE;border:1px solid #C0DD97;border-radius:10px;font-size:12px;color:#27500A;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    
+    /* Placeholder Box */
+    .placeholder-box{padding:14px 18px;background:#FAEEDA;border:1px solid #FAC775;border-radius:10px;font-size:11px;color:#633806;line-height:1.9}
+    .placeholder-code{background:rgba(0,0,0,.08);padding:2px 6px;border-radius:4px;font-family:'Courier New',monospace;font-size:11px;white-space:nowrap}
+    
+    /* Actions Footer */
+    .tf-actions{display:flex;gap:12px;justify-content:flex-end;padding:16px 24px;border-top:1px solid #e2e8f0;background:#f8f9fb}
+    .btn-primary{padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:#185FA5;color:#fff;transition:all .15s}
+    .btn-primary:hover{background:#0C447C}
+    .btn-cancel{padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;background:#fff;color:#555;border:1px solid #e2e8f0;text-decoration:none;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+    .btn-cancel:hover{background:#f8f9fb;border-color:#cbd5e1;color:#333}
+    
+    /* Animation */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin { animation: spin 1s linear infinite; }
+    </style>
+    
+    <!-- Breadcrumb -->
+    <section class="py-3">
+      <div class="container-xl">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <a href="/user/home" class="text-decoration-none">Home</a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="/template/list" class="text-decoration-none">My Templates</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              <%= isEdit ? 'Edit Template' : 'New Template' %>
+            </li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+    
+    <div class="tf-container">
+      <div class="tf-card">
+        <div class="tf-header">
+          <div class="tf-icon"><i class="bi bi-file-earmark-word"></i></div>
+          <div class="tf-header-text">
+            <div class="tf-title">
+              <%= isEdit ? 'Edit Template' : 'Create New Template' %>
+            </div>
+            <div class="tf-subtitle">
+              Upload a .docx Word document with {{placeholders}} for dynamic data
+            </div>
+          </div>
+        </div>
+    
+        <form method="POST" action="/template/save" enctype="multipart/form-data" id="templateForm">
+    
+          <% if(isEdit && template){ %>
+            <input type="hidden" name="id" value="<%= template.Id %>">
+            <input type="hidden" name="htmlContent" value="<%= template.Content %>">
+          <% } %>
+    
+          <%# Check if logged-in user is admin %>
+          
+
+<!-- ... existing header ... -->
+
+        <div class="tf-body">
+
+        <%- include("../partials/messages") %>
+
+        <%# ONLY SHOW THIS IF ADMIN %>
+        <% if(isUserAdmin) { %>
+            <div class="tf-section">
+            <div class="tf-section-title">
+                <i class="bi bi-person-badge"></i> Assign To Doctor
+            </div>
+            
+            <div style="padding:12px 16px;background:#E6F1FB;border-radius:8px;
+                        font-size:12px;color:#0C447C;margin-bottom:12px">
+                <strong>ℹ️ Admin Mode:</strong> Select which doctor this template is for, 
+                or leave blank to create for yourself.
+            </div>
+
+            <div class="tf-field">
+                <label class="tf-label">
+                Doctor (optional)
+                </label>
+                <select class="form-select" name="assignToDoctorId">
+                <option value="">— For Myself —</option>
+                <% doctors.forEach(doc => { %>
+                    <option value="<%= doc.UserId %>"
+                    <%= (isEdit && template && template.DoctorId==doc.UserId) ? 'selected' : '' %>>
+                    Dr. <%= doc.FirstName %> <%= doc.LastName %>
+                    <% if(doc.Specialization) { %> — <%= doc.Specialization %><% } %>
+                    </option>
+                <% }) %>
+                </select>
+                <div class="tf-note">
+                Leave blank to create template for yourself. Select a doctor to create for them.
+                </div>
+            </div>
+            </div>
+        <% } %>
+
+  <!-- ... rest of the form (template name, test, gender mode, etc.) ... -->
+            <!-- Template Name -->
+            <div class="tf-section">
+              <div class="tf-section-title">
+                <i class="bi bi-card-text"></i> Template Details
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">
+                  Template Name <span class="tf-required">*</span>
+                </label>
+                <input type="text" class="form-control" name="name" required
+                  placeholder="e.g. USG Whole Abdomen"
+                  value="<%= isEdit && template ? template.Name : '' %>">
+                <div class="tf-note">Give your template a descriptive name</div>
+              </div>
+            </div>
+    
+            <!-- Test Selection -->
+            <div class="tf-section">
+              <div class="tf-section-title">
+                <i class="bi bi-grid-3x3-gap"></i> Template Scope
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">
+                  Test <span class="tf-required">*</span>
+                </label>
+                <select class="form-select" name="testId" required>
+                  <option value="">— Select Test —</option>
+                  <% tests.forEach(t => { %>
+                    <option value="<%= t.Id %>"
+                      <%= (isEdit && template && template.TestId==t.Id) ? 'selected' : '' %>>
+                      <%= t.TestName %>
+                    </option>
+                  <% }) %>
+                </select>
+                <div class="tf-note">Which test is this template for?</div>
+              </div>
+            </div>
+    
+            <!-- Gender Mode Toggle -->
+            <div class="tf-section">
+              <div class="tf-section-title">
+                <i class="bi bi-gender-ambiguous"></i> Gender Configuration
+              </div>
+              
+              <div class="mode-toggle">
+                <label class="mode-btn active" id="btnCommon">
+                  <input type="radio" name="genderMode" value="common" checked
+                         onchange="setGenderMode('common')">
+                  ⚥ Common Template
+                  <span style="font-size:10px;color:#888">(same for both genders)</span>
+                </label>
+                <label class="mode-btn" id="btnSeparate">
+                  <input type="radio" name="genderMode" value="separate"
+                         onchange="setGenderMode('separate')">
+                  ♂♀ Gender Specific
+                  <span style="font-size:10px;color:#888">(different for male & female)</span>
+                </label>
+              </div>
+    
+              <!-- Common Upload (shown by default) -->
+              <div id="uploadCommon">
+                <% if(isEdit && template && template.GenderType === 'common') { %>
+                  <div class="existing-badge">
+                    <i class="bi bi-check-circle-fill" style="font-size:16px"></i>
+                    <div>
+                      <strong>Common template exists</strong> — upload new file to replace (optional)
+                    </div>
+                  </div>
+                <% } %>
+    
+                <div class="upload-area" onclick="document.getElementById('fileCommon').click()">
+                  <input type="file" id="fileCommon" name="fileCommon"
+                         accept=".docx" onchange="handleFileSelect('common', this)" style="display:none">
+                  <i class="bi bi-cloud-upload upload-icon"></i>
+                  <div class="upload-label" id="labelCommon">
+                    Click to upload .docx template
+                  </div>
+                  <div class="upload-hint">
+                    This template will be used for both male and female patients
+                  </div>
+                </div>
+    
+                <div id="previewRowCommon" style="display:none;margin-top:14px">
+                  <button type="button" class="btn-preview" onclick="previewFile('common')">
+                    <i class="bi bi-eye"></i> Preview
+                  </button>
+                </div>
+                <div id="previewBoxCommon" class="preview-box"></div>
+                <div id="statusCommon"></div>
+              </div>
+    
+              <!-- Gender Specific Upload (hidden by default) -->
+              <div id="uploadSeparate" style="display:none">
+                <div class="upload-grid">
+                  
+                  <!-- Male Upload Card -->
+                  <div class="upload-card">
+                    <div class="upload-card-header" style="color:#185FA5">
+                      <i class="bi bi-gender-male" style="font-size:14px"></i>
+                      Male Template
+                      <% if(isEdit && template && template.GenderType === 'male') { %>
+                        <span style="margin-left:auto;font-size:10px;padding:2px 8px;
+                                     background:#EAF3DE;color:#27500A;border-radius:99px">
+                          ✓ Exists
+                        </span>
+                      <% } %>
+                    </div>
+                    <div class="upload-card-body">
+                      <div class="upload-area-small" onclick="document.getElementById('fileMale').click()">
+                        <input type="file" id="fileMale" name="fileMale"
+                               accept=".docx" onchange="handleFileSelect('male', this)" style="display:none">
+                        <i class="bi bi-cloud-upload" style="font-size:24px;color:#185FA5;margin-bottom:8px;display:block"></i>
+                        <div style="font-size:12px;font-weight:600;color:#185FA5" id="labelMale">
+                          Upload male template
+                        </div>
+                      </div>
+                      <div id="previewRowMale" style="display:none;margin-top:10px">
+                        <button type="button" class="btn-preview" style="font-size:11px;padding:6px 12px"
+                                onclick="previewFile('male')">
+                          <i class="bi bi-eye"></i> Preview
+                        </button>
+                      </div>
+                      <div id="previewBoxMale" class="preview-box" style="max-height:200px"></div>
+                      <div id="statusMale"></div>
+                    </div>
+                  </div>
+    
+                  <!-- Female Upload Card -->
+                  <div class="upload-card">
+                    <div class="upload-card-header" style="color:#831843">
+                      <i class="bi bi-gender-female" style="font-size:14px"></i>
+                      Female Template
+                      <% if(isEdit && template && template.GenderType === 'female') { %>
+                        <span style="margin-left:auto;font-size:10px;padding:2px 8px;
+                                     background:#EAF3DE;color:#27500A;border-radius:99px">
+                          ✓ Exists
+                        </span>
+                      <% } %>
+                    </div>
+                    <div class="upload-card-body">
+                      <div class="upload-area-small" onclick="document.getElementById('fileFemale').click()">
+                        <input type="file" id="fileFemale" name="fileFemale"
+                               accept=".docx" onchange="handleFileSelect('female', this)" style="display:none">
+                        <i class="bi bi-cloud-upload" style="font-size:24px;color:#831843;margin-bottom:8px;display:block"></i>
+                        <div style="font-size:12px;font-weight:600;color:#831843" id="labelFemale">
+                          Upload female template
+                        </div>
+                      </div>
+                      <div id="previewRowFemale" style="display:none;margin-top:10px">
+                        <button type="button" class="btn-preview" style="font-size:11px;padding:6px 12px"
+                                onclick="previewFile('female')">
+                          <i class="bi bi-eye"></i> Preview
+                        </button>
+                      </div>
+                      <div id="previewBoxFemale" class="preview-box" style="max-height:200px"></div>
+                      <div id="statusFemale"></div>
+                    </div>
+                  </div>
+    
+                </div>
+                <div style="font-size:11px;color:#888;margin-top:12px;text-align:center">
+                  You can upload one or both. Skip whichever doesn't apply.
+                </div>
+              </div>
+    
+            </div>
+    
+            <!-- Placeholder Reference -->
+            <div class="tf-section">
+              <div class="tf-section-title">
+                <i class="bi bi-code-square"></i> Available Placeholders
+              </div>
+              <div class="placeholder-box">
+                <strong style="display:block;margin-bottom:8px">
+                  Use these placeholders in your Word document:
+                </strong>
+                <code class="placeholder-code">{{PatientName}}</code>
+                <code class="placeholder-code">{{Age}}</code>
+                <code class="placeholder-code">{{Gender}}</code>
+                <code class="placeholder-code">{{Date}}</code>
+                <code class="placeholder-code">{{TestName}}</code>
+                <code class="placeholder-code">{{DoctorName}}</code>
+                <code class="placeholder-code">{{ReportingDoctor}}</code>
+                <code class="placeholder-code">{{ReportingDoctorDegree}}</code>
+                <div style="margin-top:8px;font-size:10px;color:#92400E">
+                  💡 These will be automatically replaced with patient data when creating reports
+                </div>
+              </div>
+            </div>
+    
+          </div>
+    
+          <div class="tf-actions">
+            <a href="/template/list" class="btn-cancel">
+              <i class="bi bi-x-lg"></i> Cancel
+            </a>
+            <button type="submit" class="btn-primary">
+              <i class="bi bi-check-lg"></i>
+              <%= isEdit ? 'Update Template' : 'Save Template' %>
+            </button>
+          </div>
+    
+        </form>
+      </div>
+    </div>
+    
+    <script>
+    // Gender mode toggle
+    function setGenderMode(mode) {
+        document.getElementById("uploadCommon").style.display   = mode === "common"   ? "" : "none";
+        document.getElementById("uploadSeparate").style.display = mode === "separate" ? "" : "none";
+        
+        document.getElementById("btnCommon").classList.toggle("active",   mode === "common");
+        document.getElementById("btnSeparate").classList.toggle("active", mode === "separate");
+    }
+    
+    // Set initial mode on page load (for edit)
+    <% if(isEdit && template && (template.GenderType === 'male' || template.GenderType === 'female')) { %>
+        setGenderMode('separate');
+        document.querySelector('input[value="separate"]').checked = true;
+    <% } %>
+    
+    function handleFileSelect(gender, input) {
+        const label = document.getElementById("label" + capitalize(gender));
+        const previewRow = document.getElementById("previewRow" + capitalize(gender));
+        const previewBox = document.getElementById("previewBox" + capitalize(gender));
+        const status = document.getElementById("status" + capitalize(gender));
+        
+        if (input.files.length) {
+            label.textContent = input.files[0].name;
+            previewRow.style.display = "block";
+        } else {
+            label.textContent = gender === "common" ? "Click to upload .docx template" : `Upload ${gender} template`;
+            previewRow.style.display = "none";
+        }
+        
+        previewBox.classList.remove("visible");
+        previewBox.innerHTML = "";
+        status.innerHTML = "";
+    }
+    
+    async function previewFile(gender) {
+        const input  = document.getElementById("file" + capitalize(gender));
+        const status = document.getElementById("status" + capitalize(gender));
+        const box    = document.getElementById("previewBox" + capitalize(gender));
+        const btn    = event.target;
+    
+        if (!input.files.length) {
+            status.innerHTML = '<span class="status-error">Please select a file first</span>';
+            return;
+        }
+    
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Converting…';
+        status.innerHTML = "";
+    
+        const fd = new FormData();
+        fd.append("docxFile", input.files[0]);
+    
+        try {
+            const res  = await fetch("/template/preview", { method:"POST", body:fd });
+            const data = await res.json();
+    
+            if (data.success) {
+                box.innerHTML = data.html;
+                box.classList.add("visible");
+                status.innerHTML = '<span class="status-success">✓ Preview loaded</span>';
+            } else {
+                status.innerHTML = `<span class="status-error">Failed: ${data.message}</span>`;
+            }
+        } catch(err) {
+            status.innerHTML = `<span class="status-error">Error: ${err.message}</span>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-eye"></i> Preview';
+        }
+    }
+    
+    function capitalize(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+    </script>

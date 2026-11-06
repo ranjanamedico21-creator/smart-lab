@@ -1,0 +1,117 @@
+<%
+  var LIST = (typeof categoryDetails !== 'undefined' && categoryDetails) ? categoryDetails : [];
+  var ST = (typeof stats !== 'undefined' && stats) ? stats : {};
+  var rate = function (s) { if (!s || s.minRate == null) return '—'; return s.minRate === s.maxRate ? s.minRate + '%' : s.minRate + '–' + s.maxRate + '%'; };
+%>
+<style>
+  .cg{--brand:#185FA5;--brand-soft:#E6F1FB;--ink:#111827;--ink2:#6B7280;--ink3:#9CA3AF;--line:rgba(0,0,0,.09);--bad:#A32D2D;--bads:#FCEBEB;--warn:#854F0B;--warns:#FFF6E5;
+      width:100%;padding:12px 0 40px;color:var(--ink)}
+  .cg *{box-sizing:border-box}
+  .cg-crumb{font-size:12.5px;color:var(--ink2);margin-bottom:14px}.cg-crumb a{color:var(--brand);text-decoration:none}
+  .cg-card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);overflow:hidden}
+  .cg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#fff,#F8F9FB)}
+  .cg-head-l{display:flex;align-items:center;gap:12px;min-width:0}
+  .cg-icon{width:42px;height:42px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .cg-title{font-size:17px;font-weight:700;margin:0}.cg-sub{font-size:13px;color:var(--ink2);margin:2px 0 0}
+  .cg-body{padding:22px}
+  .cg-msgs{padding:0 22px}.cg-msgs:empty{display:none}
+  .cg-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px}
+  @media(max-width:640px){.cg-grid{grid-template-columns:1fr}.cg-body{padding:16px}.cg-head{padding:14px 16px}}
+  .cg-label{font-size:11px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+  .cg-req{color:var(--bad)}
+  .cg-input{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:44px;transition:.2s}
+  .cg-input:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px rgba(24,95,165,.08)}
+  .cg-input.error{border-color:var(--bad);background:var(--bads)}
+  .cg-input i.lead{padding:0 10px 0 12px;color:var(--ink3)}
+  .cg-input input{border:0;outline:0;background:transparent;flex:1;min-width:0;padding:10px 12px 10px 0;font-size:14.5px}
+  .cg-input .suffix{padding:0 12px;color:var(--ink2);font-weight:600}
+  .cg-input input[name=category]{text-transform:uppercase}
+  .cg-input input::placeholder{text-transform:none;color:var(--ink3)}
+  .cg-err{font-size:12px;color:var(--bad);margin-top:5px}
+  .cg-hint{font-size:12px;color:var(--ink3);margin-top:5px}
+  .cg-warn{font-size:12.5px;color:var(--warn);background:var(--warns);border-radius:8px;padding:8px 10px;margin-top:8px}
+  .cg-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .cg-chips button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 11px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+  .cg-chips button:hover,.cg-chips button.on{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+  .cg-note{display:flex;gap:10px;align-items:flex-start;background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink2)}
+  .cg-note i{color:var(--brand);font-size:16px;margin-top:1px}
+  .cg-apply{border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:13px}
+  .cg-apply.on{border-color:#f0c27b;background:#fffaf0}
+  .cg-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--line);background:#F8F9FB}
+  .cg-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
+  .cg-btn-pri{background:var(--brand);color:#fff}.cg-btn-pri:hover{background:#0C447C;color:#fff}.cg-btn-pri:disabled{opacity:.6}
+  .cg-btn-ghost{background:transparent;color:var(--ink2)}.cg-btn-ghost:hover{background:rgba(0,0,0,.04);color:var(--ink)}
+  .cg-btn-out{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}.cg-btn-out:hover{background:var(--brand-soft)}
+  @media(max-width:640px){.cg-bar{padding:12px 16px}.cg-bar .cg-btn-pri{flex:1}}
+</style>
+<style>
+  .cg-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line)}
+  .cg-search{position:relative;flex:1 1 240px}
+  .cg-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+  .cg-search input{width:100%;height:40px;border:1.5px solid var(--line);border-radius:8px;padding:0 12px 0 36px;font-size:14px}
+  .cg-search input:focus{outline:0;border-color:var(--brand)}
+  .cg-table{width:100%;border-collapse:collapse;font-size:14px}
+  .cg-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:#FAFBFC}
+  .cg-table td{padding:12px 14px;border-bottom:1px solid #f0f2f6;vertical-align:middle}
+  .cg-table tr:hover td{background:#FAFCFF}
+  .cg-name{font-weight:700;color:var(--ink)}
+  .cg-pill{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:3px 10px;background:#f2f4f7;color:var(--ink2)}
+  .cg-pill.pri{background:var(--brand-soft);color:var(--brand)}
+  .cg-pill.warn{background:var(--warns);color:var(--warn)}
+  .cg-av{width:28px;height:28px;border-radius:50%;background:#0f766e;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:6px}
+  .cg-empty{padding:48px 16px;text-align:center;color:var(--ink2)}
+  @media(max-width:640px){.cg-tools{padding:12px 16px}.cg-table td,.cg-table th{padding:10px}}
+</style>
+<div class="cg wide">
+  <div class="cg-crumb"><a href="/user/home">Home</a> › Test categories</div>
+  <div class="cg-card">
+    <div class="cg-head">
+      <div class="cg-head-l">
+        <div class="cg-icon"><i class="bi bi-tags"></i></div>
+        <div><p class="cg-title">Test categories</p><p class="cg-sub"><%= LIST.length %> categor<%= LIST.length === 1 ? 'y' : 'ies' %></p></div>
+      </div>
+      <a href="/category/createCategory" class="cg-btn cg-btn-pri"><i class="bi bi-plus-lg"></i> New category</a>
+    </div>
+    <div class="cg-msgs"><%- include('../partials/messages') %></div>
+    <% if (LIST.length) { %>
+      <div class="cg-tools">
+        <div class="cg-search"><i class="bi bi-search"></i><input type="search" id="cgQ" placeholder="Search category" aria-label="Search category"></div>
+      </div>
+      <div class="table-responsive">
+        <table class="cg-table">
+          <thead><tr>
+            <th>Category</th><th>Default thanks</th><th>Tests</th><th class="d-none d-md-table-cell">Doctors' thanks</th>
+            <th class="d-none d-lg-table-cell">Created by</th><th class="d-none d-lg-table-cell">Created on</th><th></th>
+          </tr></thead>
+          <tbody id="cgRows">
+            <% LIST.forEach(function (c) { var s = ST[c.Id] || {}; var who = [c.FirstName, c.LastName].filter(Boolean).join(' '); %>
+              <tr data-q="<%= String(c.Name || '').toLowerCase() %>">
+                <td><span class="cg-name"><%= c.Name %></span></td>
+                <td><% if (c.CommissionRate != null) { %><span class="cg-pill pri"><%= Number(c.CommissionRate) %>%</span><% } else { %><span class="cg-pill">not set</span><% } %></td>
+                <td><span class="cg-pill <%= s.tests ? '' : 'warn' %>" title="<%= s.tests ? '' : 'No tests in this category yet' %>"><%= s.tests || 0 %></span></td>
+                <td class="d-none d-md-table-cell"><span class="text-secondary"><%= rate(s) %></span> <span class="text-secondary small">· <%= s.doctors || 0 %> doctors</span></td>
+                <td class="d-none d-lg-table-cell text-nowrap"><% if (who) { %><span class="cg-av"><%= who.charAt(0).toUpperCase() %></span><span class="text-capitalize"><%= who %></span><% } else { %><span class="text-secondary">—</span><% } %></td>
+                <td class="d-none d-lg-table-cell text-secondary small text-nowrap"><%= c.CreatedOn || '—' %></td>
+                <td class="text-end"><a href="/category/editCategory/<%= c.Id %>" class="cg-btn cg-btn-out" style="padding:6px 14px;font-size:13px"><i class="bi bi-pencil-square"></i><span class="d-none d-sm-inline">Edit</span></a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="cg-empty" id="cgNone" hidden>No category matches.</div>
+    <% } else { %>
+      <div class="cg-empty"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>No categories yet.<br>
+        <a href="/category/createCategory" class="cg-btn cg-btn-pri mt-3"><i class="bi bi-plus-lg"></i> Create the first category</a></div>
+    <% } %>
+  </div>
+</div>
+<script>
+(function () {
+  var q = document.getElementById('cgQ'); if (!q) return;
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase(), n = 0;
+    document.querySelectorAll('#cgRows tr').forEach(function (r) { var ok = !v || r.dataset.q.indexOf(v) !== -1; r.hidden = !ok; if (ok) n++; });
+    document.getElementById('cgNone').hidden = n > 0;
+  });
+})();
+</script>

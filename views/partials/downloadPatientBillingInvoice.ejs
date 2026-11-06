@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice — <%= patientDetails[0].Name %></title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<%
+  const pd   = patientDetails[0];
+  const num  = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+  const r2   = v => Math.round(num(v) * 100) / 100;
+  const fmt  = v => '₹' + num(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // ── money (one place, used by the page AND the PDF) ──
+  const testsTotal = r2(testDetails.reduce((s, t) => s + num(t.Price) + (t.subTests || []).reduce((a, x) => a + num(x.Price), 0), 0));
+  const gross      = num(pd.GrossAmount) > 0 ? r2(pd.GrossAmount) : testsTotal;      // total of tests before discount
+  const disc       = r2(typeof Discount !== 'undefined' ? Discount : pd.Discount);
+  const net        = r2(Math.max(gross - disc, 0));                                   // amount payable
+  const cashPaid   = r2(pd.CashPayment);
+  const onlinePaid = r2(pd.OnlinePayment);
+  const totalPaid  = r2(cashPaid + onlinePaid);
+  const dues       = r2(typeof DuesAmount !== 'undefined' ? DuesAmount : pd.DuesAmount);
+  const isCan      = Number(pd.Status) === 2;
+  const sex        = Number(pd.Gender) === 1 ? 'Male' : Number(pd.Gender) === 2 ? 'Female' : (pd.Gender || '');
+  const degrees    = [pd.DoctorDegree1, pd.DoctorDegree2, pd.DoctorDegree3].filter(Boolean).join(', ');
+  const doctor     = pd.DoctorFirstName ? ('Dr. ' + [pd.DoctorFirstName, pd.DoctorLastName].filter(Boolean).join(' ')) : 'Self';
+  const payMode    = cashPaid > 0 && onlinePaid > 0 ? 'Cash + Online' : onlinePaid > 0 ? 'Online' : cashPaid > 0 ? 'Cash' : '—';
+
+  // Indian-system amount in words: 12,34,567.50 → "Twelve Lakh Thirty Four Thousand Five Hundred Sixty Seven Rupees and Fifty Paise Only"
+  const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const two  = n => n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '');
+  const three = n => (n >= 100 ? ONES[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' : '') : '') + (n % 100 ? two(n % 100) : '');
+  const words = v => {
+    let n = Math.floor(num(v)); const p = Math.round((num(v) - n) * 100);
+    if (n === 0 && p === 0) return 'Zero Rupees Only';
+    const parts = [];
+    const cr = Math.floor(n / 1e7); n %= 1e7; const lk = Math.floor(n / 1e5); n %= 1e5; const th = Math.floor(n / 1e3); n %= 1e3;
+    if (cr) parts.push(three(cr) + ' Crore'); if (lk) parts.push(two(lk) + ' Lakh'); if (th) parts.push(two(th) + ' Thousand'); if (n) parts.push(three(n));
+    return (parts.length ? parts.join(' ') + ' Rupees' : '') + (p ? (parts.length ? ' and ' : '') + two(p) + ' Paise' : '') + ' Only';
+  };
+  // JSON safe inside <script> (names with quotes / "</script>" cannot break the page or show as &#39; in the PDF)
+  const js = v => JSON.stringify(v === undefined ? null : v).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+%>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; background: #eef0f3; color: #111; }
+
+/* toolbar (screen only) */
+.tb { background: #1f2937; padding: 7px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.tb-title { color: #9ca3af; font-size: 12px; }
+.tb-btns { display: flex; gap: 6px; align-items: center; }
+.tb-btn { padding: 4px 12px; border-radius: 5px; font: 600 11.5px inherit; font-family: inherit; cursor: pointer; background: transparent; text-decoration: none; }
+.tb-pdf { border: 1px solid #fff; color: #fff; } .tb-print { border: 1px solid #4b5563; color: #d1d5db; } .tb-back { border: 1px solid #374151; color: #9ca3af; }
+#inv-progress { font-size: 11px; color: #9ca3af; display: none; }
+
+/* invoice */
+.wrap { max-width: 720px; margin: 14px auto; padding: 0 10px 30px; }
+.card { background: #fff; border: 1px solid #c8cdd4; position: relative; overflow: hidden; padding: 14px 18px 12px; }
+.wm { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); font-size: 86px; font-weight: 900; color: rgba(0,0,0,.06); pointer-events: none; white-space: nowrap; }
+
+.hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding-bottom: 8px; border-bottom: 2px solid #111; }
+.brand { font-size: 14.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+.brand-sub { font-size: 10.5px; color: #555; margin-top: 2px; line-height: 1.45; }
+.bill { text-align: right; white-space: nowrap; }
+.bill-word { font-size: 17px; font-weight: 800; letter-spacing: 2px; }
+.bill-line { font-size: 11px; color: #555; margin-top: 1px; }
+.bill-line b { color: #111; }
+
+.flag { margin-top: 7px; padding: 4px 8px; font-size: 11px; font-weight: 700; border: 1px dashed #b91c1c; color: #b91c1c; }
+.flag.can { border-style: solid; border-color: #555; color: #333; background: #f5f5f5; }
+
+/* patient + doctor: two soft panels, no grid lines */
+.who { display: grid; grid-template-columns: 1.25fr 1fr; gap: 10px; margin-top: 10px; }
+.who-box { background: #f6f7f9; border-radius: 6px; padding: 8px 12px; border-left: 3px solid #111; }
+.who-box.doc { border-left-color: #9aa1ab; }
+.who-lbl { font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #8a919b; margin-bottom: 3px; }
+.who-name { font-size: 14px; font-weight: 700; color: #111; text-transform: capitalize; line-height: 1.25; }
+.who-meta { margin-top: 3px; font-size: 11.5px; color: #333; display: flex; flex-wrap: wrap; gap: 3px 0; }
+.who-meta span + span::before { content: '•'; color: #b4b9c0; margin: 0 7px; }
+.who-sub { margin-top: 2px; font-size: 11px; color: #666; text-transform: capitalize; }
+
+/* tests */
+table.ts { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table.ts th { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #555; text-align: left; padding: 0 6px 5px; border-bottom: 1.5px solid #111; }
+table.ts th.r, table.ts td.r { text-align: right; }
+table.ts td { padding: 4px 6px; border-bottom: 1px solid #ececec; font-size: 12px; }
+table.ts td.n { color: #999; font-size: 10.5px; width: 26px; }
+table.ts td.r { font-family: 'Courier New', monospace; width: 100px; white-space: nowrap; }
+table.ts tr.s td { font-size: 11px; color: #666; padding-top: 2px; padding-bottom: 2px; }
+table.ts tr.s td.nm::before { content: '↳ '; color: #aaa; }
+
+/* totals */
+.bt { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-top: 8px; }
+.words { font-size: 10.5px; color: #444; max-width: 340px; line-height: 1.5; }
+.words b { color: #111; }
+.mode { margin-top: 4px; font-size: 10.5px; color: #666; }
+table.tt { border-collapse: collapse; min-width: 230px; font-size: 12px; }
+table.tt td { padding: 2px 4px; }
+table.tt td.k { color: #555; white-space: nowrap; }
+table.tt td.v { text-align: right; font-family: 'Courier New', monospace; font-weight: 600; white-space: nowrap; }
+table.tt tr.line td { border-top: 1px solid #bbb; padding-top: 4px; }
+table.tt tr.strong td { font-weight: 700; color: #111; }
+table.tt tr.due td { border-top: 1.5px solid #111; padding-top: 5px; font-size: 13.5px; font-weight: 800; color: #111; }
+table.tt tr.due.zero td { font-size: 12px; font-weight: 700; }
+
+.ft { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-top: 12px; padding-top: 6px; border-top: 1px solid #ddd; font-size: 10px; color: #888; line-height: 1.5; }
+.sig { text-align: right; }
+.sig-name { font-size: 11.5px; font-weight: 600; color: #111; }
+.sig-role { margin-top: 14px; border-top: 1px solid #aaa; padding-top: 2px; font-size: 9.5px; letter-spacing: .04em; }
+
+@media (max-width: 560px) {
+  .hd { flex-direction: column; } .bill { text-align: left; }
+  .who { grid-template-columns: 1fr; } .bt { flex-direction: column-reverse; } table.tt { width: 100%; }
+}
+@media print {
+  @page { margin: 8mm; }
+  .tb { display: none !important; }
+  body { background: #fff; }
+  .wrap { margin: 0; padding: 0; max-width: 100%; }
+  .card { border: none; padding: 0; }
+  .who-box, .flag.can { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div class="tb">
+  <div class="tb-title">Bill #<%= pd.Id %> · <%= pd.Title %> <%= pd.Name %></div>
+  <div class="tb-btns">
+    <span id="inv-progress">Generating…</span>
+    <a href="javascript:history.back()" class="tb-btn tb-back">← Back</a>
+    <button class="tb-btn tb-print" onclick="window.print()">Print</button>
+    <button class="tb-btn tb-pdf" onclick="downloadInvoicePDF()">↓ PDF</button>
+  </div>
+</div>
+
+<div class="wrap"><div class="card">
+  <% if (isCan) { %><div class="wm">CANCELLED</div><% } %>
+
+  <!-- header -->
+  <div class="hd">
+    <div>
+      <div class="brand"><%= BRAND_NAME %></div>
+      <% if (BRAND_QUOTE) { %><div class="brand-sub"><%= BRAND_QUOTE %></div><% } %>
+      <div class="brand-sub">
+        <% if (BRAND_ADDRESS) { %><%= BRAND_ADDRESS %><br><% } %>
+        Ph: <%= BRAND_CONTACT_NO %><% if (BRAND_SECONDARY_CONTACT_N0) { %> / <%= BRAND_SECONDARY_CONTACT_N0 %><% } %>
+      </div>
+    </div>
+    <div class="bill">
+      <div class="bill-word">INVOICE</div>
+      <div class="bill-line">Bill No: <b>#<%= pd.Id %></b></div>
+      <div class="bill-line">Date: <b><%= pd.RegisteredOn %></b></div>
+    </div>
+  </div>
+
+  <% if (isCan) { %>
+    <div class="flag can">✕ CANCELLED<% if (pd.CancelReason) { %> — <span style="font-weight:400"><%= pd.CancelReason %></span><% } %></div>
+  <% } %>
+  <% if (locals.receiptInfo && receiptInfo.isReprint) { %>
+    <div class="flag">DUPLICATE — Print #<%= receiptInfo.printNo %> (first printed <%= receiptInfo.firstPrintedAt %>)<% if (receiptInfo.changedSincePrevious) { %> · REVISED BILL — replaces receipt #<%= receiptInfo.previous.printNo %><% } %></div>
+  <% } %>
+
+  <!-- patient + doctor -->
+  <div class="who">
+    <div class="who-box">
+      <div class="who-lbl">Billed To</div>
+      <div class="who-name"><%= pd.Title %> <%= pd.Name %></div>
+      <div class="who-meta">
+        <span><%= pd.Age %> <%= pd.YMD %></span><span><%= sex %></span><% if (pd.PhoneNumber) { %><span>+91 <%= pd.PhoneNumber %></span><% } %>
+      </div>
+      <% if (pd.Address) { %><div class="who-sub"><%= pd.Address %></div><% } %>
+    </div>
+    <div class="who-box doc">
+      <div class="who-lbl">Referred By</div>
+      <div class="who-name"><%= doctor %></div>
+      <% if (degrees || pd.DoctorSpecialistIn) { %>
+        <div class="who-meta"><% if (degrees) { %><span><%= degrees %></span><% } %><% if (pd.DoctorSpecialistIn) { %><span><%= pd.DoctorSpecialistIn %></span><% } %></div>
+      <% } %>
+      <% if (pd.ClinicName) { %><div class="who-sub"><%= pd.ClinicName %></div><% } %>
+    </div>
+  </div>
+
+  <!-- tests -->
+  <table class="ts">
+    <thead><tr><th>#</th><th>Test / Description</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      <% testDetails.forEach(function (t, i) { %>
+        <tr><td class="n"><%= i + 1 %></td><td><%= t.TestName %></td><td class="r"><%= fmt(t.Price) %></td></tr>
+        <% (t.subTests || []).forEach(function (s) { %>
+          <tr class="s"><td></td><td class="nm"><%= s.SubTestName %></td><td class="r"><%= fmt(s.Price) %></td></tr>
+        <% }) %>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <!-- totals -->
+  <div class="bt">
+    <div class="words">
+      <div>Amount paid in words:<br><b><%= words(totalPaid) %></b></div>
+      <div class="mode">Payment mode: <%= payMode %></div>
+    </div>
+    <table class="tt">
+      <tr><td class="k">Total</td><td class="v"><%= fmt(gross) %></td></tr>
+      <% if (disc > 0) { %>
+        <tr><td class="k">Discount</td><td class="v">− <%= fmt(disc) %></td></tr>
+        <tr class="line strong"><td class="k">Net Amount</td><td class="v"><%= fmt(net) %></td></tr>
+      <% } %>
+      <tr class="line"><td class="k">Cash Paid</td><td class="v"><%= fmt(cashPaid) %></td></tr>
+      <tr><td class="k">Online Paid</td><td class="v"><%= fmt(onlinePaid) %></td></tr>
+      <tr class="strong"><td class="k">Total Paid</td><td class="v"><%= fmt(totalPaid) %></td></tr>
+      <tr class="due <%= dues > 0 ? '' : 'zero' %>"><td class="k">Balance Due</td><td class="v"><%= fmt(dues) %></td></tr>
+    </table>
+  </div>
+
+  <!-- footer -->
+  <div class="ft">
+    <div>
+      Thank you for choosing our diagnostic services. This is a computer-generated invoice.<br>
+      <% if (LANDMARK) { %><%= LANDMARK %> · <% } %>Printed: <%= new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+    </div>
+    <div class="sig">
+      <div class="sig-name"><%= registeredByName || 'Staff' %></div>
+      <div class="sig-role">AUTHORISED SIGNATORY</div>
+    </div>
+  </div>
+</div></div>
+
+<script>
+const INV = {
+  brand:        <%- js(BRAND_NAME || '') %>,
+  address:      <%- js(BRAND_ADDRESS || '') %>,
+  contact:      <%- js([BRAND_CONTACT_NO, BRAND_SECONDARY_CONTACT_N0].filter(Boolean).join(' / ')) %>,
+  patientName:  <%- js([pd.Title, pd.Name].filter(Boolean).join(' ').toLowerCase().replace(/(^|[\s.'-])\S/g, c => c.toUpperCase())) %>,
+  patientAge:   <%- js(`${pd.Age || ''} ${pd.YMD || ''} / ${sex}`) %>,
+  patientPhone: <%- js(pd.PhoneNumber ? '+91 ' + pd.PhoneNumber : '') %>,
+  billNo:       <%- js(String(pd.Id)) %>,
+  date:         <%- js(String(pd.RegisteredOn || '')) %>,
+  doctorName:   <%- js(doctor) %>,
+  doctorInfo:   <%- js([degrees, pd.DoctorSpecialistIn].filter(Boolean).join('  •  ')) %>,
+  clinic:       <%- js(pd.ClinicName ? String(pd.ClinicName).replace(/\b\w/g, c => c.toUpperCase()) : '') %>,
+  patientAgeOnly: <%- js(`${pd.Age || ''} ${pd.YMD || ''}`.trim()) %>,
+  patientSex:   <%- js(sex) %>,
+  patientAddress: <%- js(pd.Address ? String(pd.Address).replace(/\b\w/g, c => c.toUpperCase()) : '') %>,
+  registeredBy: <%- js(registeredByName || 'Staff') %>,
+  isCancelled:  <%- isCan ? 'true' : 'false' %>,
+  isDuplicate:  <%- locals.receiptInfo && receiptInfo.isReprint ? 'true' : 'false' %>,
+  gross: <%- gross %>, discount: <%- disc %>, net: <%- net %>,
+  cashPaid: <%- cashPaid %>, onlinePaid: <%- onlinePaid %>, totalPaid: <%- totalPaid %>, dues: <%- dues %>,
+  payMode: <%- js(payMode) %>, inWords: <%- js(words(totalPaid)) %>,
+  tests: <%- js(testDetails.map(t => ({ name: t.TestName, price: num(t.Price), subTests: (t.subTests || []).map(s => ({ name: s.SubTestName, price: num(s.Price) })) }))) %>
+};
+const rs = v => 'Rs. ' + (parseFloat(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function downloadInvoicePDF() {
+  const btn = document.querySelector('.tb-pdf'), prog = document.getElementById('inv-progress');
+  btn.disabled = true; prog.style.display = 'inline';
+  setTimeout(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5', compress: true });
+      const W = 148, ML = 9, MR = 9, F = 'helvetica';
+      let y = 10;
+
+      // header
+      doc.setFont(F, 'bold'); doc.setFontSize(11.5); doc.setTextColor(0);
+      const brand = doc.splitTextToSize(INV.brand.toUpperCase(), 92);          // long names wrap, address moves down
+      doc.text(brand, ML, y);
+      const by = y + (brand.length - 1) * 4.6;
+      doc.setFont(F, 'normal'); doc.setFontSize(7); doc.setTextColor(80);
+      const addr = doc.splitTextToSize(INV.address || '', 92);
+      doc.text(addr, ML, by + 4.5);
+      doc.text('Ph: ' + INV.contact, ML, by + 4.5 + addr.length * 3.2);
+      doc.setFont(F, 'bold'); doc.setFontSize(14); doc.setTextColor(0);
+      doc.text('INVOICE', W - MR, y, { align: 'right' });
+      doc.setFont(F, 'normal'); doc.setFontSize(7.5); doc.setTextColor(60);
+      doc.text('Bill No: #' + INV.billNo, W - MR, y + 5, { align: 'right' });
+      doc.text('Date: ' + INV.date, W - MR, y + 9, { align: 'right' });
+      y = Math.max(by + 7.5 + addr.length * 3.2, y + 12);
+      doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(ML, y, W - MR, y); y += 2;
+      if (INV.isDuplicate) { doc.setFont(F, 'bold'); doc.setFontSize(7.5); doc.setTextColor(185, 28, 28); doc.text('DUPLICATE COPY', ML, y + 3); y += 4; }
+
+      // patient + doctor: two soft panels (same look as the page)
+      const panel = (x, w, label, name, lines, accent) => {
+        doc.setFontSize(9.5); const nm = doc.splitTextToSize(name, w - 7);
+        doc.setFontSize(7.3); const ls = lines.filter(Boolean).map(t => doc.splitTextToSize(t, w - 7)).flat();
+        const h = 6.5 + nm.length * 4 + ls.length * 3.4 + 1.5;
+        doc.setFillColor(246, 247, 249); doc.roundedRect(x, y, w, h, 1.5, 1.5, 'F');
+        doc.setFillColor(...accent); doc.rect(x, y, 0.9, h, 'F');
+        doc.setFont(F, 'bold'); doc.setFontSize(6); doc.setTextColor(138, 145, 155); doc.text(label, x + 3.5, y + 3.8);
+        doc.setFontSize(9.5); doc.setTextColor(0); doc.text(nm, x + 3.5, y + 7.8);
+        doc.setFont(F, 'normal'); doc.setFontSize(7.3); doc.setTextColor(60); doc.text(ls, x + 3.5, y + 7.8 + nm.length * 4);
+        return h;
+      };
+      const gap = 4, w1 = (W - ML - MR - gap) * 0.55, w2 = (W - ML - MR - gap) - w1;
+      const h1 = panel(ML, w1, 'BILLED TO', INV.patientName, [[INV.patientAgeOnly, INV.patientSex, INV.patientPhone].filter(Boolean).join('  •  '), INV.patientAddress], [17, 17, 17]);
+      const h2 = panel(ML + w1 + gap, w2, 'REFERRED BY', INV.doctorName, [INV.doctorInfo, INV.clinic], [154, 161, 171]);
+      y += Math.max(h1, h2) + 4;
+
+      if (INV.isCancelled) {
+        doc.saveGraphicsState(); doc.setFont(F, 'bold'); doc.setFontSize(36); doc.setTextColor(210);
+        doc.text('CANCELLED', W / 2, 110, { align: 'center', angle: 20 }); doc.restoreGraphicsState();
+      }
+
+      // tests
+      const rows = []; let sr = 1;
+      INV.tests.forEach(t => { rows.push([String(sr++), t.name, rs(t.price)]); t.subTests.forEach(s => rows.push(['', '   - ' + s.name, rs(s.price)])); });
+      doc.autoTable({
+        startY: y, head: [['#', 'Test / Description', 'Amount']], body: rows, margin: { left: ML, right: MR },
+        styles: { fontSize: 7.5, cellPadding: [1.4, 2], textColor: [0, 0, 0] },
+        headStyles: { fillColor: [255, 255, 255], textColor: [80, 80, 80], fontSize: 6.8, fontStyle: 'bold', lineColor: [0, 0, 0], lineWidth: { bottom: 0.4 } },
+        columnStyles: { 0: { cellWidth: 7, halign: 'center', textColor: [150, 150, 150] }, 2: { cellWidth: 26, halign: 'right' } },
+        didParseCell(d) { if (d.section === 'body' && d.row.raw[0] === '') { d.cell.styles.textColor = [110, 110, 110]; d.cell.styles.fontSize = 7; } },
+      });
+      y = doc.lastAutoTable.finalY + 4;
+
+      // totals (right) + words (left)
+      const tot = [['Total', rs(INV.gross)]];
+      if (INV.discount > 0) { tot.push(['Discount', '- ' + rs(INV.discount)]); tot.push(['Net Amount', rs(INV.net), 'b']); }
+      tot.push(['Cash Paid', rs(INV.cashPaid)], ['Online Paid', rs(INV.onlinePaid)], ['Total Paid', rs(INV.totalPaid), 'b']);
+      const xK = W - MR - 50, top = y;
+      tot.forEach(([k, v, b]) => {
+        doc.setFont(F, b ? 'bold' : 'normal'); doc.setFontSize(7.8); doc.setTextColor(b ? 0 : 80); doc.text(k, xK, y);
+        doc.setFont(F, 'bold'); doc.setTextColor(0); doc.text(v, W - MR, y, { align: 'right' }); y += 4.3;
+      });
+      doc.setDrawColor(0); doc.setLineWidth(0.4); doc.line(xK, y - 2.6, W - MR, y - 2.6); y += 1.6;
+      doc.setFont(F, 'bold'); doc.setFontSize(9.5); doc.text('Balance Due', xK, y); doc.text(rs(INV.dues), W - MR, y, { align: 'right' });
+
+      doc.setFont(F, 'normal'); doc.setFontSize(7); doc.setTextColor(80);
+      doc.text('Amount paid in words:', ML, top);
+      doc.setFont(F, 'bold'); doc.setTextColor(0);
+      const w = doc.splitTextToSize(INV.inWords, xK - ML - 6); doc.text(w, ML, top + 3.5);
+      doc.setFont(F, 'normal'); doc.setTextColor(100); doc.text('Payment mode: ' + INV.payMode, ML, top + 4.5 + w.length * 3.2);
+      y += 9;
+
+      // footer
+      doc.setDrawColor(190); doc.setLineWidth(0.2); doc.line(ML, y, W - MR, y); y += 3.5;
+      doc.setFont(F, 'normal'); doc.setFontSize(6.5); doc.setTextColor(130);
+      doc.text('Thank you for choosing our diagnostic services. Computer-generated invoice.', ML, y);
+      doc.setFont(F, 'bold'); doc.setFontSize(7.5); doc.setTextColor(40); doc.text(INV.registeredBy, W - MR, y + 3, { align: 'right' });
+      doc.setFont(F, 'normal'); doc.setFontSize(6); doc.setTextColor(140); doc.text('AUTHORISED SIGNATORY', W - MR, y + 6, { align: 'right' });
+
+      doc.save('Invoice_' + INV.patientName.replace(/[^\w]+/g, '_') + '_' + INV.billNo + '.pdf');
+    } catch (err) {
+      alert('PDF error: ' + err.message); console.error(err);
+    } finally {
+      btn.disabled = false; prog.style.display = 'none';
+    }
+  }, 50);
+}
+</script>
+</body>
+</html>

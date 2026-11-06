@@ -1,0 +1,106 @@
+<div class="container mt-5 bg-white p-4 shadow-sm rounded">
+    <h4 class="mb-4">Add Stock</h4>
+    <%- include ("./partials/messages"); %>
+    <form action="/billing/addStock" method="POST">
+        <!-- Product and Batch Number -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <select name="supplierId" id="supplierIdPurchasePo" aria-label="Supplier Id" class="form-control" required>
+                    <% suppliers.forEach(supplier => { %>
+                        <option value="<%= supplier.Id %>"><%= supplier.Name %></option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <select name="productId" id="productIdPurchasePo"  aria-label="Product Id" class="form-control" required>
+                    <% products.forEach(product => { %>
+                        <option value="<%= product.Id %>" data-supplier-id-purchase="<%=product.SupplierId%>"><%= product.ProductName %></option>
+                    <% }); %>
+                </select>
+            </div>
+        </div>
+        <!-- Quantity and Expiry Date -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <input 
+                    type="number" 
+                    id="quantity" 
+                    class="form-control" 
+                    name="quantity" 
+                    placeholder="Quantity" 
+                    value="<%= typeof quantity!= 'undefined' ? quantity : '' %>" 
+                    autocomplete="off" 
+                    required>
+            </div>
+            <div class="col-md-6">
+                <input 
+                    type="text" 
+                    id="batchNumber" 
+                    class="form-control" 
+                    name="batchNumber" 
+                    placeholder="Batch Number" 
+                    value="<%= typeof batchNumber!= 'undefined' ? batchNumber : '' %>" 
+                    autocomplete="off" 
+                    required>
+            </div>
+        </div>
+        <!-- Purchase Price and SGST -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    id="purchasePrice" 
+                    class="form-control" 
+                    name="purchasePrice" 
+                    placeholder="Purchase Price" 
+                    value="<%= typeof purchasePrice!= 'undefined' ? purchasePrice : '' %>" 
+                    autocomplete="off" 
+                    required>
+            </div>
+            <div class="col-md-6">
+                <input 
+                    type="text" 
+                    id="FromDate" 
+                    class="form-control" 
+                    name="expiryDate" 
+                    value="<%= typeof expiryDate!= 'undefined' ? expiryDate : '' %>" 
+                    autocomplete="off" 
+                    required>
+            </div>
+        </div>
+        <!-- CGST -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    id="sgst" 
+                    class="form-control" 
+                    name="sgst" 
+                    placeholder="SGST" 
+                    value="<%= typeof sgst!= 'undefined' ? sgst : '' %>" 
+                    autocomplete="off" 
+                    required>
+            </div>
+            <div class="col-md-6">
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    id="cgst" 
+                    class="form-control" 
+                    name="cgst" 
+                    placeholder="CGST" 
+                    value="<%= typeof cgst!= 'undefined' ? cgst : '' %>" 
+                    autocomplete="off" 
+                    required>
+            </div>
+        </div>
+        <!-- Submit Button -->
+        <div class="row">
+            <div class="col text-center">
+                <button type="submit" class="btn btn-primary px-5">Add Stock</button>
+            </div>
+        </div>
+    </form>
+</div>

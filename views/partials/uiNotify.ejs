@@ -1,0 +1,110 @@
+<%#
+  views/partials/uiNotify.ejs — Bootstrap 5 toasts + confirm dialog (replaces alert()/confirm()).
+  Include once per page with:  include("../partials/uiNotify")  (unescaped output tag)
+  (or once in your layout to use it everywhere)
+
+  JS API:
+    ui.toast('success' | 'danger' | 'warning' | 'info', 'Title', 'message' | ['line 1', 'line 2'], { delay: 5000 })
+    ui.confirm({ title, message, okText, okClass }).then(function (yes) { ... })
+%>
+<style>
+  #uiToastStack{position:fixed;top:16px;right:16px;z-index:2000;width:min(400px,calc(100vw - 32px));display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  #uiToastStack .toast{pointer-events:auto;border:0;border-left:4px solid var(--ui-c,#0d6efd);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.16);overflow:hidden;width:100%}
+  #uiToastStack .toast .toast-body{display:flex;gap:12px;align-items:flex-start;padding:12px 14px}
+  #uiToastStack .ui-ic{font-size:1.25rem;line-height:1;color:var(--ui-c)}
+  #uiToastStack .ui-title{font-weight:700;font-size:.9rem;margin-bottom:2px;color:#0f172a}
+  #uiToastStack .ui-msg{font-size:.85rem;color:#475569}
+  #uiToastStack .ui-msg ul{margin:2px 0 0;padding-left:18px}
+  #uiToastStack .ui-bar{height:3px;background:var(--ui-c);opacity:.35;transform-origin:left;animation:uiBar linear forwards}
+  @keyframes uiBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  @media (max-width:575.98px){#uiToastStack{top:auto;bottom:76px;right:12px;left:12px;width:auto}}
+  #uiConfirm .modal-content{border:0;border-radius:14px;overflow:hidden}
+  #uiConfirm .ui-cf-ic{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+</style>
+
+<div id="uiToastStack" aria-live="polite" aria-atomic="false"></div>
+
+<div class="modal fade" id="uiConfirm" tabindex="-1" aria-labelledby="uiConfirmTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <div class="d-flex gap-3">
+          <div class="ui-cf-ic" id="uiConfirmIc"><i class="bi bi-question-lg"></i></div>
+          <div class="flex-grow-1">
+            <h5 class="fw-bold mb-1" id="uiConfirmTitle" style="font-size:1rem">Are you sure?</h5>
+            <div class="text-secondary small" id="uiConfirmMsg"></div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" id="uiConfirmNo">Cancel</button>
+          <button type="button" class="btn btn-primary fw-semibold" id="uiConfirmYes">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  if (window.ui && window.ui._ready) return;
+  var C = { success: ['#16a34a', 'bi-check-circle-fill'], danger: ['#dc2626', 'bi-x-octagon-fill'],
+            warning: ['#d97706', 'bi-exclamation-triangle-fill'], info: ['#2563eb', 'bi-info-circle-fill'] };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+
+  function toast(type, title, msg, opt) {
+    opt = opt || {};
+    var c = C[type] || C.info;
+    var lines = Array.isArray(msg) ? msg.filter(Boolean) : (msg ? [msg] : []);
+    var delay = opt.delay != null ? opt.delay : (type === 'danger' ? 8000 : 4500);
+    var body = lines.length > 1 ? '<ul>' + lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>'
+                                : (lines[0] ? esc(lines[0]) : '');
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.setAttribute('role', type === 'danger' ? 'alert' : 'status');
+    el.style.setProperty('--ui-c', c[0]);
+    el.innerHTML = '<div class="toast-body"><i class="bi ' + c[1] + ' ui-ic"></i><div class="flex-grow-1">' +
+      (title ? '<div class="ui-title">' + esc(title) + '</div>' : '') + '<div class="ui-msg">' + body + '</div></div>' +
+      '<button type="button" class="btn-close ms-1" data-bs-dismiss="toast" aria-label="Close"></button></div>' +
+      (delay ? '<div class="ui-bar" style="animation-duration:' + delay + 'ms"></div>' : '');
+    document.getElementById('uiToastStack').appendChild(el);
+
+    if (window.bootstrap && bootstrap.Toast) {
+      var t = new bootstrap.Toast(el, { autohide: !!delay, delay: delay || 5000 });
+      el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+      t.show();
+    } else {                                   // works even without Bootstrap JS
+      el.classList.add('show');
+      el.querySelector('.btn-close').onclick = function () { el.remove(); };
+      if (delay) setTimeout(function () { el.remove(); }, delay);
+    }
+    return el;
+  }
+
+  function confirmBox(o) {
+    o = o || {};
+    var m = document.getElementById('uiConfirm');
+    if (!(window.bootstrap && bootstrap.Modal)) return Promise.resolve(window.confirm((o.title ? o.title + '\n\n' : '') + (o.message || '')));
+    var type = o.type || 'warning', c = C[type] || C.warning;
+    document.getElementById('uiConfirmTitle').textContent = o.title || 'Are you sure?';
+    document.getElementById('uiConfirmMsg').innerHTML = esc(o.message || '').replace(/\n/g, '<br>');
+    var ic = document.getElementById('uiConfirmIc');
+    ic.style.background = c[0] + '1a'; ic.style.color = c[0]; ic.innerHTML = '<i class="bi ' + c[1] + '"></i>';
+    var yes = document.getElementById('uiConfirmYes');
+    yes.textContent = o.okText || 'OK';
+    yes.className = 'btn fw-semibold ' + (o.okClass || 'btn-primary');
+    document.getElementById('uiConfirmNo').textContent = o.cancelText || 'Cancel';
+
+    return new Promise(function (resolve) {
+      var modal = bootstrap.Modal.getOrCreateInstance(m), answered = false;
+      var onYes = function () { answered = true; modal.hide(); };
+      var onHidden = function () { yes.removeEventListener('click', onYes); m.removeEventListener('hidden.bs.modal', onHidden); resolve(answered); };
+      yes.addEventListener('click', onYes);
+      m.addEventListener('hidden.bs.modal', onHidden);
+      modal.show();
+      m.addEventListener('shown.bs.modal', function f() { yes.focus(); m.removeEventListener('shown.bs.modal', f); });
+    });
+  }
+
+  window.ui = { toast: toast, confirm: confirmBox, _ready: true };
+})();
+</script>

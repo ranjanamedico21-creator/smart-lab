@@ -1,0 +1,291 @@
+<%
+  var clinic   = (typeof clinicDetails !== 'undefined' && clinicDetails) ? clinicDetails : {};
+  var attached = (typeof attachedDoctorList   !== 'undefined' && attachedDoctorList)   ? attachedDoctorList   : [];
+  var avail    = (typeof unAttachedDoctorList !== 'undefined' && unAttachedDoctorList) ? unAttachedDoctorList : [];
+  var COLORS   = [['#E6F1FB','#185FA5'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B'],['#FCEBEB','#A32D2D'],['#EEEDFE','#534AB7'],['#E1F5EE','#0F6E56']];
+  var ini      = function (d) { return ((d.FirstName || '?').charAt(0) + (d.LastName || '').charAt(0)).toUpperCase(); };
+  var fullName = function (d) { return [d.FirstName, d.LastName].filter(Boolean).join(' '); };
+  var degs     = function (d) { return [d.Degree1, d.Degree2, d.Degree3, d.Degree4].filter(Boolean); };
+  var addr     = [clinic.Address, clinic.AdditionalAddress, clinic.City, clinic.Pincode].filter(Boolean).join(', ');
+%>
+
+<style>
+  .ad{--brand:#185FA5;--brand-soft:#E6F1FB;--surface:#fff;--alt:#F8F9FB;--border:rgba(0,0,0,.08);--border-strong:rgba(0,0,0,.16);
+      --text:#111827;--text-2:#6B7280;--hint:#9CA3AF;--ok-bg:#EAF3DE;--ok:#3B6D11;--warn-bg:#FAEEDA;--warn:#854F0B;--err-bg:#FCEBEB;--err:#A32D2D;--pur-bg:#EEEDFE;--pur:#534AB7;
+      --shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);padding:16px 0 40px;max-width:1200px;margin:0 auto}
+  .ad-card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+  .ad-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 22px;border-bottom:1px solid var(--border)}
+  .ad-head-l{display:flex;align-items:center;gap:12px;min-width:0}
+  .ad-ic{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .ad-ic.b{background:var(--brand-soft);color:var(--brand)} .ad-ic.g{background:var(--ok-bg);color:var(--ok)} .ad-ic.w{background:var(--warn-bg);color:var(--warn)}
+  .ad-title{font-size:15px;font-weight:600;color:var(--text);margin:0;text-transform:capitalize}
+  .ad-sub{font-size:12px;color:var(--text-2);margin:2px 0 0}
+  .ad-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;background:var(--alt);border:1px solid var(--border);color:var(--text-2);white-space:nowrap}
+  .ad-sec{padding:18px 22px}
+  .ad-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+  .ad-info-l{font-size:10.5px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:.06em}
+  .ad-info-v{font-size:13px;color:var(--text);font-weight:500;word-break:break-word}
+
+  .ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .ad-doc{border:1px solid var(--border);border-radius:10px;background:var(--alt);overflow:hidden;display:flex;flex-direction:column;position:relative;transition:border-color .15s,box-shadow .15s,background .15s}
+  .ad-doc-top{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .ad-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .ad-name{font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize}
+  .ad-spec{font-size:11.5px;color:var(--text-2);text-transform:capitalize}
+  .ad-tags{padding:9px 14px;display:flex;flex-wrap:wrap;gap:4px}
+  .ad-tag{font-size:10.5px;padding:2px 8px;border-radius:99px;background:var(--pur-bg);color:var(--pur);font-weight:500}
+  .ad-foot{margin-top:auto;padding:8px 14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+
+  label.ad-doc{cursor:pointer;margin:0}
+  label.ad-doc:hover{border-color:var(--brand)}
+  label.ad-doc.sel{border-color:var(--brand);background:var(--brand-soft);box-shadow:0 0 0 2px rgba(24,95,165,.2)}
+  .ad-check{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;border:2px solid var(--border-strong);background:#fff;display:flex;align-items:center;justify-content:center;color:transparent;font-size:13px;transition:all .15s}
+  label.ad-doc.sel .ad-check{background:var(--brand);border-color:var(--brand);color:#fff}
+  .ad-doc input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
+  .ad-doc input[type=checkbox]:focus-visible ~ .ad-check{box-shadow:0 0 0 3px rgba(24,95,165,.35)}
+
+  .ad-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ad-search{position:relative;flex:1;min-width:200px;max-width:380px}
+  .ad-search i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--hint)}
+  .ad-search input{padding-left:34px;height:40px;font-size:15px}
+  .ad-note{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--warn-bg);border-radius:8px;font-size:13px;color:var(--warn)}
+  .ad-pager{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;padding:6px 22px 14px}
+  .ad-pager button{min-width:34px;height:34px;border-radius:8px;border:1px solid var(--border-strong);background:#fff;font-size:13px;color:var(--text-2)}
+  .ad-pager button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .ad-pager button:disabled{opacity:.4}
+  .ad-bar{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;background:var(--alt);border-top:1px solid var(--border)}
+  .ad-bar-l{font-size:13px;color:var(--text-2)}
+
+  @media (max-width:575.98px){
+    .ad{padding:8px 0 24px} .ad-head,.ad-sec,.ad-bar{padding-left:14px;padding-right:14px}
+    .ad-grid{grid-template-columns:1fr} .ad-info{grid-template-columns:1fr 1fr}
+    .ad-search{max-width:none}
+    .ad-bar{flex-direction:column;align-items:stretch} .ad-bar .btn{width:100%}
+  }
+</style>
+
+<div class="ad">
+  
+  <%- include("../partials/messages"); %>
+
+  <!-- Clinic -->
+  <div class="ad-card">
+    <div class="ad-head">
+      <div class="ad-head-l">
+        <div class="ad-ic b"><i class="bi bi-hospital"></i></div>
+        <div style="min-width:0">
+          <p class="ad-title"><%= clinic.Name %></p>
+          <p class="ad-sub">Attach or remove doctors for this clinic</p>
+        </div>
+      </div>
+      <a href="/clinic/updateClinicDetails/<%= clinic.Id %>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit clinic</a>
+    </div>
+    <div class="ad-sec">
+      <div class="ad-info">
+        <div><div class="ad-info-l"><i class="bi bi-envelope me-1"></i>Email</div><div class="ad-info-v"><%= clinic.Email || '—' %></div></div>
+        <div><div class="ad-info-l"><i class="bi bi-telephone me-1"></i>Phone</div><div class="ad-info-v">
+          <% if (clinic.PhoneNumber) { %><a href="tel:<%= clinic.PhoneNumber %>" class="text-decoration-none"><%= clinic.PhoneNumber %></a><% } else { %>—<% } %></div></div>
+        <div><div class="ad-info-l"><i class="bi bi-pin-angle me-1"></i>Key area</div><div class="ad-info-v text-capitalize"><%= clinic.KeyArea || '—' %></div></div>
+        <div><div class="ad-info-l"><i class="bi bi-signpost-2 me-1"></i>Landmark</div><div class="ad-info-v text-capitalize"><%= clinic.LandMark || '—' %></div></div>
+        <div style="grid-column:1/-1"><div class="ad-info-l"><i class="bi bi-geo-alt me-1"></i>Address</div><div class="ad-info-v text-capitalize"><%= addr || '—' %></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attached -->
+  <div class="ad-card">
+    <div class="ad-head">
+      <div class="ad-head-l">
+        <div class="ad-ic g"><i class="bi bi-person-check"></i></div>
+        <div><p class="ad-title" style="text-transform:none">Attached doctors</p><p class="ad-sub">Currently linked to this clinic</p></div>
+      </div>
+      <span class="ad-pill"><%= attached.length %> doctor<%= attached.length !== 1 ? 's' : '' %></span>
+    </div>
+    <div class="ad-sec">
+      <% if (!attached.length) { %>
+        <div class="ad-note"><i class="bi bi-info-circle"></i> No doctors attached yet. Select doctors below and press <strong>Attach</strong>.</div>
+      <% } else { %>
+        <div class="ad-grid">
+          <% attached.forEach(function (d, i) { var c = COLORS[i % COLORS.length]; var dg = degs(d); %>
+            <div class="ad-doc">
+              <div class="ad-doc-top">
+                <div class="ad-av" style="background:<%= c[0] %>;color:<%= c[1] %>"><%= ini(d) %></div>
+                <div style="min-width:0"><div class="ad-name">Dr. <%= fullName(d) %></div><div class="ad-spec"><%= d.SpecialistIn || '—' %></div></div>
+              </div>
+              <% if (dg.length) { %><div class="ad-tags"><% dg.forEach(function (x) { %><span class="ad-tag"><%= x %></span><% }) %></div><% } %>
+              <div class="ad-foot">
+                <!-- POST + confirm text in a data attribute (names can't break the JS) -->
+                <form method="post" action="/clinic/detachDoctor/<%= d.Id %>/<%= clinic.Id %>" class="js-detach" data-name="Dr. <%= fullName(d) %>">
+                  <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-person-dash"></i> Remove</button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Available -->
+  <div class="ad-card">
+    <div class="ad-head">
+      <div class="ad-head-l">
+        <div class="ad-ic w"><i class="bi bi-person-plus"></i></div>
+        <div><p class="ad-title" style="text-transform:none">Attach doctors</p><p class="ad-sub">Tap doctors to select, then press Attach</p></div>
+      </div>
+      <span class="ad-pill"><%= avail.length %> available</span>
+    </div>
+
+    <form method="post" action="/clinic/attachDoctorToClinic?clinicId=<%= clinic.Id %>" id="attachForm">
+      <div class="ad-sec" style="padding-bottom:8px">
+        <% if (!avail.length) { %>
+          <div class="ad-note"><i class="bi bi-check-circle"></i> All registered doctors are already attached to this clinic.</div>
+        <% } else { %>
+          <div class="ad-tools">
+            <div class="ad-search">
+              <i class="bi bi-search"></i>
+              <input type="search" class="form-control" id="q" placeholder="Search name, speciality, degree…" autocomplete="off" aria-label="Search doctors">
+            </div>
+            <div class="form-check m-0">
+              <input class="form-check-input" type="checkbox" id="selPage">
+              <label class="form-check-label small" for="selPage">Select all shown</label>
+            </div>
+            <span class="small text-muted" id="shownInfo"></span>
+          </div>
+
+          <div class="ad-note mb-3" id="noMatch" style="display:none"><i class="bi bi-search"></i> No doctors match your search.</div>
+
+          <div class="ad-grid" id="grid">
+            <% avail.forEach(function (d, i) { var c = COLORS[i % COLORS.length]; var dg = degs(d); %>
+              <label class="ad-doc js-doc" data-q="<%= (fullName(d) + ' ' + (d.SpecialistIn || '') + ' ' + dg.join(' ') + ' ' + (d.WorkedAt || '')).toLowerCase() %>">
+                <input type="checkbox" name="doctor" value="<%= d.Id %>">
+                <span class="ad-check" aria-hidden="true"><i class="bi bi-check"></i></span>
+                <div class="ad-doc-top">
+                  <div class="ad-av" style="background:<%= c[0] %>;color:<%= c[1] %>"><%= ini(d) %></div>
+                  <div style="min-width:0;padding-right:26px"><div class="ad-name">Dr. <%= fullName(d) %></div><div class="ad-spec"><%= d.SpecialistIn || '—' %></div></div>
+                </div>
+                <% if (dg.length) { %><div class="ad-tags"><% dg.forEach(function (x) { %><span class="ad-tag"><%= x %></span><% }) %></div><% } %>
+                <% if (d.WorkedAt) { %><div class="px-3 pb-2 small text-muted"><i class="bi bi-building me-1"></i><%= d.WorkedAt %></div><% } %>
+              </label>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (avail.length) { %>
+        <div class="ad-pager" id="pager"></div>
+        <div class="ad-bar">
+          <span class="ad-bar-l"><i class="bi bi-check2-square me-1"></i><strong id="selCount">0</strong> selected</span>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearSel" disabled>Clear</button>
+            <button type="submit" class="btn btn-primary" id="attachBtn" disabled>
+              <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+              <i class="bi bi-person-plus"></i> Attach <span id="attachN"></span>
+            </button>
+          </div>
+        </div>
+      <% } %>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* Detach confirmation (name read from data attribute → safe with quotes in names) */
+  document.querySelectorAll('.js-detach').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      if (!confirm('Remove ' + f.dataset.name + ' from this clinic?')) { e.preventDefault(); return; }
+      var b = f.querySelector('button'); b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    });
+  });
+
+  var grid = document.getElementById('grid');
+  if (!grid) return;
+
+  var PER_PAGE = 12, page = 1;
+  var cards  = Array.prototype.slice.call(grid.querySelectorAll('.js-doc'));
+  var q      = document.getElementById('q');
+  var selAll = document.getElementById('selPage');
+  var btn    = document.getElementById('attachBtn');
+  var matched = cards;
+
+  function visible() { return matched.slice((page - 1) * PER_PAGE, page * PER_PAGE); }
+
+  function draw() {
+    var pages = Math.max(1, Math.ceil(matched.length / PER_PAGE));
+    page = Math.min(page, pages);
+    var vis = visible();
+    cards.forEach(function (c) { c.style.display = vis.indexOf(c) === -1 ? 'none' : ''; });
+    document.getElementById('noMatch').style.display = matched.length ? 'none' : 'flex';
+    document.getElementById('shownInfo').textContent = matched.length
+      ? 'Showing ' + ((page - 1) * PER_PAGE + 1) + '–' + Math.min(page * PER_PAGE, matched.length) + ' of ' + matched.length : '';
+
+    var pager = document.getElementById('pager'); pager.innerHTML = '';
+    if (pages > 1) {
+      var mk = function (label, p, on, dis) {
+        var b = document.createElement('button'); b.type = 'button'; b.innerHTML = label;
+        if (on) b.className = 'on'; b.disabled = !!dis;
+        b.addEventListener('click', function () { page = p; draw(); grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+        pager.appendChild(b);
+      };
+      mk('<i class="bi bi-chevron-left"></i>', page - 1, false, page === 1);
+      var s = Math.max(1, Math.min(page - 2, pages - 4)), e = Math.min(pages, s + 4);
+      for (var p = s; p <= e; p++) mk(String(p), p, p === page);
+      mk('<i class="bi bi-chevron-right"></i>', page + 1, false, page === pages);
+    }
+    syncSelAll();
+  }
+
+  function syncSelAll() {
+    var vis = visible();
+    var n = vis.filter(function (c) { return c.querySelector('input').checked; }).length;
+    selAll.checked = vis.length > 0 && n === vis.length;
+    selAll.indeterminate = n > 0 && n < vis.length;
+  }
+
+  function updateCount() {
+    var n = grid.querySelectorAll('input:checked').length;
+    document.getElementById('selCount').textContent = n;
+    document.getElementById('attachN').textContent = n ? '(' + n + ')' : '';
+    btn.disabled = !n; document.getElementById('clearSel').disabled = !n;
+    syncSelAll();
+  }
+
+  grid.addEventListener('change', function (e) {
+    var card = e.target.closest('.js-doc');
+    if (card) card.classList.toggle('sel', e.target.checked);
+    updateCount();
+  });
+
+  selAll.addEventListener('change', function () {
+    var on = this.checked;
+    visible().forEach(function (c) { var i = c.querySelector('input'); i.checked = on; c.classList.toggle('sel', on); });
+    updateCount();
+  });
+
+  document.getElementById('clearSel').addEventListener('click', function () {
+    cards.forEach(function (c) { c.querySelector('input').checked = false; c.classList.remove('sel'); });
+    updateCount();
+  });
+
+  var t;
+  q.addEventListener('input', function () {
+    clearTimeout(t);
+    t = setTimeout(function () {
+      var term = q.value.trim().toLowerCase();
+      matched = !term ? cards : cards.filter(function (c) { return c.dataset.q.indexOf(term) !== -1; });
+      page = 1; draw();
+    }, 120);
+  });
+  q.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });  // Enter must not submit
+
+  document.getElementById('attachForm').addEventListener('submit', function (e) {
+    if (!grid.querySelectorAll('input:checked').length) { e.preventDefault(); return; }
+    btn.disabled = true; btn.querySelector('.spinner-border').classList.remove('d-none');
+  });
+
+  draw(); updateCount();
+})();
+</script>

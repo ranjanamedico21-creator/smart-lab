@@ -1,0 +1,107 @@
+<%
+const typeLabel = {
+    doctor_test:    { text:'Doctor + Test',  bg:'#EEEDFE', color:'#3C3489' },
+    doctor_default: { text:'Doctor Default', bg:'#E6F1FB', color:'#0C447C' },
+    test_default:   { text:'Test Default',   bg:'#EAF3DE', color:'#27500A' },
+    system_default: { text:'System Default', bg:'#FAEEDA', color:'#633806' },
+};
+const gIcon = { male:'♂', female:'♀', common:'⚥' };
+%>
+
+<style>
+.tl-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.tl-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0}
+.tl-title{font-size:14px;font-weight:600;color:#111}
+.tl-sub{font-size:12px;color:#666;margin-top:2px}
+.tl-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#185FA5;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none}
+.tl-table{width:100%;border-collapse:collapse}
+.tl-table thead th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#666;padding:9px 16px;border-bottom:1px solid #e2e8f0;text-align:left;background:#f8f9fb}
+.tl-table tbody tr{border-bottom:1px solid #e2e8f0}
+.tl-table tbody tr:hover td{background:#f8fbff}
+.tl-table tbody td{padding:11px 16px;font-size:13px;vertical-align:middle}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+.ib{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;text-decoration:none;border:1px solid}
+.ib-blue{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}
+.ib-red{background:#FCEBEB;color:#791F1F;border-color:#F7C1C1}
+</style>
+
+<div class="tl-card">
+  <div class="tl-header">
+    <div>
+      <div class="tl-title">Report Templates</div>
+      <div class="tl-sub"><%= templates.length %> template<%= templates.length!==1?'s':'' %></div>
+    </div>
+    <a href="/report/templates/new" class="tl-btn">
+      <i class="bi bi-plus-lg"></i> New Template
+    </a>
+  </div>
+
+  <%- include("../partials/messages") %>
+
+  <div style="overflow-x:auto">
+    <table class="tl-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Template Name</th>
+          <th>Type</th>
+          <th>Doctor</th>
+          <th>Test</th>
+          <th>Gender</th>
+          <th>File</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% let i=1; templates.forEach(function(t){ const tl=typeLabel[t.TemplateType]||{}; %>
+        <tr>
+          <td style="color:#aaa;font-size:12px"><%= String(i).padStart(2,'0') %></td>
+          <td style="font-weight:600"><%= t.Name %></td>
+          <td>
+            <span class="pill" style="background:<%= tl.bg %>;color:<%= tl.color %>">
+              <%= tl.text %>
+            </span>
+          </td>
+          <td style="color:#555"><%= t.DoctorName||'<span style="color:#aaa">Any</span>' %></td>
+          <td style="color:#555"><%= t.TestName||'<span style="color:#aaa">Any</span>'   %></td>
+          <td>
+            <span style="font-size:15px"><%= gIcon[t.GenderType]||'⚥' %></span>
+            <span style="font-size:11px;color:#666;margin-left:4px">
+              <%= t.GenderType.charAt(0).toUpperCase()+t.GenderType.slice(1) %>
+            </span>
+          </td>
+          <td>
+            <span style="font-size:11px;color:#555">
+              <i class="bi bi-file-earmark-word" style="color:#185FA5"></i>
+              <%= t.OriginalName %>
+            </span>
+          </td>
+          <td>
+            <a href="/report/templates/<%= t.Id %>/edit" class="ib ib-blue">
+              <i class="bi bi-pencil" style="font-size:11px"></i> Edit
+            </a>
+            <button class="ib ib-red" style="cursor:pointer;margin-left:4px"
+                    onclick="deleteTemplate(<%= t.Id %>, '<%= t.Name %>')">
+              <i class="bi bi-trash" style="font-size:11px"></i>
+            </button>
+          </td>
+        </tr>
+        <% i++; }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function deleteTemplate(id, name) {
+    if (!confirm(`Delete template "${name}"? This cannot be undone.`)) return;
+    const res  = await fetch("/report/templates/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.success) location.reload();
+    else alert("Delete failed: " + data.message);
+}
+</script>

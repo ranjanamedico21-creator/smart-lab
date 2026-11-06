@@ -1,0 +1,805 @@
+<style>
+  /* ── Tom Select Scoped Styles ── */
+  #returnForm select.form-select {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      background: transparent !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      position: absolute !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+  }
+  
+  #returnForm .ts-wrapper {
+      padding: 0 !important;
+  }
+  #returnForm .ts-wrapper.single .ts-control {
+      min-height: 38px !important;
+      height: 38px !important;
+      border: 1.5px solid #E2E8F0 !important;
+      border-radius: 8px !important;
+      padding: 0 32px 0 12px !important;
+      font-size: 13px !important;
+      font-family: 'Sora', sans-serif !important;
+      background: #fff !important;
+      color: #1E293B !important;
+      box-shadow: none !important;
+      display: flex !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      position: relative !important;
+  }
+  #returnForm .ts-wrapper.single .ts-control::after {
+      border-color: #94A3B8 transparent transparent !important;
+      right: 12px !important;
+  }
+  #returnForm .ts-wrapper.single:focus-within .ts-control,
+  #returnForm .ts-wrapper.single.focus .ts-control {
+      border-color: #185FA5 !important;
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1) !important;
+  }
+  #returnForm .ts-wrapper.disabled .ts-control {
+      background: #F1F5F9 !important;
+      opacity: 0.6 !important;
+      cursor: not-allowed !important;
+  }
+  
+  #returnForm .ts-dropdown {
+      border: 1.5px solid #E2E8F0 !important;
+      border-radius: 8px !important;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 4px 10px -5px rgba(0,0,0,0.04) !important;
+      font-size: 13px !important;
+      font-family: 'Sora', sans-serif !important;
+      margin-top: 4px !important;
+      overflow: hidden !important;
+      z-index: 99999 !important;
+  }
+  #returnForm .ts-dropdown input {
+      border: none !important;
+      border-bottom: 1.5px solid #F1F5F9 !important;
+      border-radius: 0 !important;
+      padding: 10px 12px !important;
+      font-size: 13px !important;
+      font-family: 'Sora', sans-serif !important;
+      width: 100% !important;
+      outline: none !important;
+      color: #1E293B !important;
+      background: #F8FAFC !important;
+      box-shadow: none !important;
+  }
+  #returnForm .ts-dropdown input::placeholder {
+      color: #94A3B8 !important;
+  }
+  #returnForm .ts-dropdown .option {
+      padding: 10px 14px !important;
+      font-size: 13px !important;
+      color: #1E293B !important;
+      cursor: pointer !important;
+      text-transform: capitalize !important;
+      transition: background 0.12s ease !important;
+      border-bottom: 1px solid #F8FAFC !important;
+  }
+  #returnForm .ts-dropdown .option:last-child {
+      border-bottom: none !important;
+  }
+  #returnForm .ts-dropdown .option:hover,
+  #returnForm .ts-dropdown .option.active {
+      background: #E6F1FB !important;
+      color: #185FA5 !important;
+  }
+  #returnForm .ts-dropdown .option[data-value=""] {
+      color: #94A3B8 !important;
+      font-style: italic !important;
+      text-transform: none !important;
+  }
+  #returnForm .ts-wrapper .item {
+      font-size: 13px !important;
+      color: #1E293B !important;
+      text-transform: capitalize !important;
+  }
+  
+  /* ── Page Variables ── */
+  :root {
+      --nm-primary: #185FA5;
+      --nm-primary-light: #E6F1FB;
+      --nm-primary-mid: #378ADD;
+      --nm-success: #3B6D11;
+      --nm-success-light: #EAF3DE;
+      --nm-danger: #A32D2D;
+      --nm-danger-light: #FCEBEB;
+      --nm-warn: #854F0B;
+      --nm-warn-light: #FAEEDA;
+      --nm-info: #0C447C;
+      --nm-info-light: #E0F2FE;
+      --nm-border: rgba(0,0,0,0.08);
+      --nm-surface: #ffffff;
+      --nm-surface2: #F8FAFC;
+      --nm-surface3: #F1F5F9;
+      --nm-text: #1E293B;
+      --nm-text2: #64748B;
+      --nm-text3: #94A3B8;
+      --nm-radius: 10px;
+      --nm-radius-lg: 14px;
+      --nm-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --nm-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --nm-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025);
+  }
+  
+  .nm-page { font-family: 'Sora', sans-serif; color: var(--nm-text); }
+  
+  /* ── Breadcrumb ── */
+  .nm-breadcrumb {
+      background: var(--nm-surface);
+      border: 1px solid var(--nm-border);
+      border-radius: var(--nm-radius);
+      padding: 12px 20px;
+  }
+  .nm-breadcrumb .breadcrumb { margin: 0; }
+  .nm-breadcrumb .breadcrumb-item a {
+      color: var(--nm-primary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 13px;
+  }
+  .nm-breadcrumb .breadcrumb-item.active {
+      color: var(--nm-text2);
+      font-size: 13px;
+  }
+  
+  /* ── Header Card ── */
+  .nm-header-card {
+      background: linear-gradient(135deg, var(--nm-primary) 0%, var(--nm-primary-mid) 100%);
+      border-radius: var(--nm-radius-lg);
+      padding: 24px 28px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+  }
+  .nm-header-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+  }
+  .nm-header-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+  }
+  .nm-header-subtitle {
+      font-size: 13px;
+      opacity: 0.85;
+      font-weight: 400;
+  }
+  
+  /* ── Stats Cards ── */
+  .nm-stat-card {
+      background: var(--nm-surface);
+      border: 1px solid var(--nm-border);
+      border-radius: var(--nm-radius);
+      padding: 20px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+  }
+  .nm-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--nm-shadow-md);
+  }
+  .nm-stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: var(--nm-radius) 0 0 var(--nm-radius);
+  }
+  .nm-stat-card.total::before { background: var(--nm-primary); }
+  .nm-stat-card.stock::before { background: var(--nm-success); }
+  .nm-stat-card.expired::before { background: var(--nm-danger); }
+  .nm-stat-card.expiring::before { background: var(--nm-warn); }
+  .nm-stat-card.nonmoving::before { background: var(--nm-text3); }
+  
+  .nm-stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--nm-text2);
+      margin-bottom: 8px;
+  }
+  .nm-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+  }
+  .nm-stat-value.total { color: var(--nm-primary); }
+  .nm-stat-value.stock { color: var(--nm-success); }
+  .nm-stat-value.expired { color: var(--nm-danger); }
+  .nm-stat-value.expiring { color: var(--nm-warn); }
+  .nm-stat-value.nonmoving { color: var(--nm-text2); }
+  .nm-stat-delta {
+      font-size: 11px;
+      color: var(--nm-text3);
+      font-weight: 500;
+  }
+  
+  /* ── Filter Bar ── */
+  .nm-filter-bar {
+      background: var(--nm-surface);
+      border: 1px solid var(--nm-border);
+      border-radius: var(--nm-radius);
+      padding: 16px 20px;
+  }
+  .nm-filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--nm-text2);
+      margin-bottom: 6px;
+  }
+  .nm-filter-input {
+      height: 38px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.15s;
+      color: #1E293B;
+  }
+  .nm-filter-input:focus {
+      border-color: var(--nm-primary);
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+  }
+  
+  /* ── FIX: Search Input Group Alignment ── */
+  .nm-filter-bar .input-group {
+      height: 38px;
+  }
+  .nm-filter-bar .input-group-text {
+      height: 38px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid #E2E8F0;
+      border-right: none;
+      background: #fff;
+      border-radius: 8px 0 0 8px;
+      color: var(--nm-text3);
+  }
+  .nm-filter-bar .input-group .form-control {
+      height: 38px;
+      border: 1.5px solid #E2E8F0;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      padding-left: 0;
+      font-size: 13px;
+      font-family: 'Sora', sans-serif;
+      color: #1E293B;
+  }
+  .nm-filter-bar .input-group .form-control:focus {
+      border-color: var(--nm-primary);
+      box-shadow: none;
+  }
+  .nm-filter-bar .input-group:focus-within .input-group-text {
+      border-color: var(--nm-primary);
+  }
+  .nm-filter-bar .input-group:focus-within .form-control {
+      border-color: var(--nm-primary);
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.1);
+  }
+  
+  .nm-btn-filter {
+      height: 38px;
+      padding: 0 20px;
+      background: var(--nm-primary);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+  }
+  .nm-btn-filter:hover {
+      background: var(--nm-info);
+      transform: translateY(-1px);
+  }
+  .nm-btn-export {
+      height: 38px;
+      padding: 0 16px;
+      background: var(--nm-success-light);
+      border: 1.5px solid #C0DD97;
+      border-radius: 8px;
+      color: var(--nm-success);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+  }
+  .nm-btn-export:hover {
+      background: #C0DD97;
+      color: #173404;
+  }
+  
+  /* ── Status Badges ── */
+  .nm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      font-family: 'Sora', sans-serif;
+  }
+  .nm-badge.expired {
+      background: var(--nm-danger-light);
+      color: var(--nm-danger);
+      border: 1px solid #F7C1C1;
+  }
+  .nm-badge.expiring {
+      background: var(--nm-warn-light);
+      color: var(--nm-warn);
+      border: 1px solid #FAC775;
+  }
+  .nm-badge.nonmoving {
+      background: #F1F5F9;
+      color: var(--nm-text2);
+      border: 1px solid #E2E8F0;
+  }
+  .nm-badge.ok {
+      background: var(--nm-success-light);
+      color: var(--nm-success);
+      border: 1px solid #C0DD97;
+  }
+  
+  /* ── Table ── */
+  .nm-table-wrap {
+      background: var(--nm-surface);
+      border: 1px solid var(--nm-border);
+      border-radius: var(--nm-radius);
+      overflow: hidden;
+  }
+  .nm-table {
+      width: 100%;
+      margin: 0;
+      font-size: 13px;
+      font-family: 'Sora', sans-serif;
+  }
+  .nm-table thead th {
+      background: var(--nm-surface2);
+      color: var(--nm-text2);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--nm-border);
+      white-space: nowrap;
+      font-family: 'Sora', sans-serif;
+  }
+  .nm-table tbody td {
+      padding: 14px 16px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--nm-border);
+      color: var(--nm-text);
+  }
+  .nm-table tbody tr {
+      transition: background 0.15s;
+  }
+  .nm-table tbody tr:hover {
+      background: var(--nm-surface2);
+  }
+  .nm-table tbody tr:last-child td {
+      border-bottom: none;
+  }
+  
+  .nm-table tbody tr.expired td:first-child {
+      border-left: 3px solid var(--nm-danger);
+  }
+  .nm-table tbody tr.expiring td:first-child {
+      border-left: 3px solid var(--nm-warn);
+  }
+  .nm-table tbody tr.nonmoving td:first-child {
+      border-left: 3px solid var(--nm-text3);
+  }
+  
+  .nm-cell-product {
+      font-weight: 600;
+      color: var(--nm-text);
+  }
+  .nm-cell-batch {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--nm-text2);
+      background: var(--nm-surface3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-block;
+  }
+  .nm-cell-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 13px;
+  }
+  .nm-cell-date {
+      color: var(--nm-text2);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+  }
+  .nm-cell-date i {
+      color: var(--nm-text3);
+      font-size: 13px;
+  }
+  .nm-cell-age {
+      font-size: 12px;
+  }
+  .nm-cell-age .days {
+      color: var(--nm-text3);
+      font-size: 11px;
+  }
+  
+  /* ── Empty State ── */
+  .nm-empty {
+      text-align: center;
+      padding: 60px 20px;
+  }
+  .nm-empty-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--nm-surface2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+  }
+  .nm-empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--nm-text);
+      margin-bottom: 6px;
+  }
+  .nm-empty-text {
+      font-size: 13px;
+      color: var(--nm-text2);
+  }
+  
+  /* ── Pagination ── */
+  .nm-pagination {
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--nm-border);
+  }
+  .nm-page-link {
+      min-width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      border: 1px solid var(--nm-border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--nm-text2);
+      text-decoration: none;
+      transition: all 0.15s;
+      font-family: 'Sora', sans-serif;
+  }
+  .nm-page-link:hover {
+      background: var(--nm-surface2);
+      color: var(--nm-primary);
+      border-color: var(--nm-primary);
+  }
+  .nm-page-link.active {
+      background: var(--nm-primary);
+      color: #fff;
+      border-color: var(--nm-primary);
+  }
+  .nm-page-link.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+  }
+  
+  /* ── Legend ── */
+  .nm-legend {
+      display: flex;
+      gap: 20px;
+      padding: 12px 16px;
+      background: var(--nm-surface2);
+      border-radius: var(--nm-radius);
+      margin-bottom: 16px;
+  }
+  .nm-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--nm-text2);
+      font-weight: 500;
+      font-family: 'Sora', sans-serif;
+  }
+  .nm-legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+  }
+  
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+      .nm-stat-card { margin-bottom: 12px; }
+      .nm-table-wrap { overflow-x: auto; }
+      .nm-table { min-width: 900px; }
+  }
+  </style>
+
+  <section class="nm-page py-3">
+      <div class="container-fluid">
+          <div class="nm-header-card mb-4">
+              <div class="nm-header-title">
+                  <i class="bi bi-box-seam"></i>
+                  Non Movable / Expiring Stock
+              </div>
+              <div class="nm-header-subtitle">
+                  Monitor batches that are expired, expiring soon, or not moving since last sale
+              </div>
+          </div>
+  
+          <%- include("./partials/messages"); %>
+  
+          <div class="row g-3 mb-4">
+              <div class="col-xl col-md-4 col-6">
+                  <div class="nm-stat-card total">
+                      <div class="nm-stat-label">Total Batches</div>
+                      <div class="nm-stat-value total"><%= summary.totalCount || 0 %></div>
+                      <div class="nm-stat-delta">All tracked batches</div>
+                  </div>
+              </div>
+              <div class="col-xl col-md-4 col-6">
+                  <div class="nm-stat-card stock">
+                      <div class="nm-stat-label">Current Stock</div>
+                      <div class="nm-stat-value stock"><%= summary.totalCurrentStock || 0 %></div>
+                      <div class="nm-stat-delta">Units in inventory</div>
+                  </div>
+              </div>
+              <div class="col-xl col-md-4 col-6">
+                  <div class="nm-stat-card expired">
+                      <div class="nm-stat-label">Expired</div>
+                      <div class="nm-stat-value expired"><%= summary.expiredCount || 0 %></div>
+                      <div class="nm-stat-delta">Requires action</div>
+                  </div>
+              </div>
+              <div class="col-xl col-md-4 col-6">
+                  <div class="nm-stat-card expiring">
+                      <div class="nm-stat-label">Expiring Soon</div>
+                      <div class="nm-stat-value expiring"><%= summary.expiringSoonCount || 0 %></div>
+                      <div class="nm-stat-delta">Within 30 days</div>
+                  </div>
+              </div>
+              <div class="col-xl col-md-4 col-6">
+                  <div class="nm-stat-card nonmoving">
+                      <div class="nm-stat-label">Non Moving</div>
+                      <div class="nm-stat-value nonmoving"><%= summary.nonMovingCount || 0 %></div>
+                      <div class="nm-stat-delta">≥ 2 months idle</div>
+                  </div>
+              </div>
+          </div>
+  
+          <div class="nm-filter-bar mb-3">
+              <form method="GET" action="/billing/nonMovableStocks" class="row g-3 align-items-end" id="filterForm">
+                  <div class="col-lg-3 col-md-4">
+                      <div class="nm-filter-label">Supplier</div>
+                      <select name="supplierId" id="supplierId" class="form-select nm-filter-input">
+                          <option value="">All Suppliers</option>
+                          <% if (suppliers && suppliers.length) { %>
+                              <% suppliers.forEach(function(s) { %>
+                                  <option value="<%= s.Id %>" <%= (selectedSupplierId && selectedSupplierId == s.Id ? 'selected' : '') %>>
+                                      <%= s.Name %>
+                                  </option>
+                              <% }) %>
+                          <% } %>
+                      </select>
+                  </div>
+  
+                  <div class="col-lg-4 col-md-5">
+                      <div class="nm-filter-label">Product Search</div>
+                      <div class="input-group">
+                          <span class="input-group-text">
+                              <i class="bi bi-search" style="font-size: 13px;"></i>
+                          </span>
+                          <input
+                              type="text"
+                              id="search"
+                              name="search"
+                              class="form-control"
+                              placeholder="Search by product name..."
+                              value="<%= search || '' %>"
+                          >
+                      </div>
+                  </div>
+  
+                  <div class="col-lg-5 col-md-3 d-flex gap-2 justify-content-md-end">
+                      <button type="submit" class="nm-btn-filter">
+                          <i class="bi bi-funnel"></i> Filter
+                      </button>
+                      <a
+                          href="/billing/nonMovableStocks?<% if (selectedSupplierId) { %>supplierId=<%= selectedSupplierId %>&<% } %><% if (search) { %>search=<%= encodeURIComponent(search) %>&<% } %>download=true"
+                          class="nm-btn-export"
+                      >
+                          <i class="bi bi-file-earmark-excel"></i> Export
+                      </a>
+                  </div>
+              </form>
+          </div>
+  
+          <div class="nm-legend">
+              <div class="nm-legend-item">
+                  <span class="nm-legend-dot" style="background: var(--nm-danger);"></span>
+                  Expired
+              </div>
+              <div class="nm-legend-item">
+                  <span class="nm-legend-dot" style="background: var(--nm-warn);"></span>
+                  Expiring Soon
+              </div>
+              <div class="nm-legend-item">
+                  <span class="nm-legend-dot" style="background: var(--nm-text3);"></span>
+                  Non Moving (≥ 2 months)
+              </div>
+          </div>
+  
+          <div class="nm-table-wrap">
+              <div class="table-responsive">
+                  <table class="nm-table">
+                      <thead>
+                          <tr>
+                              <th>Supplier</th>
+                              <th>Product</th>
+                              <th>Batch</th>
+                              <th class="text-end">Stock Qty</th>
+                              <th class="text-end">Sold</th>
+                              <th class="text-end">Current</th>
+                              <th>Expiry Date</th>
+                              <th>Last Sale</th>
+                              <th>Movement Age</th>
+                              <th>Status</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <% if (!stocks || stocks.length === 0) { %>
+                              <tr>
+                                  <td colspan="10">
+                                      <div class="nm-empty">
+                                          <div class="nm-empty-icon">📦</div>
+                                          <div class="nm-empty-title">No stock found</div>
+                                          <div class="nm-empty-text">No non-movable or expiring stock matches your criteria.</div>
+                                      </div>
+                                  </td>
+                              </tr>
+                          <% } else { %>
+                              <% stocks.forEach(function(row) { 
+                                  let statusClass = '';
+                                  let statusBadge = '';
+                                  if (row.StatusFlag === 'EXPIRED') {
+                                      statusClass = 'expired';
+                                      statusBadge = '<span class="nm-badge expired"><i class="bi bi-exclamation-octagon-fill"></i>Expired</span>';
+                                  } else if (row.StatusFlag === 'EXPIRING_SOON') {
+                                      statusClass = 'expiring';
+                                      statusBadge = '<span class="nm-badge expiring"><i class="bi bi-alarm-fill"></i>Expiring Soon</span>';
+                                  } else if (row.StatusFlag === 'NON_MOVING') {
+                                      statusClass = 'nonmoving';
+                                      statusBadge = '<span class="nm-badge nonmoving"><i class="bi bi-arrow-repeat"></i>Non Moving</span>';
+                                  } else {
+                                      statusBadge = '<span class="nm-badge ok"><i class="bi bi-check-circle-fill"></i>OK</span>';
+                                  }
+                              %>
+                                  <tr class="<%= statusClass %>">
+                                      <td>
+                                          <span class="text-capitalize"><%= row.SupplierName || '-' %></span>
+                                      </td>
+                                      <td>
+                                          <span class="nm-cell-product text-capitalize"><%= row.ProductName %></span>
+                                      </td>
+                                      <td>
+                                          <span class="nm-cell-batch"><%= row.BatchNumber || '-' %></span>
+                                      </td>
+                                      <td class="text-end">
+                                          <span class="nm-cell-number text-muted"><%= row.BatchQuantity %></span>
+                                      </td>
+                                      <td class="text-end">
+                                          <span class="nm-cell-number text-muted"><%= row.QuantitySold %></span>
+                                      </td>
+                                      <td class="text-end">
+                                          <span class="nm-cell-number" style="color: var(--nm-primary);"><%= row.CurrentStock %></span>
+                                      </td>
+                                      <td>
+                                          <% if (row.ExpiryDate) { %>
+                                              <span class="nm-cell-date">
+                                                  <i class="bi bi-calendar-event"></i>
+                                                  <%= new Date(row.ExpiryDate).toLocaleDateString('en-GB').replace(/\//g, '-') %>
+                                              </span>
+                                          <% } else { %>
+                                              <span class="text-muted">—</span>
+                                          <% } %>
+                                      </td>
+                                      <td>
+                                          <% if (row.LastSaleDate) { %>
+                                              <span class="nm-cell-date">
+                                                  <i class="bi bi-cash-coin"></i>
+                                                  <%= new Date(row.LastSaleDate).toLocaleDateString('en-GB').replace(/\//g, '-') %>
+                                              </span>
+                                          <% } else { %>
+                                              <span class="text-muted small">No sale</span>
+                                          <% } %>
+                                      </td>
+                                      <td>
+                                          <span class="nm-cell-age">
+                                              <span class="text-capitalize fw-medium"><%= row.MovementAge %></span>
+                                              <% if (row.DaysSinceMovement != null) { %>
+                                                  <span class="days">(<%= row.DaysSinceMovement %> days)</span>
+                                              <% } %>
+                                          </span>
+                                      </td>
+                                      <td><%- statusBadge %></td>
+                                  </tr>
+                              <% }) %>
+                          <% } %>
+                      </tbody>
+                  </table>
+              </div>
+  
+              <% if (totalPages && totalPages > 1) { %>
+                  <div class="nm-pagination">
+                      <% const baseQuery = (pageNum) => {
+                          let q = [];
+                          if (selectedSupplierId) q.push('supplierId=' + selectedSupplierId);
+                          if (search) q.push('search=' + encodeURIComponent(search));
+                          q.push('page=' + pageNum);
+                          return '/billing/nonMovableStocks?' + q.join('&');
+                      }; %>
+  
+                      <a class="nm-page-link <%= page <= 1 ? 'disabled' : '' %>" href="<%= page > 1 ? baseQuery(page - 1) : '#' %>">
+                          <i class="bi bi-chevron-left"></i>
+                      </a>
+  
+                      <% for (let p = 1; p <= totalPages; p++) { %>
+                          <a class="nm-page-link <%= p === page ? 'active' : '' %>" href="<%= baseQuery(p) %>"><%= p %></a>
+                      <% } %>
+  
+                      <a class="nm-page-link <%= page >= totalPages ? 'disabled' : '' %>" href="<%= page < totalPages ? baseQuery(page + 1) : '#' %>">
+                          <i class="bi bi-chevron-right"></i>
+                      </a>
+                  </div>
+              <% } %>
+          </div>
+  
+      </div>
+  </section>

@@ -1,0 +1,62 @@
+<!-- views/partials/confirmModal.ejs
+     Bootstrap confirm for any button/link with data-confirm="message".
+     Optional: data-confirm-title, data-confirm-ok (button text),
+               data-confirm-variant (success | danger | primary | warning) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalTitle">Please confirm</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="confirmModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">No, go back</button>
+        <button type="button" class="btn btn-primary" id="confirmModalOk">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    if (window.__confirmModalReady) return;
+    window.__confirmModalReady = true;
+
+    var modalEl = document.getElementById('confirmModal');
+    var okBtn = document.getElementById('confirmModalOk');
+    var pending = null;
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-confirm]');
+      if (!btn) return;
+
+      // Second click (after user pressed Yes) → let it through
+      if (btn.dataset.confirmed === '1') { btn.dataset.confirmed = ''; return; }
+
+      e.preventDefault();
+
+      // Fallback if Bootstrap JS isn't loaded on the page
+      if (!window.bootstrap || !bootstrap.Modal) {
+        if (confirm(btn.dataset.confirm)) { btn.dataset.confirmed = '1'; btn.click(); }
+        return;
+      }
+
+      pending = btn;
+      document.getElementById('confirmModalTitle').textContent = btn.dataset.confirmTitle || 'Please confirm';
+      document.getElementById('confirmModalBody').textContent = btn.dataset.confirm;
+      okBtn.textContent = btn.dataset.confirmOk || 'Yes';
+      okBtn.className = 'btn btn-' + (btn.dataset.confirmVariant || 'primary');
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    });
+
+    okBtn.addEventListener('click', function () {
+      if (!pending) return;
+      var btn = pending;
+      pending = null;
+      bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+      btn.dataset.confirmed = '1';
+      btn.click(); // re-clicks the original submit button, so its name/value (e.g. status=Approved) is sent
+    });
+  })();
+</script>

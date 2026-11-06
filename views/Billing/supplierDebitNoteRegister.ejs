@@ -1,0 +1,804 @@
+<%
+/*
+  Supplier Debit Note Register
+  Expects:
+    rows        – array of return objects with .CreatedAt, .SupplierName, .products[], .TotalAmount, .ReturnNumber, .Id, .ReturnStatus, .ItemStatusSummary
+    suppliers   – array of { Id, Name }
+    fromDate    – string (DD-MM-YYYY) or undefined
+    toDate      – string (DD-MM-YYYY) or undefined
+    supplierId  – selected supplier id or undefined
+*/
+%>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* ── Reset & Base ─────────────────────────────────────────── */
+  .dn-page *,
+  .dn-page *::before,
+  .dn-page *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .dn-page {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: #f4f5f7;
+    padding: 28px 24px;
+    min-height: 100vh;
+  }
+
+  /* ── Page Header ──────────────────────────────────────────── */
+  .dn-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dn-title-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 3px;
+  }
+
+  .dn-title {
+    font-size: 21px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.3px;
+  }
+
+  /* ── Button: Export ───────────────────────────────────────── */
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #1a9e6a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .btn-export:hover { background: #158a5a; color: #fff; text-decoration: none; }
+
+  /* ── Stat Cards ───────────────────────────────────────────── */
+  .dn-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 240px));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  .stat-card.accent-teal::before  { background: #1a9e6a; }
+  .stat-card.accent-blue::before  { background: #2c7be5; }
+  .stat-card.accent-amber::before { background: #d97706; }
+  .stat-card.accent-red::before   { background: #dc2626; }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 7px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.5px;
+  }
+
+  /* ── Filter Card ──────────────────────────────────────────── */
+  .filter-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+
+  @media (max-width: 768px) {
+    .filter-grid { grid-template-columns: 1fr 1fr; }
+    .filter-grid .filter-col-supplier,
+    .filter-grid .filter-col-submit { grid-column: 1 / -1; }
+  }
+
+  .filter-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 0.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #111827;
+    background: #f9fafb;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .filter-input:focus,
+  .filter-select:focus {
+    outline: none;
+    border-color: #2c7be5;
+    box-shadow: 0 0 0 3px rgba(44,123,229,0.12);
+    background: #fff;
+  }
+
+  .filter-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+
+  .btn-search {
+    width: 100%;
+    padding: 9px 22px;
+    background: #2c7be5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-search:hover { background: #1a6dcf; }
+
+  /* ── Table Card ───────────────────────────────────────────── */
+  .table-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-responsive { overflow-x: auto; }
+
+  .dn-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  /* Head */
+  .dn-table thead th {
+    background: #f9fafb;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #6b7280;
+    text-align: left;
+    border-bottom: 0.5px solid #e5e7eb;
+    white-space: nowrap;
+  }
+  .dn-table thead th.col-right  { text-align: right; }
+  .dn-table thead th.col-center { text-align: center; }
+
+  /* Parent row (per debit note) */
+  .dn-table tr.row-parent td {
+    padding: 13px 14px;
+    background: #f9fafb;
+    border-top: 1.5px solid #e5e7eb;
+    border-bottom: 0.5px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .dn-table tr.row-parent:first-of-type td { border-top: none; }
+
+  /* Child rows (line items) */
+  .dn-table tr.row-child td {
+    padding: 8px 14px;
+    border-bottom: 0.5px solid #f3f4f6;
+    background: #fff;
+    vertical-align: middle;
+    color: #374151;
+  }
+
+  .dn-table tr.row-child:last-child td { border-bottom: none; }
+
+  /* Empty state */
+  .dn-table tr.row-empty td {
+    padding: 40px 14px;
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+  }
+
+  /* ── Cell Content Styles ─────────────────────────────────── */
+  .cell-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .cell-supplier {
+    font-weight: 500;
+    color: #111827;
+  }
+
+  .cell-items {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .cell-items strong { color: #374151; }
+
+  .cell-value-main {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a9e6a;
+    text-align: right;
+    display: block;
+  }
+
+  .cell-value-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #6b7280;
+    text-align: right;
+    display: block;
+  }
+
+  .badge-dn {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 5px;
+    background: #fee2e2;
+    color: #991b1b;
+    letter-spacing: 0.2px;
+  }
+
+  .badge-batch {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 0.5px solid #e5e7eb;
+  }
+
+  /* ── Return Status Badge ─────────────────────────────────── */
+  .badge-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge-status.status-settled         { background: #d1fae5; color: #065f46; }
+  .badge-status.status-partial-settled { background: #fef3c7; color: #92400e; }
+  .badge-status.status-pending         { background: #fee2e2; color: #991b1b; }
+  .badge-status.status-default         { background: #f3f4f6; color: #4b5563; }
+  .btn-view.is-done { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; cursor: default; pointer-events: none; }
+  .btn-view.btn-done { color: #065f46; border-color: #a7f3d0; background: #ecfdf5; }
+  .btn-view.btn-done:hover { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+
+  /* NEW: credit notes column */
+  .cn-line { margin-bottom: 6px; }
+  .cn-line:last-child { margin-bottom: 0; }
+  .badge-cn { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 5px; background: #d1fae5; color: #065f46; }
+  .cn-amt { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #065f46; margin-left: 4px; white-space: nowrap; }
+  .cn-meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .cn-none { color: #9ca3af; }
+  .mono-sm { font-family: 'JetBrains Mono', monospace; color: #065f46; }
+
+  /* ── Item Status Summary Pills (header row) ──────────────── */
+  .item-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .pill-accepted { background: #d1fae5; color: #065f46; }
+  .pill-rejected { background: #fee2e2; color: #991b1b; }
+  .pill-pending  { background: #fef3c7; color: #92400e; }
+
+  .pill svg { flex-shrink: 0; }
+
+  /* ── Product-level item status ───────────────────────────── */
+  .item-status-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .qty-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .qty-label { color: #9ca3af; font-weight: 400; min-width: 28px; }
+  .qty-accepted { color: #065f46; }
+  .qty-rejected { color: #991b1b; }
+  .qty-pending  { color: #92400e; }
+
+  .badge-item-status {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .badge-item-status.item-accepted { background: #d1fae5; color: #065f46; }
+  .badge-item-status.item-partial  { background: #fef3c7; color: #92400e; }
+  .badge-item-status.item-rejected { background: #fee2e2; color: #991b1b; }
+  .badge-item-status.item-pending  { background: #f3f4f6; color: #4b5563; }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border: 0.5px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
+    color: #2c7be5;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+    margin-bottom: 4px;
+  }
+  .btn-view:last-child { margin-bottom: 0; }
+  .btn-view:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1a6dcf;
+    text-decoration: none;
+  }
+
+  .action-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* ── Print ───────────────────────────────────────────────── */
+  @media print {
+    .no-print { display: none !important; }
+    .dn-page  { background: #fff; padding: 0; }
+    .filter-card { display: none; }
+    .table-card { border: 1px solid #ccc; border-radius: 0; }
+  }
+</style>
+
+<%
+/* ── Helpers ── */
+function formatReturnStatus(status) {
+  switch ((status || '').toUpperCase()) {
+    case 'SETTLED':         return { label: 'Settled',         cls: 'status-settled' };
+    case 'PARTIAL_SETTLED': return { label: 'Partial Settled', cls: 'status-partial-settled' };
+    case 'PENDING':
+    case 'SENT':            return { label: 'Awaiting approval', cls: 'status-pending' };
+    case 'CANCELLED':       return { label: 'Cancelled',       cls: 'status-default' };
+    case 'WRITTEN_OFF':     return { label: 'Written off',     cls: 'status-pending' };
+    case 'SETTLED_PART_WRITTEN_OFF': return { label: 'Settled - part written off', cls: 'status-partial-settled' };
+    default:                return { label: status || '—',     cls: 'status-default' };
+  }
+}
+
+function formatItemStatus(status) {
+  switch ((status || '').toUpperCase()) {
+    case 'SETTLED': return { label: 'Accepted', cls: 'item-accepted' };
+    case 'PARTIAL':  return { label: 'Partial',  cls: 'item-partial' };
+    case 'REJECTED': return { label: 'Rejected', cls: 'item-rejected' };
+    default:         return { label: 'Pending',  cls: 'item-pending' };
+  }
+}
+%>
+
+<div class="dn-page">
+
+  <!-- ── Page Header ── -->
+  <div class="dn-header">
+    <div>
+      <div class="dn-title-eyebrow">Procurement</div>
+      <h4 class="dn-title">Supplier Debit Note Register</h4>
+    </div>
+
+    <div class="no-print">
+      <button id="exportExcel" class="btn-export" data-export-table="returnTable"
+      data-export-name="supplier_debit_note">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="white"/>
+          <path d="M8 2v7M5 6.5l3 3 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ── Summary Cards ── -->
+  <div class="dn-stats">
+
+    <div class="stat-card accent-teal">
+      <div class="stat-label">Total Debit Notes</div>
+      <div class="stat-value"><%= rows.length %></div>
+    </div>
+
+    <div class="stat-card accent-blue">
+      <div class="stat-label">Total Debit Value</div>
+      <div class="stat-value">
+        ₹ <%= rows.reduce((sum, r) => sum + r.TotalAmount, 0).toLocaleString('en-IN') %>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ── Filters ── -->
+  <div class="filter-card no-print">
+    <form method="post" action="" >
+      <div class="filter-grid">
+
+        <div>
+          <label class="filter-label" for="FromDate">From Date</label>
+          <input
+            type="text"
+            name="fromDate"
+            id="FromDate" 
+            autocomplete="off"
+            class="filter-input"
+            value="<%= fromDate || '' %>"
+            placeholder="DD-MM-YYYY"
+          >
+        </div>
+
+        <div>
+          <label class="filter-label" for="ToDate">To Date</label>
+          <input
+            type="text"
+            name="toDate"
+            id="ToDate"
+            autocomplete="off"
+            class="filter-input"
+            value="<%= toDate || '' %>"
+            placeholder="DD-MM-YYYY"
+          >
+        </div>
+
+        <div class="filter-col-supplier">
+          <label class="filter-label" for="supplierId">Supplier</label>
+          <select name="supplierId" id="supplierId" class="filter-select">
+            <option value="">All Suppliers</option>
+            <% suppliers.forEach(s => { %>
+              <option value="<%= s.Id %>" <%= (supplierId == s.Id) ? 'selected' : '' %>>
+                <%= s.Name %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="filter-col-submit">
+          <button type="submit" class="btn-search">Search</button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+
+  <!-- ── Register Table ── -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="dn-table" id="returnTable">
+
+        <thead>
+          <tr>
+            <th style="width:110px">Date</th>
+            <th style="width:180px">Supplier</th>
+            <th>Product</th>
+            <th style="width:110px">Batch</th>
+            <th class="col-center" style="width:60px">Qty</th>
+            <th class="col-center" style="width:160px">Accepted / Rejected</th>
+            <th style="width:120px">Item Status</th>
+            <th class="col-right" style="width:110px">Value</th>
+            <th style="width:130px">Debit Note</th>
+            <th style="width:210px">Credit Notes / Invoice Ref</th>
+            <th style="width:100px">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <% if (rows.length === 0) { %>
+            <tr class="row-empty">
+              <td colspan="11">No debit notes found for the selected criteria.</td>
+            </tr>
+          <% } %>
+
+          <% rows.forEach(returnRow => {
+               const rs = formatReturnStatus(returnRow.ReturnStatus);
+               const iss = returnRow.ItemStatusSummary || {};
+          %>
+
+            <!-- ── Parent row: one per debit note ── -->
+            <tr class="row-parent">
+
+              <!-- Date -->
+              <td>
+                <span class="cell-date">
+                  <%= new Date(returnRow.CreatedAt).toISOString().slice(0, 10) %>
+                </span>
+              </td>
+
+              <!-- Supplier + Return Status -->
+              <td>
+                <span class="cell-supplier"><%= returnRow.SupplierName %></span><br>
+                <span class="badge-status <%= rs.cls %>" style="margin-top:5px"><%= rs.label %></span>
+              </td>
+
+              <!-- Product: span — show item count + accepted/rejected summary pills -->
+              <td colspan="2">
+                <span class="cell-items" style="display:block;margin-bottom:7px;">
+                  Total Items: <strong><%= returnRow.products.length %></strong>
+                </span>
+                <div class="item-summary">
+                  <% if (iss.AcceptedQty > 0) { %>
+                    <span class="pill pill-accepted">
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2.5 2.5L8 3" stroke="#065f46" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Acc: <%= iss.AcceptedQty %>
+                    </span>
+                  <% } %>
+                  <% if (iss.RejectedQty > 0) { %>
+                    <span class="pill pill-rejected">
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                        <path d="M3 3l4 4M7 3l-4 4" stroke="#991b1b" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                      Rej: <%= iss.RejectedQty %>
+                    </span>
+                  <% } %>
+                  <% if (iss.PendingQty > 0) { %>
+                    <span class="pill pill-pending">
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                        <circle cx="5" cy="5" r="3.5" stroke="#92400e" stroke-width="1.3"/>
+                        <path d="M5 3v2l1.2 1.2" stroke="#92400e" stroke-width="1.2" stroke-linecap="round"/>
+                      </svg>
+                      Pend: <%= iss.PendingQty %>
+                    </span>
+                  <% } %>
+                </div>
+              </td>
+
+              <!-- Qty (blank for parent) -->
+              <td></td>
+
+              <!-- Accepted/Rejected (blank for parent) -->
+              <td></td>
+
+              <!-- Item Status (blank for parent) -->
+              <td></td>
+
+              <!-- Total Value -->
+              <td>
+                <span class="cell-value-main">
+                  ₹ <%= Number(returnRow.TotalAmount).toFixed(2) %>
+                </span>
+              </td>
+
+              <!-- Debit Note Number -->
+              <td>
+                <span class="badge-dn"><%= returnRow.ReturnNumber %></span>
+              </td>
+
+              <!-- NEW: credit notes received for this debit note -->
+              <td>
+                <% if ((returnRow.CreditNotes || []).length) { %>
+                  <% returnRow.CreditNotes.forEach(function (c) { %>
+                    <div class="cn-line">
+                      <span class="badge-cn"><%= c.Number || 'No CN no' %></span>
+                      <span class="cn-amt">₹ <%= Number(c.Total).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></span>
+                      <div class="cn-meta"><%= [c.Date, c.InvoiceRefNo ? 'Inv ' + c.InvoiceRefNo : '', c.PoNo ? 'PO ' + c.PoNo : '', c.Type !== 'Credit Note' ? c.Type : ''].filter(Boolean).join(' · ') %></div>
+                    </div>
+                  <% }) %>
+                  <% if (returnRow.CreditNotes.length > 1) { %>
+                    <div class="cn-meta" style="font-weight:600">Total ₹ <%= Number(returnRow.CreditTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></div>
+                  <% } %>
+                <% } else { %>
+                  <span class="cn-none">—</span>
+                <% } %>
+              </td>
+
+              <!-- Actions -->
+              <td>
+                <div class="action-cell">
+                  <% if (returnRow.CanSettle !== false) { %>
+                  <a href="/billing/individualSupplierExpProductSettlement/<%= returnRow.Id %>" class="btn-view">
+                    Settle
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                  <% } else { %>
+                  <!-- CHANGED: a settled / cancelled return can still be opened (credit notes, write-off, history) -->
+                  <a href="/billing/individualSupplierExpProductSettlement/<%= returnRow.Id %>" class="btn-view btn-done" title="See the credit notes and what was written off">
+                    Details
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                  <% } %>
+                  <a href="/billing/individualSupplierDebitNote/<%= returnRow.Id %>" class="btn-view">
+                    View
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                </div>
+              </td>
+
+            </tr>
+
+            <!-- ── Child rows: one per line item ── -->
+            <% returnRow.products.forEach(item => {
+                 const its = formatItemStatus(item.ItemStatus);
+                 const pending = (item.Quantity || 0) - (item.AcceptedQty || 0) - (item.RejectedQty || 0);
+            %>
+              <tr class="row-child">
+
+                <!-- Date (empty) -->
+                <td></td>
+
+                <!-- Supplier (empty) -->
+                <td></td>
+
+                <!-- Product name -->
+                <td class="text-capitalize"><%= item.ProductName %></td>
+
+                <!-- Batch -->
+                <td><span class="badge-batch"><%= item.BatchNumber %></span></td>
+
+                <!-- Total Qty -->
+                <td style="text-align:center">
+                  <strong><%= item.Quantity %></strong>
+                </td>
+
+                <!-- Accepted / Rejected breakdown -->
+                <td style="text-align:center">
+                  <div class="item-status-cell" style="align-items:center">
+                    <div class="qty-row">
+                      <span class="qty-label">Acc</span>
+                      <span class="qty-accepted">
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle">
+                          <path d="M2 5l2.5 2.5L8 3" stroke="#065f46" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <%= item.AcceptedQty || 0 %>
+                      </span>
+                    </div>
+                    <div class="qty-row">
+                      <span class="qty-label">Rej</span>
+                      <span class="qty-rejected">
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="vertical-align:middle">
+                          <path d="M3 3l4 4M7 3l-4 4" stroke="#991b1b" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <%= item.RejectedQty || 0 %>
+                      </span>
+                    </div>
+                    <% if (pending > 0) { %>
+                    <div class="qty-row">
+                      <span class="qty-label">Pend</span>
+                      <span class="qty-pending"><%= pending %></span>
+                    </div>
+                    <% } %>
+                  </div>
+                </td>
+
+                <!-- Item Status badge -->
+                <td>
+                  <span class="badge-item-status <%= its.cls %>"><%= its.label %></span>
+                </td>
+
+                <!-- Line item value -->
+                <td>
+                  <span class="cell-value-item">
+                    ₹ <%= Number(item.Total).toFixed(2) %>
+                  </span>
+                </td>
+
+                <!-- Debit Note (empty) -->
+                <td></td>
+
+                <!-- NEW: credit note(s) of this product -->
+                <td>
+                  <% (item.CreditNotes || []).forEach(function (c) { %>
+                    <div class="cn-meta"><span class="mono-sm"><%= c.number || 'No CN no' %></span> · <%= c.qty %> u · ₹ <%= Number(c.total).toFixed(2) %><%= c.invoiceRefNo ? ' · Inv ' + c.invoiceRefNo : '' %></div>
+                  <% }) %>
+                </td>
+
+                <!-- Action (empty) -->
+                <td></td>
+
+              </tr>
+            <% }) %>
+
+          <% }) %>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

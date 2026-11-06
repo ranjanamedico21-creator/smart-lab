@@ -1,0 +1,290 @@
+<%# Assign board: admin, authorised people, and staff who can only take free packets for themselves. Scoped to .pkb so it cannot change the layout. %>
+<%- include("pickers") %>
+<style>
+  .pkb { --line:#e2e8f0; --ink:#0f172a; --muted:#64748b; --blue:#2563eb; --green:#15803d; --amber:#b45309; --purple:#7c3aed; --red:#b91c1c; color:var(--ink); padding:16px 4px 96px; }
+  .pkb .pkb-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:12px; }
+  .pkb h1 { font-size:20px; font-weight:700; margin:0 auto 0 0; }
+  .pkb .pkb-filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .pkb .pkb-filters > * { flex:1 1 150px; min-width:0; }
+  .pkb .pkb-filters .pkb-search { flex:2 1 220px; }
+  .pkb .pkb-tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px; }
+  .pkb .pkb-tab { flex:none; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; }
+  .pkb .pkb-tab.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .pkb .pkb-tab b { font-weight:700; margin-left:4px; }
+  .pkb table { width:100%; background:#fff; border:1px solid var(--line); border-radius:10px; border-collapse:separate; border-spacing:0; overflow:hidden; }
+  .pkb th { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); background:#f8fafc; padding:10px 12px; border-bottom:1px solid var(--line); }
+  .pkb td { padding:10px 12px; border-bottom:1px solid #f1f5f9; font-size:14px; vertical-align:top; overflow-wrap:anywhere; }
+  .pkb tr:last-child td { border-bottom:0; }
+  .pkb tr.sel td { background:#eff6ff; }
+  .pkb .code { font-family:ui-monospace,Menlo,monospace; font-size:12px; font-weight:600; color:var(--blue); }
+  .pkb .sub { font-size:12px; color:var(--muted); }
+  .pkb .pill { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:20px; white-space:nowrap; }
+  .pkb .s-UPLOADED { background:#dbeafe; color:#1d4ed8; } .pkb .s-ASSIGNED { background:#fef3c7; color:var(--amber); }
+  .pkb .s-DELIVERED { background:#dcfce7; color:var(--green); } .pkb .s-RETURNED { background:#ede9fe; color:var(--purple); }
+  .pkb .s-DISABLED { background:#fee2e2; color:var(--red); }
+  .pkb .row-acts { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+  .pkb .note { font-size:12px; margin-top:4px; }
+  .pkb .note.ret { color:var(--purple); } .pkb .note.off { color:var(--red); }
+  .pkb .empty { text-align:center; color:var(--muted); padding:40px 12px; background:#fff; border:1px solid var(--line); border-radius:10px; }
+  .pkb .pkb-bar { position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:1020; width:min(680px,calc(100% - 24px)); background:#1e293b; color:#fff; border-radius:12px; padding:10px 14px; display:none; flex-wrap:wrap; align-items:center; gap:8px; box-shadow:0 8px 30px rgba(0,0,0,.25); }
+  .pkb .pkb-bar.show { display:flex; }
+  .pkb .pkb-bar .count { font-weight:700; margin-right:auto; }
+  @media (max-width:767px) {
+    .pkb thead { display:none; }
+    .pkb table, .pkb tbody, .pkb tr, .pkb td { display:block; width:100%; }
+    .pkb table { border:0; background:transparent; }
+    .pkb tr { background:#fff; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; padding:6px 0; position:relative; }
+    .pkb td { border:0; padding:4px 12px; }
+    .pkb td.cb { position:absolute; top:6px; right:0; width:auto; }
+    .pkb td[data-label]:not([data-label=""])::before { content:attr(data-label); display:block; font-size:10px; text-transform:uppercase; color:var(--muted); letter-spacing:.5px; }
+    .pkb .row-acts { justify-content:flex-start; padding-top:4px; }
+    .pkb .row-acts .btn { flex:1 1 auto; min-height:40px; }
+  }
+</style>
+
+<div class="pkb">
+  <div class="pkb-head">
+    <h1>Assign packets</h1>
+    <a class="btn btn-sm btn-outline-secondary" href="/packet/report?month=<%= encodeURIComponent(month) %>"><i class="bi bi-file-earmark-text"></i> Report</a>
+    <% if (perms.isAdmin) { %><a class="btn btn-sm btn-outline-secondary" href="/packet/adminPacket?month=<%= encodeURIComponent(month) %>">Admin panel</a><% } %>
+  </div>
+
+  <%- include("../partials/messages") %>
+
+  <div class="pkb-filters">
+    <input type="text" class="form-control" id="monthInput" aria-label="Month" value="<%= month %>">
+    <input type="search" class="form-control pkb-search" id="searchInput" placeholder="Search code, name, person, receiver…" aria-label="Search">
+    <select class="form-select" id="typeFilter" aria-label="Type"><option value="">All types</option></select>
+  </div>
+
+  <div class="pkb-tabs" id="tabs" role="tablist"></div>
+  <div id="listArea"></div>
+
+  <div class="pkb-bar" id="bar">
+    <span class="count" id="barCount"></span>
+    <button type="button" class="btn btn-sm btn-primary d-none" id="barAssign"></button>
+    <button type="button" class="btn btn-sm btn-success d-none" id="barEnable">Enable</button>
+    <button type="button" class="btn btn-sm btn-outline-light d-none" id="barDisable">Disable</button>
+    <button type="button" class="btn btn-sm btn-link text-white" id="barClear">Clear</button>
+  </div>
+
+  <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="assignTitle">Assign</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="sub mb-2" id="assignWhat"></p>
+        <label class="form-label fw-semibold" for="assignUser">Assign to</label>
+        <select id="assignUser" placeholder="Search staff…"></select>
+        <label class="form-label fw-semibold mt-3" for="assignReason">Reason <span class="text-muted fw-normal">(optional)</span></label>
+        <input type="text" class="form-control" id="assignReason" maxlength="255" placeholder="e.g. Agent on leave">
+        <div class="alert alert-danger mt-3 mb-0 d-none" id="assignErr"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="assignGo">Assign</button></div>
+    </div></div>
+  </div>
+
+  <div class="modal fade" id="disableModal" tabindex="-1" aria-labelledby="disableTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="disableTitle">Disable packets</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <p class="sub mb-2" id="disableWhat"></p>
+        <p class="mb-2">Staff will no longer see these packets. Nothing is deleted and you can enable them again.</p>
+        <label class="form-label fw-semibold" for="disableReason">Why? <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="disableReason" maxlength="255" placeholder="e.g. Wrong sheet uploaded">
+        <div class="alert alert-danger mt-3 mb-0 d-none" id="disableErr"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-danger" id="disableGo">Disable</button></div>
+    </div></div>
+  </div>
+
+  <script type="application/json" id="pkbData"><%- safeJson({ packets: packets, users: users, perms: perms, me: me, month: month }) %></script>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var D = JSON.parse(document.getElementById('pkbData').textContent);
+  var P = D.perms, canHandOut = P.assign || P.assignReturned, canTake = !P.manage;
+  var TABS = [
+    { id: 'UPLOADED', label: 'To assign' }, { id: 'RETURNED', label: 'Returned' }, { id: 'ASSIGNED', label: 'With staff' },
+    { id: 'DELIVERED', label: 'Delivered' }, { id: 'DISABLED', label: 'Disabled' }, { id: 'ALL', label: 'All' }
+  ];
+  var LABEL = { UPLOADED: 'To assign', ASSIGNED: 'With staff', DELIVERED: 'Delivered', RETURNED: 'Returned', DISABLED: 'Disabled' };
+  var count = function (s) { return D.packets.filter(function (p) { return s === 'ALL' || p.Status === s; }).length; };
+  var tab = location.hash.slice(1);
+  if (!TABS.some(function (t) { return t.id === tab; })) tab = count('UPLOADED') || !count('RETURNED') ? 'UPLOADED' : 'RETURNED';
+  var selected = new Set(), action = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function byId(id) { return D.packets.find(function (p) { return p.Id === id; }); }
+  function canAssignRow(p) {
+    if (canTake) return p.Status === 'UPLOADED';
+    if (p.Status === 'RETURNED') return P.assignReturned;
+    return (p.Status === 'UPLOADED' || p.Status === 'ASSIGNED') && P.assign;
+  }
+  function canDisableRow(p) { return P.disable && p.Status !== 'DELIVERED' && p.Status !== 'DISABLED'; }
+  function canEnableRow(p) { return P.disable && p.Status === 'DISABLED'; }
+  function selectable(p) { return canAssignRow(p) || canDisableRow(p) || canEnableRow(p); }
+
+  var types = [...new Set(D.packets.map(function (p) { return p.Type; }).filter(Boolean))].sort();
+  var typeSel = document.getElementById('typeFilter');
+  types.forEach(function (t) { var o = document.createElement('option'); o.value = t; o.textContent = t; typeSel.appendChild(o); });
+  if (types.length < 2) typeSel.classList.add('d-none');
+
+  function visible() {
+    var q = document.getElementById('searchInput').value.toLowerCase().trim(), t = typeSel.value;
+    return D.packets.filter(function (p) {
+      if (tab !== 'ALL' && p.Status !== tab) return false;
+      if (t && p.Type !== t) return false;
+      if (!q) return true;
+      return [p.PacketCode, p.Name, p.assignedUser, p.ReceiverName, p.ReceiverPhone, p.returnedByName].filter(Boolean).join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function assignWord(p) { return canTake ? 'Take' : p.Status === 'ASSIGNED' ? 'Re-assign' : p.Status === 'RETURNED' ? 'Assign again' : 'Assign'; }
+
+  function render() {
+    document.getElementById('tabs').innerHTML = TABS.map(function (t) {
+      return '<button type="button" role="tab" class="pkb-tab' + (t.id === tab ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '<b>' + count(t.id) + '</b></button>';
+    }).join('');
+    var rows = visible();
+    var ids = new Set(rows.filter(selectable).map(function (p) { return p.Id; }));
+    selected.forEach(function (id) { if (!ids.has(id)) selected.delete(id); });
+    var area = document.getElementById('listArea');
+    if (!rows.length) { area.innerHTML = '<div class="empty">No packets here for ' + esc(D.month) + '.</div>'; renderBar(); return; }
+    area.innerHTML = '<table><thead><tr><th style="width:36px"><input class="form-check-input" type="checkbox" id="selAll" aria-label="Select all shown"></th><th>Packet</th><th>Name</th><th>Status</th><th>With</th><th></th></tr></thead><tbody>' +
+      rows.map(function (p) {
+        var notes = '';
+        if (p.Status === 'RETURNED' && p.returnReason) notes = '<div class="note ret">Returned by ' + esc(p.returnedByName || '—') + ': ' + esc(p.returnReason) + (p.returnNote ? ' · ' + esc(p.returnNote) : '') + '</div>';
+        if (p.Status === 'DISABLED') notes = '<div class="note off">' + esc(p.disabledReason || 'Disabled') + (p.disabledByName ? ' — ' + esc(p.disabledByName) : '') + '</div>';
+        var who = p.Status === 'DELIVERED' && p.ReceiverName ? esc(p.ReceiverName) + '<div class="sub">' + esc(p.ReceiverPhone || '') + '</div>' : esc(p.assignedUser || '—');
+        var acts = '';
+        if (canAssignRow(p)) acts += '<button type="button" class="btn btn-sm btn-primary" data-act="assign" data-id="' + p.Id + '">' + assignWord(p) + '</button>';
+        if (canEnableRow(p)) acts += '<button type="button" class="btn btn-sm btn-success" data-act="enable" data-id="' + p.Id + '">Enable</button>';
+        if (canDisableRow(p)) acts += '<button type="button" class="btn btn-sm btn-outline-danger" data-act="disable" data-id="' + p.Id + '">Disable</button>';
+        return '<tr class="' + (selected.has(p.Id) ? 'sel' : '') + '"><td class="cb" data-label="">' + (selectable(p) ? '<input class="form-check-input row-cb" type="checkbox" data-id="' + p.Id + '" aria-label="Select ' + esc(p.PacketCode) + '"' + (selected.has(p.Id) ? ' checked' : '') + '>' : '') + '</td>' +
+          '<td data-label=""><span class="code">' + esc(p.PacketCode) + '</span><div class="sub">' + esc(p.Type || '') + '</div></td>' +
+          '<td data-label="Name">' + esc(p.Name || '—') + notes + '</td>' +
+          '<td data-label="Status"><span class="pill s-' + esc(p.Status) + '">' + esc(LABEL[p.Status] || p.Status) + '</span></td>' +
+          '<td data-label="' + (p.Status === 'DELIVERED' ? 'Received by' : 'With') + '">' + who + '</td>' +
+          '<td data-label=""><div class="row-acts">' + acts + '</div></td></tr>';
+      }).join('') + '</tbody></table>';
+    syncAll(ids);
+    renderBar();
+  }
+  function syncAll(ids) {
+    var all = document.getElementById('selAll'); if (!all) return;
+    var n = 0; ids.forEach(function (id) { if (selected.has(id)) n++; });
+    all.disabled = !ids.size; all.checked = ids.size > 0 && n === ids.size; all.indeterminate = n > 0 && n < ids.size;
+  }
+  function renderBar() {
+    var list = [...selected].map(byId), n = list.length;
+    document.getElementById('bar').classList.toggle('show', n > 0);
+    document.getElementById('barCount').textContent = n + ' selected';
+    var a = document.getElementById('barAssign'), d = document.getElementById('barDisable'), e = document.getElementById('barEnable');
+    var okA = n && list.every(canAssignRow), okD = n && list.every(canDisableRow), okE = n && list.every(canEnableRow);
+    a.classList.toggle('d-none', !okA); d.classList.toggle('d-none', !okD); e.classList.toggle('d-none', !okE);
+    if (okA) a.textContent = canTake ? 'Take for me' : list.every(function (p) { return p.Status === 'ASSIGNED'; }) ? 'Re-assign' : 'Assign';
+  }
+
+  /* person picker */
+  var userSel = document.getElementById('assignUser');
+  var ts = new TomSelect(userSel, { options: D.users.map(function (u) { return { value: String(u.id), text: u.name }; }), maxOptions: null, create: false, refreshThrottle: 0 });
+  var assignModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('assignModal'));
+  var disableModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('disableModal'));
+
+  function describe(ids) {
+    var l = ids.map(byId), head = l.slice(0, 4).map(function (p) { return p.PacketCode; }).join(', ');
+    return l.length + ' packet' + (l.length > 1 ? 's' : '') + ': ' + head + (l.length > 4 ? ' and ' + (l.length - 4) + ' more' : '');
+  }
+  function post(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(Object.assign({ month: D.month, from: 'board' }, body)) })
+      .then(function (r) { return r.json().catch(function () { return { success: false, error: 'Please log in again.' }; }); })
+      .then(function (j) { if (!j.success && !j.error) j.error = j.message; return j; })
+      .catch(function () { return { success: false, error: 'No connection — nothing was changed. Try again.' }; });
+  }
+  function done(res, btn, errEl) {
+    if (res.success) { location.hash = tab; location.reload(); return; }
+    btn.disabled = false;
+    if (errEl) { errEl.textContent = res.error || 'Something went wrong.'; errEl.classList.remove('d-none'); }
+  }
+  function take(ids) {
+    post('/packet/assignBulk', { packetIds: ids, userId: D.me }).then(function (res) {
+      if (res.success) { location.hash = tab; location.reload(); } else { showPageError(res.error); }
+    });
+  }
+  function showPageError(msg) {
+    var a = document.getElementById('listArea'), el = document.createElement('div');
+    el.className = 'alert alert-danger'; el.textContent = msg || 'Something went wrong.'; a.parentNode.insertBefore(el, a);
+  }
+  function openAssign(ids) {
+    if (canTake) return take(ids);
+    action = ids;
+    var l = ids.map(byId), allHeld = l.every(function (p) { return p.Status === 'ASSIGNED'; });
+    document.getElementById('assignTitle').textContent = allHeld ? 'Re-assign' : 'Assign';
+    document.getElementById('assignGo').textContent = allHeld ? 'Re-assign' : 'Assign';
+    var one = l.length === 1 ? l[0] : null;
+    document.getElementById('assignWhat').textContent = describe(ids) + (one && one.assignedUser ? ' — now with ' + one.assignedUser : '');
+    document.getElementById('assignReason').value = '';
+    document.getElementById('assignErr').classList.add('d-none');
+    ts.clear(true);
+    ['assignGo'].forEach(function (i) { document.getElementById(i).disabled = false; });
+    assignModal.show();
+  }
+  function openDisable(ids) {
+    action = ids;
+    document.getElementById('disableWhat').textContent = describe(ids);
+    document.getElementById('disableReason').value = '';
+    document.getElementById('disableErr').classList.add('d-none');
+    document.getElementById('disableGo').disabled = false;
+    disableModal.show();
+  }
+  document.getElementById('assignModal').addEventListener('shown.bs.modal', function () { ts.focus(); });
+  document.getElementById('disableModal').addEventListener('shown.bs.modal', function () { document.getElementById('disableReason').focus(); });
+
+  document.getElementById('assignGo').addEventListener('click', function () {
+    var err = document.getElementById('assignErr');
+    if (!ts.getValue()) { err.textContent = 'Choose the person.'; err.classList.remove('d-none'); return; }
+    this.disabled = true; var btn = this;
+    post('/packet/assignBulk', { packetIds: action, userId: ts.getValue(), reason: document.getElementById('assignReason').value }).then(function (r) { done(r, btn, err); });
+  });
+  document.getElementById('disableGo').addEventListener('click', function () {
+    var err = document.getElementById('disableErr'), why = document.getElementById('disableReason').value.trim();
+    if (why.length < 3) { err.textContent = 'Write why the packet is being disabled.'; err.classList.remove('d-none'); return; }
+    this.disabled = true; var btn = this;
+    post('/packet/disablePackets', { packetIds: action, reason: why }).then(function (r) { done(r, btn, err); });
+  });
+  function enable(ids) {
+    post('/packet/enablePackets', { packetIds: ids }).then(function (r) { if (r.success) { location.hash = tab; location.reload(); } else showPageError(r.error); });
+  }
+
+  document.getElementById('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tab]'); if (!b) return;
+    tab = b.getAttribute('data-tab'); selected.clear(); history.replaceState(null, '', '#' + tab); render();
+  });
+  document.getElementById('listArea').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var id = Number(b.getAttribute('data-id')), act = b.getAttribute('data-act');
+    if (act === 'assign') openAssign([id]); else if (act === 'disable') openDisable([id]); else enable([id]);
+  });
+  document.getElementById('listArea').addEventListener('change', function (e) {
+    if (e.target.id === 'selAll') {
+      visible().filter(selectable).forEach(function (p) { if (e.target.checked) selected.add(p.Id); else selected.delete(p.Id); });
+      render(); return;
+    }
+    if (e.target.classList.contains('row-cb')) {
+      var id = Number(e.target.getAttribute('data-id'));
+      if (e.target.checked) selected.add(id); else selected.delete(id);
+      e.target.closest('tr').classList.toggle('sel', e.target.checked);
+      syncAll(new Set(visible().filter(selectable).map(function (p) { return p.Id; }))); renderBar();
+    }
+  });
+  document.getElementById('barAssign').addEventListener('click', function () { openAssign([...selected]); });
+  document.getElementById('barDisable').addEventListener('click', function () { openDisable([...selected]); });
+  document.getElementById('barEnable').addEventListener('click', function () { enable([...selected]); });
+  document.getElementById('barClear').addEventListener('click', function () { selected.clear(); render(); });
+  document.getElementById('searchInput').addEventListener('input', render);
+  typeSel.addEventListener('change', render);
+  pkvMonthPicker('#monthInput', function (m) { if (m !== D.month) location.href = '/packet/packets?month=' + encodeURIComponent(m) + '#' + tab; });
+  render();
+});
+</script>

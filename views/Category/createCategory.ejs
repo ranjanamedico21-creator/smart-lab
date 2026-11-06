@@ -1,0 +1,125 @@
+<%
+  var V = (typeof values !== 'undefined' && values) ? values : { category: (typeof category !== 'undefined' ? category : ''), thanks: (typeof thanks !== 'undefined' ? thanks : '') };
+  var E = (typeof errors !== 'undefined' && errors && !Array.isArray(errors)) ? errors : {};
+  var DC = (typeof doctorCount !== 'undefined') ? doctorCount : null;
+  var NAMES = (typeof existingNames !== 'undefined' && existingNames) ? existingNames : [];
+%>
+<style>
+  .cg{--brand:#185FA5;--brand-soft:#E6F1FB;--ink:#111827;--ink2:#6B7280;--ink3:#9CA3AF;--line:rgba(0,0,0,.09);--bad:#A32D2D;--bads:#FCEBEB;--warn:#854F0B;--warns:#FFF6E5;
+      width:100%;padding:12px 0 40px;color:var(--ink)}
+  .cg *{box-sizing:border-box}
+  .cg-crumb{font-size:12.5px;color:var(--ink2);margin-bottom:14px}.cg-crumb a{color:var(--brand);text-decoration:none}
+  .cg-card{background:#fff;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.08);overflow:hidden}
+  .cg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,#fff,#F8F9FB)}
+  .cg-head-l{display:flex;align-items:center;gap:12px;min-width:0}
+  .cg-icon{width:42px;height:42px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .cg-title{font-size:17px;font-weight:700;margin:0}.cg-sub{font-size:13px;color:var(--ink2);margin:2px 0 0}
+  .cg-body{padding:22px}
+  .cg-msgs{padding:0 22px}.cg-msgs:empty{display:none}
+  .cg-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px}
+  @media(max-width:640px){.cg-grid{grid-template-columns:1fr}.cg-body{padding:16px}.cg-head{padding:14px 16px}}
+  .cg-label{font-size:11px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+  .cg-req{color:var(--bad)}
+  .cg-input{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:44px;transition:.2s}
+  .cg-input:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px rgba(24,95,165,.08)}
+  .cg-input.error{border-color:var(--bad);background:var(--bads)}
+  .cg-input i.lead{padding:0 10px 0 12px;color:var(--ink3)}
+  .cg-input input{border:0;outline:0;background:transparent;flex:1;min-width:0;padding:10px 12px 10px 0;font-size:14.5px}
+  .cg-input .suffix{padding:0 12px;color:var(--ink2);font-weight:600}
+  .cg-input input[name=category]{text-transform:uppercase}
+  .cg-input input::placeholder{text-transform:none;color:var(--ink3)}
+  .cg-err{font-size:12px;color:var(--bad);margin-top:5px}
+  .cg-hint{font-size:12px;color:var(--ink3);margin-top:5px}
+  .cg-warn{font-size:12.5px;color:var(--warn);background:var(--warns);border-radius:8px;padding:8px 10px;margin-top:8px}
+  .cg-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .cg-chips button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 11px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+  .cg-chips button:hover,.cg-chips button.on{border-color:var(--brand);color:var(--brand);background:var(--brand-soft)}
+  .cg-note{display:flex;gap:10px;align-items:flex-start;background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink2)}
+  .cg-note i{color:var(--brand);font-size:16px;margin-top:1px}
+  .cg-apply{border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:13px}
+  .cg-apply.on{border-color:#f0c27b;background:#fffaf0}
+  .cg-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--line);background:#F8F9FB}
+  .cg-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap}
+  .cg-btn-pri{background:var(--brand);color:#fff}.cg-btn-pri:hover{background:#0C447C;color:#fff}.cg-btn-pri:disabled{opacity:.6}
+  .cg-btn-ghost{background:transparent;color:var(--ink2)}.cg-btn-ghost:hover{background:rgba(0,0,0,.04);color:var(--ink)}
+  .cg-btn-out{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}.cg-btn-out:hover{background:var(--brand-soft)}
+  @media(max-width:640px){.cg-bar{padding:12px 16px}.cg-bar .cg-btn-pri{flex:1}}
+</style>
+<div class="cg">
+  <div class="cg-crumb"><a href="/user/home">Home</a> › <a href="/category/getCategoryListView">Test categories</a> › Create</div>
+  <form action="/category/createCategory" method="post" novalidate id="cgForm" autocomplete="off">
+    <div class="cg-card">
+      <div class="cg-head">
+        <div class="cg-head-l">
+          <div class="cg-icon"><i class="bi bi-folder-plus"></i></div>
+          <div><p class="cg-title">Create test category</p><p class="cg-sub">e.g. MRI, CT SCAN, PATHOLOGY, X-RAY</p></div>
+        </div>
+      </div>
+      <div class="cg-msgs"><%- include('../partials/messages') %></div>
+      <div class="cg-body">
+        <div class="cg-grid">
+          <div>
+            <label class="cg-label" for="category">Category name <span class="cg-req">*</span></label>
+            <div class="cg-input <%= E.category ? 'error' : '' %>"><i class="bi bi-tag lead"></i>
+              <input type="text" name="category" id="category" value="<%= V.category %>" placeholder="Category name" maxlength="50" required autofocus>
+            </div>
+            <div class="cg-err" id="nameErr" <%= E.category ? '' : 'hidden' %>><%= E.category || '' %></div>
+            <div class="cg-hint">Saved in capitals. Letters, numbers, spaces and & ( ) / . , + - allowed.</div>
+          </div>
+          <div>
+            <label class="cg-label" for="thanks">Default thanks <span class="cg-req">*</span></label>
+            <div class="cg-input <%= E.thanks ? 'error' : '' %>"><i class="bi bi-percent lead"></i>
+              <input type="number" name="thanks" id="thanks" value="<%= V.thanks %>" placeholder="e.g. 30" min="0" max="100" step="0.5" inputmode="decimal" required>
+              <span class="suffix">%</span>
+            </div>
+            <div class="cg-err" id="thanksErr" <%= E.thanks ? '' : 'hidden' %>><%= E.thanks || '' %></div>
+            <div class="cg-chips" id="chips"><% [0, 20, 25, 30, 35, 40].forEach(function (x) { %><button type="button" data-v="<%= x %>"><%= x %>%</button><% }) %></div>
+          </div>
+        </div>
+        <div class="cg-note mt-4"><i class="bi bi-info-circle"></i>
+          <div>The default thanks % is given to <b><%= DC == null ? 'every' : 'all ' + DC %> doctor<%= DC === 1 ? '' : 's' %></b> for this category.
+            Tests you add to this category later get <i>test price × that %</i> as thanks.
+            You can still set a different % for one doctor on his Edit page.</div>
+        </div>
+      </div>
+      <div class="cg-bar">
+        <a href="/category/getCategoryListView" class="cg-btn cg-btn-ghost"><i class="bi bi-x-lg"></i> Cancel</a>
+        <button type="submit" class="cg-btn cg-btn-pri" id="cgSubmit"><i class="bi bi-check2-circle"></i> Create category</button>
+      </div>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  var form = document.getElementById('cgForm'), name = document.getElementById('category'), th = document.getElementById('thanks');
+  var NAMES = <%- JSON.stringify(NAMES).replace(/</g, '\\u003c') %>;
+  var RE = /^[A-Z0-9][A-Z0-9 &()\/.,+'-]*$/;
+  var norm = function (s) { return String(s || '').replace(/\s+/g, ' ').trim().toUpperCase(); };
+  var show = function (id, input, msg) { var e = document.getElementById(id); e.textContent = msg || ''; e.hidden = !msg; input.closest('.cg-input').classList.toggle('error', !!msg); };
+  function checkName() {
+    var v = norm(name.value);
+    var msg = !v ? 'Enter the category name.' : !RE.test(v) ? 'Use letters, numbers, spaces and & ( ) / . , + - only.'
+            : NAMES.indexOf(v) !== -1 ? 'Category "' + v + '" already exists. Use another name, or edit the existing one.' : '';
+    show('nameErr', name, msg); return !msg;
+  }
+  function checkThanks() {
+    var v = th.value.trim(), n = Number(v);
+    var msg = v === '' ? 'Enter the default thanks % (0 if none).' : (!isFinite(n) || n < 0 || n > 100) ? 'Default thanks must be from 0 to 100.' : '';
+    show('thanksErr', th, msg);
+    document.querySelectorAll('#chips button').forEach(function (b) { b.classList.toggle('on', v !== '' && Number(b.dataset.v) === n); });
+    return !msg;
+  }
+  name.addEventListener('input', function () { if (!document.getElementById('nameErr').hidden || NAMES.indexOf(norm(name.value)) !== -1) checkName(); });
+  name.addEventListener('blur', function () { name.value = norm(name.value); if (name.value) checkName(); });
+  th.addEventListener('input', checkThanks);
+  document.getElementById('chips').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) { th.value = b.dataset.v; checkThanks(); } });
+  if (th.value !== '') checkThanks();
+  form.addEventListener('submit', function (e) {
+    name.value = norm(name.value);
+    var ok = checkName() & checkThanks();
+    if (!ok) { e.preventDefault(); (document.querySelector('.cg-input.error input') || name).focus(); return; }
+    var b = document.getElementById('cgSubmit'); if (b.disabled) { e.preventDefault(); return; }
+    b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating…';
+  });
+})();
+</script>
